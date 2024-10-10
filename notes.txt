@@ -36,3 +36,16 @@ This also works (no kill-at):
 g++ triangle.cpp webgpu-utils.cpp glfw3webgpu.c -I.\include wgpu_native.dll glfw3.dll -o triangle.exe
 
 Note the dll need to be found by the executable so we put them in the same directory at the executable.
+
+
+Now to call from Java.
+To make sure the Java programme can find the native.dll set the working directory to the once containing the DLLs.
+
+So we can call DLL functions from Java, but now we need to pass descriptor structs to the DLL.
+A Java class will not have the same memory layout, we need to pass a pointer to memory that follows precisely the struct as defined in C.
+
+One solution may be JNR-FFI (foreign function interface) which allows conversion between Java and C parameters and supports structs in memory.
+
+Need to up my Gradle skills to link JNR-FFI with my Java code.
+
+ 
