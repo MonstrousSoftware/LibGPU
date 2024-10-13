@@ -48,4 +48,46 @@ One solution may be JNR-FFI (foreign function interface) which allows conversion
 
 Need to up my Gradle skills to link JNR-FFI with my Java code.
 
- 
+
+
+Side note:
+The notation R"( .... )"; in the cpp code to define shader code is a so-called raw string
+introduced in C++11.
+
+You can check for C++11 support like this:
+
+#if __cplusplus < 201103L
+  #error This library needs at least a C++11 compliant compiler
+#endif
+
+> g++ --version
+g++.exe (x86_64-win32-seh, Built by MinGW-W64 project) 4.8.2
+
+Need to call with a flag like this:
+g++ -std=c++11 triangle.cpp -I.\include
+
+triangle.exe hangs on laptop.
+It hangs in the call of wgpuCreateInstance().
+
+
+To compile LeanrnWebGPU C code with MinGW:
+> delete build directory
+> cmake -G "MinGW Makefiles" . -B build
+> cmake --build build
+
+Errors:
+  WGPURequestAdapterOptions adapterOpts = {};                                           ^
+C:\Coding\C\LearnWebGPU-Code-step030-vanilla\main.cpp:106:43: error: missing initializer for member 'WGPURequestAdapterO
+
+
+The mingw compiler is very old. Replaced it by downloading MSYS2 and adding
+C:\Coding\msys64\ucrt64\bin to the PATH
+> gcc --version
+gcc (Rev3, Built by MSYS2 project) 14.1.0
+Copyright (C) 2024 Free Software Foundation, Inc.
+
+Download gcc using: pacman -S mingw-w64-ucrt-x86_64-gcc
+
+Also download pacman -S mingw-w64-ucrt-x86_64-cmake
+
+

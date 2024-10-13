@@ -1,5 +1,8 @@
 #define WEBGPU_BACKEND_WGPU
 
+#if __cplusplus < 201103L
+  #error This library needs at least a C++11 compliant compiler
+#endif
 
 #include "webgpu-utils.h"
 
@@ -20,6 +23,7 @@
 #include <vector>
 
 // We embbed the source of the shader module here
+// R"( ") is a raw string, supported since C++11
 const char* shaderSource = R"(
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4f {
@@ -98,12 +102,18 @@ int main() {
 
 bool Application::Initialize() {
 	// Open window
+		std::cout << "Init..." << std::endl;
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	window = glfwCreateWindow(640, 480, "Learn WebGPU", nullptr, nullptr);
 
-	WGPUInstance instance = wgpuCreateInstance(nullptr);
+	// We create a descriptor
+    WGPUInstanceDescriptor desc = {};
+    desc.nextInChain = nullptr;
+
+	std::cout << "Creating instance..." << std::endl;
+	WGPUInstance instance = wgpuCreateInstance(&desc);
 
 	std::cout << "Requesting adapter..." << std::endl;
 	surface = glfwGetWGPUSurface(instance, window);
