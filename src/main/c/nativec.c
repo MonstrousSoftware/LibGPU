@@ -12,24 +12,6 @@
 //#define nullptr ((void*)0)
 
 extern "C" {
-
-//typedef enum WGPUBackendType {
-//    /**
-//     * `0x00000000`.
-//     * Indicates no value is passed for this argument. See @ref SentinelValues.
-//     */
-//    WGPUBackendType_Undefined = 0x00000000,
-//    WGPUBackendType_Null = 0x00000001,
-//    WGPUBackendType_WebGPU = 0x00000002,
-//    WGPUBackendType_D3D11 = 0x00000003,
-//    WGPUBackendType_D3D12 = 0x00000004,
-//    WGPUBackendType_Metal = 0x00000005,
-//    WGPUBackendType_Vulkan = 0x00000006,
-//    WGPUBackendType_OpenGL = 0x00000007,
-//    WGPUBackendType_OpenGLES = 0x00000008,
-//    WGPUBackendType_Force32 = 0x7FFFFFFF
-//} WGPUBackendType WGPU_ENUM_ATTRIBUTE;
-
 /*
  * Class:     org_example_Main
  * Method:    add
@@ -58,24 +40,24 @@ extern "C" {
 
 
 
-WGPUInstance WGPUCreateInstance( void ){
+WGPUInstance CreateInstance( void ){
 
         WGPUInstance instance = wgpuCreateInstance(nullptr);
         printf("creating instance %p\n", instance);
         return instance;
 }
 
-void WGPUInstanceRelease( WGPUInstance instance ){
+void InstanceRelease( WGPUInstance instance ){
         printf("releasing instance %p\n", instance);
         wgpuInstanceRelease(instance);
 }
 
-void WGPUAdapterRelease( WGPUAdapter adapter ){
+void AdapterRelease( WGPUAdapter adapter ){
     printf("releasing adapter %p\n", adapter);
     wgpuAdapterRelease(adapter);
 }
 
-void WGPUDeviceRelease( WGPUDevice device ){
+void DeviceRelease( WGPUDevice device ){
     printf("releasing device %p\n", device);
     wgpuDeviceRelease(device);
 }
@@ -115,7 +97,7 @@ WGPUBool    DeviceGetLimits(WGPUDevice device, WGPUSupportedLimits *supportedLim
  * is roughly equivalent to
  *     const adapter = await navigator.gpu.requestAdapter(options);
  */
-WGPUAdapter requestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions const * options) {
+WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions const * options) {
     // A simple structure holding the local information shared with the
     // onAdapterRequestEnded callback.
     struct UserData {
@@ -172,7 +154,7 @@ WGPUAdapter requestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions 
  *     const device = await adapter.requestDevice(descriptor);
  * It is very similar to requestAdapter
  */
-WGPUDevice requestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor) {
+WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor) {
     struct UserData {
         WGPUDevice device = nullptr;
         bool requestEnded = false;

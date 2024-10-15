@@ -38,19 +38,19 @@ public class MainJNR {
         void testStruct(WGPURequestAdapterOptions options);
         void testLimitsStruct(WGPUSupportedLimits supported);
 
-        Pointer WGPUCreateInstance();
-        void WGPUInstanceRelease(Pointer instance);
+        Pointer CreateInstance();
+        void InstanceRelease(Pointer instance);
 
-        Pointer requestAdapterSync(Pointer instance, WGPURequestAdapterOptions options);
+        Pointer RequestAdapterSync(Pointer instance, WGPURequestAdapterOptions options);
 
-        void WGPUAdapterRelease(Pointer adapter);
+        void AdapterRelease(Pointer adapter);
 
         boolean    AdapterGetLimits(Pointer adapter, WGPUSupportedLimits limits);
 
-        Pointer requestDeviceSync(Pointer adapter, WGPUDeviceDescriptor descriptor);
-        void WGPUDeviceRelease(Pointer device);
+        Pointer RequestDeviceSync(Pointer adapter, WGPUDeviceDescriptor descriptor);
+        void DeviceRelease(Pointer device);
 
-        //WGPUStatus WGPUDeviceGetFeatures(Pointer device, WGPUSupportedFeatures features);
+        //WGPUStatus DeviceGetFeatures(Pointer device, WGPUSupportedFeatures features);
 
         boolean DeviceGetLimits(Pointer device, WGPUSupportedLimits limits);
     }
@@ -77,8 +77,8 @@ public class MainJNR {
         options.forceFallbackAdapter.set(true);
         options.powerPreference.set(WGPUPowerPreference.HighPerformance);
 
-        Pointer instance = wgpu.WGPUCreateInstance();
-        Pointer adapter = wgpu.requestAdapterSync(instance, options);
+        Pointer instance = wgpu.CreateInstance();
+        Pointer adapter = wgpu.RequestAdapterSync(instance, options);
 
         WGPUSupportedLimits supportedLimits = new WGPUSupportedLimits();
         supportedLimits.useDirectMemory();
@@ -94,9 +94,9 @@ public class MainJNR {
         WGPUDeviceDescriptor deviceDescriptor = new WGPUDeviceDescriptor();
         deviceDescriptor.nextInChain.set(WgpuJava.createNullPointer());
 
-        Pointer device = wgpu.requestDeviceSync(adapter, deviceDescriptor);
+        Pointer device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
         System.out.println("Got device = "+device.toString());
-        wgpu.WGPUAdapterRelease(adapter);       // we can release our adapter as soon as we have a device
+        wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
 
 
         wgpu.DeviceGetLimits(device, supportedLimits);
@@ -107,8 +107,8 @@ public class MainJNR {
         System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
 
         // cleanup
-        wgpu.WGPUDeviceRelease(device);
-        wgpu.WGPUInstanceRelease(instance);
+        wgpu.DeviceRelease(device);
+        wgpu.InstanceRelease(instance);
 
     }
 
