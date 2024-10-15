@@ -24,4 +24,21 @@ public interface WGPU { // A representation of the C interface in Java
     //WGPUStatus DeviceGetFeatures(Pointer device, WGPUSupportedFeatures features);
 
     boolean DeviceGetLimits(Pointer device, WGPUSupportedLimits limits);
+
+    Pointer DeviceGetQueue(Pointer device);
+
+    void QueueRelease(Pointer queue);
+
+    Pointer DeviceCreateCommandEncoder(Pointer device, WGPUCommandEncoderDescriptor encoderDesc);
+
+    void CommandEncoderRelease(Pointer commandEncoder);
+
+    void CommandEncoderInsertDebugMarker(Pointer encoder, String marker);
+
+    Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
+
+    void QueueSubmit(Pointer queue, int count, Pointer commandBuffer);       // array of command buffer
+    void CommandBufferRelease(Pointer commandBuffer);
+
+
 }

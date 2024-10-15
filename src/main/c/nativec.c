@@ -62,6 +62,56 @@ void DeviceRelease( WGPUDevice device ){
     wgpuDeviceRelease(device);
 }
 
+WGPUQueue DeviceGetQueue(WGPUDevice device ){
+     WGPUQueue q = wgpuDeviceGetQueue(device);
+     printf("get queue => %p\n", q);
+     return q;
+ }
+
+void QueueRelease( WGPUQueue queue ){
+    printf("releasing queue %p\n", queue);
+    wgpuQueueRelease(queue);
+}
+
+
+WGPUCommandEncoder DeviceCreateCommandEncoder(WGPUDevice device,  WGPUCommandEncoderDescriptor *encoderDescriptor ){
+     printf("encode descriptor label: [%s]\n", encoderDescriptor->label);
+     WGPUCommandEncoder e = wgpuDeviceCreateCommandEncoder(device, encoderDescriptor);
+     printf("get command encoder => %p\n", e);
+
+     return e;
+}
+
+void CommandEncoderRelease(WGPUCommandEncoder encoder){
+    printf("releasing encoder %p\n", encoder);
+    wgpuCommandEncoderRelease(encoder);
+}
+
+void CommandEncoderInsertDebugMarker(WGPUCommandEncoder encoder, char *marker){
+    printf("insert debug marker [%s]\n", marker);
+    wgpuCommandEncoderInsertDebugMarker(encoder, marker);
+}
+
+WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCommandBufferDescriptor *bufferDescriptor){
+    WGPUCommandBuffer buf = wgpuCommandEncoderFinish(encoder, bufferDescriptor);
+    printf("encoder finish => command %p\n", buf);
+    return buf;
+}
+
+void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
+    printf("submit %d commands to queue\n", (int)count);
+    printf("commands at %p\n", commands);
+    printf("command[0] = %p\n", commands[0]);
+    wgpuQueueSubmit(queue, count, commands);
+}
+
+
+void CommandBufferRelease(WGPUCommandBuffer commandBuffer){
+    printf("releasing command buffer %p\n", commandBuffer);
+    wgpuCommandBufferRelease(commandBuffer);
+}
+
+
 WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
     printf("get limits for adapter %p\n", adapter);
 

@@ -46,6 +46,7 @@ public class MainJNR {
 
         WGPUDeviceDescriptor deviceDescriptor = new WGPUDeviceDescriptor();
         deviceDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        deviceDescriptor.setLabel("My Device");
 
         Pointer device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
         System.out.println("Got device = "+device.toString());
@@ -59,7 +60,38 @@ public class MainJNR {
         System.out.println("maxTextureDimension3D " + supportedLimits.limits.maxTextureDimension3D);
         System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
 
+        Pointer queue = wgpu.DeviceGetQueue(device);
+        System.out.println("Got queue = "+queue.toString());
+
+
+        WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
+        encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        encoderDescriptor.setLabel("My Encoder");
+
+        Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, encoderDescriptor);
+
+        wgpu.CommandEncoderInsertDebugMarker(encoder, "foobar");
+
+
+        WGPUCommandBufferDescriptor bufferDescriptor = new WGPUCommandBufferDescriptor();
+        bufferDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        bufferDescriptor.setLabel("My Buffer");
+        Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
+        wgpu.CommandEncoderRelease(encoder);
+
+        long[] buffers = new long[1];
+        buffers[0] = commandBuffer.address();
+
+        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
+        System.out.println("Pointer: "+bufferPtr.toString());
+        System.out.println("Submitting command...");
+        wgpu.QueueSubmit(queue, 1, bufferPtr);
+
+        wgpu.CommandBufferRelease(commandBuffer);
+        System.out.println("Command submitted...");
+
         // cleanup
+        wgpu.QueueRelease(queue);
         wgpu.DeviceRelease(device);
         wgpu.InstanceRelease(instance);
 

@@ -15,6 +15,7 @@ package org.example.wgpu;
 //} WGPUDeviceDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
+import org.example.RustCString;
 import org.example.WgpuJavaStruct;
 
 public class WGPUDeviceDescriptor extends WgpuJavaStruct {
@@ -27,4 +28,12 @@ public class WGPUDeviceDescriptor extends WgpuJavaStruct {
     public final WGPUQueueDescriptor defaultQueue = inner(new WGPUQueueDescriptor());
     public final WGPUDeviceLostCallbackInfo deviceLostCallbackInfo = inner(new WGPUDeviceLostCallbackInfo());
     public final WGPUUncapturedErrorCallbackInfo uncapturedErrorCallbackInfo = inner(new WGPUUncapturedErrorCallbackInfo());
+
+    public java.lang.String getLabel(){
+        return RustCString.fromPointer(label.get());
+    }
+
+    public void setLabel(java.lang.String x){
+        this.label.set(RustCString.toPointer(x));
+    }
 }

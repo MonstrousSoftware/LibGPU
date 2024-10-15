@@ -1,21 +1,20 @@
 package org.example.wgpu;
 
-//typedef struct WGPUQueueDescriptor {
+import org.example.RustCString;
+import org.example.WgpuJavaStruct;
+
+//typedef struct WGPUCommandEncoderDescriptor {
 //    WGPUChainedStruct const * nextInChain;
 //    /**
 //     * If the null value is passed, this defaults to the empty string.
 //     */
 //    WGPUStringView label;
-//} WGPUQueueDescriptor WGPU_STRUCTURE_ATTRIBUTE;
+//} WGPUCommandEncoderDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
-import jnr.ffi.Struct;
-import org.example.RustCString;
-import org.example.WgpuJavaStruct;
-
-public class WGPUQueueDescriptor extends WgpuJavaStruct {
+public class WGPUCommandEncoderDescriptor extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();
 
-    private final Struct.Pointer label = new Struct.Pointer();
+    public final Pointer label = new Pointer();
 
     public java.lang.String getLabel(){
         return RustCString.fromPointer(label.get());
