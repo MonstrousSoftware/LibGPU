@@ -1,4 +1,4 @@
-package org.example;
+package org.example.wgpu;
 
 //typedef struct WGPUQueueDescriptor {
 //    WGPUChainedStruct const * nextInChain;
@@ -9,6 +9,7 @@ package org.example;
 //} WGPUQueueDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
+import org.example.WgpuJavaStruct;
 
 public class WGPUQueueDescriptor extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();

@@ -1,4 +1,4 @@
-package org.example;
+package org.example.wgpu;
 
 //typedef struct WGPUDeviceLostCallbackInfo {
 //    WGPUChainedStruct const * nextInChain;
@@ -8,6 +8,7 @@ package org.example;
 //} WGPUDeviceLostCallbackInfo WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
+import org.example.WgpuJavaStruct;
 
 public class WGPUDeviceLostCallbackInfo extends WgpuJavaStruct {
     public final Struct.Pointer nextInChain = new Struct.Pointer();

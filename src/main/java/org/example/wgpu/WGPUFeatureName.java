@@ -1,4 +1,4 @@
-package org.example;
+package org.example.wgpu;
 
 public enum WGPUFeatureName {
         Undefined,

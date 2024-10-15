@@ -1,4 +1,6 @@
-package org.example;
+package org.example.wgpu;
+
+import org.example.WgpuJavaStruct;
 
 public final class WGPULimits extends WgpuJavaStruct {
     public final Unsigned32 maxTextureDimension1D = new Unsigned32();

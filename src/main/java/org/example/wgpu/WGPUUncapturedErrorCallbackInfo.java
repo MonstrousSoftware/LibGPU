@@ -1,6 +1,7 @@
-package org.example;
+package org.example.wgpu;
 
 import jnr.ffi.Struct;
+import org.example.WgpuJavaStruct;
 
 public class WGPUUncapturedErrorCallbackInfo extends WgpuJavaStruct {
     public final Struct.Pointer nextInChain = new Struct.Pointer();

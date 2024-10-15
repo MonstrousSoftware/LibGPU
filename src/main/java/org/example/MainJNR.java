@@ -3,62 +3,15 @@ package org.example;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
+import org.example.wgpu.*;
+
 
 public class MainJNR {
     private static Runtime runtime;
 
-    enum WGPUPowerPreference {
-        Undefined,
-        LowPower,
-        HighPerformance,
-    };
-    enum WGPUBackendType {
-        Undefined,
-        Null,
-        WebGPU,
-        D3D11,
-        D3D12,
-        Metal,
-        Vulkan,
-        OpenGL,
-        OpenGLES
-    };
-
-    enum WGPUStatus {
-        Undefined,
-        Success,
-        Error,
-    };
-
-
-    public interface WGPU { // A representation of libC in Java
-
-        int add(int a, int b);
-
-        void testStruct(WGPURequestAdapterOptions options);
-        void testLimitsStruct(WGPUSupportedLimits supported);
-
-        Pointer CreateInstance();
-        void InstanceRelease(Pointer instance);
-
-        Pointer RequestAdapterSync(Pointer instance, WGPURequestAdapterOptions options);
-
-        void AdapterRelease(Pointer adapter);
-
-        boolean    AdapterGetLimits(Pointer adapter, WGPUSupportedLimits limits);
-
-        Pointer RequestDeviceSync(Pointer adapter, WGPUDeviceDescriptor descriptor);
-        void DeviceRelease(Pointer device);
-
-        //WGPUStatus DeviceGetFeatures(Pointer device, WGPUSupportedFeatures features);
-
-        boolean DeviceGetLimits(Pointer device, WGPUSupportedLimits limits);
-    }
-
     public static void main(String[] args) {
         MainJNR main = new MainJNR();
         main.runTest();
-
     }
 
     public void runTest() {

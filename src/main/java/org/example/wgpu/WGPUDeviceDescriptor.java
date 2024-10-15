@@ -1,4 +1,4 @@
-package org.example;
+package org.example.wgpu;
 
 //typedef struct WGPUDeviceDescriptor {
 //    WGPUChainedStruct const * nextInChain;
@@ -15,6 +15,7 @@ package org.example;
 //} WGPUDeviceDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
+import org.example.WgpuJavaStruct;
 
 public class WGPUDeviceDescriptor extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();

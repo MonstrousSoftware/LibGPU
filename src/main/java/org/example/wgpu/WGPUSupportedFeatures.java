@@ -1,4 +1,4 @@
-package org.example;
+package org.example.wgpu;
 
 //typedef struct WGPUSupportedFeatures {
 //    WGPUChainedStructOut * nextInChain;
@@ -7,6 +7,7 @@ package org.example;
 //} WGPUSupportedFeatures WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
+import org.example.WgpuJavaStruct;
 
 public class WGPUSupportedFeatures extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();
