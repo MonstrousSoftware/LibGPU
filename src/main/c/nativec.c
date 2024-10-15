@@ -40,17 +40,21 @@ extern "C" {
  }
 
 
- int subtract(int a, int b ){
-    return a - b;
- }
-
  void testStruct( WGPURequestAdapterOptions options ){
     printf("backend: %d\n", options.backendType);
     printf("power: %d\n", options.powerPreference);
     printf("fallback: %d\n", options.forceFallbackAdapter);
     printf("surface: %p\n", options.compatibleSurface);
-
  }
+
+
+  void testLimitsStruct( WGPUSupportedLimits *supported ){
+     printf("supported: %p\n", supported);
+     printf("supported.nextInChain: %p @ %p\n", supported->nextInChain, &(supported->nextInChain));
+     printf("supported.limits.maxTextureDimension1D: %d\n", supported->limits.maxTextureDimension1D);
+  }
+
+
 
 
 
@@ -72,9 +76,7 @@ void WGPUAdapterRelease( WGPUAdapter adapter ){
 }
 
 WGPUBool    WGPUAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
-    printf("get limits for adapter %p, place in struct at %p\n", adapter, supportedLimits);
-    printf("supportedLimits.next %p\n",supportedLimits->nextInChain);
-    printf("supportedLimits.limits %p\n",supportedLimits->limits);
+    printf("get limits for adapter %p\n", adapter);
 
     bool ok = wgpuAdapterGetLimits(adapter, supportedLimits);
     if (ok) {
@@ -85,7 +87,7 @@ WGPUBool    WGPUAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *suppo
         std::cout << " - maxTextureArrayLayers: " << supportedLimits->limits.maxTextureArrayLayers << std::endl;
     }
 
-    supportedLimits->nextInChain = 1234;
+    //supportedLimits->nextInChain = 1234;
     return ok;
 }
 

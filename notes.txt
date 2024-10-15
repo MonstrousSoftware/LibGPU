@@ -91,3 +91,4 @@ Download gcc using: pacman -S mingw-w64-ucrt-x86_64-gcc
 Also download pacman -S mingw-w64-ucrt-x86_64-cmake
 
 
+To do: make gradle script to compile the C source instead of calling compile.bat manually.
