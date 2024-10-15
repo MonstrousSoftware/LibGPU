@@ -24,6 +24,12 @@ public class MainJNR {
         OpenGLES
     };
 
+    enum WGPUStatus {
+        Undefined,
+        Success,
+        Error,
+    };
+
 
     public interface WGPU { // A representation of libC in Java
 
@@ -39,7 +45,14 @@ public class MainJNR {
 
         void WGPUAdapterRelease(Pointer adapter);
 
-        boolean    WGPUAdapterGetLimits(Pointer adapter, WGPUSupportedLimits limits);
+        boolean    AdapterGetLimits(Pointer adapter, WGPUSupportedLimits limits);
+
+        Pointer requestDeviceSync(Pointer adapter, WGPUDeviceDescriptor descriptor);
+        void WGPUDeviceRelease(Pointer device);
+
+        //WGPUStatus WGPUDeviceGetFeatures(Pointer device, WGPUSupportedFeatures features);
+
+        boolean DeviceGetLimits(Pointer device, WGPUSupportedLimits limits);
     }
 
     public static void main(String[] args) {
@@ -70,7 +83,7 @@ public class MainJNR {
         WGPUSupportedLimits supportedLimits = new WGPUSupportedLimits();
         supportedLimits.useDirectMemory();
 
-        wgpu.WGPUAdapterGetLimits(adapter, supportedLimits);
+        wgpu.AdapterGetLimits(adapter, supportedLimits);
 
         System.out.println("maxTextureDimension1D " + supportedLimits.limits.maxTextureDimension1D);
         System.out.println("maxTextureDimension2D " + supportedLimits.limits.maxTextureDimension2D);
@@ -78,8 +91,23 @@ public class MainJNR {
         System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
 
 
+        WGPUDeviceDescriptor deviceDescriptor = new WGPUDeviceDescriptor();
+        deviceDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+
+        Pointer device = wgpu.requestDeviceSync(adapter, deviceDescriptor);
+        System.out.println("Got device = "+device.toString());
+        wgpu.WGPUAdapterRelease(adapter);       // we can release our adapter as soon as we have a device
+
+
+        wgpu.DeviceGetLimits(device, supportedLimits);
+
+        System.out.println("maxTextureDimension1D " + supportedLimits.limits.maxTextureDimension1D);
+        System.out.println("maxTextureDimension2D " + supportedLimits.limits.maxTextureDimension2D);
+        System.out.println("maxTextureDimension3D " + supportedLimits.limits.maxTextureDimension3D);
+        System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
+
         // cleanup
-        wgpu.WGPUAdapterRelease(adapter);
+        wgpu.WGPUDeviceRelease(device);
         wgpu.WGPUInstanceRelease(instance);
 
     }

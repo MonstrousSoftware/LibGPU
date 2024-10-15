@@ -75,7 +75,12 @@ void WGPUAdapterRelease( WGPUAdapter adapter ){
     wgpuAdapterRelease(adapter);
 }
 
-WGPUBool    WGPUAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
+void WGPUDeviceRelease( WGPUDevice device ){
+    printf("releasing device %p\n", device);
+    wgpuDeviceRelease(device);
+}
+
+WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
     printf("get limits for adapter %p\n", adapter);
 
     bool ok = wgpuAdapterGetLimits(adapter, supportedLimits);
@@ -86,8 +91,21 @@ WGPUBool    WGPUAdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *suppo
         std::cout << " - maxTextureDimension3D: " << supportedLimits->limits.maxTextureDimension3D << std::endl;
         std::cout << " - maxTextureArrayLayers: " << supportedLimits->limits.maxTextureArrayLayers << std::endl;
     }
+    return ok;
+}
 
-    //supportedLimits->nextInChain = 1234;
+
+WGPUBool    DeviceGetLimits(WGPUDevice device, WGPUSupportedLimits *supportedLimits) {
+    printf("get limits for device %p\n", device);
+
+    bool ok = wgpuDeviceGetLimits(device, supportedLimits);
+    if (ok) {
+        std::cout << "Device limits:" << std::endl;
+        std::cout << " - maxTextureDimension1D: " << supportedLimits->limits.maxTextureDimension1D << std::endl;
+        std::cout << " - maxTextureDimension2D: " << supportedLimits->limits.maxTextureDimension2D << std::endl;
+        std::cout << " - maxTextureDimension3D: " << supportedLimits->limits.maxTextureDimension3D << std::endl;
+        std::cout << " - maxTextureArrayLayers: " << supportedLimits->limits.maxTextureArrayLayers << std::endl;
+    }
     return ok;
 }
 
@@ -145,6 +163,43 @@ WGPUAdapter requestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions 
 
     printf("requested adapter %p\n", userData.adapter);
     return userData.adapter;
+}
+
+/**
+ * Utility function to get a WebGPU device, so that
+ *     WGPUAdapter device = requestDeviceSync(adapter, options);
+ * is roughly equivalent to
+ *     const device = await adapter.requestDevice(descriptor);
+ * It is very similar to requestAdapter
+ */
+WGPUDevice requestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor) {
+    struct UserData {
+        WGPUDevice device = nullptr;
+        bool requestEnded = false;
+    };
+    UserData userData;
+
+    auto onDeviceRequestEnded = [](WGPURequestDeviceStatus status, WGPUDevice device, char const * message, void * pUserData) {
+        UserData& userData = *reinterpret_cast<UserData*>(pUserData);
+        if (status == WGPURequestDeviceStatus_Success) {
+            userData.device = device;
+        } else {
+            std::cout << "Could not get WebGPU device: " << message << std::endl;
+        }
+        userData.requestEnded = true;
+    };
+
+    wgpuAdapterRequestDevice(
+        adapter,
+        descriptor,
+        onDeviceRequestEnded,
+        (void*)&userData
+    );
+
+    assert(userData.requestEnded);
+
+    printf("requested device %p\n", userData.device);
+    return userData.device;
 }
 
 }
