@@ -39,7 +39,8 @@ Note the dll need to be found by the executable so we put them in the same direc
 
 
 Now to call from Java.
-To make sure the Java programme can find the native.dll set the working directory to the once containing the DLLs.
+To make sure the Java programme can find the native.dll set the working directory to the once containing the DLLs:
+In Intellij: Edit Configuration, set Working Directory to F:\Coding\IdeaProjects\CallingWebGPU\src\main\c
 
 So we can call DLL functions from Java, but now we need to pass descriptor structs to the DLL.
 A Java class will not have the same memory layout, we need to pass a pointer to memory that follows precisely the struct as defined in C.
@@ -92,3 +93,7 @@ Also download pacman -S mingw-w64-ucrt-x86_64-cmake
 
 
 To do: make gradle script to compile the C source instead of calling compile.bat manually.
+
+Can we impose some typing on the various Pointer variables (device, adapter, queue, etc.)
+
+To do: add GLFW to create a window

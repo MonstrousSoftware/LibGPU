@@ -106,6 +106,11 @@ void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
 }
 
 
+void QueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallback callback, void * userdata){
+    printf("registering callback for queue submitted work done\n");
+    wgpuQueueOnSubmittedWorkDone(queue, callback, userdata);
+}
+
 void CommandBufferRelease(WGPUCommandBuffer commandBuffer){
     printf("releasing command buffer %p\n", commandBuffer);
     wgpuCommandBufferRelease(commandBuffer);

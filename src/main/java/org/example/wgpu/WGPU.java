@@ -40,5 +40,6 @@ public interface WGPU { // A representation of the C interface in Java
     void QueueSubmit(Pointer queue, int count, Pointer commandBuffer);       // array of command buffer
     void CommandBufferRelease(Pointer commandBuffer);
 
+    void QueueOnSubmittedWorkDone(Pointer queue, WGPUQueueWorkDoneCallback callback, Pointer userdata);
 
 }
