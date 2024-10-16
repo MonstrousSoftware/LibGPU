@@ -77,7 +77,7 @@ public class Main {
 
         // use a lambda expression to define a callback function
         WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
-            System.out.println("Queue work finished with status: "+ status);
+            System.out.println("=== Queue work finished with status: "+ status);
         };
         wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
 
@@ -107,6 +107,8 @@ public class Main {
 
         wgpu.CommandBufferRelease(commandBuffer);
         System.out.println("Command submitted...");
+
+        // there is no tick or poll defined in webgpu.h
 
         // cleanup
         wgpu.QueueRelease(queue);
