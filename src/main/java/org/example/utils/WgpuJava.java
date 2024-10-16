@@ -1,4 +1,4 @@
-package org.example;
+package org.example.utils;
 
 
 import jnr.ffi.Pointer;
@@ -113,7 +113,7 @@ public class WgpuJava {
     /**
      * Used for unit testing only!
      */
-    static void setRuntime(Runtime runtime) {
+    public static void setRuntime(Runtime runtime) {
         WgpuJava.runtime = runtime;
     }
 

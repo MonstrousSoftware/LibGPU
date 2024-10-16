@@ -7,7 +7,7 @@ package org.example.wgpu;
 //} WGPUSupportedFeatures WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
-import org.example.WgpuJavaStruct;
+import org.example.utils.WgpuJavaStruct;
 
 public class WGPUSupportedFeatures extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();

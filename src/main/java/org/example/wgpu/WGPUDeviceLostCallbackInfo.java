@@ -8,7 +8,7 @@ package org.example.wgpu;
 //} WGPUDeviceLostCallbackInfo WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
-import org.example.WgpuJavaStruct;
+import org.example.utils.WgpuJavaStruct;
 
 public class WGPUDeviceLostCallbackInfo extends WgpuJavaStruct {
     public final Struct.Pointer nextInChain = new Struct.Pointer();

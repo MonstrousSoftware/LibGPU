@@ -15,8 +15,8 @@ package org.example.wgpu;
 //} WGPUDeviceDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
-import org.example.RustCString;
-import org.example.WgpuJavaStruct;
+import org.example.utils.RustCString;
+import org.example.utils.WgpuJavaStruct;
 
 public class WGPUDeviceDescriptor extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();

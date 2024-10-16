@@ -1,7 +1,7 @@
 package org.example.wgpu;
 
-import org.example.RustCString;
-import org.example.WgpuJavaStruct;
+import org.example.utils.RustCString;
+import org.example.utils.WgpuJavaStruct;
 
 //typedef struct WGPUCommandEncoderDescriptor {
 //    WGPUChainedStruct const * nextInChain;

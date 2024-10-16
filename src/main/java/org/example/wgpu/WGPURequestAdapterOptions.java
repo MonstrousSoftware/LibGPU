@@ -1,7 +1,7 @@
 package org.example.wgpu;
 
 import jnr.ffi.Struct;
-import org.example.WgpuJavaStruct;
+import org.example.utils.WgpuJavaStruct;
 
 public class WGPURequestAdapterOptions extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();

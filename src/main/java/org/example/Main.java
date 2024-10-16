@@ -3,6 +3,7 @@ package org.example;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
+import org.example.utils.WgpuJava;
 import org.example.wgpu.*;
 
 

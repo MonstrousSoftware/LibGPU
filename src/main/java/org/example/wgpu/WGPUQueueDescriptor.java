@@ -9,8 +9,8 @@ package org.example.wgpu;
 //} WGPUQueueDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
 import jnr.ffi.Struct;
-import org.example.RustCString;
-import org.example.WgpuJavaStruct;
+import org.example.utils.RustCString;
+import org.example.utils.WgpuJavaStruct;
 
 public class WGPUQueueDescriptor extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();
