@@ -68,6 +68,11 @@ WGPUQueue DeviceGetQueue(WGPUDevice device ){
      return q;
  }
 
+ void DeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata){
+     printf("registering callback for device errors\n");
+     wgpuDeviceSetUncapturedErrorCallback(device, callback, userdata);
+ }
+
 void QueueRelease( WGPUQueue queue ){
     printf("releasing queue %p\n", queue);
     wgpuQueueRelease(queue);
@@ -104,6 +109,7 @@ void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
     printf("command[0] = %p\n", commands[0]);
     wgpuQueueSubmit(queue, count, commands);
 }
+
 
 
 void QueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallback callback, void * userdata){

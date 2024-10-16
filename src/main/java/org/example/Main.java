@@ -56,6 +56,14 @@ public class Main {
         System.out.println("Got device = "+device.toString());
         wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
 
+        // use a lambda expression to define a callback function
+        WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
+            System.out.println("*** Device error: "+ type + " : "+message);
+        };
+        wgpu.DeviceSetUncapturedErrorCallback(device, deviceCallback, null);
+
+
+
 
         wgpu.DeviceGetLimits(device, supportedLimits);
 

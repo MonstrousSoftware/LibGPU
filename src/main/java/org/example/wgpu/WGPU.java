@@ -42,4 +42,6 @@ public interface WGPU { // A representation of the C interface in Java
 
     void QueueOnSubmittedWorkDone(Pointer queue, WGPUQueueWorkDoneCallback callback, Pointer userdata);
 
+    void DeviceSetUncapturedErrorCallback(Pointer device, WGPUErrorCallback callback, Pointer userdata);
+
 }
