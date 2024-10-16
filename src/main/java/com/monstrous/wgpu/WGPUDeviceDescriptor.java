@@ -14,7 +14,7 @@ package com.monstrous.wgpu;
 //    WGPUUncapturedErrorCallbackInfo uncapturedErrorCallbackInfo;
 //} WGPUDeviceDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
-import com.monstrous.utils.RustCString;
+import com.monstrous.utils.CString;
 import com.monstrous.utils.WgpuJavaStruct;
 import jnr.ffi.Struct;
 
@@ -30,10 +30,10 @@ public class WGPUDeviceDescriptor extends WgpuJavaStruct {
     public final WGPUUncapturedErrorCallbackInfo uncapturedErrorCallbackInfo = inner(new WGPUUncapturedErrorCallbackInfo());
 
     public java.lang.String getLabel(){
-        return RustCString.fromPointer(label.get());
+        return CString.fromPointer(label.get());
     }
 
     public void setLabel(java.lang.String x){
-        this.label.set(RustCString.toPointer(x));
+        this.label.set(CString.toPointer(x));
     }
 }

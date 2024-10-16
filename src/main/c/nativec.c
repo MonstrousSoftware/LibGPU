@@ -1,10 +1,17 @@
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+
+#include "glfw3webgpu.h"
+
 #include <stdio.h>
 #include <iostream>
 #include <cassert>
 
 // Include WebGPU header
 #include "webgpu/webgpu.h"
+
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 
 #include "org_example_Main.h"
@@ -137,6 +144,19 @@ WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supported
     return ok;
 }
 
+void AdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties *properties){
+//	WGPUAdapterProperties properties = {};
+//	properties.nextInChain = nullptr;
+
+    printf("get properties for adapter %p to %p\n", adapter, properties);
+    wgpuAdapterGetProperties(adapter, properties);
+    std::cout << "Vendor ID:" << properties->vendorID << std::endl;
+    std::cout << "Vendor name:" << properties->vendorName << std::endl;
+    std::cout << "Architecture:" << properties->architecture << std::endl;
+    std::cout << "Device ID:" << properties->deviceID << std::endl;
+    std::cout << "Driver Description:" << properties->driverDescription << std::endl;
+}
+
 
 WGPUBool    DeviceGetLimits(WGPUDevice device, WGPUSupportedLimits *supportedLimits) {
     printf("get limits for device %p\n", device);
@@ -244,5 +264,26 @@ WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * d
     printf("requested device %p\n", userData.device);
     return userData.device;
 }
+
+    WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window){
+            printf("getting surface from GLFW window %p\n", window);
+
+            HWND hwnd = glfwGetWin32Window(window);
+            HINSTANCE hinstance = GetModuleHandle(NULL);
+
+            WGPUSurfaceDescriptorFromWindowsHWND fromWindowsHWND;
+            fromWindowsHWND.chain.next = NULL;
+            fromWindowsHWND.chain.sType = WGPUSType_SurfaceDescriptorFromWindowsHWND;
+            fromWindowsHWND.hinstance = hinstance;
+            fromWindowsHWND.hwnd = hwnd;
+
+            WGPUSurfaceDescriptor surfaceDescriptor;
+            surfaceDescriptor.nextInChain = &fromWindowsHWND.chain;
+            surfaceDescriptor.label = NULL;
+
+            WGPUSurface s = wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
+            printf("surface => %p\n", s);
+            return s;
+    }
 
 }

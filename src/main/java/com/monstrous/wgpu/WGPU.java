@@ -15,6 +15,7 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer RequestAdapterSync(Pointer instance, WGPURequestAdapterOptions options);
     void AdapterRelease(Pointer adapter);
     boolean    AdapterGetLimits(Pointer adapter, WGPUSupportedLimits limits);
+    void AdapterGetProperties(Pointer adapter, WGPUAdapterProperties properties);
 
     Pointer RequestDeviceSync(Pointer adapter, WGPUDeviceDescriptor descriptor);
     void DeviceRelease(Pointer device);
@@ -34,6 +35,6 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
     void CommandBufferRelease(Pointer commandBuffer);
 
-
+    Pointer glfwGetWGPUSurface(Pointer instance, Pointer GLFWwindow);
 
 }

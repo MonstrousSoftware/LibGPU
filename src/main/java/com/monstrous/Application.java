@@ -1,5 +1,6 @@
 package com.monstrous;
 
+import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
@@ -15,9 +16,11 @@ public class Application {
 
     // The window handle
     private long window;
+    private Demo demo;
 
-    public void init(){
+    public void init(Demo demo){
         System.out.println("Application init");
+        System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
@@ -31,11 +34,16 @@ public class Application {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);       // because we will use webgpu
 
         // Create the window
         window = glfwCreateWindow(640, 480, "Hello World!", NULL, NULL);
+
+        System.out.println("window from glfwCreateWindow = "+Long.toString(window, 16));
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
+
+        demo.init(window);
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -63,16 +71,16 @@ public class Application {
         } // the stack frame is popped automatically
 
         // Make the OpenGL context current
-        glfwMakeContextCurrent(window);
+        //glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(1);
+        //glfwSwapInterval(1);
 
         // Make the window visible
-        glfwShowWindow(window);
+        //glfwShowWindow(window);
 
     }
 
-    public void loop(){
+    public void loop(Demo demo){
             // This line is critical for LWJGL's interoperation with GLFW's
             // OpenGL context, or any context that is managed externally.
             // LWJGL detects the context that is current in the current thread,
@@ -86,9 +94,11 @@ public class Application {
             // Run the rendering loop until the user has attempted to close
             // the window or has pressed the ESCAPE key.
             while ( !glfwWindowShouldClose(window) ) {
+                demo.render();
+
                 //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
-                glfwSwapBuffers(window); // swap the color buffers
+                //glfwSwapBuffers(window); // swap the color buffers
 
                 // Poll for window events. The key callback above will only be
                 // invoked during this call.
@@ -96,8 +106,11 @@ public class Application {
             }
     }
 
-    public void exit(){
+    public void exit(Demo demo){
         System.out.println("Application exit");
+
+        demo.exit();
+
         // Free the window callbacks and destroy the window
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);

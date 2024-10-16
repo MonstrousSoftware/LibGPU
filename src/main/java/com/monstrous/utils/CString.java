@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Utilities for converting between Rust CString and Java Strings.
  */
-public class RustCString {
+public class CString {
 
     /**
      * returns a Java String made from the pointer using the {@link StandardCharsets#US_ASCII} charset.

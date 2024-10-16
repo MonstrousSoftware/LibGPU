@@ -1,0 +1,157 @@
+package com.monstrous;
+
+import com.monstrous.utils.CString;
+import com.monstrous.utils.WgpuJava;
+import com.monstrous.wgpu.*;
+import jnr.ffi.LibraryLoader;
+import jnr.ffi.Pointer;
+import jnr.ffi.Runtime;
+
+
+public class Demo {
+    private static Runtime runtime;
+    private WGPU wgpu;
+    private Pointer surface;
+    private Pointer instance;
+    private Pointer device;
+    private Pointer queue;
+
+
+    public void init(long window) {
+        wgpu = LibraryLoader.create(WGPU.class).load("nativec"); // load the library into the libc variable
+        runtime = Runtime.getRuntime(wgpu);
+        WgpuJava.setRuntime(runtime);
+
+        // debug test
+        System.out.println("Hello world!");
+        int sum = wgpu.add(1200, 34);
+        System.out.println("sum = "+sum);
+
+        instance = wgpu.CreateInstance();
+
+        System.out.println("window = "+Long.toString(window, 16));
+        surface = wgpu.glfwGetWGPUSurface(instance,  Pointer.newIntPointer(runtime, window));     //?
+        System.out.println("surface = "+surface);
+
+        WGPURequestAdapterOptions options = new WGPURequestAdapterOptions();
+        options.nextInChain.set(WgpuJava.createNullPointer());
+        options.compatibleSurface.set(surface.address());
+// causes:
+//        Could not get WebGPU adapter: Validation Error
+//
+//        Caused by:
+//        No suitable adapter found
+//
+//        Caused by:
+//
+//        thread '<unnamed>' panicked at src\lib.rs:686:40:
+//        invalid adapter
+//        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+        //options.backendType.set(WGPUBackendType.Null);
+        //options.forceFallbackAdapter.set(true);
+        //options.powerPreference.set(WGPUPowerPreference.LowPower);
+
+        // Get Adapter
+        Pointer adapter = wgpu.RequestAdapterSync(instance, options);
+
+        WGPUSupportedLimits supportedLimits = new WGPUSupportedLimits();
+        supportedLimits.useDirectMemory();
+
+
+        wgpu.AdapterGetLimits(adapter, supportedLimits);
+
+        System.out.println("maxTextureDimension1D " + supportedLimits.limits.maxTextureDimension1D);
+        System.out.println("maxTextureDimension2D " + supportedLimits.limits.maxTextureDimension2D);
+        System.out.println("maxTextureDimension3D " + supportedLimits.limits.maxTextureDimension3D);
+        System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
+
+
+        WGPUAdapterProperties adapterProperties = new WGPUAdapterProperties();
+        adapterProperties.useDirectMemory();
+        adapterProperties.nextInChain.set(WgpuJava.createNullPointer());
+
+        wgpu.AdapterGetProperties(adapter, adapterProperties);
+
+        System.out.println("VendorID: " + adapterProperties.vendorID);
+        System.out.println("Vendor name: " + CString.fromPointer(adapterProperties.vendorName.get()));
+        System.out.println("Device ID: " + adapterProperties.deviceID);
+        System.out.println("Back end: " + adapterProperties.backendType);
+
+        // Get Device
+        WGPUDeviceDescriptor deviceDescriptor = new WGPUDeviceDescriptor();
+        deviceDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        deviceDescriptor.setLabel("My Device");
+
+        device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
+        System.out.println("Got device = "+device.toString());
+        wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
+
+        // use a lambda expression to define a callback function
+        WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
+            System.out.println("*** Device error: "+ type + " : "+message);
+        };
+        wgpu.DeviceSetUncapturedErrorCallback(device, deviceCallback, null);
+
+
+
+
+        wgpu.DeviceGetLimits(device, supportedLimits);
+
+        System.out.println("maxTextureDimension1D " + supportedLimits.limits.maxTextureDimension1D);
+        System.out.println("maxTextureDimension2D " + supportedLimits.limits.maxTextureDimension2D);
+        System.out.println("maxTextureDimension3D " + supportedLimits.limits.maxTextureDimension3D);
+        System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
+
+        queue = wgpu.DeviceGetQueue(device);
+        System.out.println("Got queue = "+queue.toString());
+
+        // use a lambda expression to define a callback function
+        WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
+            System.out.println("=== Queue work finished with status: "+ status);
+        };
+        wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
+
+
+        WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
+        encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        encoderDescriptor.setLabel("My Encoder");
+
+        Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, encoderDescriptor);
+
+        wgpu.CommandEncoderInsertDebugMarker(encoder, "foobar");
+
+
+        WGPUCommandBufferDescriptor bufferDescriptor = new WGPUCommandBufferDescriptor();
+        bufferDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        bufferDescriptor.setLabel("My Buffer");
+        Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
+        wgpu.CommandEncoderRelease(encoder);
+
+        long[] buffers = new long[1];
+        buffers[0] = commandBuffer.address();
+
+        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
+        System.out.println("Pointer: "+bufferPtr.toString());
+        System.out.println("Submitting command...");
+        wgpu.QueueSubmit(queue, 1, bufferPtr);
+
+        wgpu.CommandBufferRelease(commandBuffer);
+        System.out.println("Command submitted...");
+
+        // there is no tick or poll defined in webgpu.h
+    }
+
+    public void render(){
+
+    }
+
+    public void exit(){
+        // cleanup
+        wgpu.QueueRelease(queue);
+        wgpu.DeviceRelease(device);
+        wgpu.InstanceRelease(instance);
+    }
+
+}

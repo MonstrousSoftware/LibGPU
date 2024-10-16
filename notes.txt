@@ -97,3 +97,10 @@ To do: make gradle script to compile the C source instead of calling compile.bat
 Can we impose some typing on the various Pointer variables (device, adapter, queue, etc.)
 
 To do: add GLFW to create a window
+
+
+To add LWJGL3 to your Java project you can just go to the customizer on https://www.lwjgl.org/download, select the options you need
+and copy the build.gradle fragment you need to add.  Gradle will download the files automatically.
+
+Note that in the Structs we need Struct.Pointer not jnr.ffi.Pointer because they are different. (Struct.Pointer.get() gives the jnr.ffi Pointer).
+If you just write Pointer it will normally resolve to Struct.Pointer but maybe best to be explicit.
