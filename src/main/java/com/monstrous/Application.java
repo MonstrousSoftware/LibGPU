@@ -2,6 +2,7 @@ package com.monstrous;
 
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
 
@@ -16,7 +17,7 @@ public class Application {
 
     // The window handle
     private long window;
-    private Demo demo;
+    private long windowHandle;
 
     public void init(Demo demo){
         System.out.println("Application init");
@@ -39,11 +40,17 @@ public class Application {
         // Create the window
         window = glfwCreateWindow(640, 480, "Hello World!", NULL, NULL);
 
+
+
         System.out.println("window from glfwCreateWindow = "+Long.toString(window, 16));
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 
-        demo.init(window);
+        String title = glfwGetWindowTitle(window);
+        System.out.println("Window title: " + title);
+
+        windowHandle = GLFWNativeWin32.glfwGetWin32Window(window);
+        System.out.println("Window HWND: " + Long.toString(windowHandle, 16));
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
         glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
@@ -78,6 +85,8 @@ public class Application {
         // Make the window visible
         //glfwShowWindow(window);
 
+
+        demo.init(windowHandle);
     }
 
     public void loop(Demo demo){
@@ -107,8 +116,8 @@ public class Application {
     }
 
     public void exit(Demo demo){
-        System.out.println("Application exit");
 
+        System.out.println("Application exit");
         demo.exit();
 
         // Free the window callbacks and destroy the window

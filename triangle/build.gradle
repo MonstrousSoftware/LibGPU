@@ -2,54 +2,10 @@ plugins {
     id 'cpp-application'
 }
 
-group = 'org.example'
-version = '1.0-SNAPSHOT'
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-
-}
-
+// Set the target operating system and architecture for this application
 application {
-    targetMachines.add(machines.linux.x86_64)
-}
-
-model {
-    toolChains {
-        gcc(Gcc) {
-            path 'F:\\Coding\\mingw64\\bin\\'
-            eachPlatform {
-                cppCompiler.withArguments { args ->
-                    args << "-std=c++11"
-                }
-            }
-        }
-    }
-
-    buildTypes {
-        release
-    }
-    components {
-        triangleExe(NativeExecutableSpec) {
-            targetBuildTypes("release")
-            sources {
-                main {
-                    cpp {
-                        source {
-                            srcDir "src"
-                            include "../include"
-                        }
-                        exportedHeaders {
-                            srcDir "../include"
-                        }
-                    }
-                }
-            }
-        }
-    }
+    targetMachines.add(machines.windows.x86_64)
 }
 
 tasks.withType(CppCompile).configureEach {
@@ -57,6 +13,7 @@ tasks.withType(CppCompile).configureEach {
     macros.put("NDEBUG", null)
 
     // Define a compiler options
-    compilerArgs.add '-std=c++11'
+    //compilerArgs.add '-std=c++11'
+    compilerArgs.add '/std:c++14'
 }
 

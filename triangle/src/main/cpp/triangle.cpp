@@ -1,8 +1,11 @@
 #define WEBGPU_BACKEND_WGPU
+#define WGPU_SHARED_LIBRARY
+#define _WIN32
+#define __cplusplus
 
-#if __cplusplus < 201103L
-  #error This library needs at least a C++11 compliant compiler
-#endif
+//#if __cplusplus < 201103L
+//  #error This library needs at least a C++11 compliant compiler
+//#endif
 
 #include "webgpu-utils.h"
 

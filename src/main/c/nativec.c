@@ -1,22 +1,26 @@
 
-#define GLFW_EXPOSE_NATIVE_WIN32
 
-#include "glfw3webgpu.h"
+
+//#include "glfw3webgpu.h"
 
 #include <stdio.h>
 #include <iostream>
 #include <cassert>
 
 // Include WebGPU header
-#include "webgpu/webgpu.h"
 
+#ifdef DAWN
+#include "dawn/webgpu.h"
+#else
+#include "webgpu/webgpu.h"
+#endif
+
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
 
 #include "org_example_Main.h"
-
-//#define nullptr ((void*)0)
 
 extern "C" {
 /*
@@ -49,6 +53,11 @@ extern "C" {
 
 WGPUInstance CreateInstance( void ){
 
+#ifdef DAWN
+        printf("Linked to dawn.dll\n");
+#else
+        printf("Linked to wgpu-native.dll\n");
+#endif
         WGPUInstance instance = wgpuCreateInstance(nullptr);
         printf("creating instance %p\n", instance);
         return instance;
@@ -265,17 +274,18 @@ WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * d
     return userData.device;
 }
 
-    WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window){
-            printf("getting surface from GLFW window %p\n", window);
+    WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, long long hwnd){
+            printf("getting surface from GLFW window %lld (HWND)\n", hwnd);
 
-            HWND hwnd = glfwGetWin32Window(window);
+            if(hwnd == 0)
+                printf("** Window handle (HWND) is NULL!\n");
             HINSTANCE hinstance = GetModuleHandle(NULL);
 
             WGPUSurfaceDescriptorFromWindowsHWND fromWindowsHWND;
             fromWindowsHWND.chain.next = NULL;
             fromWindowsHWND.chain.sType = WGPUSType_SurfaceDescriptorFromWindowsHWND;
             fromWindowsHWND.hinstance = hinstance;
-            fromWindowsHWND.hwnd = hwnd;
+            fromWindowsHWND.hwnd = (void *)hwnd;
 
             WGPUSurfaceDescriptor surfaceDescriptor;
             surfaceDescriptor.nextInChain = &fromWindowsHWND.chain;

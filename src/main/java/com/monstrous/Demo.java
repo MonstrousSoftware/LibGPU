@@ -17,7 +17,7 @@ public class Demo {
     private Pointer queue;
 
 
-    public void init(long window) {
+    public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("nativec"); // load the library into the libc variable
         runtime = Runtime.getRuntime(wgpu);
         WgpuJava.setRuntime(runtime);
@@ -29,29 +29,13 @@ public class Demo {
 
         instance = wgpu.CreateInstance();
 
-        System.out.println("window = "+Long.toString(window, 16));
-        surface = wgpu.glfwGetWGPUSurface(instance,  Pointer.newIntPointer(runtime, window));     //?
+        System.out.println("window = "+Long.toString(windowHandle, 16));
+        surface = wgpu.glfwGetWGPUSurface(instance,  windowHandle);
         System.out.println("surface = "+surface);
 
         WGPURequestAdapterOptions options = new WGPURequestAdapterOptions();
         options.nextInChain.set(WgpuJava.createNullPointer());
         options.compatibleSurface.set(surface.address());
-// causes:
-//        Could not get WebGPU adapter: Validation Error
-//
-//        Caused by:
-//        No suitable adapter found
-//
-//        Caused by:
-//
-//        thread '<unnamed>' panicked at src\lib.rs:686:40:
-//        invalid adapter
-//        note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
-
-
-        //options.backendType.set(WGPUBackendType.Null);
-        //options.forceFallbackAdapter.set(true);
-        //options.powerPreference.set(WGPUPowerPreference.LowPower);
 
         // Get Adapter
         Pointer adapter = wgpu.RequestAdapterSync(instance, options);

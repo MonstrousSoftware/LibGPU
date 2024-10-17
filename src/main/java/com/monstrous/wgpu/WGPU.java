@@ -35,6 +35,6 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
     void CommandBufferRelease(Pointer commandBuffer);
 
-    Pointer glfwGetWGPUSurface(Pointer instance, Pointer GLFWwindow);
+    Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
 
 }
