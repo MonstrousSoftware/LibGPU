@@ -138,6 +138,11 @@ void CommandBufferRelease(WGPUCommandBuffer commandBuffer){
     wgpuCommandBufferRelease(commandBuffer);
 }
 
+void SurfaceRelease(WGPUSurface surface){
+    printf("releasing surface %p\n", surface);
+    wgpuSurfaceRelease(surface);
+}
+
 
 WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
     printf("get limits for adapter %p\n", adapter);

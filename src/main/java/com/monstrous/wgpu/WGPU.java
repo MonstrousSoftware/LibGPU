@@ -37,4 +37,6 @@ public interface WGPU { // A representation of the C interface in Java
 
     Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
 
+    void SurfaceRelease(Pointer surface);
+
 }

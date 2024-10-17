@@ -133,6 +133,7 @@ public class Demo {
 
     public void exit(){
         // cleanup
+        wgpu.SurfaceRelease(surface);
         wgpu.QueueRelease(queue);
         wgpu.DeviceRelease(device);
         wgpu.InstanceRelease(instance);
