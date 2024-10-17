@@ -8,7 +8,7 @@ public class WGPUTextureUsage {
     static final int CopyDst  =  0x2;
     static final int TextureBinding  =  0x4;
     static final int StorageBinding  =  0x8;
-    static final int RenderAttachment  =  0x10;
+    public static final int RenderAttachment  =  0x10;
     static final int TransientAttachment  =  0x20;
     static final int StorageAttachment  =  0x40;
 }

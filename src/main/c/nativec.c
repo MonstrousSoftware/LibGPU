@@ -143,6 +143,22 @@ void SurfaceRelease(WGPUSurface surface){
     wgpuSurfaceRelease(surface);
 }
 
+void SurfaceConfigure(WGPUSurface surface, WGPUSurfaceConfiguration *config){
+    printf("configure surface %p\n", surface);
+    wgpuSurfaceConfigure(surface, config);
+}
+
+void SurfaceUnconfigure(WGPUSurface surface){
+    printf("unconfiguring surface %p\n", surface);
+    wgpuSurfaceUnconfigure(surface);
+}
+
+int SurfaceGetPreferredFormat(WGPUSurface surface, WGPUAdapter adapter){
+    int format = SurfaceGetPreferredFormat(surface, adapter);
+    printf("preferred format %d\n", format);
+    return format;
+}
+
 
 WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
     printf("get limits for adapter %p\n", adapter);

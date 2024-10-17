@@ -98,6 +98,25 @@ public class Demo {
         wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
 
 
+        WGPUSurfaceConfiguration config = new WGPUSurfaceConfiguration();
+        config.nextInChain.set(WgpuJava.createNullPointer());
+
+        config.width.set(640);
+        config.height.set(480);
+
+        int surfaceFormat = wgpu.SurfaceGetPreferredFormat(surface, adapter);
+        config.format.set(surfaceFormat);
+        // And we do not need any particular view format:
+        config.viewFormatCount.set(0);
+        config.viewFormats.set(WgpuJava.createNullPointer());
+        config.usage.set(WGPUTextureUsage.RenderAttachment);
+        config.device.set(device);
+        config.presentMode.set(WGPUPresentMode.Fifo);
+        config.alphaMode.set(WGPUCompositeAlphaMode.Auto);
+
+        wgpu.SurfaceConfigure(surface, config);
+
+
         WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
         encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
         encoderDescriptor.setLabel("My Encoder");
@@ -133,6 +152,7 @@ public class Demo {
 
     public void exit(){
         // cleanup
+        wgpu.SurfaceUnconfigure(surface);
         wgpu.SurfaceRelease(surface);
         wgpu.QueueRelease(queue);
         wgpu.DeviceRelease(device);
