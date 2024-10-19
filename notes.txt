@@ -128,3 +128,9 @@ directory points to src\main\c where the nativec.dll is located.
 Warning: Disable Intel Vulkan adapter on Windows driver version 100.8729. See https://crbug.com/1338622.
  - While initializing adapter (backend=BackendType::Vulkan)
     at InitializeImpl (D:\a\webgpu-dawn-binaries\webgpu-dawn-binaries\build\_deps\dawn-src\src\dawn\native\vulkan\PhysicalDeviceVk.cpp:130)
+
+Fixed by performing a graphics driver update.
+
+
+
+Warning: GetPreferredFormat is deprecated, use GetCapabilities().format[0] instead as the preferred format.

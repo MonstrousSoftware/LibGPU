@@ -171,6 +171,32 @@ int SurfaceGetPreferredFormat(WGPUSurface surface, WGPUAdapter adapter){
     return format;
 }
 
+void SurfaceGetCurrentTexture(WGPUSurface surface, WGPUSurfaceTexture *surfaceTexture ){
+    cout << "SurfaceGetCurrentTexture " << endl;
+
+    wgpuSurfaceGetCurrentTexture(surface, surfaceTexture);
+}
+
+WGPUTextureFormat TextureGetFormat(WGPUTexture texture){
+    cout << "TextureGetFormat " << endl;
+    WGPUTextureFormat format = wgpuTextureGetFormat(texture);
+    return format;
+}
+
+WGPUTextureView TextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor *viewDescriptor){
+    WGPUTextureView view = wgpuTextureCreateView(texture, viewDescriptor);
+    return view;
+}
+
+void TextureViewRelease(WGPUTextureView view){
+    cout << "TextureViewRelease " << endl;
+    wgpuTextureViewRelease(view);
+}
+
+void SurfacePresent(WGPUSurface surface){
+    cout << "SurfacePresent " << endl;
+    wgpuSurfacePresent(surface);
+}
 
 WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
     printf("get limits for adapter %p\n", adapter);

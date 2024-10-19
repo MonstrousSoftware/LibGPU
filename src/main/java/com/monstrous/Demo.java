@@ -117,6 +117,14 @@ public class Demo {
 
         wgpu.SurfaceConfigure(surface, config);
 
+        // loop
+        Pointer targetView = getNextSurfaceTextureView();
+        if (targetView.address() == 0)
+            System.out.println("*** Invalid target view");  // break
+
+
+        // At the end of the frame
+        wgpu.TextureViewRelease(targetView);
 
         WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
         encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
@@ -158,6 +166,34 @@ public class Demo {
         wgpu.QueueRelease(queue);
         wgpu.DeviceRelease(device);
         wgpu.InstanceRelease(instance);
+    }
+
+    private Pointer getNextSurfaceTextureView() {
+        // [...] Get the next surface texture
+
+
+        WGPUSurfaceTexture surfaceTexture = new WGPUSurfaceTexture();
+        wgpu.SurfaceGetCurrentTexture(surface, surfaceTexture);
+        if(surfaceTexture.status.get() != WGPUSurfaceGetCurrentTextureStatus.Success){
+            return WgpuJava.createNullPointer();
+        }
+        // [...] Create surface texture view
+        WGPUTextureViewDescriptor viewDescriptor = new WGPUTextureViewDescriptor();
+        viewDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        viewDescriptor.setLabel("Surface texture view");
+        Pointer tex = surfaceTexture.texture.get();
+        WGPUTextureFormat format = wgpu.TextureGetFormat(tex);
+        System.out.println("Set format "+format);
+        viewDescriptor.format.set(format);
+        viewDescriptor.dimension.set(WGPUTextureViewDimension._2D);
+        viewDescriptor.baseMipLevel.set(0);
+        viewDescriptor.mipLevelCount.set(1);
+        viewDescriptor.baseArrayLayer.set(0);
+        viewDescriptor.arrayLayerCount.set(1);
+        viewDescriptor.aspect.set(WGPUTextureAspect.All);
+        Pointer targetView = wgpu.TextureCreateView(surfaceTexture.texture.get(), viewDescriptor);
+
+        return targetView;
     }
 
 }
