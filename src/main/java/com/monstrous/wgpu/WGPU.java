@@ -49,4 +49,6 @@ public interface WGPU { // A representation of the C interface in Java
 
     void TextureViewRelease(Pointer view);
 
+    void SurfacePresent(Pointer surface);
+
 }

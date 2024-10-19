@@ -125,6 +125,9 @@ public class Demo {
 
         // At the end of the frame
         wgpu.TextureViewRelease(targetView);
+        wgpu.SurfacePresent(surface);
+
+
 
         WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
         encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
