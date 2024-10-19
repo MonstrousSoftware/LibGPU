@@ -40,6 +40,6 @@ public interface WGPU { // A representation of the C interface in Java
     void SurfaceRelease(Pointer surface);
     void SurfaceConfigure(Pointer surface, WGPUSurfaceConfiguration config);
     void SurfaceUnconfigure(Pointer surface);
-    int SurfaceGetPreferredFormat(Pointer surface, Pointer adapter);
+    WGPUTextureFormat SurfaceGetPreferredFormat(Pointer surface, Pointer adapter);
 
 }

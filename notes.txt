@@ -104,3 +104,27 @@ and copy the build.gradle fragment you need to add.  Gradle will download the fi
 
 Note that in the Structs we need Struct.Pointer not jnr.ffi.Pointer because they are different. (Struct.Pointer.get() gives the jnr.ffi Pointer).
 If you just write Pointer it will normally resolve to Struct.Pointer but maybe best to be explicit.
+
+Tip: In Intellij install the plugin for CMD bat files. Then you can right click to execute a .bat file.
+
+On laptop compileDawn.bat doesn't work:
+g++ complains about not find entry point crc32_combine from cc1plus.exe
+gcc runs fine, but g++ cannot even compile a simple helloworld.cpp
+
+Reinstalled mingw-64 from here:
+https://github.com/niXman/mingw-builds-binaries/releases
+Version : wx86-64-....-win32-seh-ucrt....
+
+Installed it in C:\Coding\mingw64 and added C:\Coding\mingw64\bin to the system environment variable PATH.
+(Use env)
+
+g++ --version  => 4.8.2
+
+Make sure the run configuration of Main is changed so that the working
+directory points to src\main\c where the nativec.dll is located.
+
+
+
+Warning: Disable Intel Vulkan adapter on Windows driver version 100.8729. See https://crbug.com/1338622.
+ - While initializing adapter (backend=BackendType::Vulkan)
+    at InitializeImpl (D:\a\webgpu-dawn-binaries\webgpu-dawn-binaries\build\_deps\dawn-src\src\dawn\native\vulkan\PhysicalDeviceVk.cpp:130)

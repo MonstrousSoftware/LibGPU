@@ -1,11 +1,17 @@
 
-
+#if __cplusplus < 201103L
+  #error This library needs at least a C++11 compliant compiler
+#endif
 
 //#include "glfw3webgpu.h"
 
 #include <stdio.h>
-#include <iostream>
 #include <cassert>
+#include <iostream>
+
+using namespace std;
+
+// note we should't mix printf and cout <<
 
 // Include WebGPU header
 
@@ -20,9 +26,12 @@
 #include <GLFW/glfw3native.h>
 
 
-#include "org_example_Main.h"
+//#include "org_example_Main.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
 /*
  * Class:     org_example_Main
  * Method:    add
@@ -154,8 +163,11 @@ void SurfaceUnconfigure(WGPUSurface surface){
 }
 
 int SurfaceGetPreferredFormat(WGPUSurface surface, WGPUAdapter adapter){
-    int format = SurfaceGetPreferredFormat(surface, adapter);
-    printf("preferred format %d\n", format);
+    cout << "SurfaceGetPreferredFormat " << surface << ", " << adapter << endl;
+
+    WGPUTextureFormat format = wgpuSurfaceGetPreferredFormat(surface, adapter);
+
+    cout << "preferred format " << format << endl;
     return format;
 }
 
@@ -316,5 +328,6 @@ WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * d
             printf("surface => %p\n", s);
             return s;
     }
-
-}
+#ifdef __cplusplus
+} // extern "C"
+#endif

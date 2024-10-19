@@ -104,7 +104,8 @@ public class Demo {
         config.width.set(640);
         config.height.set(480);
 
-        int surfaceFormat = wgpu.SurfaceGetPreferredFormat(surface, adapter);
+        WGPUTextureFormat surfaceFormat = wgpu.SurfaceGetPreferredFormat(surface, adapter);
+        System.out.println("Using format: "+surfaceFormat);
         config.format.set(surfaceFormat);
         // And we do not need any particular view format:
         config.viewFormatCount.set(0);
