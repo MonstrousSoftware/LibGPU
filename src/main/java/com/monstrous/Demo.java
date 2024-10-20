@@ -98,6 +98,7 @@ public class Demo {
         wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
 
 
+        // configure the surface
         WGPUSurfaceConfiguration config = new WGPUSurfaceConfiguration();
         config.nextInChain.set(WgpuJava.createNullPointer());
 
@@ -117,12 +118,19 @@ public class Demo {
 
         wgpu.SurfaceConfigure(surface, config);
 
+
+    }
+
+    public void render(){
         // loop
         Pointer targetView = getNextSurfaceTextureView();
-        if (targetView.address() == 0)
-            System.out.println("*** Invalid target view");  // break
+        if (targetView.address() == 0) {
+            System.out.println("*** Invalid target view");
+            return;
+        }
 
         WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
+        encoderDescriptor.useDirectMemory();
         encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
         encoderDescriptor.setLabel("My Encoder");
 
@@ -138,9 +146,12 @@ public class Demo {
         renderPassColorAttachment.resolveTarget.set(WgpuJava.createNullPointer());
         renderPassColorAttachment.loadOP.set(WGPULoadOp.Clear);
         renderPassColorAttachment.storeOP.set(WGPUStoreOp.Store);
-        WGPUColor bgColor = new WGPUColor();
-        bgColor.set(0.9, 0.1, 0.2, 1.0 );
-        renderPassColorAttachment.clearValue.set(bgColor.getPointerTo());
+
+        renderPassColorAttachment.clearValue.r.set(0.9);
+        renderPassColorAttachment.clearValue.g.set(0.1);
+        renderPassColorAttachment.clearValue.b.set(0.2);
+        renderPassColorAttachment.clearValue.a.set(1.0);
+
         renderPassColorAttachment.depthSlice.set(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
 
         WGPURenderPassDescriptor renderPassDescriptor = new WGPURenderPassDescriptor();
@@ -162,8 +173,9 @@ public class Demo {
         wgpu.RenderPassEncoderRelease(renderPass);
 
         WGPUCommandBufferDescriptor bufferDescriptor = new WGPUCommandBufferDescriptor();
+        bufferDescriptor.useDirectMemory();
         bufferDescriptor.nextInChain.set(WgpuJava.createNullPointer());
-        bufferDescriptor.setLabel("My Buffer");
+        bufferDescriptor.setLabel("Command Buffer");
         Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
         wgpu.CommandEncoderRelease(encoder);
 
@@ -173,6 +185,7 @@ public class Demo {
 
 
         long[] buffers = new long[1];
+        buffers[0] = commandBuffer.address();
         Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
         System.out.println("Pointer: "+bufferPtr.toString());
         System.out.println("Submitting command...");
@@ -186,10 +199,6 @@ public class Demo {
         // At the end of the frame
         wgpu.TextureViewRelease(targetView);
         wgpu.SurfacePresent(surface);
-    }
-
-    public void render(){
-
     }
 
     public void exit(){
@@ -206,12 +215,16 @@ public class Demo {
 
 
         WGPUSurfaceTexture surfaceTexture = new WGPUSurfaceTexture();
+        surfaceTexture.useDirectMemory();
         wgpu.SurfaceGetCurrentTexture(surface, surfaceTexture);
+        System.out.println("get current texture: "+surfaceTexture.status.get());
         if(surfaceTexture.status.get() != WGPUSurfaceGetCurrentTextureStatus.Success){
+            System.out.println("*** No current texture");
             return WgpuJava.createNullPointer();
         }
         // [...] Create surface texture view
         WGPUTextureViewDescriptor viewDescriptor = new WGPUTextureViewDescriptor();
+        viewDescriptor.useDirectMemory();
         viewDescriptor.nextInChain.set(WgpuJava.createNullPointer());
         viewDescriptor.setLabel("Surface texture view");
         Pointer tex = surfaceTexture.texture.get();

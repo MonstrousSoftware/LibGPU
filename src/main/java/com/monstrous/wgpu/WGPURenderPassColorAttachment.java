@@ -22,5 +22,5 @@ public class WGPURenderPassColorAttachment extends WgpuJavaStruct {
     public final Struct.Pointer resolveTarget = new Struct.Pointer();
     public final Struct.Enum32<WGPULoadOp> loadOP = new Struct.Enum32<>(WGPULoadOp.class);
     public final Struct.Enum32<WGPUStoreOp> storeOP = new Struct.Enum32<>(WGPUStoreOp.class);
-    public final Struct.Pointer clearValue = new Struct.Pointer();
+    public final WGPUColor clearValue = inner(new WGPUColor());
 }

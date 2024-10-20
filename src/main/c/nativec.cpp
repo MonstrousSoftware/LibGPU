@@ -136,10 +136,26 @@ WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCommandBu
     return buf;
 }
 
+void dumpColAtt( WGPURenderPassColorAttachment colAtt){
+    cout << "nextInChain=" << colAtt.nextInChain << endl;
+    cout << "depthSlice=" << colAtt.depthSlice << endl;
+    printf("clearValue @ %p size %ld\n", &colAtt.clearValue, sizeof(WGPUColor));
+    printf("clearValue rgba @ %p, %p, %p, %p \n", &colAtt.clearValue.r,  &colAtt.clearValue.g,  &colAtt.clearValue.b,  &colAtt.clearValue.a);
+    cout << "clearValue: r=" << colAtt.clearValue.r
+     << "g=" << colAtt.clearValue.g
+     << "b=" << colAtt.clearValue.b
+     << "a=" << colAtt.clearValue.a << endl;
+    cout << "loadOp=" << colAtt.loadOp << endl;
+    cout << "storeOp=" << colAtt.storeOp << endl;
+}
+
 WGPURenderPassEncoder  CommandEncoderBeginRenderPass(WGPUCommandEncoder encoder, WGPURenderPassDescriptor *renderPassDescriptor){
     WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+    dumpColAtt(renderPassDescriptor->colorAttachments[0]);
     return pass;
 }
+
+
 
 void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
     printf("submit %d commands to queue\n", (int)count);
