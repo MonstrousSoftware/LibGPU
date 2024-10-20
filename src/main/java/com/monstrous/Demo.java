@@ -122,21 +122,42 @@ public class Demo {
         if (targetView.address() == 0)
             System.out.println("*** Invalid target view");  // break
 
-
-        // At the end of the frame
-        wgpu.TextureViewRelease(targetView);
-        wgpu.SurfacePresent(surface);
-
-
-
         WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
         encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
         encoderDescriptor.setLabel("My Encoder");
 
         Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, encoderDescriptor);
 
-        wgpu.CommandEncoderInsertDebugMarker(encoder, "foobar");
 
+
+
+        WGPURenderPassColorAttachment renderPassColorAttachment = new WGPURenderPassColorAttachment();
+        renderPassColorAttachment.useDirectMemory();
+        renderPassColorAttachment.nextInChain.set(WgpuJava.createNullPointer());
+        renderPassColorAttachment.view.set(targetView);
+        renderPassColorAttachment.resolveTarget.set(WgpuJava.createNullPointer());
+        renderPassColorAttachment.loadOP.set(WGPULoadOp.Clear);
+        renderPassColorAttachment.storeOP.set(WGPUStoreOp.Store);
+        WGPUColor bgColor = new WGPUColor();
+        bgColor.set(0.9, 0.1, 0.2, 1.0 );
+        renderPassColorAttachment.clearValue.set(bgColor.getPointerTo());
+        renderPassColorAttachment.depthSlice.set(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
+
+        WGPURenderPassDescriptor renderPassDescriptor = new WGPURenderPassDescriptor();
+        renderPassDescriptor.useDirectMemory();
+        renderPassDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+
+        renderPassDescriptor.colorAttachmentCount.set(1);
+        renderPassDescriptor.colorAttachments.set( renderPassColorAttachment.getPointerTo());
+
+        renderPassDescriptor.occlusionQuerySet.set(WgpuJava.createNullPointer());
+        renderPassDescriptor.depthStencilAttachment.set(WgpuJava.createNullPointer());
+        renderPassDescriptor.timestampWrites.set(WgpuJava.createNullPointer());
+
+        Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+// [...] Use Render Pass
+        wgpu.RenderPassEncoderEnd(renderPass);
+        wgpu.RenderPassEncoderRelease(renderPass);
 
         WGPUCommandBufferDescriptor bufferDescriptor = new WGPUCommandBufferDescriptor();
         bufferDescriptor.nextInChain.set(WgpuJava.createNullPointer());
@@ -144,8 +165,17 @@ public class Demo {
         Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
         wgpu.CommandEncoderRelease(encoder);
 
+
+
+        //wgpu.CommandEncoderInsertDebugMarker(encoder, "foobar");
+
+
+
+
         long[] buffers = new long[1];
-        buffers[0] = commandBuffer.address();
+
+
+
 
         Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
         System.out.println("Pointer: "+bufferPtr.toString());
@@ -156,6 +186,10 @@ public class Demo {
         System.out.println("Command submitted...");
 
         // there is no tick or poll defined in webgpu.h
+
+        // At the end of the frame
+        wgpu.TextureViewRelease(targetView);
+        wgpu.SurfacePresent(surface);
     }
 
     public void render(){

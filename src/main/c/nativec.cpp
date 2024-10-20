@@ -117,6 +117,14 @@ void CommandEncoderRelease(WGPUCommandEncoder encoder){
     wgpuCommandEncoderRelease(encoder);
 }
 
+void RenderPassEncoderEnd(WGPURenderPassEncoder encoder){
+    wgpuRenderPassEncoderEnd(encoder);
+}
+
+void RenderPassEncoderRelease(WGPURenderPassEncoder encoder){
+    wgpuRenderPassEncoderRelease(encoder);
+}
+
 void CommandEncoderInsertDebugMarker(WGPUCommandEncoder encoder, char *marker){
     printf("insert debug marker [%s]\n", marker);
     wgpuCommandEncoderInsertDebugMarker(encoder, marker);
@@ -126,6 +134,11 @@ WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCommandBu
     WGPUCommandBuffer buf = wgpuCommandEncoderFinish(encoder, bufferDescriptor);
     printf("encoder finish => command %p\n", buf);
     return buf;
+}
+
+WGPURenderPassEncoder  CommandEncoderBeginRenderPass(WGPUCommandEncoder encoder, WGPURenderPassDescriptor *renderPassDescriptor){
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+    return pass;
 }
 
 void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){

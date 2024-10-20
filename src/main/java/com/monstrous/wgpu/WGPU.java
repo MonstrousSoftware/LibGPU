@@ -4,6 +4,8 @@ import jnr.ffi.Pointer;
 
 public interface WGPU { // A representation of the C interface in Java
 
+    final static int WGPU_DEPTH_SLICE_UNDEFINED = 0xffffffff;
+
     int add(int a, int b);
 
     void testStruct(WGPURequestAdapterOptions options);
@@ -31,6 +33,10 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer DeviceCreateCommandEncoder(Pointer device, WGPUCommandEncoderDescriptor encoderDesc);
     void CommandEncoderRelease(Pointer commandEncoder);
     void CommandEncoderInsertDebugMarker(Pointer encoder, String marker);
+    Pointer CommandEncoderBeginRenderPass(Pointer encoder, WGPURenderPassDescriptor renderPassDescriptor);
+
+    void RenderPassEncoderEnd(Pointer renderPass);
+    void RenderPassEncoderRelease(Pointer renderPass);
 
     Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
     void CommandBufferRelease(Pointer commandBuffer);
