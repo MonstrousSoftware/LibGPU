@@ -154,6 +154,8 @@ public class Demo {
         renderPassDescriptor.depthStencilAttachment.set(WgpuJava.createNullPointer());
         renderPassDescriptor.timestampWrites.set(WgpuJava.createNullPointer());
 
+
+
         Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
 // [...] Use Render Pass
         wgpu.RenderPassEncoderEnd(renderPass);
@@ -170,13 +172,7 @@ public class Demo {
         //wgpu.CommandEncoderInsertDebugMarker(encoder, "foobar");
 
 
-
-
         long[] buffers = new long[1];
-
-
-
-
         Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
         System.out.println("Pointer: "+bufferPtr.toString());
         System.out.println("Submitting command...");
