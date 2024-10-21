@@ -56,5 +56,11 @@ public interface WGPU { // A representation of the C interface in Java
     void TextureViewRelease(Pointer view);
 
     void SurfacePresent(Pointer surface);
-
+// todo
+    void RenderPassEncoderSetPipeline(Pointer renderPass, Pointer pipeline);
+    void RenderPassEncoderDraw(Pointer renderPass, int numVertices, int numInstances, int firstVertex, int firstInstance);
+    Pointer DeviceCreateRenderPipeline(Pointer device, WGPURenderPipelineDescriptor pipelineDesc);
+    Pointer DeviceCreateShaderModule(Pointer device, WGPUShaderModuleDescriptor shaderDesc);
+    void RenderPipelineRelease(Pointer pipeline);
+    void ShaderModuleRelease(Pointer shaderModule);
 }

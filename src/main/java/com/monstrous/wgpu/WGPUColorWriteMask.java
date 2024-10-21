@@ -8,5 +8,5 @@ public class WGPUColorWriteMask {
     static final int Green  =  0x2;
     static final int Blue  =  0x4;
     static final int Alpha  =  0x8;
-    static final int All  =  0xf;
+    public static final int All  =  0xf;
 }

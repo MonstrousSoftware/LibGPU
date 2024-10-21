@@ -269,6 +269,34 @@ WGPUBool    DeviceGetLimits(WGPUDevice device, WGPUSupportedLimits *supportedLim
     return ok;
 }
 
+
+void RenderPassEncoderSetPipeline(WGPURenderPassEncoder  renderPass, WGPURenderPipeline pipeline){
+    wgpuRenderPassEncoderSetPipeline(renderPass, pipeline);
+}
+
+void RenderPassEncoderDraw(WGPURenderPassEncoder renderPass, uint32_t numVertices,uint32_t numInstances, uint32_t firstVertex, uint32_t firstInstance){
+    wgpuRenderPassEncoderDraw(renderPass, numVertices, numInstances, firstVertex, firstInstance);
+}
+
+
+WGPURenderPipeline DeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor *pipelineDesc){
+    WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, pipelineDesc);
+    return pipeline;
+}
+
+WGPUShaderModule DeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor *shaderDesc){
+    return wgpuDeviceCreateShaderModule(device, shaderDesc);
+}
+
+void RenderPipelineRelease(WGPURenderPipeline pipeline){
+    wgpuRenderPipelineRelease(pipeline);
+}
+
+void ShaderModuleRelease(WGPUShaderModule shaderModule){
+    wgpuShaderModuleRelease(shaderModule);
+}
+
+
 /**
  * Utility function to get a WebGPU adapter, so that
  *     WGPUAdapter adapter = requestAdapterSync(options);

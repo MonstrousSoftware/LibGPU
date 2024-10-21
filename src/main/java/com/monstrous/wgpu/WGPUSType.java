@@ -9,7 +9,7 @@ public class WGPUSType {
     static final int SurfaceDescriptorFromXlibWindow  =  0x3;
     static final int SurfaceDescriptorFromCanvasHTMLSelector  =  0x4;
     static final int ShaderModuleSPIRVDescriptor  =  0x5;
-    static final int ShaderModuleWGSLDescriptor  =  0x6;
+    public static final int ShaderModuleWGSLDescriptor  =  0x6;
     static final int PrimitiveDepthClipControl  =  0x7;
     static final int SurfaceDescriptorFromWaylandSurface  =  0x8;
     static final int SurfaceDescriptorFromAndroidNativeWindow  =  0x9;
