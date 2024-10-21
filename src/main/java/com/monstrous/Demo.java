@@ -11,6 +11,25 @@ import static java.lang.Boolean.FALSE;
 
 
 public class Demo {
+    private final String shaderSource = "@vertex\n" +
+            "fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4f {\n" +
+            "    var p = vec2f(0.0, 0.0);\n" +
+            "    if (in_vertex_index == 0u) {\n" +
+            "        p = vec2f(-0.5, -0.5);\n" +
+            "    } else if (in_vertex_index == 1u) {\n" +
+            "        p = vec2f(0.5, -0.5);\n" +
+            "    } else {\n" +
+            "        p = vec2f(0.0, 0.5);\n" +
+            "    }\n" +
+            "    return vec4f(p, 0.0, 1.0);\n" +
+            "}\n" +
+            "\n" +
+            "@fragment\n" +
+            "fn fs_main() -> @location(0) vec4f {\n" +
+            "    return vec4f(0.0, 0.4, 1.0, 1.0);\n" +
+            "}";
+
+
     private static Runtime runtime;
     private WGPU wgpu;
     private Pointer surface;
@@ -19,7 +38,6 @@ public class Demo {
     private Pointer queue;
     private Pointer pipeline;
     private WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
-
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("nativec"); // load the library into the libc variable
@@ -73,7 +91,6 @@ public class Demo {
         deviceDescriptor.setLabel("My Device");
 
         device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
-        System.out.println("Got device = "+device.toString());
         wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
 
         // use a lambda expression to define a callback function
@@ -81,9 +98,6 @@ public class Demo {
             System.out.println("*** Device error: "+ type + " : "+message);
         };
         wgpu.DeviceSetUncapturedErrorCallback(device, deviceCallback, null);
-
-
-
 
         wgpu.DeviceGetLimits(device, supportedLimits);
 
@@ -93,7 +107,6 @@ public class Demo {
         System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
 
         queue = wgpu.DeviceGetQueue(device);
-        System.out.println("Got queue = "+queue.toString());
 
         // use a lambda expression to define a callback function
         WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
@@ -141,9 +154,6 @@ public class Demo {
 
         Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, encoderDescriptor);
 
-
-
-
         WGPURenderPassColorAttachment renderPassColorAttachment = new WGPURenderPassColorAttachment();
         renderPassColorAttachment.useDirectMemory();
         renderPassColorAttachment.nextInChain.set(WgpuJava.createNullPointer());
@@ -152,7 +162,6 @@ public class Demo {
         renderPassColorAttachment.loadOP.set(WGPULoadOp.Clear);
         renderPassColorAttachment.storeOP.set(WGPUStoreOp.Store);
 
-        // todo find smarter way
         renderPassColorAttachment.clearValue.r.set(0.9);
         renderPassColorAttachment.clearValue.g.set(0.1);
         renderPassColorAttachment.clearValue.b.set(0.2);
@@ -187,21 +196,16 @@ public class Demo {
         wgpu.CommandEncoderRelease(encoder);
 
 
-
-        //wgpu.CommandEncoderInsertDebugMarker(encoder, "foobar");
-
-
         long[] buffers = new long[1];
         buffers[0] = commandBuffer.address();
         Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
-        System.out.println("Pointer: "+bufferPtr.toString());
-        System.out.println("Submitting command...");
+        //System.out.println("Pointer: "+bufferPtr.toString());
+        //System.out.println("Submitting command...");
         wgpu.QueueSubmit(queue, 1, bufferPtr);
 
         wgpu.CommandBufferRelease(commandBuffer);
-        System.out.println("Command submitted...");
+        //System.out.println("Command submitted...");
 
-        // there is no tick or poll defined in webgpu.h
 
         // At the end of the frame
         wgpu.TextureViewRelease(targetView);
@@ -225,7 +229,7 @@ public class Demo {
         WGPUSurfaceTexture surfaceTexture = new WGPUSurfaceTexture();
         surfaceTexture.useDirectMemory();
         wgpu.SurfaceGetCurrentTexture(surface, surfaceTexture);
-        System.out.println("get current texture: "+surfaceTexture.status.get());
+        //System.out.println("get current texture: "+surfaceTexture.status.get());
         if(surfaceTexture.status.get() != WGPUSurfaceGetCurrentTextureStatus.Success){
             System.out.println("*** No current texture");
             return WgpuJava.createNullPointer();
@@ -237,7 +241,7 @@ public class Demo {
         viewDescriptor.setLabel("Surface texture view");
         Pointer tex = surfaceTexture.texture.get();
         WGPUTextureFormat format = wgpu.TextureGetFormat(tex);
-        System.out.println("Set format "+format);
+        //System.out.println("Set format "+format);
         viewDescriptor.format.set(format);
         viewDescriptor.dimension.set(WGPUTextureViewDimension._2D);
         viewDescriptor.baseMipLevel.set(0);
@@ -257,23 +261,7 @@ public class Demo {
         shaderDesc.useDirectMemory();
         shaderDesc.setLabel("My Shader");
 
-        String shaderSource = "@vertex\n" +
-                "fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4f {\n" +
-                "    var p = vec2f(0.0, 0.0);\n" +
-                "    if (in_vertex_index == 0u) {\n" +
-                "        p = vec2f(-0.5, -0.5);\n" +
-                "    } else if (in_vertex_index == 1u) {\n" +
-                "        p = vec2f(0.5, -0.5);\n" +
-                "    } else {\n" +
-                "        p = vec2f(0.0, 0.5);\n" +
-                "    }\n" +
-                "    return vec4f(p, 0.0, 1.0);\n" +
-                "}\n" +
-                "\n" +
-                "@fragment\n" +
-                "fn fs_main() -> @location(0) vec4f {\n" +
-                "    return vec4f(0.0, 0.4, 1.0, 1.0);\n" +
-                "}";
+
 
         WGPUShaderModuleWGSLDescriptor shaderCodeDesc = new WGPUShaderModuleWGSLDescriptor();
         shaderCodeDesc.useDirectMemory();
