@@ -135,12 +135,26 @@ Fixed by performing a graphics driver update.
 
 Warning: GetPreferredFormat is deprecated, use GetCapabilities().format[0] instead as the preferred format.
 
+Note: since MSVC is installed this seems to be the preferred compiler by the Gradle plugin for cpp-application instead of MingW.
 
 
 Get dawn.dll, dawn.lib and webgpu.h from here: https://github.com/jspanchu/webgpu-dawn-binaries
-GLFW binaries from here: https://www.glfw.org/download
+GLFW binaries from here: https://www.glfw.org/download, include glfw3dll.lib!
 
 When using MSVC:
 Note: to link a C++ app that relies on external DLLs (glfw3, webgpu) you need to download not only the DLL files but also the .LIB files.
 The linker needs those .LIB files or else it will complain about 'error LNK2019: unresolved external symbol'
 Make sure to use the .lib file that corresponds to the dll, e.g. the glfw3dll.lib of 6Kb not glfw3.lib of 200Kb which is a static library.
+
+
+Running Main:
+The gradle run task doesn't work yet (cannot find nativec.dll)
+But you can right click on the Main class and select Main.main(). The Intellij run configuration was updated with the working dir.
+
+To do:
+- improve gradle builds, modularize project
+- generate more of the Java files, esp. the structs
+- call dawn.dll directly without nativec.dll (could remain as a debug option?)
+- add comfort layer on top of 1 to 1 translation of Webgpu API
+- elaborate on 3d, etc.
+- emulate SpriteBatch, Mesh, Bitmapfont, scene2d

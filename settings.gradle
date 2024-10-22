@@ -1,4 +1,4 @@
 rootProject.name = 'CallingWebGPU'
 include('triangle')
-//include 'libGPU'
+include 'libGPU'
 

@@ -5,7 +5,8 @@ October 2024.
 
 ## Modules
 
--   triangle    Sample C++ app to render a triangle using webgpu. For reference.
+-   ```triangle```    Sample C++ app to render a triangle using webgpu. For reference.
+  - ```libGPU``` Java library to call WebGPU
 
 ## Switching between Native WGPU and DAWN
 This turned out to be very easy. Just drop the DAWN dll to be linked by the C wrapper and use the header file from Dawn (which 
