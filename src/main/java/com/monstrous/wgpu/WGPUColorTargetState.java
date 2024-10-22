@@ -15,5 +15,5 @@ public class WGPUColorTargetState extends WgpuJavaStruct {
     public final Pointer nextInChain = new Pointer();
     public final Struct.Enum32<WGPUTextureFormat> format = new Struct.Enum32<>(WGPUTextureFormat.class);
     public final Pointer blend = new Pointer();
-    public final Struct.Unsigned32 writeMask = new Unsigned32();
+    public final Struct.Enum32<WGPUColorWriteMask> writeMask = new Struct.Enum32<>(WGPUColorWriteMask.class);
 }

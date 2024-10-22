@@ -3,7 +3,9 @@
 Trying to build a Java wrapper for WebGPU.
 October 2024.
 
+## Modules
 
+-   triangle    Sample C++ app to render a triangle using webgpu. For reference.
 
 ## Switching between Native WGPU and DAWN
 This turned out to be very easy. Just drop the DAWN dll to be linked by the C wrapper and use the header file from Dawn (which 

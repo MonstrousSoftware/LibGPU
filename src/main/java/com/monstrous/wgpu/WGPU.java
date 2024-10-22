@@ -6,6 +6,7 @@ public interface WGPU { // A representation of the C interface in Java
 
     final static int WGPU_DEPTH_SLICE_UNDEFINED = 0xffffffff;
 
+
     int add(int a, int b);
 
     void testStruct(WGPURequestAdapterOptions options);

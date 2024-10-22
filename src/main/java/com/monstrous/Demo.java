@@ -266,7 +266,7 @@ public class Demo {
         WGPUShaderModuleWGSLDescriptor shaderCodeDesc = new WGPUShaderModuleWGSLDescriptor();
         shaderCodeDesc.useDirectMemory();
         shaderCodeDesc.next.set(WgpuJava.createNullPointer());
-        shaderCodeDesc.sType.set(WGPUSType.ShaderModuleWGSLDescriptor);
+        shaderCodeDesc.sType.set(WGPUSType.ShaderModuleWGSLDescriptor); //(WGPUSType.ShaderModuleWGSLDescriptor);
         shaderCodeDesc.setCode(shaderSource);
 
         shaderDesc.nextInChain.set(shaderCodeDesc.getPointerTo());

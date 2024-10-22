@@ -6,14 +6,41 @@ plugins {
 // Set the target operating system and architecture for this application
 application {
     targetMachines.add(machines.windows.x86_64)
+
 }
 
 tasks.withType(CppCompile).configureEach {
-    // Define a preprocessor macro for every binary
-    macros.put("NDEBUG", null)
 
     // Define a compiler options
-    //compilerArgs.add '-std=c++11'
-    compilerArgs.add '/std:c++14'
+    // Define toolchain-specific compiler options
+    compilerArgs.addAll toolChain.map { toolChain ->
+        if (toolChain in [ Gcc, Clang ]) {
+            return [ '/std:c++11']
+        } else if (toolChain in VisualCpp) {
+            return ['/PD',  '/Zc:__cplusplus'] //  /Zc:__cplusplus /c']
+        }
+        return []
+    }
 }
 
+tasks.withType(LinkExecutable).configureEach {
+    linkerArgs.add 'src/main/lib/*.lib'
+//    linkerArgs.add 'src/main/lib/glfw3dll.lib'
+}
+
+
+task copyDLL(type: Copy) {
+    from 'src/main/lib/'
+    into 'build/install/main/debug/lib'
+    include '*.dll'
+    outputs.upToDateWhen { false }
+}
+tasks.register('runDebug') {
+    dependsOn assemble  // build executable if it does not exist
+    dependsOn copyDLL
+    doLast {
+        exec {
+            executable = 'build/install/main/debug/lib/triangle.exe'
+        }
+    }
+}

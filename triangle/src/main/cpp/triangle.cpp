@@ -1,11 +1,10 @@
-#define WEBGPU_BACKEND_WGPU
+#define WEBGPU_BACKEND_DAWN
 #define WGPU_SHARED_LIBRARY
-#define _WIN32
-#define __cplusplus
+//#define _WIN32
 
-//#if __cplusplus < 201103L
-//  #error This library needs at least a C++11 compliant compiler
-//#endif
+#if __cplusplus < 201103L
+  #error This library needs at least a C++11 compliant compiler
+#endif
 
 #include "webgpu-utils.h"
 
@@ -24,6 +23,7 @@
 #include <iostream>
 #include <cassert>
 #include <vector>
+
 
 // We embbed the source of the shader module here
 // R"( ") is a raw string, supported since C++11
@@ -335,7 +335,7 @@ void Application::MainLoop() {
 #if defined(WEBGPU_BACKEND_DAWN)
 	wgpuDeviceTick(device);
 #elif defined(WEBGPU_BACKEND_WGPU)
-	wgpuDevicePoll(device, false, nullptr);
+	//wgpuDevicePoll(device, false, nullptr);
 #endif
 }
 

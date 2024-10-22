@@ -7,7 +7,7 @@ public class WGPUSurfaceConfiguration extends WgpuJavaStruct {
     public final Struct.Pointer nextInChain = new Struct.Pointer();
     public final Struct.Pointer device = new Struct.Pointer();
     public final Struct.Enum32<WGPUTextureFormat> format = new Enum32<>(WGPUTextureFormat.class);
-    public final Struct.Unsigned32 usage = new Struct.Unsigned32();
+    public final Struct.Enum32<WGPUTextureUsage> usage = new Struct.Enum32<>(WGPUTextureUsage.class);
     public final Struct.size_t viewFormatCount = new Struct.size_t();
     public final Struct.Pointer viewFormats = new Struct.Pointer();
     public final Struct.Enum32<WGPUCompositeAlphaMode> alphaMode = new Enum32<>(WGPUCompositeAlphaMode.class);

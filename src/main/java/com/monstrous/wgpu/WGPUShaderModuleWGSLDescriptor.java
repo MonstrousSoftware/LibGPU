@@ -11,7 +11,7 @@ import jnr.ffi.Struct;
 
 public class WGPUShaderModuleWGSLDescriptor extends WgpuJavaStruct {
     public final Pointer next = new Pointer();
-    public final Struct.Unsigned32 sType = new Unsigned32();
+    public final Struct.Enum32<WGPUSType> sType = new Struct.Enum32<>(WGPUSType.class);
     public final Pointer code = new Pointer();
 
     public java.lang.String getCode(){
