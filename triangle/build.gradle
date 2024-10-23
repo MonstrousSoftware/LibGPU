@@ -25,7 +25,6 @@ tasks.withType(CppCompile).configureEach {
 
 tasks.withType(LinkExecutable).configureEach {
     linkerArgs.add 'src/main/lib/*.lib'
-//    linkerArgs.add 'src/main/lib/glfw3dll.lib'
 }
 
 
@@ -35,6 +34,7 @@ task copyDLL(type: Copy) {
     include '*.dll'
     outputs.upToDateWhen { false }
 }
+
 tasks.register('runDebug') {
     dependsOn assemble  // build executable if it does not exist
     dependsOn copyDLL
