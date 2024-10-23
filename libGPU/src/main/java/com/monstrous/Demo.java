@@ -1,6 +1,5 @@
 package com.monstrous;
 
-import com.monstrous.utils.CString;
 import com.monstrous.utils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.LibraryLoader;
@@ -55,39 +54,38 @@ public class Demo {
         surface = wgpu.glfwGetWGPUSurface(instance,  windowHandle);
         System.out.println("surface = "+surface);
 
-        WGPURequestAdapterOptions options = new WGPURequestAdapterOptions();
-        options.nextInChain.set(WgpuJava.createNullPointer());
-        options.compatibleSurface.set(surface.address());
+        WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
+        options.setNextInChain();
+        options.setCompatibleSurface(surface);
 
         // Get Adapter
         Pointer adapter = wgpu.RequestAdapterSync(instance, options);
 
-        WGPUSupportedLimits supportedLimits = new WGPUSupportedLimits();
-        supportedLimits.useDirectMemory();
+        WGPUSupportedLimits supportedLimits = WGPUSupportedLimits.createDirect();
 
 
         wgpu.AdapterGetLimits(adapter, supportedLimits);
 
-        System.out.println("maxTextureDimension1D " + supportedLimits.limits.maxTextureDimension1D);
-        System.out.println("maxTextureDimension2D " + supportedLimits.limits.maxTextureDimension2D);
-        System.out.println("maxTextureDimension3D " + supportedLimits.limits.maxTextureDimension3D);
-        System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
+        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
+        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
+        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
+        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
 
 
-        WGPUAdapterProperties adapterProperties = new WGPUAdapterProperties();
-        adapterProperties.useDirectMemory();
-        adapterProperties.nextInChain.set(WgpuJava.createNullPointer());
+        WGPUAdapterProperties adapterProperties = WGPUAdapterProperties.createDirect();
+        adapterProperties.setNextInChain();
 
         wgpu.AdapterGetProperties(adapter, adapterProperties);
 
-        System.out.println("VendorID: " + adapterProperties.vendorID);
-        System.out.println("Vendor name: " + CString.fromPointer(adapterProperties.vendorName.get()));
-        System.out.println("Device ID: " + adapterProperties.deviceID);
-        System.out.println("Back end: " + adapterProperties.backendType);
+        System.out.println("VendorID: " + adapterProperties.getVendorID());
+        System.out.println("Vendor name: " + adapterProperties.getVendorName());
+        System.out.println("Device ID: " + adapterProperties.getDeviceID());
+        System.out.println("Back end: " + adapterProperties.getBackendType());
+        System.out.println("Description: " + adapterProperties.getDriverDescription());
 
         // Get Device
-        WGPUDeviceDescriptor deviceDescriptor = new WGPUDeviceDescriptor();
-        deviceDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor.createDirect();
+        deviceDescriptor.setNextInChain();
         deviceDescriptor.setLabel("My Device");
 
         device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
@@ -101,10 +99,10 @@ public class Demo {
 
         wgpu.DeviceGetLimits(device, supportedLimits);
 
-        System.out.println("maxTextureDimension1D " + supportedLimits.limits.maxTextureDimension1D);
-        System.out.println("maxTextureDimension2D " + supportedLimits.limits.maxTextureDimension2D);
-        System.out.println("maxTextureDimension3D " + supportedLimits.limits.maxTextureDimension3D);
-        System.out.println("maxTextureArrayLayers " + supportedLimits.limits.maxTextureArrayLayers);
+        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
+        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
+        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
+        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
 
         queue = wgpu.DeviceGetQueue(device);
 
@@ -116,22 +114,22 @@ public class Demo {
 
 
         // configure the surface
-        WGPUSurfaceConfiguration config = new WGPUSurfaceConfiguration();
-        config.nextInChain.set(WgpuJava.createNullPointer());
+        WGPUSurfaceConfiguration config = WGPUSurfaceConfiguration.createDirect();
+        config.setNextInChain();
 
-        config.width.set(640);
-        config.height.set(480);
+        config.setWidth(640);
+        config.setHeight(480);
 
         surfaceFormat = wgpu.SurfaceGetPreferredFormat(surface, adapter);
         System.out.println("Using format: "+surfaceFormat);
-        config.format.set(surfaceFormat);
+        config.setFormat(surfaceFormat);
         // And we do not need any particular view format:
-        config.viewFormatCount.set(0);
-        config.viewFormats.set(WgpuJava.createNullPointer());
-        config.usage.set(WGPUTextureUsage.RenderAttachment);
-        config.device.set(device);
-        config.presentMode.set(WGPUPresentMode.Fifo);
-        config.alphaMode.set(WGPUCompositeAlphaMode.Auto);
+        config.setViewFormatCount(0);
+        config.setViewFormats();
+        config.setUsage(WGPUTextureUsage.RenderAttachment);
+        config.setDevice(device);
+        config.setPresentMode(WGPUPresentMode.Fifo);
+        config.setAlphaMode(WGPUCompositeAlphaMode.Auto);
 
         wgpu.SurfaceConfigure(surface, config);
 
@@ -257,19 +255,17 @@ public class Demo {
     void initializePipeline() {
 
         // Create Shader Module
-        WGPUShaderModuleDescriptor shaderDesc = new WGPUShaderModuleDescriptor();
-        shaderDesc.useDirectMemory();
+        WGPUShaderModuleDescriptor shaderDesc = WGPUShaderModuleDescriptor.createDirect();
         shaderDesc.setLabel("My Shader");
 
 
 
-        WGPUShaderModuleWGSLDescriptor shaderCodeDesc = new WGPUShaderModuleWGSLDescriptor();
-        shaderCodeDesc.useDirectMemory();
-        shaderCodeDesc.next.set(WgpuJava.createNullPointer());
-        shaderCodeDesc.sType.set(WGPUSType.ShaderModuleWGSLDescriptor); //(WGPUSType.ShaderModuleWGSLDescriptor);
+        WGPUShaderModuleWGSLDescriptor shaderCodeDesc = WGPUShaderModuleWGSLDescriptor.createDirect();
+        shaderCodeDesc.getChain().setNext();
+        shaderCodeDesc.getChain().setSType(WGPUSType.ShaderModuleWGSLDescriptor);
         shaderCodeDesc.setCode(shaderSource);
 
-        shaderDesc.nextInChain.set(shaderCodeDesc.getPointerTo());
+        shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
         Pointer shaderModule = wgpu.DeviceCreateShaderModule(device, shaderDesc);
 

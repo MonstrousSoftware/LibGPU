@@ -11,7 +11,7 @@ package com.monstrous.wgpu;
 //    WGPUColorTargetState const * targets;
 //} WGPUFragmentState WGPU_STRUCTURE_ATTRIBUTE;
 
-import com.monstrous.utils.CString;
+import com.monstrous.utils.RustCString;
 import com.monstrous.utils.WgpuJavaStruct;
 import jnr.ffi.Struct;
 
@@ -25,7 +25,7 @@ public class WGPUFragmentState  extends WgpuJavaStruct {
     public final Pointer targets = new Pointer();
 
     public java.lang.String getEntryPoint(){
-        return CString.fromPointer(entryPoint.get());
+        return RustCString.fromPointer(entryPoint.get());
     }
-    public void setEntryPoint(java.lang.String x){ this.entryPoint.set(CString.toPointer(x)); }
+    public void setEntryPoint(java.lang.String x){ this.entryPoint.set(RustCString.toPointer(x)); }
 }

@@ -159,3 +159,58 @@ To do:
 - elaborate on 3d, etc.
 - emulate SpriteBatch, Mesh, Bitmapfont, scene2d
 - reduce duplication of binary files
+
+
+Exercise: replacing each handcrafted class file one by one with generated files and check nothing breaks....
+Some issues:
+
+
+1. public class WGPUSurfaceConfiguration extends WgpuJavaStruct {
+    private final DynamicStructRef<WGPUTextureFormat> viewFormats = new DynamicStructRef<>(WGPUTextureFormat.class);
+    this is pointer to enum not pointer to struct should be Pointer
+
+        private final Struct.Unsigned32 usage = new Struct.Unsigned32();
+        should be enum WGPUTextureUsageFlags
+
+        In the webgpu.h (dawn) there are typedef for each flag enum to give a uint32 as alternative:
+
+        typedef enum WGPUColorWriteMask {
+            WGPUColorWriteMask_None = 0x00000000,
+            WGPUColorWriteMask_Red = 0x00000001,
+            WGPUColorWriteMask_Green = 0x00000002,
+            //.....
+        } WGPUColorWriteMask WGPU_ENUM_ATTRIBUTE;
+        typedef WGPUFlags WGPUColorWriteMaskFlags WGPU_ENUM_ATTRIBUTE;
+
+        If a struct refers to WGPUColorWriteMaskFlags instead of WGPUColorWriteMask you get a uint as type
+
+        E.g. in WGPUSurfaceConfiguration.usage
+
+        Dirty fix: Alias WGPUColorWriteMaskFlags to WGPUColorWriteMask : DONE
+
+
+2.        public class WGPUDeviceDescriptor extends WgpuJavaStruct {
+
+            private final DynamicStructRef<WGPUFeatureName> requiredFeatures = new DynamicStructRef<>(WGPUFeatureName.class);
+         WGPUFeatureName is a enum with gaps
+
+         typedef struct WGPUDeviceDescriptor {
+             WGPUChainedStruct const * nextInChain;
+             WGPU_NULLABLE char const * label;
+             size_t requiredFeatureCount;
+             WGPUFeatureName const * requiredFeatures;
+             WGPU_NULLABLE WGPURequiredLimits const * requiredLimits;
+
+             It is in fact a pointer to an array of enum values (32 bit).
+             requiredLimits is similar
+
+             We can use Pointer, but need to think on how to build an array of enums
+             todo
+
+
+3.   Structs that are chained to should be subclassed from    WGPUChainedStruct instead of WgpuJavaStruct
+  to allow         shaderDesc.setNextInChain(shaderCodeDesc);
+
+        public class WGPUShaderModuleWGSLDescriptor extends WGPUChainedStruct - but this gives all sorts of problems
+
+        Or use: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());

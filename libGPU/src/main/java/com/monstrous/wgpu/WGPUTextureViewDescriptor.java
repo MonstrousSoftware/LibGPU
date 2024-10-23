@@ -13,7 +13,7 @@ package com.monstrous.wgpu;
 //        } WGPUTextureViewDescriptor WGPU_STRUCTURE_ATTRIBUTE;
 
 
-import com.monstrous.utils.CString;
+import com.monstrous.utils.RustCString;
 import com.monstrous.utils.WgpuJavaStruct;
 import jnr.ffi.Struct;
 
@@ -31,11 +31,11 @@ public class WGPUTextureViewDescriptor extends WgpuJavaStruct {
 
 
     public java.lang.String getLabel(){
-        return CString.fromPointer(label.get());
+        return RustCString.fromPointer(label.get());
     }
 
     public void setLabel(java.lang.String x){
-        this.label.set(CString.toPointer(x));
+        this.label.set(RustCString.toPointer(x));
     }
 
 }
