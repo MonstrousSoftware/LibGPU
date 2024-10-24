@@ -218,30 +218,28 @@ public class Demo {
         // [...] Get the next surface texture
 
 
-        WGPUSurfaceTexture surfaceTexture = new WGPUSurfaceTexture();
-        surfaceTexture.useDirectMemory();
+        WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
         wgpu.SurfaceGetCurrentTexture(surface, surfaceTexture);
         //System.out.println("get current texture: "+surfaceTexture.status.get());
-        if(surfaceTexture.status.get() != WGPUSurfaceGetCurrentTextureStatus.Success){
+        if(surfaceTexture.getStatus() != WGPUSurfaceGetCurrentTextureStatus.Success){
             System.out.println("*** No current texture");
             return WgpuJava.createNullPointer();
         }
         // [...] Create surface texture view
-        WGPUTextureViewDescriptor viewDescriptor = new WGPUTextureViewDescriptor();
-        viewDescriptor.useDirectMemory();
-        viewDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        WGPUTextureViewDescriptor viewDescriptor = WGPUTextureViewDescriptor.createDirect();
+        viewDescriptor.setNextInChain();
         viewDescriptor.setLabel("Surface texture view");
-        Pointer tex = surfaceTexture.texture.get();
+        Pointer tex = surfaceTexture.getTexture();
         WGPUTextureFormat format = wgpu.TextureGetFormat(tex);
         //System.out.println("Set format "+format);
-        viewDescriptor.format.set(format);
-        viewDescriptor.dimension.set(WGPUTextureViewDimension._2D);
-        viewDescriptor.baseMipLevel.set(0);
-        viewDescriptor.mipLevelCount.set(1);
-        viewDescriptor.baseArrayLayer.set(0);
-        viewDescriptor.arrayLayerCount.set(1);
-        viewDescriptor.aspect.set(WGPUTextureAspect.All);
-        Pointer targetView = wgpu.TextureCreateView(surfaceTexture.texture.get(), viewDescriptor);
+        viewDescriptor.setFormat(format);
+        viewDescriptor.setDimension(WGPUTextureViewDimension._2D);
+        viewDescriptor.setBaseMipLevel(0);
+        viewDescriptor.setMipLevelCount(1);
+        viewDescriptor.setBaseArrayLayer(0);
+        viewDescriptor.setArrayLayerCount(1);
+        viewDescriptor.setAspect(WGPUTextureAspect.All);
+        Pointer targetView = wgpu.TextureCreateView(surfaceTexture.getTexture(), viewDescriptor);
 
         return targetView;
     }
