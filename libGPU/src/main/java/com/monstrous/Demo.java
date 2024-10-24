@@ -181,9 +181,8 @@ public class Demo {
         wgpu.RenderPassEncoderEnd(renderPass);
         wgpu.RenderPassEncoderRelease(renderPass);
 
-        WGPUCommandBufferDescriptor bufferDescriptor = new WGPUCommandBufferDescriptor();
-        bufferDescriptor.useDirectMemory();
-        bufferDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
+        bufferDescriptor.setNextInChain();
         bufferDescriptor.setLabel("Command Buffer");
         Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
         wgpu.CommandEncoderRelease(encoder);
