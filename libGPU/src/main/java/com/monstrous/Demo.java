@@ -114,7 +114,14 @@ public class Demo {
         WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
             System.out.println("=== Queue work finished with status: "+ status);
         };
-        wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
+        // deprecated
+         wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
+
+//        WGPUQueueWorkDoneCallbackInfo2 callbackInfo = WGPUQueueWorkDoneCallbackInfo2.createDirect();
+//        callbackInfo.setNextInChain();
+//        callbackInfo.setMode(WGPUCallbackMode.WaitAnyOnly); // no idea...
+//        callbackInfo.setCallback(queueCallback);    // type error
+//        wgpu.QueueOnSubmittedWorkDone2(queue, callbackInfo);
 
 
         // configure the surface
@@ -138,6 +145,33 @@ public class Demo {
         wgpu.SurfaceConfigure(surface, config);
 
         initializePipeline();
+
+//        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+//        bufferDesc.setNextInChain();
+//        bufferDesc.setLabel("Some GPU-side data buffer");
+//        bufferDesc.setUsage( WGPUBufferUsage.CopyDst.intValue() + WGPUBufferUsage.CopySrc.intValue() );
+//        bufferDesc.setSize(16);
+//        bufferDesc.setMappedAtCreation(0);
+//        Pointer buffer1 = wgpu.DeviceCreateBuffer(device, bufferDesc);
+//
+//        bufferDesc.setLabel("Output buffer");
+//        Pointer buffer2 = wgpu.DeviceCreateBuffer(device, bufferDesc);
+
+
+        // Create some CPU-side data buffer (of size 16 bytes)
+//        short[] numbers = new short[16];
+//        for(short i = 0; i < 16; i++)
+//            numbers[i] = i;
+//
+//        // `numbers` now contains [ 0, 1, 2, ... ]
+//
+//        // Copy this from `numbers` (RAM) to `buffer1` (VRAM)
+//        wgpu.QueueWriteBuffer(queue, buffer1, 0, numbers.data(), numbers.length);
+
+
+
+//        wgpu.BufferRelease(buffer1);
+//        wgpu.BufferRelease(buffer2);
 
     }
 
@@ -209,8 +243,7 @@ public class Demo {
         wgpu.TextureViewRelease(targetView);
         wgpu.SurfacePresent(surface);
 
-        for(int i = 0; i < 10; i++)
-            wgpu.DeviceTick(device);
+        wgpu.DeviceTick(device);
     }
 
     public void exit(){

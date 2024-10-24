@@ -10,6 +10,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/libGPU" />
+            <option value="$PROJECT_DIR$/nativeWrapper" />
             <option value="$PROJECT_DIR$/triangle" />
           </set>
         </option>

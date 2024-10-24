@@ -186,7 +186,7 @@ Some issues:
 
         E.g. in WGPUSurfaceConfiguration.usage
 
-        Dirty fix: Alias WGPUColorWriteMaskFlags to WGPUColorWriteMask : DONE
+        FIX: Alias WGPUColorWriteMaskFlags to WGPUColorWriteMask : and likewise for any identifier ending in Flags: DONE
 
 
 2.        public class WGPUDeviceDescriptor extends WgpuJavaStruct {
@@ -213,7 +213,7 @@ Some issues:
 
         public class WGPUShaderModuleWGSLDescriptor extends WGPUChainedStruct - but this gives all sorts of problems
 
-        Or use: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
+        Instead: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
 
 4. Sometimes (1 in 2 runs) the demo crashes. FIXED
@@ -223,3 +223,7 @@ Some issues:
     Description: D3D12 driver version 32.0.15.6094
 
     The crash is prevented by setting backend to D3D12 or Vulkan, i.e. not Undefined.
+
+5. Orring flags is clumsy with Java enums:
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst.intValue() + WGPUBufferUsage.CopySrc.intValue() );
+    type had to be changed to an integer to allow combined enum values

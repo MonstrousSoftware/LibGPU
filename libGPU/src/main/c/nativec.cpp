@@ -179,6 +179,12 @@ void QueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallback callbac
     wgpuQueueOnSubmittedWorkDone(queue, callback, userdata);
 }
 
+void QueueOnSubmittedWorkDone2(WGPUQueue queue, WGPUQueueWorkDoneCallbackInfo2 callback){
+    LOG( printf("registering callback for queue submitted work done (v2)\n"); )
+    wgpuQueueOnSubmittedWorkDone2(queue, callback);
+}
+
+
 void CommandBufferRelease(WGPUCommandBuffer commandBuffer){
     //printf("releasing command buffer %p\n", commandBuffer);
     wgpuCommandBufferRelease(commandBuffer);
@@ -233,6 +239,14 @@ void TextureViewRelease(WGPUTextureView view){
 void SurfacePresent(WGPUSurface surface){
     //cout << "SurfacePresent " << endl;
     wgpuSurfacePresent(surface);
+}
+
+WGPUBuffer DeviceCreateBuffer(WGPUDevice device, const WGPUBufferDescriptor *bufferDesc){
+    return wgpuDeviceCreateBuffer(device, bufferDesc);
+}
+
+void BufferRelease(WGPUBuffer buffer){
+    wgpuBufferRelease(buffer);
 }
 
 WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {

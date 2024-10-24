@@ -33,6 +33,7 @@ public interface WGPU { // A representation of the C interface in Java
     void QueueRelease(Pointer queue);
     void QueueSubmit(Pointer queue, int count, Pointer commandBuffer);       // array of command buffer
     void QueueOnSubmittedWorkDone(Pointer queue, WGPUQueueWorkDoneCallback callback, Pointer userdata);
+    void QueueOnSubmittedWorkDone2(Pointer queue, WGPUQueueWorkDoneCallbackInfo2 callback);
 
     Pointer DeviceCreateCommandEncoder(Pointer device, WGPUCommandEncoderDescriptor encoderDesc);
     void CommandEncoderRelease(Pointer commandEncoder);
@@ -67,4 +68,7 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer DeviceCreateShaderModule(Pointer device, WGPUShaderModuleDescriptor shaderDesc);
     void RenderPipelineRelease(Pointer pipeline);
     void ShaderModuleRelease(Pointer shaderModule);
+
+    Pointer DeviceCreateBuffer(Pointer device, WGPUBufferDescriptor bufferDesc);
+    void BufferRelease(Pointer buffer);
 }
