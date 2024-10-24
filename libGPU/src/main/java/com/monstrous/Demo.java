@@ -287,14 +287,13 @@ public class Demo {
         fragmentState.setConstants();
 
         // blend
-        WGPUBlendState blendState = new WGPUBlendState();
-        blendState.useDirectMemory();
-        blendState.color.srcFactor.set(WGPUBlendFactor.SrcAlpha);
-        blendState.color.dstFactor.set(WGPUBlendFactor.OneMinusSrcAlpha);
-        blendState.color.operation.set(WGPUBlendOperation.Add);
-        blendState.alpha.srcFactor.set(WGPUBlendFactor.Zero);
-        blendState.alpha.dstFactor.set(WGPUBlendFactor.One);
-        blendState.alpha.operation.set(WGPUBlendOperation.Add);
+        WGPUBlendState blendState = WGPUBlendState.createDirect();
+        blendState.getColor().setSrcFactor(WGPUBlendFactor.SrcAlpha);
+        blendState.getColor().setDstFactor(WGPUBlendFactor.OneMinusSrcAlpha);
+        blendState.getColor().setOperation(WGPUBlendOperation.Add);
+        blendState.getAlpha().setSrcFactor(WGPUBlendFactor.Zero);
+        blendState.getAlpha().setDstFactor(WGPUBlendFactor.One);
+        blendState.getAlpha().setOperation(WGPUBlendOperation.Add);
 
         WGPUColorTargetState colorTarget = new WGPUColorTargetState();
         colorTarget.useDirectMemory();
