@@ -6,8 +6,6 @@ import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
 
-import static java.lang.Boolean.FALSE;
-
 
 public class Demo {
     private final String shaderSource = "@vertex\n" +
@@ -270,31 +268,29 @@ public class Demo {
         Pointer shaderModule = wgpu.DeviceCreateShaderModule(device, shaderDesc);
 
 
-        WGPURenderPipelineDescriptor pipelineDesc = new WGPURenderPipelineDescriptor();
-        pipelineDesc.useDirectMemory();
-        pipelineDesc.nextInChain.set(WgpuJava.createNullPointer());
+        WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
+        pipelineDesc.setNextInChain();
         pipelineDesc.setLabel("pipeline");
 
-        pipelineDesc.vertex.bufferCount.set(0);
-        pipelineDesc.vertex.buffers.set(WgpuJava.createNullPointer());
+        pipelineDesc.getVertex().setBufferCount(0);
+        pipelineDesc.getVertex().setBuffers();
 
-        pipelineDesc.vertex.module.set(shaderModule);
-        pipelineDesc.vertex.setEntryPoint("vs_main");
-        pipelineDesc.vertex.constantCount.set(0);
-        pipelineDesc.vertex.constants.set(WgpuJava.createNullPointer());
+        pipelineDesc.getVertex().setModule(shaderModule);
+        pipelineDesc.getVertex().setEntryPoint("vs_main");
+        pipelineDesc.getVertex().setConstantCount(0);
+        pipelineDesc.getVertex().setConstants();
 
-        pipelineDesc.primitive.topology.set(WGPUPrimitiveTopology.TriangleList);
-        pipelineDesc.primitive.stripIndexFormat.set(WGPUIndexFormat.Undefined);
-        pipelineDesc.primitive.frontFace.set(WGPUFrontFace.CCW);
-        pipelineDesc.primitive.cullMode.set(WGPUCullMode.None);
+        pipelineDesc.getPrimitive().setTopology(WGPUPrimitiveTopology.TriangleList);
+        pipelineDesc.getPrimitive().setStripIndexFormat(WGPUIndexFormat.Undefined);
+        pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
+        pipelineDesc.getPrimitive().setCullMode(WGPUCullMode.None);
 
-        WGPUFragmentState fragmentState = new WGPUFragmentState();
-        fragmentState.useDirectMemory();
-        fragmentState.nextInChain.set(WgpuJava.createNullPointer());
-        fragmentState.module.set(shaderModule);
+        WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
+        fragmentState.setNextInChain();
+        fragmentState.setModule(shaderModule);
         fragmentState.setEntryPoint("fs_main");
-        fragmentState.constantCount.set(0);
-        fragmentState.constants.set(WgpuJava.createNullPointer());
+        fragmentState.setConstantCount(0);
+        fragmentState.setConstants();
 
         // blend
         WGPUBlendState blendState = new WGPUBlendState();
@@ -312,21 +308,20 @@ public class Demo {
         colorTarget.blend.set(blendState.getPointerTo());
         colorTarget.writeMask.set(WGPUColorWriteMask.All);
 
-        fragmentState.targetCount.set(1);
-        fragmentState.targets.set(colorTarget.getPointerTo());
+        fragmentState.setTargetCount(1);
+        fragmentState.setTargets(colorTarget);
 
-        pipelineDesc.fragment.set(fragmentState.getPointerTo());
+        pipelineDesc.setFragment(fragmentState);
 
-        pipelineDesc.depthStencil.set(WgpuJava.createNullPointer());
-
-
+        pipelineDesc.setDepthStencil();
 
 
-        pipelineDesc.multisample.count.set(1);
-        pipelineDesc.multisample.mask.set( 0xFFFFFFFF);
-        pipelineDesc.multisample.alphaToCoverageEnabled.set(FALSE);
 
-        pipelineDesc.layout.set(WgpuJava.createNullPointer());
+        pipelineDesc.getMultisample().setCount(1);
+        pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
+        pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
+
+        pipelineDesc.setLayout(WgpuJava.createNullPointer());
 
         pipeline = wgpu.DeviceCreateRenderPipeline(device, pipelineDesc);
 

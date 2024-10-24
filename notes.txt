@@ -214,3 +214,6 @@ Some issues:
         public class WGPUShaderModuleWGSLDescriptor extends WGPUChainedStruct - but this gives all sorts of problems
 
         Or use: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
+
+
+4. WGPURenderPipelineDescriptor has additional fields at the start
