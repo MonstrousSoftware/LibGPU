@@ -143,37 +143,34 @@ public class Demo {
             return;
         }
 
-        WGPUCommandEncoderDescriptor encoderDescriptor = new WGPUCommandEncoderDescriptor();
-        encoderDescriptor.useDirectMemory();
-        encoderDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
+        encoderDescriptor.setNextInChain();
         encoderDescriptor.setLabel("My Encoder");
 
         Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, encoderDescriptor);
 
-        WGPURenderPassColorAttachment renderPassColorAttachment = new WGPURenderPassColorAttachment();
-        renderPassColorAttachment.useDirectMemory();
-        renderPassColorAttachment.nextInChain.set(WgpuJava.createNullPointer());
-        renderPassColorAttachment.view.set(targetView);
-        renderPassColorAttachment.resolveTarget.set(WgpuJava.createNullPointer());
-        renderPassColorAttachment.loadOP.set(WGPULoadOp.Clear);
-        renderPassColorAttachment.storeOP.set(WGPUStoreOp.Store);
+        WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
+        renderPassColorAttachment.setNextInChain();
+        renderPassColorAttachment.setView(targetView);
+        renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+        renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
+        renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
-        renderPassColorAttachment.clearValue.r.set(0.9);
-        renderPassColorAttachment.clearValue.g.set(0.1);
-        renderPassColorAttachment.clearValue.b.set(0.2);
-        renderPassColorAttachment.clearValue.a.set(1.0);
+        renderPassColorAttachment.getClearValue().setR(0.9);
+        renderPassColorAttachment.getClearValue().setG(0.1);
+        renderPassColorAttachment.getClearValue().setB(0.2);
+        renderPassColorAttachment.getClearValue().setA(1.0);
 
-        renderPassColorAttachment.depthSlice.set(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
+        renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
 
-        WGPURenderPassDescriptor renderPassDescriptor = new WGPURenderPassDescriptor();
-        renderPassDescriptor.useDirectMemory();
-        renderPassDescriptor.nextInChain.set(WgpuJava.createNullPointer());
+        WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
+        renderPassDescriptor.setNextInChain();
 
-        renderPassDescriptor.colorAttachmentCount.set(1);
-        renderPassDescriptor.colorAttachments.set( renderPassColorAttachment.getPointerTo());
-        renderPassDescriptor.occlusionQuerySet.set(WgpuJava.createNullPointer());
-        renderPassDescriptor.depthStencilAttachment.set(WgpuJava.createNullPointer());
-        renderPassDescriptor.timestampWrites.set(WgpuJava.createNullPointer());
+        renderPassDescriptor.setColorAttachmentCount(1);
+        renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
+        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
+        renderPassDescriptor.setDepthStencilAttachment();
+        renderPassDescriptor.setTimestampWrites();
 
         Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
 // [...] Use Render Pass
