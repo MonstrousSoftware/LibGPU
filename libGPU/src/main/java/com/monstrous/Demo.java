@@ -295,11 +295,10 @@ public class Demo {
         blendState.getAlpha().setDstFactor(WGPUBlendFactor.One);
         blendState.getAlpha().setOperation(WGPUBlendOperation.Add);
 
-        WGPUColorTargetState colorTarget = new WGPUColorTargetState();
-        colorTarget.useDirectMemory();
-        colorTarget.format.set(surfaceFormat);
-        colorTarget.blend.set(blendState.getPointerTo());
-        colorTarget.writeMask.set(WGPUColorWriteMask.All);
+        WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
+        colorTarget.setFormat(surfaceFormat);
+        colorTarget.setBlend(blendState);
+        colorTarget.setWriteMask(WGPUColorWriteMask.All);
 
         fragmentState.setTargetCount(1);
         fragmentState.setTargets(colorTarget);
