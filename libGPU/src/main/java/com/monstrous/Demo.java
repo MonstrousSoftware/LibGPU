@@ -202,6 +202,9 @@ public class Demo {
         // At the end of the frame
         wgpu.TextureViewRelease(targetView);
         wgpu.SurfacePresent(surface);
+
+        for(int i = 0; i < 10; i++)
+            wgpu.DeviceTick(device);
     }
 
     public void exit(){

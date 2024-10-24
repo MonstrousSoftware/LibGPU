@@ -22,6 +22,7 @@ public interface WGPU { // A representation of the C interface in Java
 
     Pointer RequestDeviceSync(Pointer adapter, WGPUDeviceDescriptor descriptor);
     void DeviceRelease(Pointer device);
+    void DeviceTick(Pointer device);    // DAWN
     //WGPUStatus DeviceGetFeatures(Pointer device, WGPUSupportedFeatures features);
     boolean DeviceGetLimits(Pointer device, WGPUSupportedLimits limits);
     void DeviceSetUncapturedErrorCallback(Pointer device, WGPUErrorCallback callback, Pointer userdata);

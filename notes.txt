@@ -216,4 +216,4 @@ Some issues:
         Or use: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
 
-4. WGPURenderPipelineDescriptor has additional fields at the start
+4. Sometimes (1 in 2 runs) the demo crashes

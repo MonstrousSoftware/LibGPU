@@ -87,6 +87,12 @@ void DeviceRelease( WGPUDevice device ){
     wgpuDeviceRelease(device);
 }
 
+void DeviceTick( WGPUDevice device ){
+    //printf("releasing device %p\n", device);
+    wgpuDeviceTick(device);
+}
+
+
 WGPUQueue DeviceGetQueue(WGPUDevice device ){
      WGPUQueue q = wgpuDeviceGetQueue(device);
      //printf("get queue => %p\n", q);
