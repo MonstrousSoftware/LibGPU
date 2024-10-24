@@ -9,6 +9,8 @@
 #include <cassert>
 #include <iostream>
 
+#define LOG(x)
+
 using namespace std;
 
 // note we should't mix printf and cout <<
@@ -73,53 +75,53 @@ WGPUInstance CreateInstance( void ){
 }
 
 void InstanceRelease( WGPUInstance instance ){
-        //printf("releasing instance %p\n", instance);
+        LOG( printf("releasing instance %p\n", instance); )
         wgpuInstanceRelease(instance);
 }
 
 void AdapterRelease( WGPUAdapter adapter ){
-    //printf("releasing adapter %p\n", adapter);
+    LOG( printf("releasing adapter %p\n", adapter); )
     wgpuAdapterRelease(adapter);
 }
 
 void DeviceRelease( WGPUDevice device ){
-    //printf("releasing device %p\n", device);
+    LOG( printf("releasing device %p\n", device); )
     wgpuDeviceRelease(device);
 }
 
 void DeviceTick( WGPUDevice device ){
-    //printf("releasing device %p\n", device);
+    LOG( printf("device tick\n", device); )
     wgpuDeviceTick(device);
 }
 
 
 WGPUQueue DeviceGetQueue(WGPUDevice device ){
      WGPUQueue q = wgpuDeviceGetQueue(device);
-     //printf("get queue => %p\n", q);
+     LOG( printf("get queue => %p\n", q); )
      return q;
  }
 
  void DeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata){
-     //printf("registering callback for device errors\n");
+     LOG( printf("registering callback for device errors\n"); )
      wgpuDeviceSetUncapturedErrorCallback(device, callback, userdata);
  }
 
 void QueueRelease( WGPUQueue queue ){
-    //printf("releasing queue %p\n", queue);
+    LOG( printf("releasing queue %p\n", queue); )
     wgpuQueueRelease(queue);
 }
 
 
 WGPUCommandEncoder DeviceCreateCommandEncoder(WGPUDevice device,  WGPUCommandEncoderDescriptor *encoderDescriptor ){
-     //printf("encode descriptor label: [%s]\n", encoderDescriptor->label);
+     LOG( printf("encode descriptor label: [%s]\n", encoderDescriptor->label); )
      WGPUCommandEncoder e = wgpuDeviceCreateCommandEncoder(device, encoderDescriptor);
-     //printf("get command encoder => %p\n", e);
+     LOG( printf("get command encoder => %p\n", e); )
 
      return e;
 }
 
 void CommandEncoderRelease(WGPUCommandEncoder encoder){
-    //printf("releasing encoder %p\n", encoder);
+    LOG( printf("releasing encoder %p\n", encoder); )
     wgpuCommandEncoderRelease(encoder);
 }
 
@@ -138,7 +140,7 @@ void CommandEncoderInsertDebugMarker(WGPUCommandEncoder encoder, char *marker){
 
 WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCommandBufferDescriptor *bufferDescriptor){
     WGPUCommandBuffer buf = wgpuCommandEncoderFinish(encoder, bufferDescriptor);
-    //printf("encoder finish => command %p\n", buf);
+    LOG( printf("encoder finish => command %p\n", buf); )
     return buf;
 }
 
@@ -157,7 +159,7 @@ void dumpColAtt( WGPURenderPassColorAttachment colAtt){
 
 WGPURenderPassEncoder  CommandEncoderBeginRenderPass(WGPUCommandEncoder encoder, WGPURenderPassDescriptor *renderPassDescriptor){
     WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-    //dumpColAtt(renderPassDescriptor->colorAttachments[0]);
+    LOG( dumpColAtt(renderPassDescriptor->colorAttachments[0]); )
     return pass;
 }
 
@@ -173,7 +175,7 @@ void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
 
 
 void QueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallback callback, void * userdata){
-    //printf("registering callback for queue submitted work done\n");
+    LOG( printf("registering callback for queue submitted work done\n"); )
     wgpuQueueOnSubmittedWorkDone(queue, callback, userdata);
 }
 
@@ -188,12 +190,12 @@ void SurfaceRelease(WGPUSurface surface){
 }
 
 void SurfaceConfigure(WGPUSurface surface, WGPUSurfaceConfiguration *config){
-    //printf("configure surface %p\n", surface);
+    LOG( printf("configure surface %p\n", surface); )
     wgpuSurfaceConfigure(surface, config);
 }
 
 void SurfaceUnconfigure(WGPUSurface surface){
-    //printf("unconfiguring surface %p\n", surface);
+    LOG( printf("unconfiguring surface %p\n", surface); )
     wgpuSurfaceUnconfigure(surface);
 }
 
@@ -310,6 +312,16 @@ void ShaderModuleRelease(WGPUShaderModule shaderModule){
  *     const adapter = await navigator.gpu.requestAdapter(options);
  */
 WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions const * options) {
+
+//    WGPURequestAdapterOptions theOptions, *options;
+//    options = &theOptions;
+//    theOptions.nextInChain = nullptr;
+//    theOptions.compatibleSurface = nullptr;
+//    theOptions.powerPreference = WGPUPowerPreference_Undefined;
+//    theOptions.backendType = WGPUBackendType_D3D12; // WGPUBackendType_D3D12; //WGPUBackendType_Vulkan;
+//    theOptions.forceFallbackAdapter = false;
+//    theOptions.compatibilityMode = false;
+
     // A simple structure holding the local information shared with the
     // onAdapterRequestEnded callback.
     struct UserData {
@@ -317,6 +329,7 @@ WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions 
         bool requestEnded = false;
     };
     UserData userData;
+    LOG( printf("RequestAdapterSync\n"); )
 
     // Callback called by wgpuInstanceRequestAdapter when the request returns
     // This is a C++ lambda function, but could be any function defined in the
@@ -327,6 +340,7 @@ WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions 
     // provided as the last argument of wgpuInstanceRequestAdapter and received
     // by the callback as its last argument.
     auto onAdapterRequestEnded = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * pUserData) {
+        std::cout << "onAdapterRequestEnded : " << status << std::endl;
         UserData& userData = *reinterpret_cast<UserData*>(pUserData);
         if (status == WGPURequestAdapterStatus_Success) {
             userData.adapter = adapter;
@@ -341,6 +355,7 @@ WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions 
     printf("fallback: %d\n", options->forceFallbackAdapter);
     printf("surface: %p\n", options->compatibleSurface);
 
+    LOG( printf("wgpuInstanceRequestAdapter\n"); )
 
     // Call to the WebGPU request adapter procedure
     wgpuInstanceRequestAdapter(
@@ -353,9 +368,10 @@ WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions 
     // We wait until userData.requestEnded gets true
     // [...] Wait for request to end
 
-    assert(userData.requestEnded);
+    LOG( printf("requested ended? %d\n", (int)userData.requestEnded); )
+    LOG( printf("requested adapter %p\n", userData.adapter); )
 
-    //printf("requested adapter %p\n", userData.adapter);
+    assert(userData.requestEnded);
     return userData.adapter;
 }
 
@@ -396,10 +412,10 @@ WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * d
     return userData.device;
 }
 
-    WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, long long hwnd){
-            //printf("getting surface from GLFW window %lld (HWND)\n", hwnd);
-
-            if(hwnd == 0)
+    WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, void * hwnd){
+            LOG( printf("getting surface from GLFW window %p (HWND)\n", hwnd); )
+            LOG( printf("instance => %p\n", instance); )
+            if(hwnd == nullptr)
                 printf("** Window handle (HWND) is NULL!\n");
             HINSTANCE hinstance = GetModuleHandle(NULL);
 
@@ -407,14 +423,14 @@ WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * d
             fromWindowsHWND.chain.next = NULL;
             fromWindowsHWND.chain.sType = WGPUSType_SurfaceDescriptorFromWindowsHWND;
             fromWindowsHWND.hinstance = hinstance;
-            fromWindowsHWND.hwnd = (void *)hwnd;
+            fromWindowsHWND.hwnd = hwnd;
 
             WGPUSurfaceDescriptor surfaceDescriptor;
             surfaceDescriptor.nextInChain = &fromWindowsHWND.chain;
             surfaceDescriptor.label = NULL;
 
             WGPUSurface s = wgpuInstanceCreateSurface(instance, &surfaceDescriptor);
-            //printf("surface => %p\n", s);
+            LOG( printf("surface => %p\n", s); )
             return s;
     }
 #ifdef __cplusplus

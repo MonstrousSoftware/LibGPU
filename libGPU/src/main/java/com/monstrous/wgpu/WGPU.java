@@ -12,6 +12,8 @@ public interface WGPU { // A representation of the C interface in Java
     void testStruct(WGPURequestAdapterOptions options);
     void testLimitsStruct(WGPUSupportedLimits supported);
 
+    Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
+
     Pointer CreateInstance();
     void InstanceRelease(Pointer instance);
 
@@ -43,7 +45,7 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
     void CommandBufferRelease(Pointer commandBuffer);
 
-    Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
+
 
     void SurfaceRelease(Pointer surface);
     void SurfaceConfigure(Pointer surface, WGPUSurfaceConfiguration config);

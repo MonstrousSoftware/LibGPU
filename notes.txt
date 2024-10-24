@@ -216,4 +216,10 @@ Some issues:
         Or use: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
 
-4. Sometimes (1 in 2 runs) the demo crashes
+4. Sometimes (1 in 2 runs) the demo crashes. FIXED
+    Seems to be in RequestAdapterSync() in the call to wgpuInstanceRequestAdapter
+    If backend is set to Null, then the following is selected.
+    Back end: D3D12
+    Description: D3D12 driver version 32.0.15.6094
+
+    The crash is prevented by setting backend to D3D12 or Vulkan, i.e. not Undefined.

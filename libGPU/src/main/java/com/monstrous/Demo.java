@@ -47,17 +47,23 @@ public class Demo {
         System.out.println("sum = "+sum);
 
         instance = wgpu.CreateInstance();
+        System.out.println("instance = "+instance);
 
         System.out.println("window = "+Long.toString(windowHandle, 16));
         surface = wgpu.glfwGetWGPUSurface(instance,  windowHandle);
         System.out.println("surface = "+surface);
 
+        System.out.println("define adapter options");
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
         options.setNextInChain();
         options.setCompatibleSurface(surface);
+        options.setBackendType(WGPUBackendType.Vulkan);
+
+        System.out.println("defined adapter options");
 
         // Get Adapter
         Pointer adapter = wgpu.RequestAdapterSync(instance, options);
+        System.out.println("adapter = "+adapter);
 
         WGPUSupportedLimits supportedLimits = WGPUSupportedLimits.createDirect();
 
