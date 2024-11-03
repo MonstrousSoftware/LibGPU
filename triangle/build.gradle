@@ -29,7 +29,7 @@ tasks.withType(LinkExecutable).configureEach {
 
 
 task copyDLL(type: Copy) {
-    from 'src/main/lib/'
+    from '../lib'
     into 'build/install/main/debug/lib'
     include '*.dll'
     outputs.upToDateWhen { false }
