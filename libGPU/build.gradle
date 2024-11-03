@@ -24,8 +24,8 @@ dependencies {
 }
 
 run {
-    workingDir = rootProject.file('libGPU/src/main/c').path
-    systemProperty "java.library.path", rootProject.file('libGPU/src/main/c').path
+    workingDir = rootProject.file('lib').path
+    systemProperty "java.library.path", rootProject.file('lib').path
     setIgnoreExitValue(true)
 }
 
@@ -51,4 +51,6 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+    //implementation project(':wrapper')
 }

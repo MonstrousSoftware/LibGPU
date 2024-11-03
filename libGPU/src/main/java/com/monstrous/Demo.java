@@ -37,7 +37,7 @@ public class Demo {
     private WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
 
     public void init(long windowHandle) {
-        wgpu = LibraryLoader.create(WGPU.class).load("nativec"); // load the library into the libc variable
+        wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
         runtime = Runtime.getRuntime(wgpu);
         WgpuJava.setRuntime(runtime);
 
@@ -57,7 +57,7 @@ public class Demo {
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
         options.setNextInChain();
         options.setCompatibleSurface(surface);
-        options.setBackendType(WGPUBackendType.Vulkan);
+        options.setBackendType(WGPUBackendType.D3D12);
 
         System.out.println("defined adapter options");
 

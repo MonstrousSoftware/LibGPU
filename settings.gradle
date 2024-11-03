@@ -1,4 +1,6 @@
 rootProject.name = 'CallingWebGPU'
-include('triangle')
+include 'triangle'
 include 'libGPU'
+include 'wrapper'
+
 

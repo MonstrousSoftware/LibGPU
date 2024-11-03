@@ -123,6 +123,7 @@ bool Application::Initialize() {
 	WGPURequestAdapterOptions adapterOpts = {};
 	adapterOpts.nextInChain = nullptr;
 	adapterOpts.compatibleSurface = surface;
+	//adapterOpts.backendType = WGPUBackendType_D3D12;
 	WGPUAdapter adapter = requestAdapterSync(instance, &adapterOpts);
 	std::cout << "Got adapter: " << adapter << std::endl;
 
