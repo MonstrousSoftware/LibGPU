@@ -152,7 +152,7 @@ EXPORT WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCo
 void dumpColAtt( WGPURenderPassColorAttachment colAtt){
     cout << "nextInChain=" << colAtt.nextInChain << endl;
     cout << "depthSlice=" << colAtt.depthSlice << endl;
-    printf("clearValue @ %p size %ld\n", &colAtt.clearValue, sizeof(WGPUColor));
+    printf("clearValue @ %p size %lu\n", &colAtt.clearValue, (unsigned long)sizeof(WGPUColor));
     printf("clearValue rgba @ %p, %p, %p, %p \n", &colAtt.clearValue.r,  &colAtt.clearValue.g,  &colAtt.clearValue.b,  &colAtt.clearValue.a);
     cout << "clearValue: r=" << colAtt.clearValue.r
      << "g=" << colAtt.clearValue.g
@@ -308,6 +308,27 @@ EXPORT void RenderPipelineRelease(WGPURenderPipeline pipeline){
 EXPORT void ShaderModuleRelease(WGPUShaderModule shaderModule){
     wgpuShaderModuleRelease(shaderModule);
 }
+
+EXPORT WGPUBuffer DeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor *bufferDesc){
+    WGPUBuffer buf =  wgpuDeviceCreateBuffer(device, bufferDesc);
+    printf("created buffer at %p\n", buf);
+    return buf;
+}
+
+EXPORT void BufferRelease(WGPUBuffer buffer){
+    wgpuBufferRelease(buffer);
+}
+
+EXPORT void QueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size){
+    wgpuQueueWriteBuffer(queue, buffer, bufferOffset, data, size);
+}
+
+EXPORT void CommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size) {
+    printf("copy buf to buf: encoder %p src %p srcOffset %ld dst %p dstOffset %ld amnt %ld", commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+    wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, 0, destination, 0, 8);
+//        wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+}
+
 
 
 /**

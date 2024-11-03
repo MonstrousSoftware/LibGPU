@@ -44,14 +44,14 @@ public class Demo {
         // debug test
         System.out.println("Hello world!");
         int sum = wgpu.add(1200, 34);
-        System.out.println("sum = "+sum);
+        System.out.println("sum = " + sum);
 
         instance = wgpu.CreateInstance();
-        System.out.println("instance = "+instance);
+        System.out.println("instance = " + instance);
 
-        System.out.println("window = "+Long.toString(windowHandle, 16));
-        surface = wgpu.glfwGetWGPUSurface(instance,  windowHandle);
-        System.out.println("surface = "+surface);
+        System.out.println("window = " + Long.toString(windowHandle, 16));
+        surface = wgpu.glfwGetWGPUSurface(instance, windowHandle);
+        System.out.println("surface = " + surface);
 
         System.out.println("define adapter options");
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
@@ -63,7 +63,7 @@ public class Demo {
 
         // Get Adapter
         Pointer adapter = wgpu.RequestAdapterSync(instance, options);
-        System.out.println("adapter = "+adapter);
+        System.out.println("adapter = " + adapter);
 
         WGPUSupportedLimits supportedLimits = WGPUSupportedLimits.createDirect();
 
@@ -97,7 +97,7 @@ public class Demo {
 
         // use a lambda expression to define a callback function
         WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
-            System.out.println("*** Device error: "+ type + " : "+message);
+            System.out.println("*** Device error: " + type + " : " + message);
         };
         wgpu.DeviceSetUncapturedErrorCallback(device, deviceCallback, null);
 
@@ -112,7 +112,7 @@ public class Demo {
 
         // use a lambda expression to define a callback function
         WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
-            System.out.println("=== Queue work finished with status: "+ status);
+            System.out.println("=== Queue work finished with status: " + status);
         };
         wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
 
@@ -125,7 +125,7 @@ public class Demo {
         config.setHeight(480);
 
         surfaceFormat = wgpu.SurfaceGetPreferredFormat(surface, adapter);
-        System.out.println("Using format: "+surfaceFormat);
+        System.out.println("Using format: " + surfaceFormat);
         config.setFormat(surfaceFormat);
         // And we do not need any particular view format:
         config.setViewFormatCount(0);
@@ -138,13 +138,53 @@ public class Demo {
         wgpu.SurfaceConfigure(surface, config);
 
         initializePipeline();
+        playingWithBuffers();
+    }
 
-//        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-//        bufferDesc.setLabel("Some GPU-side data buffer");
-//        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc );
-//        bufferDesc.setSize(16);
-//        bufferDesc.setMappedAtCreation(0);
-//        Pointer buffer1 = wgpu.DeviceCreateBuffer(device, bufferDesc);
+    private void playingWithBuffers() {
+
+        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+        bufferDesc.setLabel("Some GPU-side data buffer");
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc );
+        bufferDesc.setSize(16);
+        bufferDesc.setMappedAtCreation(0L);
+        Pointer buffer1 = wgpu.DeviceCreateBuffer(device, bufferDesc);
+
+        bufferDesc.setLabel("Output buffer");
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
+        bufferDesc.setSize(16);
+        bufferDesc.setMappedAtCreation(0L);
+
+        Pointer buffer2 = wgpu.DeviceCreateBuffer(device, bufferDesc);
+
+        // Create some CPU-side data buffer (of size 16 bytes)
+        byte[] numbers = new byte[16];
+        for(int i = 0; i < 16; i++)
+            numbers[i] = (byte)i;
+        Pointer data = WgpuJava.createByteArrayPointer(numbers);
+        // `numbers` now contains [ 0, 1, 2, ... ]
+
+        // Copy this from `numbers` (RAM) to `buffer1` (VRAM)
+        wgpu.QueueWriteBuffer(queue, buffer1, 0, data, numbers.length);
+
+        Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, null);
+
+        // After creating the command encoder
+
+        // [...] Copy buffer to buffer
+        wgpu.CommandEncoderCopyBufferToBuffer(encoder, buffer1, 0, buffer2, 0, 2);
+
+
+        Pointer command = wgpu.CommandEncoderFinish(encoder, null);
+        wgpu.CommandEncoderRelease(encoder);
+
+        //#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffb3ddc7bfa, pid=17000, tid=12248
+        wgpu.QueueSubmit(queue, 1, command);
+
+        wgpu.CommandBufferRelease(command);
+
+        wgpu.BufferRelease(buffer1);
+        wgpu.BufferRelease(buffer2);
 
     }
 
