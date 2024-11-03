@@ -1,7 +1,9 @@
 package com.monstrous.wgpu;
 
 import com.monstrous.utils.WgpuJava;
+import com.monstrous.utils.CStrPointer;
 import com.monstrous.utils.WgpuJavaStruct;
+import com.monstrous.utils.RustCString;
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
 
@@ -10,14 +12,14 @@ public class WGPUSurfaceConfiguration extends WgpuJavaStruct {
 
     private final DynamicStructRef<WGPUChainedStruct> nextInChain = new DynamicStructRef<>(WGPUChainedStruct.class);
     private final Struct.Pointer device = new Struct.Pointer();
-    private final Struct.Enum32<WGPUTextureFormat> format = new Struct.Enum32<>(WGPUTextureFormat.class);
-    private final Struct.Enum32<WGPUTextureUsage> usage = new Struct.Enum32<>(WGPUTextureUsage.class);
+    private final Struct.Enum<WGPUTextureFormat> format = new Struct.Enum<>(WGPUTextureFormat.class);
+    private final Struct.Unsigned32 usage = new Struct.Unsigned32();
     private final Struct.size_t viewFormatCount = new Struct.size_t();
-    private final Pointer viewFormats = new Pointer();
-    private final Struct.Enum32<WGPUCompositeAlphaMode> alphaMode = new Struct.Enum32<>(WGPUCompositeAlphaMode.class);
+    private final Struct.Pointer viewFormats = new Struct.Pointer();
+    private final Struct.Enum<WGPUCompositeAlphaMode> alphaMode = new Struct.Enum<>(WGPUCompositeAlphaMode.class);
     private final Struct.Unsigned32 width = new Struct.Unsigned32();
     private final Struct.Unsigned32 height = new Struct.Unsigned32();
-    private final Struct.Enum32<WGPUPresentMode> presentMode = new Struct.Enum32<>(WGPUPresentMode.class);
+    private final Struct.Enum<WGPUPresentMode> presentMode = new Struct.Enum<>(WGPUPresentMode.class);
 
     private WGPUSurfaceConfiguration(){}
 
@@ -77,11 +79,11 @@ public class WGPUSurfaceConfiguration extends WgpuJavaStruct {
         this.format.set(x);
     }
 
-    public WGPUTextureUsage getUsage(){
+    public long getUsage(){
         return usage.get();
     }
 
-    public void setUsage(WGPUTextureUsage x){
+    public void setUsage(long x){
         this.usage.set(x);
     }
 
@@ -93,14 +95,12 @@ public class WGPUSurfaceConfiguration extends WgpuJavaStruct {
         this.viewFormatCount.set(x);
     }
 
-//    public DynamicStructRef<WGPUTextureFormat> getViewFormats(){
-//        return viewFormats;
-//    }
+    public jnr.ffi.Pointer getViewFormats(){
+        return viewFormats.get();
+    }
 
-    public void setViewFormats(WGPUTextureFormat... x){
-        //if(x.length == 0 || x[0] == null){
-            this.viewFormats.set(WgpuJava.createNullPointer());
-//
+    public void setViewFormats(jnr.ffi.Pointer x){
+        this.viewFormats.set(x);
     }
 
     public WGPUCompositeAlphaMode getAlphaMode(){

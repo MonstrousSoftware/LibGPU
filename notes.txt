@@ -275,3 +275,18 @@ Run wrapper/build to create wrapper.dll in root/lib
 
 
 
+Note: WGPUSurfaceConfiguration has a pointer to a list of enums.
+
+    typedef struct WGPUSurfaceConfiguration {
+        WGPUChainedStruct const * nextInChain;
+        WGPUDevice device;
+        WGPUTextureFormat format;
+        WGPUTextureUsageFlags usage;
+        size_t viewFormatCount;
+        WGPUTextureFormat const * viewFormats;
+        WGPUCompositeAlphaMode alphaMode;
+        uint32_t width;
+        uint32_t height;
+        WGPUPresentMode presentMode;
+    } WGPUSurfaceConfiguration WGPU_STRUCTURE_ATTRIB
+

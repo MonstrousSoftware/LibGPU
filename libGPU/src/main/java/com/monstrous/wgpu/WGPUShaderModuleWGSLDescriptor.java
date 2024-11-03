@@ -1,8 +1,9 @@
 package com.monstrous.wgpu;
 
+import com.monstrous.utils.WgpuJava;
 import com.monstrous.utils.CStrPointer;
-import com.monstrous.utils.RustCString;
 import com.monstrous.utils.WgpuJavaStruct;
+import com.monstrous.utils.RustCString;
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
 
@@ -10,32 +11,31 @@ import jnr.ffi.Struct;
 public class WGPUShaderModuleWGSLDescriptor extends WgpuJavaStruct {
 
     private final WGPUChainedStruct chain = inner(WGPUChainedStruct.createHeap());
-    private final @CStrPointer Struct.Pointer code = new Struct.Pointer();
+    private final @CStrPointer Pointer code = new Pointer();
 
-    private WGPUShaderModuleWGSLDescriptor(){
-    }
+    private WGPUShaderModuleWGSLDescriptor(){}
 
     @Deprecated
     public WGPUShaderModuleWGSLDescriptor(Runtime runtime){
         super(runtime);
     }
 
-    /**
-     * Creates this struct on the java heap.
-     * In general, this should <b>not</b> be used because these structs
-     * cannot be directly passed into native code.
-     */
+	/**
+	* Creates this struct on the java heap.
+	* In general, this should <b>not</b> be used because these structs
+	* cannot be directly passed into native code. 
+	*/
     public static WGPUShaderModuleWGSLDescriptor createHeap(){
         return new WGPUShaderModuleWGSLDescriptor();
     }
 
-    /**
-     * Creates this struct in direct memory.
-     * This is how most structs should be created (unless, they
-     * are members of a nothing struct)
-     *
-     * @see WgpuJavaStruct#useDirectMemory
-     */
+	/**
+	* Creates this struct in direct memory.
+	* This is how most structs should be created (unless, they
+	* are members of a nothing struct)
+	* 
+	* @see WgpuJavaStruct#useDirectMemory
+	*/
     public static WGPUShaderModuleWGSLDescriptor createDirect(){
         var struct = new WGPUShaderModuleWGSLDescriptor();
         struct.useDirectMemory();

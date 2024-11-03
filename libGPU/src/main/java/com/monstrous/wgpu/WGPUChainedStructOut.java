@@ -8,7 +8,8 @@ import jnr.ffi.Runtime;
 public class WGPUChainedStructOut extends WgpuJavaStruct {
 
     private final DynamicStructRef<WGPUChainedStructOut> next = new DynamicStructRef<>(WGPUChainedStructOut.class);
-    private final Enum<WGPUSType> sType = new Enum<>(WGPUSType.class);
+    private final Unsigned32 sType = new Unsigned32();
+
 
     private WGPUChainedStructOut(){}
 
@@ -52,11 +53,11 @@ public class WGPUChainedStructOut extends WgpuJavaStruct {
         }
     }
 
-    public WGPUSType getSType(){
+    public long getSType(){
         return sType.get();
     }
 
-    public void setSType(WGPUSType x){
+    public void setSType(long x){
         this.sType.set(x);
     }
 

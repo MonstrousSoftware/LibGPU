@@ -129,7 +129,7 @@ public class Demo {
         config.setFormat(surfaceFormat);
         // And we do not need any particular view format:
         config.setViewFormatCount(0);
-        config.setViewFormats();
+        config.setViewFormats(WgpuJava.createNullPointer());
         config.setUsage(WGPUTextureUsage.RenderAttachment);
         config.setDevice(device);
         config.setPresentMode(WGPUPresentMode.Fifo);
@@ -138,6 +138,13 @@ public class Demo {
         wgpu.SurfaceConfigure(surface, config);
 
         initializePipeline();
+
+//        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+//        bufferDesc.setLabel("Some GPU-side data buffer");
+//        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc );
+//        bufferDesc.setSize(16);
+//        bufferDesc.setMappedAtCreation(0);
+//        Pointer buffer1 = wgpu.DeviceCreateBuffer(device, bufferDesc);
 
     }
 
