@@ -78,6 +78,19 @@ public class WgpuJava {
     }
 
     /**
+     * Wraps a series of float values in a pointer in direct memory.
+     */
+    public static Pointer createFloatArrayPointer(float[] floats){
+        Pointer ptr = WgpuJava.createDirectPointer(floats.length * Float.BYTES);
+
+        for(int i = 0; i < floats.length; i++){
+            ptr.putFloat(i * Integer.BYTES, floats[i]);
+        }
+
+        return ptr;
+    }
+
+    /**
      * Copies the given data into a DirectByteBuffer and
      * then returns the buffer's pointer
      *

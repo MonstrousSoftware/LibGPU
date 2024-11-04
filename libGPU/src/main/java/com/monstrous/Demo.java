@@ -5,27 +5,31 @@ import com.monstrous.wgpu.*;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
+import jnr.ffi.Struct;
 
 
 public class Demo {
-    private final String shaderSource = "@vertex\n" +
-            "fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4f {\n" +
-            "    var p = vec2f(0.0, 0.0);\n" +
-            "    if (in_vertex_index == 0u) {\n" +
-            "        p = vec2f(-0.5, -0.5);\n" +
-            "    } else if (in_vertex_index == 1u) {\n" +
-            "        p = vec2f(0.5, -0.5);\n" +
-            "    } else {\n" +
-            "        p = vec2f(0.0, 0.5);\n" +
-            "    }\n" +
-            "    return vec4f(p, 0.0, 1.0);\n" +
+    private final String shaderSource = "struct VertexInput {\n" +
+            "    @location(0) position: vec2f,\n" +
+            "    @location(1) color: vec3f,\n" +
+            "};\n" +
+            "\nstruct VertexOutput {\n" +
+            "    @builtin(position) position: vec4f,\n" +
+            "    @location(0) color: vec3f,\n" +
+            "};\n\n" +
+
+            "@vertex\n" +
+            "fn vs_main(in: VertexInput) -> VertexOutput {\n" +
+            "   var out: VertexOutput;\n" +
+            "   out.position = vec4f(in.position, 0.0, 1.0);\n" +
+            "   out.color = in.color;\n" +
+            "   return out;\n" +
             "}\n" +
             "\n" +
             "@fragment\n" +
-            "fn fs_main() -> @location(0) vec4f {\n" +
-            "    return vec4f(0.0, 0.4, 1.0, 1.0);\n" +
+            "fn fs_main(in : VertexOutput) -> @location(0) vec4f {\n" +
+            "    return vec4f(in.color, 1.0);\n" +
             "}";
-
 
     private static Runtime runtime;
     private WGPU wgpu;
@@ -35,6 +39,8 @@ public class Demo {
     private Pointer queue;
     private Pointer pipeline;
     private WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
+    private Pointer vertexBuffer;
+    private int vertexCount;
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
@@ -66,9 +72,8 @@ public class Demo {
         System.out.println("adapter = " + adapter);
 
         WGPUSupportedLimits supportedLimits = WGPUSupportedLimits.createDirect();
-
-
         wgpu.AdapterGetLimits(adapter, supportedLimits);
+        System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
 
         System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
         System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
@@ -87,10 +92,20 @@ public class Demo {
         System.out.println("Back end: " + adapterProperties.getBackendType());
         System.out.println("Description: " + adapterProperties.getDriverDescription());
 
+        WGPURequiredLimits requiredLimits = WGPURequiredLimits.createDirect();
+        setDefault(requiredLimits.getLimits());
+        requiredLimits.getLimits().setMaxVertexAttributes(2);
+        requiredLimits.getLimits().setMaxVertexBuffers(2);
+        requiredLimits.getLimits().setMaxInterStageShaderComponents(3); // 3 floats from vert to frag
+        requiredLimits.getLimits().setMaxBufferSize(100);
+        requiredLimits.getLimits().setMaxVertexBufferArrayStride(12);
+
+
         // Get Device
         WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor.createDirect();
         deviceDescriptor.setNextInChain();
         deviceDescriptor.setLabel("My Device");
+        deviceDescriptor.setRequiredLimits(requiredLimits);
 
         device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
         wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
@@ -102,6 +117,7 @@ public class Demo {
         wgpu.DeviceSetUncapturedErrorCallback(device, deviceCallback, null);
 
         wgpu.DeviceGetLimits(device, supportedLimits);
+        System.out.println("device maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
 
         System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
         System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
@@ -139,6 +155,8 @@ public class Demo {
 
         initializePipeline();
         playingWithBuffers();
+
+        initVertexBuffer();
     }
 
     private void playingWithBuffers() {
@@ -203,6 +221,7 @@ public class Demo {
 
 
         int iters = 0;
+        // note you cannot test ready[0] because createIntegerArrayPointer made a copy
         while(udata.getInt(0) == 0){
             iters++;
             wgpu.DeviceTick(device);
@@ -226,6 +245,35 @@ public class Demo {
         wgpu.BufferRelease(buffer1);
         wgpu.BufferRelease(buffer2);
 
+    }
+
+    private void initVertexBuffer() {
+
+        float[] vertexData = {
+                // Define a first triangle:
+                // x,  y,  r,  g,  b
+                -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+                +0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+                +0.0f,   +0.5f, 0.0f, 0.0f, 1.0f,
+
+                -0.55f, -0.5f, 1.0f, 1.0f, 0.0f,
+                -0.05f, +0.5f, 1.0f, 0.0f, 1.0f,
+                -0.55f, +0.5f, 0.0f, 1.0f, 1.0f
+        };
+        vertexCount = vertexData.length / 5;
+
+        // Create vertex buffer
+        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+        bufferDesc.setLabel("Vertex buffer");
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex );
+        bufferDesc.setSize(vertexData.length*Float.BYTES);
+        bufferDesc.setMappedAtCreation(0L);
+        vertexBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
+
+        Pointer data = WgpuJava.createFloatArrayPointer(vertexData);
+
+        // Upload geometry data to the buffer
+        wgpu.QueueWriteBuffer(queue, vertexBuffer, 0, data, vertexData.length*Float.BYTES);
     }
 
     public void render(){
@@ -269,7 +317,11 @@ public class Demo {
 // [...] Use Render Pass
 
         wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
-        wgpu.RenderPassEncoderDraw(renderPass, 3, 1, 0, 0);
+
+        // Set vertex buffer while encoding the render pass
+        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+
+        wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
 
         wgpu.RenderPassEncoderEnd(renderPass);
         wgpu.RenderPassEncoderRelease(renderPass);
@@ -302,6 +354,7 @@ public class Demo {
 
     public void exit(){
         // cleanup
+        wgpu.BufferRelease(vertexBuffer);
         wgpu.RenderPipelineRelease(pipeline);
         wgpu.SurfaceUnconfigure(surface);
         wgpu.SurfaceRelease(surface);
@@ -358,12 +411,43 @@ public class Demo {
         Pointer shaderModule = wgpu.DeviceCreateShaderModule(device, shaderDesc);
 
 
+        //  create an array of WGPUVertexAttribute
+        int attribCount = 2;
+
+
+        WGPUVertexAttribute positionAttrib =  WGPUVertexAttribute.createDirect();   // just so we can take the size....
+
+//        int structSize = Struct.size(positionAttrib);
+//        jnr.ffi.Pointer arrayPointer = WgpuJava.createDirectPointer(attribCount*structSize);
+//
+//        positionAttrib.useMemory(arrayPointer);
+        positionAttrib.setShaderLocation(0);
+        positionAttrib.setFormat(WGPUVertexFormat.Float32x2);
+        positionAttrib.setOffset(0);
+
+        WGPUVertexAttribute colorAttrib = WGPUVertexAttribute.createDirect();   // wasteful?
+//        colorAttrib.useMemory(arrayPointer.slice(structSize,structSize));
+        colorAttrib.setShaderLocation(1);
+        colorAttrib.setFormat(WGPUVertexFormat.Float32x3);
+        colorAttrib.setOffset(2*Float.BYTES);
+
+
+
+
+        WGPUVertexBufferLayout vertexBufferLayout = WGPUVertexBufferLayout.createDirect();
+        vertexBufferLayout.setAttributeCount(attribCount);
+
+        vertexBufferLayout.setAttributes(positionAttrib, colorAttrib);
+        vertexBufferLayout.setArrayStride(5*Float.BYTES);
+        vertexBufferLayout.setStepMode(WGPUVertexStepMode.Vertex);
+
+
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
         pipelineDesc.setNextInChain();
         pipelineDesc.setLabel("pipeline");
 
-        pipelineDesc.getVertex().setBufferCount(0);
-        pipelineDesc.getVertex().setBuffers();
+        pipelineDesc.getVertex().setBufferCount(1);
+        pipelineDesc.getVertex().setBuffers(vertexBufferLayout);
 
         pipelineDesc.getVertex().setModule(shaderModule);
         pipelineDesc.getVertex().setEntryPoint("vs_main");
@@ -414,6 +498,50 @@ public class Demo {
         pipeline = wgpu.DeviceCreateRenderPipeline(device, pipelineDesc);
 
         wgpu.ShaderModuleRelease(shaderModule);
+    }
+
+
+
+
+   final static long WGPU_LIMIT_U32_UNDEFINED = 4294967295L;
+   final static long WGPU_LIMIT_U64_UNDEFINED = Long.MAX_VALUE;//.   18446744073709551615L;
+   // should be 18446744073709551615L but Java longs are signed so it is half that, will it work?
+    // todo
+
+
+    void setDefault(WGPULimits limits) {
+        limits.setMaxTextureDimension1D(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxTextureDimension2D(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxTextureDimension3D(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxTextureArrayLayers(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxBindGroups(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxBindGroupsPlusVertexBuffers(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxBindingsPerBindGroup(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxDynamicUniformBuffersPerPipelineLayout(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxDynamicStorageBuffersPerPipelineLayout(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxSampledTexturesPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxSamplersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxStorageBuffersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxStorageTexturesPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxUniformBuffersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxUniformBufferBindingSize(WGPU_LIMIT_U64_UNDEFINED);
+        limits.setMaxStorageBufferBindingSize(WGPU_LIMIT_U64_UNDEFINED);
+        limits.setMinUniformBufferOffsetAlignment(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMinStorageBufferOffsetAlignment(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxVertexBuffers(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxBufferSize(WGPU_LIMIT_U64_UNDEFINED);
+        limits.setMaxVertexAttributes(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxVertexBufferArrayStride(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxInterStageShaderComponents(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxInterStageShaderVariables(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxColorAttachments(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxColorAttachmentBytesPerSample(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxComputeWorkgroupStorageSize(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxComputeInvocationsPerWorkgroup(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxComputeWorkgroupSizeX(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxComputeWorkgroupSizeY(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxComputeWorkgroupSizeZ(WGPU_LIMIT_U32_UNDEFINED);
+        limits.setMaxComputeWorkgroupsPerDimension(WGPU_LIMIT_U32_UNDEFINED);
     }
 
 }

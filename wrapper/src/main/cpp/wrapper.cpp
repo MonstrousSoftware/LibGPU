@@ -293,6 +293,16 @@ EXPORT void RenderPassEncoderDraw(WGPURenderPassEncoder renderPass, uint32_t num
 
 
 EXPORT WGPURenderPipeline DeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor *pipelineDesc){
+    WGPUVertexState vertex = pipelineDesc->vertex;
+    std::cout << " - buffer Count: " << vertex.bufferCount << std::endl;
+    WGPUVertexBufferLayout layout = vertex.buffers[0];
+    std::cout << " - attribute Count: " << layout.attributeCount << std::endl;
+    for(int i = 0; i < layout.attributeCount; i++){
+        std::cout << " - attribute " << i << std::endl;
+        WGPUVertexAttribute attrib = layout.attributes[i];
+        std::cout << "    - attribute " << attrib.format  << "," << attrib.offset << ","<< attrib.shaderLocation << std::endl;
+
+    }
     WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, pipelineDesc);
     return pipeline;
 }
@@ -343,6 +353,14 @@ EXPORT void BufferUnmap(WGPUBuffer buffer){
     wgpuBufferUnmap(buffer);
 }
 
+
+EXPORT  uint64_t BufferGetSize(WGPUBuffer buffer) {
+    return wgpuBufferGetSize(buffer);
+}
+
+EXPORT void RenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPU_NULLABLE WGPUBuffer buffer, uint64_t offset, uint64_t size){
+    wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, slot, buffer, offset, size);
+}
 
 /**
  * Utility function to get a WebGPU adapter, so that

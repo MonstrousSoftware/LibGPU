@@ -79,4 +79,7 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer BufferGetConstMappedRange(Pointer buffer1, int offset, int size);       // todo use long for size_t?
 
     void BufferUnmap(Pointer buffer1);
+
+    long BufferGetSize(Pointer vertexBuffer);
+    void RenderPassEncoderSetVertexBuffer(Pointer renderPass, int slot, Pointer vertexBuffer, long offset, long size);
 }
