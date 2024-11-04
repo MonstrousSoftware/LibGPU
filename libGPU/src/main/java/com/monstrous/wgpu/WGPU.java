@@ -60,7 +60,7 @@ public interface WGPU { // A representation of the C interface in Java
     void TextureViewRelease(Pointer view);
 
     void SurfacePresent(Pointer surface);
-// todo
+
     void RenderPassEncoderSetPipeline(Pointer renderPass, Pointer pipeline);
     void RenderPassEncoderDraw(Pointer renderPass, int numVertices, int numInstances, int firstVertex, int firstInstance);
     Pointer DeviceCreateRenderPipeline(Pointer device, WGPURenderPipelineDescriptor pipelineDesc);
@@ -74,4 +74,9 @@ public interface WGPU { // A representation of the C interface in Java
     void QueueWriteBuffer(Pointer queue, Pointer buffer1, int i, Pointer data, int length);
 
     void CommandEncoderCopyBufferToBuffer(Pointer encoder, Pointer buffer1, int i, Pointer buffer2, int i1, int i2);
+    void BufferMapAsync(Pointer buffer2, WGPUMapMode wgpuMapMode, int offset, int size, WGPUBufferMapCallback onBuffer2Mapped, Pointer userData);
+
+    Pointer BufferGetConstMappedRange(Pointer buffer1, int offset, int size);       // todo use long for size_t?
+
+    void BufferUnmap(Pointer buffer1);
 }

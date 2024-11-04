@@ -324,11 +324,24 @@ EXPORT void QueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t buffer
 }
 
 EXPORT void CommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size) {
-    printf("copy buf to buf: encoder %p src %p srcOffset %ld dst %p dstOffset %ld amnt %ld", commandEncoder, source, sourceOffset, destination, destinationOffset, size);
-    wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, 0, destination, 0, 8);
+    printf("copy buf to buf: encoder %p src %p srcOffset %lld dst %p dstOffset %lld amnt %lld", commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+    wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
 //        wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
 }
 
+EXPORT void BufferMapAsync(WGPUBuffer buffer, WGPUMapMode wgpuMapMode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userData){
+    wgpuBufferMapAsync(buffer, wgpuMapMode, offset, size, callback, userData);
+}
+
+EXPORT void const * BufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size){
+    void const * ptr = wgpuBufferGetConstMappedRange(buffer, offset, size);
+    printf("buffer const map range: %p\n", ptr);
+    return ptr;
+}
+
+EXPORT void BufferUnmap(WGPUBuffer buffer){
+    wgpuBufferUnmap(buffer);
+}
 
 
 /**

@@ -172,16 +172,56 @@ public class Demo {
         // After creating the command encoder
 
         // [...] Copy buffer to buffer
-        wgpu.CommandEncoderCopyBufferToBuffer(encoder, buffer1, 0, buffer2, 0, 2);
+        // size must be multiple of 4
+        wgpu.CommandEncoderCopyBufferToBuffer(encoder, buffer1, 0, buffer2, 0, 16);
 
 
         Pointer command = wgpu.CommandEncoderFinish(encoder, null);
         wgpu.CommandEncoderRelease(encoder);
 
-        //#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ffb3ddc7bfa, pid=17000, tid=12248
-        wgpu.QueueSubmit(queue, 1, command);
+        // BEWARE: we need this convoluted call sequence or it will crash
+        long[] buffers = new long[1];
+        buffers[0] = command.address();
+        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
+        wgpu.QueueSubmit(queue, 1, bufferPtr);
+
 
         wgpu.CommandBufferRelease(command);
+
+        // use a lambda expression to define a callback function
+        WGPUBufferMapCallback onBuffer2Mapped = (WGPUBufferMapAsyncStatus status, Pointer userData) -> {
+            System.out.println("=== Buffer 2 mapped with status: " + status);
+            userData.putInt(0, 1);
+        };
+
+        int[] ready = new int[1];
+        ready[0] = 0;
+
+        Pointer udata = WgpuJava.createIntegerArrayPointer(ready);
+        System.out.println(udata);
+        wgpu.BufferMapAsync(buffer2, WGPUMapMode.Read, 0, 16, onBuffer2Mapped, udata);
+
+
+        int iters = 0;
+        while(udata.getInt(0) == 0){
+            iters++;
+            wgpu.DeviceTick(device);
+        }
+        System.out.println(" Iterations: "+iters);
+
+        System.out.println(" received: " + String.valueOf(udata.getInt(0)));
+
+        // Get a pointer to wherever the driver mapped the GPU memory to the RAM
+        Pointer ram =  wgpu.BufferGetConstMappedRange(buffer2, 0, 16);
+        for(int i = 0; i < 16; i++){
+            byte num = ram.getByte(i);
+            System.out.print(num);
+            System.out.print(' ');
+        }
+        System.out.println();
+
+// Then do not forget to unmap the memory
+        wgpu.BufferUnmap(buffer2);
 
         wgpu.BufferRelease(buffer1);
         wgpu.BufferRelease(buffer2);
