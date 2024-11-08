@@ -19,6 +19,10 @@ public abstract class WgpuJavaStruct extends Struct {
         super(runtime);
     }
 
+    private static int align(int offset, int align) {
+        return (offset + align - 1) & ~(align - 1);
+    }
+
     /**
      * Sets this struct to use direct memory.
      *
@@ -27,7 +31,8 @@ public abstract class WgpuJavaStruct extends Struct {
      * all fields need to be reset
      */
     public void useDirectMemory(){
-        int size = Struct.size(this);
+        final int size = align(Struct.size(this), Struct.alignment(this));
+        //int size = Struct.size(this);
 
         jnr.ffi.Pointer pointer = WgpuJava.getRuntime().getMemoryManager().allocateDirect(size);
         useMemory(pointer);
@@ -65,12 +70,17 @@ public abstract class WgpuJavaStruct extends Struct {
             set(struct.getPointerTo());
         }
 
+
+
         public final void set(T[] structs) {
             if (structs.length == 0) {
                 set(WgpuJava.createNullPointer());
                 return;
             }
-            int size = Struct.size(structs[0]);
+            // MM: fixed to include alignment
+            // why does Struct.size not do this already?
+           // int size = Struct.size(structs[0]);
+            final int size = align(Struct.size(structs[0]), Struct.alignment(structs[0]));
 
             jnr.ffi.Pointer value = WgpuJava.createDirectPointer(size * structs.length);
             byte[] data = new byte[size];

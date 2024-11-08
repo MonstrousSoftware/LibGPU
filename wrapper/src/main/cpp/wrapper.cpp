@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <cassert>
 #include <iostream>
+#include <stdalign.h>
 
 #define LOG(x)
 
@@ -293,16 +294,44 @@ EXPORT void RenderPassEncoderDraw(WGPURenderPassEncoder renderPass, uint32_t num
 
 
 EXPORT WGPURenderPipeline DeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor *pipelineDesc){
-    WGPUVertexState vertex = pipelineDesc->vertex;
-    std::cout << " - buffer Count: " << vertex.bufferCount << std::endl;
-    WGPUVertexBufferLayout layout = vertex.buffers[0];
-    std::cout << " - attribute Count: " << layout.attributeCount << std::endl;
-    for(int i = 0; i < layout.attributeCount; i++){
-        std::cout << " - attribute " << i << std::endl;
-        WGPUVertexAttribute attrib = layout.attributes[i];
-        std::cout << "    - attribute " << attrib.format  << "," << attrib.offset << ","<< attrib.shaderLocation << std::endl;
+//    WGPUVertexState vertex = pipelineDesc->vertex;
+//    std::cout << " - buffer Count: " << vertex.bufferCount << std::endl;
+//    WGPUVertexBufferLayout layout = vertex.buffers[0];
+//    std::cout << " - attribute Count: " << layout.attributeCount << std::endl;
+//
+//    WGPUVertexAttribute atty[2], va;
+//    atty[0].format = WGPUVertexFormat_Float32x2;
+//    atty[0].offset = -1;
+//    atty[0].shaderLocation = 8;
+//        atty[1].format = WGPUVertexFormat_Float32x3;
+//        atty[1].offset = -1;
+//        atty[1].shaderLocation = 9;
+//    unsigned char const *p2 = (unsigned char const *)&atty;
+//
+//     printf("sizeof VA %ld \n", sizeof(va));
+//     printf("alignof VA %ld \n", alignof(WGPUVertexAttribute));
 
-    }
+//    for(int i = 0; i < 48; i++){
+//        unsigned char k = *p2;
+//        printf("atty[%d]: %d\n", i, k);
+//                p2++;
+//    }
+
+//    printf("attribs @ %p\n", layout.attributes);
+//    unsigned char const *p = (unsigned char const *)layout.attributes;
+//    for(int i = 0; i < 48; i++){
+//        unsigned char k = *p;
+//
+//        printf("attribs[%d]: %d\n", i, k);
+//                p++;
+//    }
+//    for(int i = 0; i < layout.attributeCount; i++){
+//        std::cout << " - attribute " << i << std::endl;
+//        printf("attribs[%d] @ %p\n", i, &(layout.attributes[i]) );
+//        WGPUVertexAttribute attrib = layout.attributes[i];
+//        std::cout << "    - attribute " << attrib.format  << "," << attrib.offset << ","<< attrib.shaderLocation << std::endl;
+//
+//    }
     WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, pipelineDesc);
     return pipeline;
 }

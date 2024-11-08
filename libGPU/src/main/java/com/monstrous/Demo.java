@@ -414,24 +414,17 @@ public class Demo {
         //  create an array of WGPUVertexAttribute
         int attribCount = 2;
 
+        WGPUVertexAttribute positionAttrib =  WGPUVertexAttribute.createDirect();
 
-        WGPUVertexAttribute positionAttrib =  WGPUVertexAttribute.createDirect();   // just so we can take the size....
-
-//        int structSize = Struct.size(positionAttrib);
-//        jnr.ffi.Pointer arrayPointer = WgpuJava.createDirectPointer(attribCount*structSize);
-//
-//        positionAttrib.useMemory(arrayPointer);
-        positionAttrib.setShaderLocation(0);
         positionAttrib.setFormat(WGPUVertexFormat.Float32x2);
         positionAttrib.setOffset(0);
+        positionAttrib.setShaderLocation(0);
 
-        WGPUVertexAttribute colorAttrib = WGPUVertexAttribute.createDirect();   // wasteful?
-//        colorAttrib.useMemory(arrayPointer.slice(structSize,structSize));
-        colorAttrib.setShaderLocation(1);
+        WGPUVertexAttribute colorAttrib = WGPUVertexAttribute.createDirect();   // freed where?
+
         colorAttrib.setFormat(WGPUVertexFormat.Float32x3);
         colorAttrib.setOffset(2*Float.BYTES);
-
-
+        colorAttrib.setShaderLocation(1);
 
 
         WGPUVertexBufferLayout vertexBufferLayout = WGPUVertexBufferLayout.createDirect();
