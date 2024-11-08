@@ -7,6 +7,8 @@ import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
 
+import java.util.ArrayList;
+
 
 public class Demo {
     private final String shaderSource = "struct VertexInput {\n" +
@@ -21,7 +23,8 @@ public class Demo {
             "@vertex\n" +
             "fn vs_main(in: VertexInput) -> VertexOutput {\n" +
             "   var out: VertexOutput;\n" +
-            "   out.position = vec4f(in.position, 0.0, 1.0);\n" +
+            "   let ratio = 640.0 / 480.0; // The width and height of the target surface\n"+
+            "   out.position = vec4f(in.position.x, in.position.y * ratio, 0.0, 1.0);\n"+
             "   out.color = in.color;\n" +
             "   return out;\n" +
             "}\n" +
@@ -251,21 +254,70 @@ public class Demo {
 
     private void initVertexBuffer() {
 
-        float[] vertexData = {
-                // Define a first triangle:
-                // x,  y,  r,  g,  b
-                -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-                +0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-                +0.5f,  +0.5f, 0.0f, 0.0f, 1.0f,
-                -0.5f,  +0.5f, 1.0f, 1.0f, 0.0f,
-        };
-        vertexCount = vertexData.length / 5;
+        FileInput input = new FileInput("webgpu.txt");
+        System.out.println("input file size : "+input.size());
+        ArrayList<Integer> indexValues = new ArrayList<>();
+        ArrayList<Float> vertFloats = new ArrayList<>();
+        int mode = 0;
+        for(int lineNr = 0; lineNr < input.size(); lineNr++) {
+            String line = input.get(lineNr).strip();
+            if (line.contentEquals("[points]")) {
+                mode = 1;
+                continue;
+            }
+            if (line.contentEquals("[indices]")) {
+                mode = 2;
+                continue;
+            }
+            if(line.startsWith("#"))
+                continue;
+            if(line.length() == 0)
+                continue;
+            if(mode == 1){
+                String [] words = line.split("[ \t]+");
+                if(words.length != 5)
+                    System.out.println("Expected 5 floats per vertex : "+line);
+                for(int i = 0; i < 5; i++)
+                    vertFloats.add(Float.parseFloat(words[i]));
+            } else if (mode == 2){
+                String [] words = line.split("[ \t]+");
+                if(words.length != 3)
+                    System.out.println("Expected 3 indices per line: "+line);
+                for(int i = 0; i < 3; i++)
+                    indexValues.add(Integer.parseInt(words[i]));
+            } else {
+                System.out.println("Unexpected input: "+line);
+            }
+        }
 
-        int[] indexData = {
-            0, 1, 2,    // triangle 0
-            0, 2, 3     // triangle 1
-        };
-        indexCount = indexData.length;
+        vertexCount = vertFloats.size()/5;
+        float[] vertexData = new float[ vertFloats.size() ];
+        for(int i = 0; i < vertFloats.size(); i++){
+            vertexData[i] = vertFloats.get(i);
+        }
+
+        indexCount = indexValues.size();
+        int [] indexData = new int[ indexCount ];
+        for(int i = 0; i < indexCount; i++){
+            indexData[i] = indexValues.get(i);
+        }
+
+
+//        float[] vertexData = {
+//                // Define a first triangle:
+//                // x,  y,  r,  g,  b
+//                -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
+//                +0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+//                +0.5f,  +0.5f, 0.0f, 0.0f, 1.0f,
+//                -0.5f,  +0.5f, 1.0f, 1.0f, 0.0f,
+//        };
+//        vertexCount = vertexData.length / 5;
+
+//        int[] indexData2 = {
+//            0, 1, 2,    // triangle 0
+//            0, 2, 3     // triangle 1
+//        };
+//        indexCount = indexData.length;
 
         // Create vertex buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
