@@ -7,32 +7,14 @@ import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 
 public class Demo {
-    private final String shaderSource = "struct VertexInput {\n" +
-            "    @location(0) position: vec2f,\n" +
-            "    @location(1) color: vec3f,\n" +
-            "};\n" +
-            "\nstruct VertexOutput {\n" +
-            "    @builtin(position) position: vec4f,\n" +
-            "    @location(0) color: vec3f,\n" +
-            "};\n\n" +
-
-            "@vertex\n" +
-            "fn vs_main(in: VertexInput) -> VertexOutput {\n" +
-            "   var out: VertexOutput;\n" +
-            "   let ratio = 640.0 / 480.0; // The width and height of the target surface\n"+
-            "   out.position = vec4f(in.position.x, in.position.y * ratio, 0.0, 1.0);\n"+
-            "   out.color = in.color;\n" +
-            "   return out;\n" +
-            "}\n" +
-            "\n" +
-            "@fragment\n" +
-            "fn fs_main(in : VertexOutput) -> @location(0) vec4f {\n" +
-            "    return vec4f(in.color, 1.0);\n" +
-            "}";
+    private String shaderSource = readShaderSource();
 
     private static Runtime runtime;
     private WGPU wgpu;
@@ -250,6 +232,16 @@ public class Demo {
         wgpu.BufferRelease(buffer1);
         wgpu.BufferRelease(buffer2);
 
+    }
+
+    private String readShaderSource() {
+        String src = null;
+        try {
+            src = Files.readString(Paths.get("shader.wgsl"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return src;
     }
 
     private void initVertexBuffer() {
@@ -483,6 +475,8 @@ public class Demo {
         shaderCodeDesc.getChain().setNext();
         shaderCodeDesc.getChain().setSType(WGPUSType.ShaderModuleWGSLDescriptor);
         shaderCodeDesc.setCode(shaderSource);
+
+        System.out.println("shaderSource: "+shaderSource);
 
         shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
