@@ -292,6 +292,14 @@ EXPORT void RenderPassEncoderDraw(WGPURenderPassEncoder renderPass, uint32_t num
     wgpuRenderPassEncoderDraw(renderPass, numVertices, numInstances, firstVertex, firstInstance);
 }
 
+EXPORT void RenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPass, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance){
+   wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
+}
+
+EXPORT void RenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size) {
+    wgpuRenderPassEncoderSetIndexBuffer( renderPassEncoder,  buffer,  format,  offset,  size);
+};
+
 
 EXPORT WGPURenderPipeline DeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor *pipelineDesc){
 //    WGPUVertexState vertex = pipelineDesc->vertex;

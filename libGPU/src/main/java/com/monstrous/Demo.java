@@ -41,6 +41,8 @@ public class Demo {
     private WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
     private Pointer vertexBuffer;
     private int vertexCount;
+    private Pointer indexBuffer;
+    private int indexCount;
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
@@ -97,7 +99,7 @@ public class Demo {
         requiredLimits.getLimits().setMaxVertexAttributes(2);
         requiredLimits.getLimits().setMaxVertexBuffers(2);
         requiredLimits.getLimits().setMaxInterStageShaderComponents(3); // 3 floats from vert to frag
-        requiredLimits.getLimits().setMaxBufferSize(100);
+        requiredLimits.getLimits().setMaxBufferSize(300);
         requiredLimits.getLimits().setMaxVertexBufferArrayStride(12);
 
 
@@ -254,13 +256,16 @@ public class Demo {
                 // x,  y,  r,  g,  b
                 -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
                 +0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-                +0.0f,   +0.5f, 0.0f, 0.0f, 1.0f,
-
-                -0.55f, -0.5f, 1.0f, 1.0f, 0.0f,
-                -0.05f, +0.5f, 1.0f, 0.0f, 1.0f,
-                -0.55f, +0.5f, 0.0f, 1.0f, 1.0f
+                +0.5f,  +0.5f, 0.0f, 0.0f, 1.0f,
+                -0.5f,  +0.5f, 1.0f, 1.0f, 0.0f,
         };
         vertexCount = vertexData.length / 5;
+
+        int[] indexData = {
+            0, 1, 2,    // triangle 0
+            0, 2, 3     // triangle 1
+        };
+        indexCount = indexData.length;
 
         // Create vertex buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
@@ -273,7 +278,24 @@ public class Demo {
         Pointer data = WgpuJava.createFloatArrayPointer(vertexData);
 
         // Upload geometry data to the buffer
-        wgpu.QueueWriteBuffer(queue, vertexBuffer, 0, data, vertexData.length*Float.BYTES);
+        wgpu.QueueWriteBuffer(queue, vertexBuffer, 0, data, (int)bufferDesc.getSize());
+
+        // Create index buffer
+        bufferDesc.setLabel("Index buffer");
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index );
+        bufferDesc.setSize(indexData.length*Integer.BYTES);
+        // in case we use a sort index:
+        //bufferDesc.size = (bufferDesc.size + 3) & ~3; // round up to the next multiple of 4
+        bufferDesc.setMappedAtCreation(0L);
+        indexBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
+
+        Pointer idata = WgpuJava.createIntegerArrayPointer(indexData);
+
+
+        // Upload data to the buffer
+        wgpu.QueueWriteBuffer(queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
+
+
     }
 
     public void render(){
@@ -297,9 +319,9 @@ public class Demo {
         renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
         renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
-        renderPassColorAttachment.getClearValue().setR(0.9);
-        renderPassColorAttachment.getClearValue().setG(0.1);
-        renderPassColorAttachment.getClearValue().setB(0.2);
+        renderPassColorAttachment.getClearValue().setR(0.25);
+        renderPassColorAttachment.getClearValue().setG(0.25);
+        renderPassColorAttachment.getClearValue().setB(0.25);
         renderPassColorAttachment.getClearValue().setA(1.0);
 
         renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
@@ -320,8 +342,11 @@ public class Demo {
 
         // Set vertex buffer while encoding the render pass
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 
-        wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
+        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+
+        //wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
 
         wgpu.RenderPassEncoderEnd(renderPass);
         wgpu.RenderPassEncoderRelease(renderPass);
@@ -354,6 +379,7 @@ public class Demo {
 
     public void exit(){
         // cleanup
+        wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(vertexBuffer);
         wgpu.RenderPipelineRelease(pipeline);
         wgpu.SurfaceUnconfigure(surface);

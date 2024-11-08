@@ -82,4 +82,8 @@ public interface WGPU { // A representation of the C interface in Java
 
     long BufferGetSize(Pointer vertexBuffer);
     void RenderPassEncoderSetVertexBuffer(Pointer renderPass, int slot, Pointer vertexBuffer, long offset, long size);
+
+    void RenderPassEncoderSetIndexBuffer(Pointer renderPass, Pointer indexBuffer, WGPUIndexFormat wgpuIndexFormat, int offset, long size);
+
+    void RenderPassEncoderDrawIndexed(Pointer renderPass, int indexCount, int numInstances, int firstIndex, int baseVertex, int firstInstance);
 }
