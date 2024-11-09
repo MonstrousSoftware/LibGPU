@@ -428,6 +428,20 @@ EXPORT WGPUPipelineLayout DeviceCreatePipelineLayout(WGPUDevice device, WGPUPipe
     return wgpuDeviceCreatePipelineLayout(device, descriptor);
 }
 
+
+EXPORT WGPUTexture DeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor){
+    return wgpuDeviceCreateTexture(device, descriptor);
+}
+
+
+EXPORT void TextureDestroy(WGPUTexture texture){
+    wgpuTextureDestroy(texture);
+}
+
+EXPORT void TextureRelease(WGPUTexture texture){
+    wgpuTextureRelease(texture);
+}
+
 /**
  * Utility function to get a WebGPU adapter, so that
  *     WGPUAdapter adapter = requestAdapterSync(options);

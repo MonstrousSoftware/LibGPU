@@ -100,4 +100,10 @@ public interface WGPU { // A representation of the C interface in Java
     void RenderPassEncoderSetBindGroup(Pointer renderPass, int groupIndex, Pointer bindGroup, int dynamicOffsetCount, Pointer dynamicOffsets);
 
     Pointer DeviceCreatePipelineLayout(Pointer device, WGPUPipelineLayoutDescriptor layoutDesc);
+
+    Pointer DeviceCreateTexture(Pointer device, WGPUTextureDescriptor depthTextureDesc);
+
+    void TextureDestroy(Pointer depthTexture);
+
+    void TextureRelease(Pointer depthTexture);
 }

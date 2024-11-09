@@ -31,7 +31,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
        alpha * in.position.y + beta * in.position.z,
        alpha * in.position.z - beta * in.position.y,
    );
-   out.position = vec4f(position.x, position.y * ratio, 0.0, 1.0);
+   out.position = vec4f(position.x, position.y * ratio, position.z * 0.5 + 0.5, 1.0);
    // We now move the scene depending on the time!
    //var offset = vec2f(-0.6875, -0.463);
    //offset += 0.3 * vec2f(cos(uMyUniforms.time), sin(uMyUniforms.time));

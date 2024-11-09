@@ -37,6 +37,8 @@ public class Demo {
     private int uniformStride;
     private int uniformInstances;
     private Pointer uniformData;
+    private Pointer depthTextureView;
+    private Pointer depthTexture;
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
@@ -96,6 +98,9 @@ public class Demo {
         requiredLimits.getLimits().setMaxBufferSize(300);
         requiredLimits.getLimits().setMaxVertexBufferArrayStride(6*Float.BYTES);
         requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
+        requiredLimits.getLimits().setMaxTextureDimension1D(480);
+        requiredLimits.getLimits().setMaxTextureDimension2D(640);
+        requiredLimits.getLimits().setMaxTextureArrayLayers(1);
 
         requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
         requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
@@ -479,7 +484,48 @@ public class Demo {
 
         pipelineDesc.setFragment(fragmentState);
 
-        pipelineDesc.setDepthStencil();
+        WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
+        setDefault(depthStencilState);
+        depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
+        depthStencilState.setDepthWriteEnabled(1L);
+        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;
+        depthStencilState.setFormat(depthTextureFormat);
+        // deactivate stencil
+        depthStencilState.setStencilReadMask(0L);
+        depthStencilState.setStencilWriteMask(0L);
+
+        pipelineDesc.setDepthStencil(depthStencilState);
+
+
+        long[] formats = new long[1];
+        formats[0] = depthTextureFormat.ordinal();
+        Pointer formatPtr = WgpuJava.createLongArrayPointer(formats);
+
+        // Create the depth texture
+        WGPUTextureDescriptor depthTextureDesc = WGPUTextureDescriptor.createDirect();
+        depthTextureDesc.setDimension( WGPUTextureDimension._2D);
+        depthTextureDesc.setFormat( depthTextureFormat );
+        depthTextureDesc.setMipLevelCount(1);
+        depthTextureDesc.setSampleCount(1);
+        depthTextureDesc.getSize().setWidth(640);
+        depthTextureDesc.getSize().setHeight(480);
+        depthTextureDesc.getSize().setDepthOrArrayLayers(1);
+        depthTextureDesc.setUsage( WGPUTextureUsage.RenderAttachment );
+        depthTextureDesc.setViewFormatCount(1);
+        depthTextureDesc.setViewFormats( formatPtr );
+        depthTexture = wgpu.DeviceCreateTexture(device, depthTextureDesc);
+
+
+        // Create the view of the depth texture manipulated by the rasterizer
+        WGPUTextureViewDescriptor depthTextureViewDesc = WGPUTextureViewDescriptor.createDirect();
+        depthTextureViewDesc.setAspect(WGPUTextureAspect.DepthOnly);
+        depthTextureViewDesc.setBaseArrayLayer(0);
+        depthTextureViewDesc.setArrayLayerCount(1);
+        depthTextureViewDesc.setBaseMipLevel(0);
+        depthTextureViewDesc.setMipLevelCount(1);
+        depthTextureViewDesc.setDimension( WGPUTextureViewDimension._2D);
+        depthTextureViewDesc.setFormat(depthTextureFormat);
+        depthTextureView = wgpu.TextureCreateView(depthTexture, depthTextureViewDesc);
 
         pipelineDesc.getMultisample().setCount(1);
         pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
@@ -567,13 +613,27 @@ public class Demo {
 
         renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
 
+
+        WGPURenderPassDepthStencilAttachment depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
+        depthStencilAttachment.setView( depthTextureView );
+        depthStencilAttachment.setDepthClearValue(1.0f);
+        depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
+        depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
+        depthStencilAttachment.setDepthReadOnly(0L);
+        depthStencilAttachment.setStencilClearValue(0);
+        depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
+        depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
+        depthStencilAttachment.setStencilReadOnly(1L);
+
+
+
         WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
         renderPassDescriptor.setNextInChain();
 
         renderPassDescriptor.setColorAttachmentCount(1);
         renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
         renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        renderPassDescriptor.setDepthStencilAttachment();
+        renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
         renderPassDescriptor.setTimestampWrites();
 
         Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
@@ -631,6 +691,10 @@ public class Demo {
 
     public void exit(){
         // cleanup
+        // Destroy the depth texture and its view
+        wgpu.TextureViewRelease(depthTextureView);
+        wgpu.TextureDestroy(depthTexture);
+        wgpu.TextureRelease(depthTexture);
         wgpu.PipelineLayoutRelease(layout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BindGroupRelease(bindGroup);
@@ -736,6 +800,26 @@ public class Demo {
         bindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Undefined);
         bindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
 
+    }
+
+    private void setDefault(WGPUStencilFaceState stencilFaceState) {
+        stencilFaceState.setCompare( WGPUCompareFunction.Always);
+        stencilFaceState.setFailOp( WGPUStencilOperation.Keep);
+        stencilFaceState.setDepthFailOp( WGPUStencilOperation.Keep);
+        stencilFaceState.setPassOp( WGPUStencilOperation.Keep);
+    }
+
+    private void setDefault(WGPUDepthStencilState  depthStencilState ) {
+        depthStencilState.setFormat(WGPUTextureFormat.Undefined);
+        depthStencilState.setDepthWriteEnabled(0L);
+        depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
+        depthStencilState.setStencilReadMask(0xFFFFFFFF);
+        depthStencilState.setStencilWriteMask(0xFFFFFFFF);
+        depthStencilState.setDepthBias(0);
+        depthStencilState.setDepthBiasSlopeScale(0);
+        depthStencilState.setDepthBiasClamp(0);
+        setDefault(depthStencilState.getStencilFront());
+        setDefault(depthStencilState.getStencilBack());
     }
 
 }
