@@ -94,7 +94,7 @@ public class Demo {
         requiredLimits.getLimits().setMaxVertexBuffers(2);
         requiredLimits.getLimits().setMaxInterStageShaderComponents(3); // 3 floats from vert to frag
         requiredLimits.getLimits().setMaxBufferSize(300);
-        requiredLimits.getLimits().setMaxVertexBufferArrayStride(12);
+        requiredLimits.getLimits().setMaxVertexBufferArrayStride(6*Float.BYTES);
         requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
 
         requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
@@ -170,7 +170,7 @@ public class Demo {
 
         int minAlign = (int)supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
         uniformStride = ceilToNextMultiple(uniformBufferSize, minAlign);
-        uniformInstances = 2;
+        uniformInstances = 1;   // how many sets of uniforms?
 
         System.out.println("min uniform alignment: "+minAlign);
         System.out.println("uniform stride: "+uniformStride);
@@ -285,9 +285,9 @@ public class Demo {
     }
 
     private void initBuffers() {
-
-        FileInput input = new FileInput("webgpu.txt");
-        System.out.println("input file size : "+input.size());
+        int dimensions = 3;
+        FileInput input = new FileInput("pyramid.txt");
+        int vertSize = 3+dimensions; // in floats
         ArrayList<Integer> indexValues = new ArrayList<>();
         ArrayList<Float> vertFloats = new ArrayList<>();
         int mode = 0;
@@ -307,9 +307,9 @@ public class Demo {
                 continue;
             if(mode == 1){
                 String [] words = line.split("[ \t]+");
-                if(words.length != 5)
-                    System.out.println("Expected 5 floats per vertex : "+line);
-                for(int i = 0; i < 5; i++)
+                if(words.length != vertSize)
+                    System.out.println("Expected "+vertSize+" floats per vertex : "+line);
+                for(int i = 0; i < vertSize; i++)
                     vertFloats.add(Float.parseFloat(words[i]));
             } else if (mode == 2){
                 String [] words = line.split("[ \t]+");
@@ -322,7 +322,7 @@ public class Demo {
             }
         }
 
-        vertexCount = vertFloats.size()/5;
+        vertexCount = vertFloats.size()/vertSize;
         float[] vertexData = new float[ vertFloats.size() ];
         for(int i = 0; i < vertFloats.size(); i++){
             vertexData[i] = vertFloats.get(i);
@@ -417,14 +417,14 @@ public class Demo {
 
         WGPUVertexAttribute positionAttrib =  WGPUVertexAttribute.createDirect();
 
-        positionAttrib.setFormat(WGPUVertexFormat.Float32x2);
+        positionAttrib.setFormat(WGPUVertexFormat.Float32x3);
         positionAttrib.setOffset(0);
         positionAttrib.setShaderLocation(0);
 
         WGPUVertexAttribute colorAttrib = WGPUVertexAttribute.createDirect();   // freed where?
 
         colorAttrib.setFormat(WGPUVertexFormat.Float32x3);
-        colorAttrib.setOffset(2*Float.BYTES);
+        colorAttrib.setOffset(3*Float.BYTES);
         colorAttrib.setShaderLocation(1);
 
 
@@ -432,7 +432,7 @@ public class Demo {
         vertexBufferLayout.setAttributeCount(attribCount);
 
         vertexBufferLayout.setAttributes(positionAttrib, colorAttrib);
-        vertexBufferLayout.setArrayStride(5*Float.BYTES);
+        vertexBufferLayout.setArrayStride(6*Float.BYTES);
         vertexBufferLayout.setStepMode(WGPUVertexStepMode.Vertex);
 
 
@@ -538,13 +538,13 @@ public class Demo {
         uniformData.putFloat(7*Float.BYTES, 1.0f); //a
         wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, uniformBufferSize);
 
-        uniformData.putFloat(0,currentTime+0.5f);
-        // 3 floats of padding
-        uniformData.putFloat(4*Float.BYTES, 1.0f); //r
-        uniformData.putFloat(5*Float.BYTES, 0.0f); //g
-        uniformData.putFloat(6*Float.BYTES, 0.6f); //b
-        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
-        wgpu.QueueWriteBuffer(queue, uniformBuffer, uniformStride, uniformData, uniformBufferSize);
+//        uniformData.putFloat(0,currentTime+0.5f);
+//        // 3 floats of padding
+//        uniformData.putFloat(4*Float.BYTES, 1.0f); //r
+//        uniformData.putFloat(5*Float.BYTES, 0.0f); //g
+//        uniformData.putFloat(6*Float.BYTES, 0.6f); //b
+//        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
+//        wgpu.QueueWriteBuffer(queue, uniformBuffer, uniformStride, uniformData, uniformBufferSize);
 
 
         WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
@@ -593,10 +593,10 @@ public class Demo {
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
         wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
 
-        offsetPtr.putInt(0, uniformStride);
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
-
+//        offsetPtr.putInt(0, uniformStride);
+//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
+//        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+//
 
         //wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
 
