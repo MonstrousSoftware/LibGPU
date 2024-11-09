@@ -34,6 +34,8 @@ public class Demo {
     private Pointer bindGroupLayout;
     private Pointer bindGroup;
     private int uniformBufferSize;  // in bytes
+    private int uniformStride;
+    private int uniformInstances;
     private Pointer uniformData;
 
     public void init(long windowHandle) {
@@ -93,6 +95,7 @@ public class Demo {
         requiredLimits.getLimits().setMaxInterStageShaderComponents(3); // 3 floats from vert to frag
         requiredLimits.getLimits().setMaxBufferSize(300);
         requiredLimits.getLimits().setMaxVertexBufferArrayStride(12);
+        requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
 
         requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
         requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
@@ -165,10 +168,22 @@ public class Demo {
         float[] uniforms = new float[uniformBufferSize];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);
 
+        int minAlign = (int)supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
+        uniformStride = ceilToNextMultiple(uniformBufferSize, minAlign);
+        uniformInstances = 2;
+
+        System.out.println("min uniform alignment: "+minAlign);
+        System.out.println("uniform stride: "+uniformStride);
+        System.out.println("uniformBufferSize: "+uniformBufferSize);
         initBuffers();
 
 
         initBindGroups();
+    }
+
+    private int ceilToNextMultiple(int value, int step){
+        int d = value / step + (value % step == 0 ? 0 : 1);
+        return step * d;
     }
 
     private void playingWithBuffers() {
@@ -351,7 +366,7 @@ public class Demo {
         //WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Uniform buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize(uniformBufferSize);
+        bufferDesc.setSize(uniformStride * uniformInstances);
         bufferDesc.setMappedAtCreation(0L);
         uniformBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
 
@@ -523,6 +538,14 @@ public class Demo {
         uniformData.putFloat(7*Float.BYTES, 1.0f); //a
         wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, uniformBufferSize);
 
+        uniformData.putFloat(0,currentTime+0.5f);
+        // 3 floats of padding
+        uniformData.putFloat(4*Float.BYTES, 1.0f); //r
+        uniformData.putFloat(5*Float.BYTES, 0.0f); //g
+        uniformData.putFloat(6*Float.BYTES, 0.6f); //b
+        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
+        wgpu.QueueWriteBuffer(queue, uniformBuffer, uniformStride, uniformData, uniformBufferSize);
+
 
         WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
         encoderDescriptor.setNextInChain();
@@ -562,10 +585,18 @@ public class Demo {
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
         wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 0, null);
+        int[] offset = new int[1];
+        offset[0] = 0;
+        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
 
 
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
         wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+
+        offsetPtr.putInt(0, uniformStride);
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
+        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+
 
         //wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
 
@@ -690,7 +721,7 @@ public class Demo {
 
         bindingLayout.getBuffer().setNextInChain();
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-        bindingLayout.getBuffer().setHasDynamicOffset(0L);
+        bindingLayout.getBuffer().setHasDynamicOffset(1L);
 
         bindingLayout.getSampler().setNextInChain();
         bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);

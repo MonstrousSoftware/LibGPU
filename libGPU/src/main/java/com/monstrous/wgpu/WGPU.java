@@ -71,7 +71,7 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer DeviceCreateBuffer(Pointer device, WGPUBufferDescriptor bufferDesc);
     void BufferRelease(Pointer buffer);
 
-    void QueueWriteBuffer(Pointer queue, Pointer buffer1, int i, Pointer data, int length);
+    void QueueWriteBuffer(Pointer queue, Pointer buffer, int dynamicOffset, Pointer data, int length);
 
     void CommandEncoderCopyBufferToBuffer(Pointer encoder, Pointer buffer1, int i, Pointer buffer2, int i1, int i2);
     void BufferMapAsync(Pointer buffer2, WGPUMapMode wgpuMapMode, int offset, int size, WGPUBufferMapCallback onBuffer2Mapped, Pointer userData);
