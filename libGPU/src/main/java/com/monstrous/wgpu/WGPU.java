@@ -86,4 +86,18 @@ public interface WGPU { // A representation of the C interface in Java
     void RenderPassEncoderSetIndexBuffer(Pointer renderPass, Pointer indexBuffer, WGPUIndexFormat wgpuIndexFormat, int offset, long size);
 
     void RenderPassEncoderDrawIndexed(Pointer renderPass, int indexCount, int numInstances, int firstIndex, int baseVertex, int firstInstance);
+
+    Pointer DeviceCreateBindGroup(Pointer device, WGPUBindGroupDescriptor bindGroupDesc);
+
+    void BindGroupRelease(Pointer bindGroup);
+
+    void BindGroupLayoutRelease(Pointer bindGroupLayout);
+
+    void PipelineLayoutRelease(Pointer layout);
+
+    Pointer DeviceCreateBindGroupLayout(Pointer device, WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc);
+
+    void RenderPassEncoderSetBindGroup(Pointer renderPass, int groupIndex, Pointer bindGroup, int dynamicOffsetCount, Pointer dynamicOffsets);
+
+    Pointer DeviceCreatePipelineLayout(Pointer device, WGPUPipelineLayoutDescriptor layoutDesc);
 }

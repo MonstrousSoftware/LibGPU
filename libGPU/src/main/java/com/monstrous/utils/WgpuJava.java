@@ -84,7 +84,7 @@ public class WgpuJava {
         Pointer ptr = WgpuJava.createDirectPointer(floats.length * Float.BYTES);
 
         for(int i = 0; i < floats.length; i++){
-            ptr.putFloat(i * Integer.BYTES, floats[i]);
+            ptr.putFloat(i * Float.BYTES, floats[i]);   // MM said Integer
         }
 
         return ptr;

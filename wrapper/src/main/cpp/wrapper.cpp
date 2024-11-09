@@ -399,6 +399,35 @@ EXPORT void RenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEnc
     wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, slot, buffer, offset, size);
 }
 
+EXPORT void BindGroupRelease(WGPUBindGroup bindGroup){
+    wgpuBindGroupRelease(bindGroup);
+}
+
+EXPORT void BindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout){
+    wgpuBindGroupLayoutRelease(bindGroupLayout);
+}
+
+
+EXPORT void PipelineLayoutRelease(WGPUPipelineLayout layout){
+    wgpuPipelineLayoutRelease(layout);
+}
+
+EXPORT WGPUBindGroupLayout DeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor *bindGroupLayoutDesc){
+    return wgpuDeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+}
+
+EXPORT void RenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPU_NULLABLE WGPUBindGroup group, size_t dynamicOffsetCount, uint32_t const * dynamicOffsets) {
+    wgpuRenderPassEncoderSetBindGroup( renderPassEncoder,  groupIndex,   group,  dynamicOffsetCount,  dynamicOffsets);
+}
+
+EXPORT WGPUBindGroup DeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor *bindGroupDesc){
+    return wgpuDeviceCreateBindGroup(device, bindGroupDesc);
+}
+
+EXPORT WGPUPipelineLayout DeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor){
+    return wgpuDeviceCreatePipelineLayout(device, descriptor);
+}
+
 /**
  * Utility function to get a WebGPU adapter, so that
  *     WGPUAdapter adapter = requestAdapterSync(options);

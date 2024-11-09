@@ -5,12 +5,13 @@ import com.monstrous.wgpu.*;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
-import jnr.ffi.Struct;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+
+import static org.lwjgl.glfw.GLFW.glfwGetTime;
 
 
 public class Demo {
@@ -28,6 +29,11 @@ public class Demo {
     private int vertexCount;
     private Pointer indexBuffer;
     private int indexCount;
+    private Pointer uniformBuffer;
+    private Pointer layout;
+    private Pointer bindGroupLayout;
+    private Pointer bindGroup;
+    private Pointer uniformData;
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
@@ -87,6 +93,12 @@ public class Demo {
         requiredLimits.getLimits().setMaxBufferSize(300);
         requiredLimits.getLimits().setMaxVertexBufferArrayStride(12);
 
+        requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
+        requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
+        // Uniform structs have a size of maximum 16 float (more than what we need)
+        requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4);
+
+
 
         // Get Device
         WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor.createDirect();
@@ -141,9 +153,13 @@ public class Demo {
         wgpu.SurfaceConfigure(surface, config);
 
         initializePipeline();
-        playingWithBuffers();
+        //playingWithBuffers();
 
-        initVertexBuffer();
+        initBuffers();
+        initBindGroups();
+
+        float[] uniforms = new float[1];
+        uniformData = WgpuJava.createFloatArrayPointer(uniforms);
     }
 
     private void playingWithBuffers() {
@@ -244,7 +260,7 @@ public class Demo {
         return src;
     }
 
-    private void initVertexBuffer() {
+    private void initBuffers() {
 
         FileInput input = new FileInput("webgpu.txt");
         System.out.println("input file size : "+input.size());
@@ -294,23 +310,6 @@ public class Demo {
             indexData[i] = indexValues.get(i);
         }
 
-
-//        float[] vertexData = {
-//                // Define a first triangle:
-//                // x,  y,  r,  g,  b
-//                -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-//                +0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-//                +0.5f,  +0.5f, 0.0f, 0.0f, 1.0f,
-//                -0.5f,  +0.5f, 1.0f, 1.0f, 0.0f,
-//        };
-//        vertexCount = vertexData.length / 5;
-
-//        int[] indexData2 = {
-//            0, 1, 2,    // triangle 0
-//            0, 2, 3     // triangle 1
-//        };
-//        indexCount = indexData.length;
-
         // Create vertex buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Vertex buffer");
@@ -339,131 +338,37 @@ public class Demo {
         // Upload data to the buffer
         wgpu.QueueWriteBuffer(queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
 
+        // Create uniform buffer
+        //WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+        bufferDesc.setLabel("Uniform buffer");
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
+        bufferDesc.setSize(4*Float.BYTES);
+        bufferDesc.setMappedAtCreation(0L);
+        uniformBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
 
     }
 
-    public void render(){
-        // loop
-        Pointer targetView = getNextSurfaceTextureView();
-        if (targetView.address() == 0) {
-            System.out.println("*** Invalid target view");
-            return;
-        }
+    private void initBindGroups() {
+        // Create a binding
+        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
+        binding.setNextInChain();
+        binding.setBinding(0);  // binding index
+        binding.setBuffer(uniformBuffer);
+        binding.setOffset(0);
+        binding.setSize(4 * Float.BYTES);
 
-        WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
-        encoderDescriptor.setNextInChain();
-        encoderDescriptor.setLabel("My Encoder");
-
-        Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, encoderDescriptor);
-
-        WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
-        renderPassColorAttachment.setNextInChain();
-        renderPassColorAttachment.setView(targetView);
-        renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
-        renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
-        renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
-
-        renderPassColorAttachment.getClearValue().setR(0.25);
-        renderPassColorAttachment.getClearValue().setG(0.25);
-        renderPassColorAttachment.getClearValue().setB(0.25);
-        renderPassColorAttachment.getClearValue().setA(1.0);
-
-        renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
-
-        WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
-        renderPassDescriptor.setNextInChain();
-
-        renderPassDescriptor.setColorAttachmentCount(1);
-        renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
-        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        renderPassDescriptor.setDepthStencilAttachment();
-        renderPassDescriptor.setTimestampWrites();
-
-        Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-// [...] Use Render Pass
-
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
-
-        // Set vertex buffer while encoding the render pass
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
-
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
-
-        //wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
-
-        wgpu.RenderPassEncoderEnd(renderPass);
-        wgpu.RenderPassEncoderRelease(renderPass);
-
-        WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
-        bufferDescriptor.setNextInChain();
-        bufferDescriptor.setLabel("Command Buffer");
-        Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
-        wgpu.CommandEncoderRelease(encoder);
-
-
-        long[] buffers = new long[1];
-        buffers[0] = commandBuffer.address();
-        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
-        //System.out.println("Pointer: "+bufferPtr.toString());
-        //System.out.println("Submitting command...");
-        wgpu.QueueSubmit(queue, 1, bufferPtr);
-
-        wgpu.CommandBufferRelease(commandBuffer);
-        //System.out.println("Command submitted...");
-
-
-        // At the end of the frame
-        wgpu.TextureViewRelease(targetView);
-        wgpu.SurfacePresent(surface);
-
-        for(int i = 0; i < 10; i++)
-            wgpu.DeviceTick(device);
+        // A bind group contains one or multiple bindings
+        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
+        bindGroupDesc.setNextInChain();
+        bindGroupDesc.setLayout(bindGroupLayout);
+        // There must be as many bindings as declared in the layout!
+        bindGroupDesc.setEntryCount(1);
+        bindGroupDesc.setEntries(binding);
+        bindGroup = wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
-    public void exit(){
-        // cleanup
-        wgpu.BufferRelease(indexBuffer);
-        wgpu.BufferRelease(vertexBuffer);
-        wgpu.RenderPipelineRelease(pipeline);
-        wgpu.SurfaceUnconfigure(surface);
-        wgpu.SurfaceRelease(surface);
-        wgpu.QueueRelease(queue);
-        wgpu.DeviceRelease(device);
-        wgpu.InstanceRelease(instance);
-    }
 
-    private Pointer getNextSurfaceTextureView() {
-        // [...] Get the next surface texture
-
-
-        WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
-        wgpu.SurfaceGetCurrentTexture(surface, surfaceTexture);
-        //System.out.println("get current texture: "+surfaceTexture.status.get());
-        if(surfaceTexture.getStatus() != WGPUSurfaceGetCurrentTextureStatus.Success){
-            System.out.println("*** No current texture");
-            return WgpuJava.createNullPointer();
-        }
-        // [...] Create surface texture view
-        WGPUTextureViewDescriptor viewDescriptor = WGPUTextureViewDescriptor.createDirect();
-        viewDescriptor.setNextInChain();
-        viewDescriptor.setLabel("Surface texture view");
-        Pointer tex = surfaceTexture.getTexture();
-        WGPUTextureFormat format = wgpu.TextureGetFormat(tex);
-        //System.out.println("Set format "+format);
-        viewDescriptor.setFormat(format);
-        viewDescriptor.setDimension(WGPUTextureViewDimension._2D);
-        viewDescriptor.setBaseMipLevel(0);
-        viewDescriptor.setMipLevelCount(1);
-        viewDescriptor.setBaseArrayLayer(0);
-        viewDescriptor.setArrayLayerCount(1);
-        viewDescriptor.setAspect(WGPUTextureAspect.All);
-        Pointer targetView = wgpu.TextureCreateView(surfaceTexture.getTexture(), viewDescriptor);
-
-        return targetView;
-    }
-
-    void initializePipeline() {
+    private void initializePipeline() {
 
         // Create Shader Module
         WGPUShaderModuleDescriptor shaderDesc = WGPUShaderModuleDescriptor.createDirect();
@@ -476,7 +381,7 @@ public class Demo {
         shaderCodeDesc.getChain().setSType(WGPUSType.ShaderModuleWGSLDescriptor);
         shaderCodeDesc.setCode(shaderSource);
 
-        System.out.println("shaderSource: "+shaderSource);
+        //System.out.println("shaderSource: "+shaderSource);
 
         shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
@@ -552,20 +457,179 @@ public class Demo {
 
         pipelineDesc.setDepthStencil();
 
-
-
         pipelineDesc.getMultisample().setCount(1);
         pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 
-        pipelineDesc.setLayout(WgpuJava.createNullPointer());
+        // Define binding layout
+        WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(bindingLayout);
+        bindingLayout.setBinding(0);
+        bindingLayout.setVisibility(WGPUShaderStage.Vertex);
+        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
+        bindingLayout.getBuffer().setMinBindingSize(4 * Float.BYTES);
 
+        // Create a bind group layout
+        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
+        bindGroupLayoutDesc.setNextInChain();
+        bindGroupLayoutDesc.setLabel("My BG Layout");
+        bindGroupLayoutDesc.setEntryCount(1);
+        bindGroupLayoutDesc.setEntries(bindingLayout);
+        bindGroupLayout = wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+
+
+        long[] layouts = new long[1];
+        layouts[0] = bindGroupLayout.address();
+        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
+
+        // Create the pipeline layout
+        WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
+        layoutDesc.setNextInChain();
+        layoutDesc.setLabel("Pipeline Layout");
+        layoutDesc.setBindGroupLayoutCount(1);
+        layoutDesc.setBindGroupLayouts(layoutPtr);
+        layout = wgpu.DeviceCreatePipelineLayout(device, layoutDesc);
+
+        pipelineDesc.setLayout(layout);
         pipeline = wgpu.DeviceCreateRenderPipeline(device, pipelineDesc);
-
         wgpu.ShaderModuleRelease(shaderModule);
+
+
     }
 
 
+    public void render(){
+        // loop
+        Pointer targetView = getNextSurfaceTextureView();
+        if (targetView.address() == 0) {
+            System.out.println("*** Invalid target view");
+            return;
+        }
+
+        float currentTime = (float) glfwGetTime();
+        uniformData.putFloat(0,currentTime);
+        wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, Float.BYTES);
+
+
+        WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
+        encoderDescriptor.setNextInChain();
+        encoderDescriptor.setLabel("My Encoder");
+
+        Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, encoderDescriptor);
+
+        WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
+        renderPassColorAttachment.setNextInChain();
+        renderPassColorAttachment.setView(targetView);
+        renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+        renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
+        renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
+
+        renderPassColorAttachment.getClearValue().setR(0.25);
+        renderPassColorAttachment.getClearValue().setG(0.25);
+        renderPassColorAttachment.getClearValue().setB(0.25);
+        renderPassColorAttachment.getClearValue().setA(1.0);
+
+        renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
+
+        WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
+        renderPassDescriptor.setNextInChain();
+
+        renderPassDescriptor.setColorAttachmentCount(1);
+        renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
+        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
+        renderPassDescriptor.setDepthStencilAttachment();
+        renderPassDescriptor.setTimestampWrites();
+
+        Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+// [...] Use Render Pass
+
+        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+
+        // Set vertex buffer while encoding the render pass
+        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
+
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 0, null);
+
+
+        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+
+        //wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
+
+        wgpu.RenderPassEncoderEnd(renderPass);
+        wgpu.RenderPassEncoderRelease(renderPass);
+
+        WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
+        bufferDescriptor.setNextInChain();
+        bufferDescriptor.setLabel("Command Buffer");
+        Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
+        wgpu.CommandEncoderRelease(encoder);
+
+
+        long[] buffers = new long[1];
+        buffers[0] = commandBuffer.address();
+        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
+        //System.out.println("Pointer: "+bufferPtr.toString());
+        //System.out.println("Submitting command...");
+        wgpu.QueueSubmit(queue, 1, bufferPtr);
+
+        wgpu.CommandBufferRelease(commandBuffer);
+        //System.out.println("Command submitted...");
+
+
+        // At the end of the frame
+        wgpu.TextureViewRelease(targetView);
+        wgpu.SurfacePresent(surface);
+
+        for(int i = 0; i < 10; i++)
+            wgpu.DeviceTick(device);
+    }
+
+    public void exit(){
+        // cleanup
+        wgpu.PipelineLayoutRelease(layout);
+        wgpu.BindGroupLayoutRelease(bindGroupLayout);
+        wgpu.BindGroupRelease(bindGroup);
+        wgpu.BufferRelease(indexBuffer);
+        wgpu.BufferRelease(vertexBuffer);
+        wgpu.BufferRelease(uniformBuffer);
+        wgpu.RenderPipelineRelease(pipeline);
+        wgpu.SurfaceUnconfigure(surface);
+        wgpu.SurfaceRelease(surface);
+        wgpu.QueueRelease(queue);
+        wgpu.DeviceRelease(device);
+        wgpu.InstanceRelease(instance);
+    }
+
+    private Pointer getNextSurfaceTextureView() {
+        // [...] Get the next surface texture
+
+
+        WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
+        wgpu.SurfaceGetCurrentTexture(surface, surfaceTexture);
+        //System.out.println("get current texture: "+surfaceTexture.status.get());
+        if(surfaceTexture.getStatus() != WGPUSurfaceGetCurrentTextureStatus.Success){
+            System.out.println("*** No current texture");
+            return WgpuJava.createNullPointer();
+        }
+        // [...] Create surface texture view
+        WGPUTextureViewDescriptor viewDescriptor = WGPUTextureViewDescriptor.createDirect();
+        viewDescriptor.setNextInChain();
+        viewDescriptor.setLabel("Surface texture view");
+        Pointer tex = surfaceTexture.getTexture();
+        WGPUTextureFormat format = wgpu.TextureGetFormat(tex);
+        //System.out.println("Set format "+format);
+        viewDescriptor.setFormat(format);
+        viewDescriptor.setDimension(WGPUTextureViewDimension._2D);
+        viewDescriptor.setBaseMipLevel(0);
+        viewDescriptor.setMipLevelCount(1);
+        viewDescriptor.setBaseArrayLayer(0);
+        viewDescriptor.setArrayLayerCount(1);
+        viewDescriptor.setAspect(WGPUTextureAspect.All);
+        Pointer targetView = wgpu.TextureCreateView(surfaceTexture.getTexture(), viewDescriptor);
+
+        return targetView;
+    }
 
 
    final static long WGPU_LIMIT_U32_UNDEFINED = 4294967295L;
@@ -607,6 +671,27 @@ public class Demo {
         limits.setMaxComputeWorkgroupSizeY(WGPU_LIMIT_U32_UNDEFINED);
         limits.setMaxComputeWorkgroupSizeZ(WGPU_LIMIT_U32_UNDEFINED);
         limits.setMaxComputeWorkgroupsPerDimension(WGPU_LIMIT_U32_UNDEFINED);
+    }
+
+    private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
+
+        bindingLayout.getBuffer().setNextInChain();
+        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
+        bindingLayout.getBuffer().setHasDynamicOffset(0L);
+
+        bindingLayout.getSampler().setNextInChain();
+        bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);
+
+        bindingLayout.getStorageTexture().setNextInChain();
+        bindingLayout.getStorageTexture().setAccess(WGPUStorageTextureAccess.Undefined);
+        bindingLayout.getStorageTexture().setFormat(WGPUTextureFormat.Undefined);
+        bindingLayout.getStorageTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
+
+        bindingLayout.getTexture().setNextInChain();
+        bindingLayout.getTexture().setMultisampled(0L);
+        bindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Undefined);
+        bindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
+
     }
 
 }
