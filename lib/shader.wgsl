@@ -1,5 +1,8 @@
 
 struct MyUniforms {
+    projectionMatrix: mat4x4f,
+    viewMatrix : mat4x4f,
+    modelMatrix: mat4x4f,
     time: f32,
     color: vec4f,
 };
@@ -21,24 +24,31 @@ struct VertexOutput {
 fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
 
-   let ratio = 640.0 / 480.0; // The width and height of the target surface
+//   let ratio = 640.0 / 480.0; // The width and height of the target surface
+
+   //out.position = uMyUniforms.projectionMatrix * uMyUniforms.viewMatrix * uMyUniforms.modelMatrix * vec4f(in.position, 1.0);
 
    let angle = uMyUniforms.time; // you can multiply it go rotate faster
    let alpha = cos(angle);
    let beta = sin(angle);
-   var position = vec3f(
-       in.position.x,
-       alpha * in.position.y + beta * in.position.z,
-       alpha * in.position.z - beta * in.position.y,
-   );
-   out.position = vec4f(position.x, position.y * ratio, position.z * 0.5 + 0.5, 1.0);
-   // We now move the scene depending on the time!
-   //var offset = vec2f(-0.6875, -0.463);
-   //offset += 0.3 * vec2f(cos(uMyUniforms.time), sin(uMyUniforms.time));
-   //out.position = vec4f(in.position.x + offset.x, (in.position.y + offset.y) * ratio, in.position.z, 1.0);
+   var pos = vec4f(in.position, 1.0);
 
-   //out.position = vec4f(in.position.x, in.position.y, in.position.z, 1.0);
+   //pos.x = cos(uMyUniforms.time);
 
+   pos =  uMyUniforms.projectionMatrix * uMyUniforms.viewMatrix * uMyUniforms.modelMatrix * pos;
+ //  var position = pos;
+
+//   var position = vec4f(
+//       pos.x,
+//       alpha * pos.y + beta * pos.z,
+//       alpha * pos.z - beta * pos.y,
+//       1.0
+//   );
+
+//    pos.x /= pos.z;
+//    pos.y /= pos.z;
+
+   out.position = vec4f(pos.x, pos.y , pos.z * 0.5 + 0.5, 1.0);
    out.color = in.color;
    return out;
 }

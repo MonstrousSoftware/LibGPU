@@ -1,5 +1,6 @@
 package com.monstrous;
 
+import com.monstrous.math.Matrix4;
 import com.monstrous.utils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.LibraryLoader;
@@ -39,6 +40,9 @@ public class Demo {
     private Pointer uniformData;
     private Pointer depthTextureView;
     private Pointer depthTexture;
+    private Matrix4 projectionMatrix;
+    private Matrix4 viewMatrix;
+    private Matrix4 modelMatrix;
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
@@ -105,7 +109,7 @@ public class Demo {
         requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
         requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
         // Uniform structs have a size of maximum 16 float (more than what we need)
-        requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4);
+        requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4*Float.BYTES);
 
 
 
@@ -164,12 +168,21 @@ public class Demo {
         initializePipeline();
         //playingWithBuffers();
 
+        projectionMatrix = new Matrix4();
+        modelMatrix = new Matrix4();
+//        modelMatrix.scale(0.5f, 0.5f, 0.5f);
+//        modelMatrix.translate(1,0,0);
+//        modelMatrix.setToYRotation(0.59f);
+        System.out.println(modelMatrix.toString());
+        viewMatrix = new Matrix4();
 
-
+        // P matrix: 16 float
+        // M matrix: 16 float
+        // V matrix: 16 float
         // time: 1 float
         // 3 floats padding
         // color: 4 floats
-        uniformBufferSize = 8 * Float.BYTES;
+        uniformBufferSize = (3*16+8) * Float.BYTES;
         float[] uniforms = new float[uniformBufferSize];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);
 
@@ -456,7 +469,7 @@ public class Demo {
         pipelineDesc.getPrimitive().setTopology(WGPUPrimitiveTopology.TriangleList);
         pipelineDesc.getPrimitive().setStripIndexFormat(WGPUIndexFormat.Undefined);
         pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
-        pipelineDesc.getPrimitive().setCullMode(WGPUCullMode.None);
+        pipelineDesc.getPrimitive().setCullMode(WGPUCullMode.Front);
 
         WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
         fragmentState.setNextInChain();
@@ -567,21 +580,57 @@ public class Demo {
 
     }
 
-
-    public void render(){
-        // loop
-        Pointer targetView = getNextSurfaceTextureView();
-        if (targetView.address() == 0) {
-            System.out.println("*** Invalid target view");
-            return;
+    private void setUniformColor(int offset, float r, float g, float b, float a ){
+        uniformData.putFloat(offset+0*Float.BYTES, r);
+        uniformData.putFloat(offset+1*Float.BYTES, g);
+        uniformData.putFloat(offset+2*Float.BYTES, b);
+        uniformData.putFloat(offset+3*Float.BYTES, a);
+    }
+    private void setUniformMatrix(int offset, Matrix4 mat ){
+        for(int i = 0; i < 16; i++){
+            uniformData.putFloat(offset+i*Float.BYTES, mat.val[i]);
         }
+    }
+
+    private void setUniforms(){
         float currentTime =  (float) glfwGetTime();
-        uniformData.putFloat(0,currentTime);
+
+        projectionMatrix.setToProjection(0.1f, 3.0f, 90f, 640f/480f);
+        //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
+
+        //modelMatrix.idt().scale(0.5f);
+        viewMatrix.idt();
+        Matrix4 R1 = new Matrix4();
+        R1.setToZRotation(currentTime*0.5f);
+        Matrix4 R2 = new Matrix4();
+        Matrix4 S = new Matrix4().scale(0.3f);
+        Matrix4 T = new Matrix4().translate(0.5f, 0f, 0f);
+
+        R2.setToXRotation((float) (-1.2* Math.PI / 4.0)); // tilt the view
+        // mul order: first scale, then transate, then rotate
+        T.mul(S);
+        R1.mul(T);
+        R2.mul(R1);
+        viewMatrix.set(R2);
+        //viewMatrix.translate(0,0.2f, 0);
+        //viewMatrix.setToZRotation((float) (Math.PI*0.5f));
+        //viewMatrix.translate(0, 0, (float)Math.cos(currentTime)*0.5f );
+
+        int offset = 0;
+        setUniformMatrix(offset, projectionMatrix);
+        offset += 16*Float.BYTES;
+        setUniformMatrix(offset, viewMatrix);
+        offset += 16*Float.BYTES;
+        setUniformMatrix(offset, modelMatrix);
+        offset += 16*Float.BYTES;
+        uniformData.putFloat(offset, currentTime);
+        offset += 4*Float.BYTES;
         // 3 floats of padding
-        uniformData.putFloat(4*Float.BYTES, 0.0f); //r
-        uniformData.putFloat(5*Float.BYTES, 1.0f); //g
-        uniformData.putFloat(6*Float.BYTES, 0.4f); //b
-        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
+        setUniformColor(offset, 0.0f, 1.0f, 0.4f, 1.0f);
+//        uniformData.putFloat(4*Float.BYTES, 0.0f); //r
+//        uniformData.putFloat(5*Float.BYTES, 1.0f); //g
+//        uniformData.putFloat(6*Float.BYTES, 0.4f); //b
+//        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
         wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, uniformBufferSize);
 
 //        uniformData.putFloat(0,currentTime+0.5f);
@@ -592,6 +641,17 @@ public class Demo {
 //        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
 //        wgpu.QueueWriteBuffer(queue, uniformBuffer, uniformStride, uniformData, uniformBufferSize);
 
+
+    }
+
+    public void render(){
+        // loop
+        Pointer targetView = getNextSurfaceTextureView();
+        if (targetView.address() == 0) {
+            System.out.println("*** Invalid target view");
+            return;
+        }
+        setUniforms();
 
         WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
         encoderDescriptor.setNextInChain();
