@@ -33,6 +33,7 @@ public class Demo {
     private Pointer layout;
     private Pointer bindGroupLayout;
     private Pointer bindGroup;
+    private int uniformBufferSize;  // in bytes
     private Pointer uniformData;
 
     public void init(long windowHandle) {
@@ -155,11 +156,19 @@ public class Demo {
         initializePipeline();
         //playingWithBuffers();
 
-        initBuffers();
-        initBindGroups();
 
-        float[] uniforms = new float[1];
+
+        // time: 1 float
+        // 3 floats padding
+        // color: 4 floats
+        uniformBufferSize = 8 * Float.BYTES;
+        float[] uniforms = new float[uniformBufferSize];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);
+
+        initBuffers();
+
+
+        initBindGroups();
     }
 
     private void playingWithBuffers() {
@@ -342,7 +351,7 @@ public class Demo {
         //WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Uniform buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize(4*Float.BYTES);
+        bufferDesc.setSize(uniformBufferSize);
         bufferDesc.setMappedAtCreation(0L);
         uniformBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
 
@@ -355,7 +364,7 @@ public class Demo {
         binding.setBinding(0);  // binding index
         binding.setBuffer(uniformBuffer);
         binding.setOffset(0);
-        binding.setSize(4 * Float.BYTES);
+        binding.setSize(uniformBufferSize);
 
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
@@ -465,9 +474,9 @@ public class Demo {
         WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(bindingLayout);
         bindingLayout.setBinding(0);
-        bindingLayout.setVisibility(WGPUShaderStage.Vertex);
+        bindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
-        bindingLayout.getBuffer().setMinBindingSize(4 * Float.BYTES);
+        bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
 
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
@@ -507,7 +516,12 @@ public class Demo {
         }
         float currentTime =  (float) glfwGetTime();
         uniformData.putFloat(0,currentTime);
-        wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, Float.BYTES);
+        // 3 floats of padding
+        uniformData.putFloat(4*Float.BYTES, 0.0f); //r
+        uniformData.putFloat(5*Float.BYTES, 1.0f); //g
+        uniformData.putFloat(6*Float.BYTES, 0.4f); //b
+        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
+        wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, uniformBufferSize);
 
 
         WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();

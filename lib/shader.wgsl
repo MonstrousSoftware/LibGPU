@@ -1,7 +1,11 @@
 
+struct MyUniforms {
+    time: f32,
+    color: vec4f,
+};
 
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
-@group(0) @binding(0) var<uniform> uTime: f32;
+@group(0) @binding(0) var<uniform> uMyUniforms: MyUniforms;
 
 struct VertexInput {
     @location(0) position: vec2f,
@@ -19,7 +23,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
    let ratio = 640.0 / 480.0; // The width and height of the target surface
    // We now move the scene depending on the time!
    var offset = vec2f(-0.6875, -0.463);
-   offset += 0.3 * vec2f(cos(uTime), sin(uTime));
+   offset += 0.3 * vec2f(cos(uMyUniforms.time), sin(uMyUniforms.time));
    out.position = vec4f(in.position.x + offset.x, (in.position.y + offset.y) * ratio, 0.0, 1.0);
    out.color = in.color;
    return out;
@@ -27,6 +31,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
+    let color = in.color * uMyUniforms.color.rgb;
     //let linear_color = pow(in.color, vec3f(2.2));
-    return vec4f(in.color, 1.0);
+    return vec4f(color, 1.0);
 }
