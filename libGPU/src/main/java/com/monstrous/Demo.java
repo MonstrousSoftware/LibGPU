@@ -505,8 +505,7 @@ public class Demo {
             System.out.println("*** Invalid target view");
             return;
         }
-
-        float currentTime = (float) glfwGetTime();
+        float currentTime =  (float) glfwGetTime();
         uniformData.putFloat(0,currentTime);
         wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, Float.BYTES);
 
