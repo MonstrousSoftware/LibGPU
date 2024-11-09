@@ -595,7 +595,7 @@ public class Demo {
     private void setUniforms(){
         float currentTime =  (float) glfwGetTime();
 
-        projectionMatrix.setToProjection(0.1f, 3.0f, 90f, 640f/480f);
+        projectionMatrix.setToProjection(0.1f, 3.0f, 60f, 640f/480f);
         //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
 
         //modelMatrix.idt().scale(0.5f);
@@ -603,7 +603,7 @@ public class Demo {
         Matrix4 R1 = new Matrix4();
         R1.setToZRotation(currentTime*0.5f);
         Matrix4 R2 = new Matrix4();
-        Matrix4 S = new Matrix4().scale(0.3f);
+        Matrix4 S = new Matrix4().scale(0.6f);
         Matrix4 T = new Matrix4().translate(0.5f, 0f, 0f);
 
         R2.setToXRotation((float) (-1.2* Math.PI / 4.0)); // tilt the view
