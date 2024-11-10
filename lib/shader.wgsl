@@ -39,8 +39,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-    //var color = in.normal * 0.5 + 0.5;
-    let color = in.color * uMyUniforms.color.rgb;
+    var color = in.normal * 0.5 + 0.5;
+    //let color = in.color * uMyUniforms.color.rgb;
     //let linear_color = pow(in.color, vec3f(2.2));
     //color = vec3f(1.0, 0.0, 0.4);
     return vec4f(color, 1.0);
