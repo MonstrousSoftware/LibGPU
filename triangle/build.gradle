@@ -29,18 +29,19 @@ tasks.withType(LinkExecutable).configureEach {
 
 
 task copyDLL(type: Copy) {
-    from 'src/main/lib/'
+    from '../lib'
     into 'build/install/main/debug/lib'
     include '*.dll'
     outputs.upToDateWhen { false }
 }
 
 tasks.register('runDebug') {
-    dependsOn assemble  // build executable if it does not exist
+    dependsOn build  // build executable if it does not exist
     dependsOn copyDLL
     doLast {
         exec {
             executable = 'build/install/main/debug/lib/triangle.exe'
+            setIgnoreExitValue(true)
         }
     }
 }

@@ -1,7 +1,9 @@
 package com.monstrous.wgpu;
 
 import com.monstrous.utils.WgpuJava;
+import com.monstrous.utils.CStrPointer;
 import com.monstrous.utils.WgpuJavaStruct;
+import com.monstrous.utils.RustCString;
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
 
@@ -9,32 +11,31 @@ import jnr.ffi.Struct;
 public class WGPUChainedStruct extends WgpuJavaStruct {
 
     private final DynamicStructRef<WGPUChainedStruct> next = new DynamicStructRef<>(WGPUChainedStruct.class);
-    private final Struct.Enum<WGPUSType> sType = new Struct.Enum<>(WGPUSType.class);
+    private final Unsigned32 sType = new Unsigned32();
 
-    protected WGPUChainedStruct(){}
-
+    private WGPUChainedStruct(){}
 
     @Deprecated
     public WGPUChainedStruct(Runtime runtime){
         super(runtime);
     }
 
-    /**
-     * Creates this struct on the java heap.
-     * In general, this should <b>not</b> be used because these structs
-     * cannot be directly passed into native code.
-     */
+	/**
+	* Creates this struct on the java heap.
+	* In general, this should <b>not</b> be used because these structs
+	* cannot be directly passed into native code. 
+	*/
     public static WGPUChainedStruct createHeap(){
         return new WGPUChainedStruct();
     }
 
-    /**
-     * Creates this struct in direct memory.
-     * This is how most structs should be created (unless, they
-     * are members of a nothing struct)
-     *
-     * @see WgpuJavaStruct#useDirectMemory
-     */
+	/**
+	* Creates this struct in direct memory.
+	* This is how most structs should be created (unless, they
+	* are members of a nothing struct)
+	* 
+	* @see WgpuJavaStruct#useDirectMemory
+	*/
     public static WGPUChainedStruct createDirect(){
         var struct = new WGPUChainedStruct();
         struct.useDirectMemory();
@@ -54,11 +55,11 @@ public class WGPUChainedStruct extends WgpuJavaStruct {
         }
     }
 
-    public WGPUSType getSType(){
+    public long getSType(){
         return sType.get();
     }
 
-    public void setSType(WGPUSType x){
+    public void setSType(long x){
         this.sType.set(x);
     }
 

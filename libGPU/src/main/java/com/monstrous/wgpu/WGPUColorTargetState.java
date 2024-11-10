@@ -11,9 +11,9 @@ import jnr.ffi.Struct;
 public class WGPUColorTargetState extends WgpuJavaStruct {
 
     private final DynamicStructRef<WGPUChainedStruct> nextInChain = new DynamicStructRef<>(WGPUChainedStruct.class);
-    private final Struct.Enum<WGPUTextureFormat> format = new Struct.Enum<>(WGPUTextureFormat.class);
+    private final Enum<WGPUTextureFormat> format = new Enum<>(WGPUTextureFormat.class);
     private final DynamicStructRef<WGPUBlendState> blend = new DynamicStructRef<>(WGPUBlendState.class);
-    private final Struct.Enum<WGPUColorWriteMask> writeMask = new Struct.Enum<>(WGPUColorWriteMask.class);
+    private final Unsigned32 writeMask = new Unsigned32();
 
     private WGPUColorTargetState(){}
 
@@ -22,22 +22,22 @@ public class WGPUColorTargetState extends WgpuJavaStruct {
         super(runtime);
     }
 
-    /**
-     * Creates this struct on the java heap.
-     * In general, this should <b>not</b> be used because these structs
-     * cannot be directly passed into native code.
-     */
+	/**
+	* Creates this struct on the java heap.
+	* In general, this should <b>not</b> be used because these structs
+	* cannot be directly passed into native code. 
+	*/
     public static WGPUColorTargetState createHeap(){
         return new WGPUColorTargetState();
     }
 
-    /**
-     * Creates this struct in direct memory.
-     * This is how most structs should be created (unless, they
-     * are members of a nothing struct)
-     *
-     * @see WgpuJavaStruct#useDirectMemory
-     */
+	/**
+	* Creates this struct in direct memory.
+	* This is how most structs should be created (unless, they
+	* are members of a nothing struct)
+	* 
+	* @see WgpuJavaStruct#useDirectMemory
+	*/
     public static WGPUColorTargetState createDirect(){
         var struct = new WGPUColorTargetState();
         struct.useDirectMemory();
@@ -77,11 +77,11 @@ public class WGPUColorTargetState extends WgpuJavaStruct {
         }
     }
 
-    public WGPUColorWriteMask getWriteMask(){
+    public long getWriteMask(){
         return writeMask.get();
     }
 
-    public void setWriteMask(WGPUColorWriteMask x){
+    public void setWriteMask(long x){
         this.writeMask.set(x);
     }
 

@@ -123,8 +123,32 @@ bool Application::Initialize() {
 	WGPURequestAdapterOptions adapterOpts = {};
 	adapterOpts.nextInChain = nullptr;
 	adapterOpts.compatibleSurface = surface;
+	adapterOpts.backendType = WGPUBackendType_D3D12;
 	WGPUAdapter adapter = requestAdapterSync(instance, &adapterOpts);
 	std::cout << "Got adapter: " << adapter << std::endl;
+
+	WGPUAdapterProperties properties = {};
+    properties.nextInChain = nullptr;
+    wgpuAdapterGetProperties(adapter, &properties);
+    std::cout << "Adapter properties:" << std::endl;
+    std::cout << " - vendorID: " << properties.vendorID << std::endl;
+    if (properties.vendorName) {
+        std::cout << " - vendorName: " << properties.vendorName << std::endl;
+    }
+    if (properties.architecture) {
+        std::cout << " - architecture: " << properties.architecture << std::endl;
+    }
+    std::cout << " - deviceID: " << properties.deviceID << std::endl;
+    if (properties.name) {
+        std::cout << " - name: " << properties.name << std::endl;
+    }
+    if (properties.driverDescription) {
+        std::cout << " - driverDescription: " << properties.driverDescription << std::endl;
+    }
+    std::cout << std::hex;
+    std::cout << " - adapterType: 0x" << properties.adapterType << std::endl;
+    std::cout << " - backendType: 0x" << properties.backendType << std::endl;
+    std::cout << std::dec; // Restore decimal numbers
 
 	wgpuInstanceRelease(instance);
 
@@ -177,6 +201,8 @@ bool Application::Initialize() {
 	wgpuAdapterRelease(adapter);
 
 	InitializePipeline();
+
+// Playing with Buffers
 
 	WGPUBufferDescriptor bufferDesc = {};
 	bufferDesc.nextInChain = nullptr;
@@ -241,10 +267,14 @@ bool Application::Initialize() {
 	wgpuBufferMapAsync(buffer2, WGPUMapMode_Read, 0, 16, onBuffer2Mapped, (void*)&context);
 	//                      Pass the address of the Context instance here: ^^^^^^^^^^^^^^
 
-	//while (!context.ready) {
+	while (!context.ready) {
 		//  ^^^^^^^^^^^^^ Use context.ready here instead of ready
-	//	wgpuPollEvents(device, true /* yieldToBrowser */);
-	//}
+#if defined(WEBGPU_BACKEND_DAWN)
+	    wgpuDeviceTick(device);
+#elif defined(WEBGPU_BACKEND_WGPU)
+	    wgpuDevicePoll(device, false, nullptr);
+#endif
+	}
 
 	// In Terminate()
 	wgpuBufferRelease(buffer1);
@@ -335,9 +365,11 @@ void Application::MainLoop() {
 #if defined(WEBGPU_BACKEND_DAWN)
 	wgpuDeviceTick(device);
 #elif defined(WEBGPU_BACKEND_WGPU)
-	//wgpuDevicePoll(device, false, nullptr);
+	wgpuDevicePoll(device, false, nullptr);
 #endif
 }
+
+
 
 bool Application::IsRunning() {
 	return !glfwWindowShouldClose(window);

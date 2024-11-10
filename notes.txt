@@ -131,6 +131,23 @@ Warning: Disable Intel Vulkan adapter on Windows driver version 100.8729. See ht
 
 Fixed by performing a graphics driver update.
 
+Intel Driver & Support Assistant
+Intel UHD Graphics 620
+Driver
+Version 27.20.100.8729
+Date 2020-11-09
+"Up to date" (Nov 2024).
+
+Can be worked around for now by specifying a non-Vulkan backend when requesting the adapter:
+	adapterOpts.backendType = WGPUBackendType_D3D12;
+
+Download newer driver from:
+https://www.intel.com/content/www/us/en/support/products/126789/graphics/processor-graphics/intel-uhd-graphics-family/intel-uhd-graphics-620.html
+Download and run Intel Graphics driver installer
+Version
+31.0.101.2130
+Date
+2024-08-13
 
 
 Warning: GetPreferredFormat is deprecated, use GetCapabilities().format[0] instead as the preferred format.
@@ -186,7 +203,7 @@ Some issues:
 
         E.g. in WGPUSurfaceConfiguration.usage
 
-        FIX: Alias WGPUColorWriteMaskFlags to WGPUColorWriteMask : and likewise for any identifier ending in Flags: DONE
+        Dirty fix: Alias WGPUColorWriteMaskFlags to WGPUColorWriteMask : DONE
 
 
 2.        public class WGPUDeviceDescriptor extends WgpuJavaStruct {
@@ -213,7 +230,7 @@ Some issues:
 
         public class WGPUShaderModuleWGSLDescriptor extends WGPUChainedStruct - but this gives all sorts of problems
 
-        Instead: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
+        Or use: shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
 
 4. Sometimes (1 in 2 runs) the demo crashes. FIXED
@@ -223,6 +240,56 @@ Some issues:
     Description: D3D12 driver version 32.0.15.6094
 
     The crash is prevented by setting backend to D3D12 or Vulkan, i.e. not Undefined.
+
+Status of triangle module:
+
+This is a simple webgpu app in C++ using the Dawn backend and GLFW3.
+It helps to test the C++ compiler is working and that WebGPU is working
+on your machine.
+
+- use Gradle command  'other\runDebug' to build and run the app.
+- starts app, shows triangle but crashes after a few seconds.
+- use Gradle command `build\clean` to clean up.
+
+
+
+Troubleshooting:
+
+DLL Link error on startup:
+
+    Exception in thread "main" java.lang.UnsatisfiedLinkError: unknown
+    Library names
+    [nativec]
+
+1. Make sure nativec.dll is compiled and present in src/main/c (run compileDawn.bat) (to do: do by gradle task instead)
+2. Run Main from the project window by right-click, Run Main:Main()
+3. Make sure the config of Main has working directory: C:\Coding\IdeaProjects\CallingWebGPU\libGPU\src\main\c
+
+Or Gradle task libGPU/application/run
+
+
+3/11:
+Added module wrapper to compile the C++ code for wrapper.dll.
+
+Run wrapper/build to create wrapper.dll in root/lib
+
+
+
+Note: WGPUSurfaceConfiguration has a pointer to a list of enums.
+
+    typedef struct WGPUSurfaceConfiguration {
+        WGPUChainedStruct const * nextInChain;
+        WGPUDevice device;
+        WGPUTextureFormat format;
+        WGPUTextureUsageFlags usage;
+        size_t viewFormatCount;
+        WGPUTextureFormat const * viewFormats;
+        WGPUCompositeAlphaMode alphaMode;
+        uint32_t width;
+        uint32_t height;
+        WGPUPresentMode presentMode;
+    } WGPUSurfaceConfiguration WGPU_STRUCTURE_ATTRIB
+
 
 5. Orring flags is clumsy with Java enums:
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst.intValue() + WGPUBufferUsage.CopySrc.intValue() );
