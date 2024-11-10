@@ -101,11 +101,11 @@ public class Demo {
         setDefault(requiredLimits.getLimits());
         requiredLimits.getLimits().setMaxVertexAttributes(2);
         requiredLimits.getLimits().setMaxVertexBuffers(2);
-        requiredLimits.getLimits().setMaxInterStageShaderComponents(6); //
+        requiredLimits.getLimits().setMaxInterStageShaderComponents(8); //
 
         // from vert to frag
         requiredLimits.getLimits().setMaxBufferSize(300);
-        requiredLimits.getLimits().setMaxVertexBufferArrayStride(9*Float.BYTES);
+        requiredLimits.getLimits().setMaxVertexBufferArrayStride(11*Float.BYTES);
         requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
         requiredLimits.getLimits().setMaxTextureDimension1D(480);
         requiredLimits.getLimits().setMaxTextureDimension2D(640);
@@ -313,7 +313,7 @@ public class Demo {
     private void initBuffers() {
         int dimensions = 3;
         FileInput input = new FileInput("plane.txt");
-        int vertSize = 6+dimensions; // in floats
+        int vertSize = 8+dimensions; // in floats
         ArrayList<Integer> indexValues = new ArrayList<>();
         ArrayList<Float> vertFloats = new ArrayList<>();
         int mode = 0;
@@ -445,7 +445,7 @@ public class Demo {
 
 
         //  create an array of WGPUVertexAttribute
-        int attribCount = 3;
+        int attribCount = 4;
 
         WGPUVertexAttribute positionAttrib =  WGPUVertexAttribute.createDirect();
 
@@ -466,12 +466,18 @@ public class Demo {
         colorAttrib.setOffset(6*Float.BYTES);
         colorAttrib.setShaderLocation(2);
 
+        WGPUVertexAttribute uvAttrib = WGPUVertexAttribute.createDirect();   // freed where?
+
+        uvAttrib.setFormat(WGPUVertexFormat.Float32x2);
+        uvAttrib.setOffset(9*Float.BYTES);
+        uvAttrib.setShaderLocation(3);
+
 
         WGPUVertexBufferLayout vertexBufferLayout = WGPUVertexBufferLayout.createDirect();
         vertexBufferLayout.setAttributeCount(attribCount);
 
-        vertexBufferLayout.setAttributes(positionAttrib, normalAttrib, colorAttrib);
-        vertexBufferLayout.setArrayStride(9*Float.BYTES);
+        vertexBufferLayout.setAttributes(positionAttrib, normalAttrib, colorAttrib, uvAttrib);
+        vertexBufferLayout.setArrayStride(11*Float.BYTES);
         vertexBufferLayout.setStepMode(WGPUVertexStepMode.Vertex);
 
 
@@ -727,7 +733,7 @@ public class Demo {
     private void setUniforms(){
 
         float currentTime =  (float) glfwGetTime();
-        updateMatrices(currentTime);
+        updateMatrices2(currentTime);
 
         int offset = 0;
         setUniformMatrix(uniformData, offset, projectionMatrix);
