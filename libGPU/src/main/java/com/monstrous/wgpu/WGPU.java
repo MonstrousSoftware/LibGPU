@@ -106,4 +106,6 @@ public interface WGPU { // A representation of the C interface in Java
     void TextureDestroy(Pointer depthTexture);
 
     void TextureRelease(Pointer depthTexture);
+
+    void QueueWriteTexture(Pointer queue, WGPUImageCopyTexture destination, Pointer pixelPtr, int i, WGPUTextureDataLayout source, WGPUExtent3D size);
 }

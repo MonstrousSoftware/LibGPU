@@ -442,6 +442,10 @@ EXPORT void TextureRelease(WGPUTexture texture){
     wgpuTextureRelease(texture);
 }
 
+EXPORT void QueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const * writeSize){
+    wgpuQueueWriteTexture(queue, destination, data, dataSize, dataLayout, writeSize);
+}
+
 /**
  * Utility function to get a WebGPU adapter, so that
  *     WGPUAdapter adapter = requestAdapterSync(options);

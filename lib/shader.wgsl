@@ -9,6 +9,8 @@ struct MyUniforms {
 
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 @group(0) @binding(0) var<uniform> uMyUniforms: MyUniforms;
+@group(0) @binding(1) var gradientTexture: texture_2d<f32>;
+
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -47,7 +49,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let shading = shading1 * lightColor1 + shading2 * lightColor2;
 
-    let color = in.color * shading;
+    //let color = in.color * shading;
 
+    //let color = in.position.xyz /256.0;
+    let color = textureLoad(gradientTexture, vec2<i32>(in.position.xy), 0).rgb;
     return vec4f(color, 1.0);
 }

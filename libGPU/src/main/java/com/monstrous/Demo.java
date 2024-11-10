@@ -43,6 +43,8 @@ public class Demo {
     private Matrix4 projectionMatrix;
     private Matrix4 viewMatrix;
     private Matrix4 modelMatrix;
+    private Pointer texture;
+    private Pointer textureView;
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
@@ -107,6 +109,7 @@ public class Demo {
         requiredLimits.getLimits().setMaxTextureDimension1D(480);
         requiredLimits.getLimits().setMaxTextureDimension2D(640);
         requiredLimits.getLimits().setMaxTextureArrayLayers(1);
+        requiredLimits.getLimits().setMaxSampledTexturesPerShaderStage(1);
 
         requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
         requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
@@ -169,6 +172,8 @@ public class Demo {
 
         initializePipeline();
         //playingWithBuffers();
+
+        createTexture();
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
@@ -306,7 +311,7 @@ public class Demo {
 
     private void initBuffers() {
         int dimensions = 3;
-        FileInput input = new FileInput("pyramid.txt");
+        FileInput input = new FileInput("plane.txt");
         int vertSize = 6+dimensions; // in floats
         ArrayList<Integer> indexValues = new ArrayList<>();
         ArrayList<Float> vertFloats = new ArrayList<>();
@@ -401,13 +406,19 @@ public class Demo {
         binding.setOffset(0);
         binding.setSize(uniformBufferSize);
 
+        WGPUBindGroupEntry texBinding = WGPUBindGroupEntry.createDirect();
+        texBinding.setNextInChain();
+        texBinding.setBinding(1);  // binding index
+        texBinding.setTextureView(textureView);
+
+
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(1);
-        bindGroupDesc.setEntries(binding);
+        bindGroupDesc.setEntryCount(2);
+        bindGroupDesc.setEntries(binding, texBinding);
         bindGroup = wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
@@ -525,6 +536,7 @@ public class Demo {
 
         // Create the depth texture
         WGPUTextureDescriptor depthTextureDesc = WGPUTextureDescriptor.createDirect();
+        depthTextureDesc.setNextInChain();
         depthTextureDesc.setDimension( WGPUTextureDimension._2D);
         depthTextureDesc.setFormat( depthTextureFormat );
         depthTextureDesc.setMipLevelCount(1);
@@ -561,12 +573,19 @@ public class Demo {
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
         bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
 
+        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(texBindingLayout);
+        texBindingLayout.setBinding(1);
+        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
         bindGroupLayoutDesc.setNextInChain();
         bindGroupLayoutDesc.setLabel("My BG Layout");
-        bindGroupLayoutDesc.setEntryCount(1);
-        bindGroupLayoutDesc.setEntries(bindingLayout);
+        bindGroupLayoutDesc.setEntryCount(2);
+        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout);
         bindGroupLayout = wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
 
 
@@ -589,6 +608,67 @@ public class Demo {
 
     }
 
+    private void createTexture() {
+
+        // Create the texture
+        WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
+        textureDesc.setNextInChain();
+        textureDesc.setDimension(WGPUTextureDimension._2D);
+        textureDesc.setFormat(WGPUTextureFormat.RGBA8Unorm);
+        textureDesc.setMipLevelCount(1);
+        textureDesc.setSampleCount(1);
+        textureDesc.getSize().setWidth(256);
+        textureDesc.getSize().setHeight(256);
+        textureDesc.getSize().setDepthOrArrayLayers(1);
+        textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
+        textureDesc.setViewFormatCount(0);
+        textureDesc.setViewFormats(WgpuJava.createNullPointer());
+        texture = wgpu.DeviceCreateTexture(device, textureDesc);
+
+        // Create the view of the depth texture manipulated by the rasterizer
+        WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
+        textureViewDesc.setAspect(WGPUTextureAspect.All);
+        textureViewDesc.setBaseArrayLayer(0);
+        textureViewDesc.setArrayLayerCount(1);
+        textureViewDesc.setBaseMipLevel(0);
+        textureViewDesc.setMipLevelCount(1);
+        textureViewDesc.setDimension( WGPUTextureViewDimension._2D);
+        textureViewDesc.setFormat( textureDesc.getFormat() );
+        textureView = wgpu.TextureCreateView(texture, textureViewDesc);
+
+        byte[] pixels = new byte[4 * 256 * 256];
+        for (int x = 0; x < 256; x++) {
+            for (int y = 0; y < 256; y++) {
+                int offset = 4*(256 * x + y);
+                pixels[offset++] = (byte) x;
+                pixels[offset++] = (byte) y;
+                pixels[offset++] = (byte) 128;
+                pixels[offset++] = (byte) 255;
+            }
+        }
+
+        // Arguments telling which part of the texture we upload to
+        // (together with the last argument of writeTexture)
+        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+        destination.setTexture(texture);
+        destination.setMipLevel(0);
+        destination.getOrigin().setX(0);
+        destination.getOrigin().setY(0);
+        destination.getOrigin().setZ(0);
+        destination.setAspect(WGPUTextureAspect.All);
+
+        // Arguments telling how the C++ side pixel memory is laid out
+        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+        source.setOffset(0);
+        source.setBytesPerRow(4*256);
+        source.setRowsPerImage(256);
+
+        Pointer pixelPtr = WgpuJava.createByteArrayPointer(pixels);
+
+        wgpu.QueueWriteTexture(queue, destination, pixelPtr, 256*256, source, textureDesc.getSize());
+    }
+
+
     private void setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
         data.putFloat(offset+0*Float.BYTES, r);
         data.putFloat(offset+1*Float.BYTES, g);
@@ -603,7 +683,7 @@ public class Demo {
 
     private void updateUniforms(float currentTime){
 
-        projectionMatrix.setToPerspective(1.5f, 0.01f, 5.0f, 640f/480f);
+        projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, 640f/480f);
         //projectionMatrix.setToProjection(0.001f, 3.0f, 60f, 640f/480f);
         //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
         modelMatrix.idt();//.setToXRotation((float) ( -0.5f*Math.PI ));
@@ -614,7 +694,7 @@ public class Demo {
         viewMatrix.idt();
         Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.6f);
         Matrix4 R2 = new Matrix4().setToXRotation((float) (-0.5* Math.PI / 4.0)); // tilt the view
-        Matrix4 S = new Matrix4().scale(0.6f);
+        Matrix4 S = new Matrix4().scale(1.6f);
         Matrix4 T = new Matrix4().translate(0.8f, 0f, 0f);
         Matrix4 TC = new Matrix4().translate(0.0f, -1f, 3f);
 
@@ -759,6 +839,9 @@ public class Demo {
         wgpu.TextureViewRelease(depthTextureView);
         wgpu.TextureDestroy(depthTexture);
         wgpu.TextureRelease(depthTexture);
+        wgpu.TextureViewRelease(textureView);
+        wgpu.TextureDestroy(texture);
+        wgpu.TextureRelease(texture);
         wgpu.PipelineLayoutRelease(layout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BindGroupRelease(bindGroup);
