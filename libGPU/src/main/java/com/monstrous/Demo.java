@@ -6,7 +6,6 @@ import com.monstrous.wgpu.*;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
-import jnr.ffi.Struct;
 
 import java.io.IOException;
 import java.nio.file.Files;
