@@ -52,6 +52,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //let color = in.color * shading;
 
     //let color = in.position.xyz /256.0;
-    let color = textureLoad(gradientTexture, vec2<i32>(in.position.xy), 0).rgb;
+    var color = textureLoad(gradientTexture, vec2<i32>(in.position.xy), 0).rgb;
+   //color.r = 1.0;
     return vec4f(color, 1.0);
 }

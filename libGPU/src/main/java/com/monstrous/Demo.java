@@ -6,6 +6,7 @@ import com.monstrous.wgpu.*;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
+import jnr.ffi.Struct;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -637,12 +638,12 @@ public class Demo {
         textureView = wgpu.TextureCreateView(texture, textureViewDesc);
 
         byte[] pixels = new byte[4 * 256 * 256];
-        for (int x = 0; x < 256; x++) {
-            for (int y = 0; y < 256; y++) {
-                int offset = 4*(256 * x + y);
-                pixels[offset++] = (byte) x;
-                pixels[offset++] = (byte) y;
-                pixels[offset++] = (byte) 128;
+        int offset = 0;
+        for (int y = 0; y < 256; y++) {
+            for (int x = 0; x < 256; x++) {
+                pixels[offset++] = (byte) ((x/16) % 2 == (y/16) % 2 ? 255 : 0);
+                pixels[offset++] = (byte) (((x-y)/16) % 2 == 0 ? 255 : 0);
+                pixels[offset++] = (byte) (((x+y)/16) % 2 == 0 ? 255 : 0);
                 pixels[offset++] = (byte) 255;
             }
         }
@@ -655,7 +656,7 @@ public class Demo {
         destination.getOrigin().setX(0);
         destination.getOrigin().setY(0);
         destination.getOrigin().setZ(0);
-        destination.setAspect(WGPUTextureAspect.All);
+        destination.setAspect(WGPUTextureAspect.All);   // not relevant
 
         // Arguments telling how the C++ side pixel memory is laid out
         WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
@@ -665,7 +666,13 @@ public class Demo {
 
         Pointer pixelPtr = WgpuJava.createByteArrayPointer(pixels);
 
-        wgpu.QueueWriteTexture(queue, destination, pixelPtr, 256*256, source, textureDesc.getSize());
+        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+        ext.setWidth(256);
+        ext.setHeight(256);
+        ext.setDepthOrArrayLayers(1);
+
+        // N.B. using textureDesc.getSize() as last param doesn't work!
+        wgpu.QueueWriteTexture(queue, destination, pixelPtr, 256*256*4, source, ext);
     }
 
 
@@ -681,7 +688,15 @@ public class Demo {
         }
     }
 
-    private void updateUniforms(float currentTime){
+    private void updateMatrices(float currentTime){
+        projectionMatrix.setToOrtho(-1.1f, 1.1f, -1.1f, 1.1f, -1, 1);
+
+        modelMatrix.setToXRotation((float) ( -0.5f*Math.PI ));  // tilt to face camera
+        viewMatrix.idt();
+
+    }
+
+    private void updateMatrices2(float currentTime){
 
         projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, 640f/480f);
         //projectionMatrix.setToProjection(0.001f, 3.0f, 60f, 640f/480f);
@@ -712,7 +727,7 @@ public class Demo {
     private void setUniforms(){
 
         float currentTime =  (float) glfwGetTime();
-        updateUniforms(currentTime);
+        updateMatrices(currentTime);
 
         int offset = 0;
         setUniformMatrix(uniformData, offset, projectionMatrix);
