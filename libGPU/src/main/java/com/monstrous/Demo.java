@@ -580,68 +580,56 @@ public class Demo {
 
     }
 
-    private void setUniformColor(int offset, float r, float g, float b, float a ){
-        uniformData.putFloat(offset+0*Float.BYTES, r);
-        uniformData.putFloat(offset+1*Float.BYTES, g);
-        uniformData.putFloat(offset+2*Float.BYTES, b);
-        uniformData.putFloat(offset+3*Float.BYTES, a);
+    private void setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
+        data.putFloat(offset+0*Float.BYTES, r);
+        data.putFloat(offset+1*Float.BYTES, g);
+        data.putFloat(offset+2*Float.BYTES, b);
+        data.putFloat(offset+3*Float.BYTES, a);
     }
-    private void setUniformMatrix(int offset, Matrix4 mat ){
+    private void setUniformMatrix(Pointer data, int offset, Matrix4 mat ){
         for(int i = 0; i < 16; i++){
-            uniformData.putFloat(offset+i*Float.BYTES, mat.val[i]);
+            data.putFloat(offset+i*Float.BYTES, mat.val[i]);
         }
     }
 
     private void setUniforms(){
         float currentTime =  (float) glfwGetTime();
 
-        projectionMatrix.setToProjection(0.1f, 3.0f, 60f, 640f/480f);
+        projectionMatrix.setToPerspective(0.5f, 0.01f, 3.0f, 640f/480f);
+        //projectionMatrix.setToProjection(0.001f, 3.0f, 60f, 640f/480f);
         //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
+        modelMatrix.idt().scale(0.5f);
 
         //modelMatrix.idt().scale(0.5f);
         viewMatrix.idt();
-        Matrix4 R1 = new Matrix4();
-        R1.setToZRotation(currentTime*0.5f);
-        Matrix4 R2 = new Matrix4();
-        Matrix4 S = new Matrix4().scale(0.6f);
-        Matrix4 T = new Matrix4().translate(0.5f, 0f, 0f);
+        Matrix4 T0 = new Matrix4().translate(0.0f, 0f, -5f);
 
-        R2.setToXRotation((float) (-1.2* Math.PI / 4.0)); // tilt the view
-        // mul order: first scale, then transate, then rotate
+        Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.5f);
+        Matrix4 R2 = new Matrix4().setToXRotation((float) (0.8* Math.PI / 4.0)); // tilt the view
+        Matrix4 S = new Matrix4().scale(0.6f);
+        Matrix4 T = new Matrix4().translate(1.0f, 0f, 0f);
+
+        // mul order: first scale, then translate, then rotate
         T.mul(S);
         R1.mul(T);
-        R2.mul(R1);
+        R2.mul(R1); // tilt
         viewMatrix.set(R2);
         //viewMatrix.translate(0,0.2f, 0);
         //viewMatrix.setToZRotation((float) (Math.PI*0.5f));
         //viewMatrix.translate(0, 0, (float)Math.cos(currentTime)*0.5f );
 
         int offset = 0;
-        setUniformMatrix(offset, projectionMatrix);
+        setUniformMatrix(uniformData, offset, projectionMatrix);
         offset += 16*Float.BYTES;
-        setUniformMatrix(offset, viewMatrix);
+        setUniformMatrix(uniformData, offset, viewMatrix);
         offset += 16*Float.BYTES;
-        setUniformMatrix(offset, modelMatrix);
+        setUniformMatrix(uniformData, offset, modelMatrix);
         offset += 16*Float.BYTES;
         uniformData.putFloat(offset, currentTime);
         offset += 4*Float.BYTES;
         // 3 floats of padding
-        setUniformColor(offset, 0.0f, 1.0f, 0.4f, 1.0f);
-//        uniformData.putFloat(4*Float.BYTES, 0.0f); //r
-//        uniformData.putFloat(5*Float.BYTES, 1.0f); //g
-//        uniformData.putFloat(6*Float.BYTES, 0.4f); //b
-//        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
+        setUniformColor(uniformData, offset, 0.0f, 1.0f, 0.4f, 1.0f);
         wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, uniformBufferSize);
-
-//        uniformData.putFloat(0,currentTime+0.5f);
-//        // 3 floats of padding
-//        uniformData.putFloat(4*Float.BYTES, 1.0f); //r
-//        uniformData.putFloat(5*Float.BYTES, 0.0f); //g
-//        uniformData.putFloat(6*Float.BYTES, 0.6f); //b
-//        uniformData.putFloat(7*Float.BYTES, 1.0f); //a
-//        wgpu.QueueWriteBuffer(queue, uniformBuffer, uniformStride, uniformData, uniformBufferSize);
-
-
     }
 
     public void render(){

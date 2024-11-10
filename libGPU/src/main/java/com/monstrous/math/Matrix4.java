@@ -133,6 +133,22 @@ public class Matrix4 {
         return this;
     }
 
+    public Matrix4 setToYRotation(float angleInRadians) {
+        float c = (float) Math.cos(angleInRadians);
+        float s = (float) Math.sin(angleInRadians);
+        idt();
+        val[M00] = c;
+        val[M02] = -s;
+        val[M20] = s;
+        val[M22] = c;
+        return this;
+    }
+
+    // the clip volume’s Z range is (0,1).
+    //. By default, it assumes that it is (-1, 1)
+    // because this is the convention that was used by OpenGL, which is different from WebGPU.
+    // todo which prob explain the difference with setToProjection
+
     public Matrix4 setToPerspective(float focalLength, float near, float far, float aspectRatio) {
 
         float divides = 1.0f/(focalLength*(far-near));
