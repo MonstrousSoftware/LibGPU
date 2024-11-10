@@ -25,13 +25,11 @@ struct VertexOutput {
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
-   out.normal = in.normal;
+   out.normal = (uMyUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
 
    var pos = vec4f(in.position, 1.0);
    pos =  uMyUniforms.projectionMatrix * uMyUniforms.viewMatrix * uMyUniforms.modelMatrix * pos;
 
-    //let ratio = 640.0/480.0;
-   // out.position = vec4f(in.position.x, in.position.y * ratio, in.position.z * 0.5 + 0.5, 1.0);
    out.position = pos;
    out.color = in.color;
    return out;
@@ -39,9 +37,17 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-    var color = in.normal * 0.5 + 0.5;
-    //let color = in.color * uMyUniforms.color.rgb;
-    //let linear_color = pow(in.color, vec3f(2.2));
-    //color = vec3f(1.0, 0.0, 0.4);
+    let normal = normalize(in.normal);
+    let lightColor1 = vec3f(1.0, 0.9, 0.6);
+    let lightColor2 = vec3f(0.6, 0.9, 1.0);
+    let lightDirection1 = vec3f(0.5, -0.9, 0.1);
+    let lightDirection2 = vec3f(0.2, 0.4, 0.3);
+    let shading1 = max(0.0, dot(lightDirection1, normal));
+    let shading2 = max(0.0, dot(lightDirection2, normal));
+
+    let shading = shading1 * lightColor1 + shading2 * lightColor2;
+
+    let color = in.color * shading;
+
     return vec4f(color, 1.0);
 }

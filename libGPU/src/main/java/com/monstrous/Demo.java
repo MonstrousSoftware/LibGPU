@@ -606,7 +606,9 @@ public class Demo {
         projectionMatrix.setToPerspective(1.5f, 0.01f, 5.0f, 640f/480f);
         //projectionMatrix.setToProjection(0.001f, 3.0f, 60f, 640f/480f);
         //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
-        modelMatrix.idt().setToXRotation((float) ( -0.5f*Math.PI ));
+        modelMatrix.idt();//.setToXRotation((float) ( -0.5f*Math.PI ));
+
+        Matrix4 RT = new Matrix4().setToXRotation((float) ( -0.5f*Math.PI ));
 
         //modelMatrix.idt().scale(0.5f);
         viewMatrix.idt();
@@ -617,10 +619,9 @@ public class Demo {
         Matrix4 TC = new Matrix4().translate(0.0f, -1f, 3f);
 
 
-        // mul order: first scale, then translate, then rotate
-        T.mul(S);
-        R1.mul(T);
-        TC.mul(R1);
+        modelMatrix.idt().mul(R1).mul(T).mul(RT);
+
+        TC.mul(S);
         R2.mul(TC); // tilt
         viewMatrix.set(R2);
         //viewMatrix.translate(0,0.2f, 0);
