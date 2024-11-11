@@ -185,7 +185,7 @@ public class Demo {
         initializePipeline();
         //playingWithBuffers();
 
-        texture = new Texture(1024, 1024); //"monstrous.png");
+        texture = new Texture("input.jpg");
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
