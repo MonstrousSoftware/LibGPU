@@ -294,3 +294,9 @@ Note: WGPUSurfaceConfiguration has a pointer to a list of enums.
 5. Orring flags is clumsy with Java enums:
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst.intValue() + WGPUBufferUsage.CopySrc.intValue() );
     type had to be changed to an integer to allow combined enum values
+
+
+
+
+Image loading
+- We use stb_image.h for image loading. Also used by LibGDX. Supports png, gif, jpg, etc.

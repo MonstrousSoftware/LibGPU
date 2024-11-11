@@ -5,9 +5,16 @@ import com.monstrous.utils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 public class Texture {
     private int width;
     private int height;
+    private int format;
+    private Pointer image;
+    private Pointer pixelPtr;
     private Pointer texture;
     private Pointer textureView;
 
@@ -22,7 +29,26 @@ public class Texture {
     }
 
     public Texture(String fileName) {
-        this(); // todo
+        this();
+        byte[] fileData;
+
+        try {
+            fileData = Files.readAllBytes(Paths.get(fileName));
+            int len = fileData.length;
+            Pointer data = WgpuJava.createByteArrayPointer(fileData);
+
+            image = LibGPU.wgpu.gdx2d_load(data, len);        // use native function to parse image file
+
+            PixmapInfo info = PixmapInfo.createAt(image);
+            this.width = info.width.intValue();
+            this.height = info.height.intValue();
+            this.format = info.format.intValue();
+            pixelPtr = info.pixels.get();
+            createTexture();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public int getWidth() {
@@ -31,6 +57,11 @@ public class Texture {
 
     public int getHeight() {
         return height;
+    }
+
+    // native format from smb_image
+    public int getFormat() {
+        return format;
     }
 
     public WGPUBindGroupEntry getBinding(int index) {
@@ -43,6 +74,8 @@ public class Texture {
 
 
     private void createTexture() {
+        if(LibGPU.device == null || LibGPU.queue == null )
+            throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
         // Create the texture
         WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
@@ -70,16 +103,20 @@ public class Texture {
         textureViewDesc.setFormat( textureDesc.getFormat() );
         textureView = LibGPU.wgpu.TextureCreateView(texture, textureViewDesc);
 
-        byte[] pixels = new byte[4 * width * height];
-        int offset = 0;
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                pixels[offset++] = (byte) ((x/16) % 2 == (y/16) % 2 ? 255 : 0);
-                pixels[offset++] = (byte) (((x-y)/16) % 2 == 0 ? 255 : 0);
-                pixels[offset++] = (byte) (((x+y)/16) % 2 == 0 ? 255 : 0);
-                pixels[offset++] = (byte) 255;
+        if(pixelPtr == null) {
+            byte[] pixels = new byte[4 * width * height];
+            int offset = 0;
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
+                    pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
+                    pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
+                    pixels[offset++] = (byte) 255;
+                }
             }
+            pixelPtr = WgpuJava.createByteArrayPointer(pixels);
         }
+
 
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -97,18 +134,19 @@ public class Texture {
         source.setBytesPerRow(4*width);
         source.setRowsPerImage(height);
 
-        Pointer pixelPtr = WgpuJava.createByteArrayPointer(pixels);
 
         WGPUExtent3D ext = WGPUExtent3D.createDirect();
         ext.setWidth(width);
         ext.setHeight(height);
         ext.setDepthOrArrayLayers(1);
 
-        // N.B. using textureDesc.getSize() as last param doesn't work!
+        // N.B. using textureDesc.getSize() for last param won't work!
         LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, width*height*4, source, ext);
     }
 
     public void dispose(){
+        if(image != null)
+            LibGPU.wgpu.gdx2d_free(image);
         LibGPU.wgpu.TextureViewRelease(textureView);
         LibGPU.wgpu.TextureDestroy(texture);
         LibGPU.wgpu.TextureRelease(texture);

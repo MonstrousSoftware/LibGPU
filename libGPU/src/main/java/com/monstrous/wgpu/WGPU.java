@@ -6,6 +6,8 @@ public interface WGPU { // A representation of the C interface in Java
 
     final static int WGPU_DEPTH_SLICE_UNDEFINED = 0xffffffff;
 
+    Pointer gdx2d_load (Pointer buffer, int len);
+    void gdx2d_free(Pointer pixmapInfo);
 
     int add(int a, int b);
 

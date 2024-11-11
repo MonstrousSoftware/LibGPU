@@ -52,10 +52,14 @@ public class Demo {
         runtime = Runtime.getRuntime(wgpu);
         WgpuJava.setRuntime(runtime);
 
+
+
         // debug test
         System.out.println("Hello world!");
         int sum = wgpu.add(1200, 34);
         System.out.println("sum = " + sum);
+
+
 
         instance = wgpu.CreateInstance();
         System.out.println("instance = " + instance);
@@ -146,6 +150,10 @@ public class Demo {
         queue = wgpu.DeviceGetQueue(device);
         LibGPU.queue = queue;
 
+
+        texture = new Texture("monstrous.png");
+
+
         // use a lambda expression to define a callback function
         WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
             System.out.println("=== Queue work finished with status: " + status);
@@ -176,7 +184,7 @@ public class Demo {
         initializePipeline();
         //playingWithBuffers();
 
-        texture = new Texture();
+        //texture = new Texture("monstrous.png");
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
