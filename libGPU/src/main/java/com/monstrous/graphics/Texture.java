@@ -14,9 +14,10 @@ public class Texture {
     private int height;
     private int format;
     private Pointer image;
-    private Pointer pixelPtr;
+    //private Pointer pixelPtr;
     private Pointer texture;
     private Pointer textureView;
+    private Pointer sampler;
 
     public Texture() {
         this(256, 256);
@@ -25,7 +26,7 @@ public class Texture {
     public Texture(int width, int height) {
         this.width = width;
         this.height = height;
-        createTexture();
+        load(null);
     }
 
     public Texture(String fileName) {
@@ -43,8 +44,9 @@ public class Texture {
             this.width = info.width.intValue();
             this.height = info.height.intValue();
             this.format = info.format.intValue();
-            pixelPtr = info.pixels.get();
-            createTexture();
+            Pointer pixelPtr = info.pixels.get();
+            load(pixelPtr);
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -72,17 +74,37 @@ public class Texture {
         return texBinding;
     }
 
+    public WGPUBindGroupEntry getSamplerBinding(int index) {
+        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
+        binding.setNextInChain();
+        binding.setBinding(index);  // binding index
+        binding.setSampler(sampler);
+        return binding;
+    }
 
-    private void createTexture() {
+    private int bitWidth(int value) {
+        if (value == 0)
+            return 0;
+        else {
+            int w = 0;
+            while ((value >>= 1) > 0)
+                ++w;
+            return w;
+        }
+    }
+
+    private void load(Pointer pixelPtr) {
         if(LibGPU.device == null || LibGPU.queue == null )
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
+
+        int mipLevelCount = bitWidth(Math.max(width, height));      // todo test for non-square
 
         // Create the texture
         WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
         textureDesc.setNextInChain();
         textureDesc.setDimension(WGPUTextureDimension._2D);
         textureDesc.setFormat(WGPUTextureFormat.RGBA8Unorm);
-        textureDesc.setMipLevelCount(1);
+        textureDesc.setMipLevelCount(mipLevelCount);
         textureDesc.setSampleCount(1);
         textureDesc.getSize().setWidth(width);
         textureDesc.getSize().setHeight(height);
@@ -98,25 +120,10 @@ public class Texture {
         textureViewDesc.setBaseArrayLayer(0);
         textureViewDesc.setArrayLayerCount(1);
         textureViewDesc.setBaseMipLevel(0);
-        textureViewDesc.setMipLevelCount(1);
+        textureViewDesc.setMipLevelCount(mipLevelCount);
         textureViewDesc.setDimension( WGPUTextureViewDimension._2D);
         textureViewDesc.setFormat( textureDesc.getFormat() );
         textureView = LibGPU.wgpu.TextureCreateView(texture, textureViewDesc);
-
-        if(pixelPtr == null) {
-            byte[] pixels = new byte[4 * width * height];
-            int offset = 0;
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
-                    pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
-                    pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
-                    pixels[offset++] = (byte) 255;
-                }
-            }
-            pixelPtr = WgpuJava.createByteArrayPointer(pixels);
-        }
-
 
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -134,14 +141,86 @@ public class Texture {
         source.setBytesPerRow(4*width);
         source.setRowsPerImage(height);
 
+        // Generate mipmap levels
+
+        int mipLevelWidth = width;
+        int mipLevelHeight = height;
 
         WGPUExtent3D ext = WGPUExtent3D.createDirect();
-        ext.setWidth(width);
-        ext.setHeight(height);
-        ext.setDepthOrArrayLayers(1);
 
-        // N.B. using textureDesc.getSize() for last param won't work!
-        LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, width*height*4, source, ext);
+
+
+        byte[] prevPixels = null;
+        for(int mipLevel = 0; mipLevel < mipLevelCount; mipLevel++) {
+            //if (pixelPtr == null) {
+                byte[] pixels = new byte[4 * mipLevelWidth * mipLevelHeight];
+                int offset = 0;
+                for (int y = 0; y < mipLevelHeight; y++) {
+                    for (int x = 0; x < mipLevelWidth; x++) {
+                        if(mipLevel == 0) {
+                            if(pixelPtr == null) {
+                                pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
+                                pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
+                                pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
+                                pixels[offset++] = (byte) 255;
+                            }
+                            else {
+                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
+                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
+                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
+                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
+                            }
+
+                        } else {
+                            // Get the corresponding 4 pixels from the previous level
+                            int offset00 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+0));
+                            int offset01 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+1));
+                            int offset10 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+0));
+                            int offset11 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+1));
+
+                            // Average
+                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01]+prevPixels[offset10]+prevPixels[offset11])/4);
+                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1]+prevPixels[offset10+1]+prevPixels[offset11+1])/4);
+                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2]+prevPixels[offset10+2]+prevPixels[offset11+2])/4);
+                            pixels[offset++] = (byte) 255;
+                        }
+
+                    }
+                }
+                pixelPtr = WgpuJava.createByteArrayPointer(pixels);
+            //}
+
+            destination.setMipLevel(mipLevel);
+
+            source.setBytesPerRow(4*mipLevelWidth);
+            source.setRowsPerImage(mipLevelHeight);
+
+            ext.setWidth(mipLevelWidth);
+            ext.setHeight(mipLevelHeight);
+            ext.setDepthOrArrayLayers(1);
+
+            // N.B. using textureDesc.getSize() for last param won't work!
+            LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, mipLevelWidth * mipLevelHeight * 4, source, ext);
+
+            mipLevelWidth /= 2;
+            mipLevelHeight /= 2;
+            prevPixels = pixels;
+        }
+
+        // Create a sampler
+        WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
+        samplerDesc.setAddressModeU( WGPUAddressMode.ClampToEdge);
+        samplerDesc.setAddressModeV( WGPUAddressMode.ClampToEdge);
+        samplerDesc.setAddressModeW( WGPUAddressMode.ClampToEdge);
+        samplerDesc.setMagFilter( WGPUFilterMode.Linear);
+        samplerDesc.setMinFilter( WGPUFilterMode.Linear);
+        samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);
+
+        samplerDesc.setLodMinClamp( 0.0f);
+        samplerDesc.setLodMaxClamp( 8.0f);
+        samplerDesc.setCompare( WGPUCompareFunction.Undefined);
+        samplerDesc.setMaxAnisotropy( 1);
+        sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
     }
 
     public void dispose(){

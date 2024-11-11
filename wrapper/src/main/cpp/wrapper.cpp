@@ -446,6 +446,12 @@ EXPORT void QueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * dest
     wgpuQueueWriteTexture(queue, destination, data, dataSize, dataLayout, writeSize);
 }
 
+
+EXPORT WGPUSampler DeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor const *samplerDesc){
+    return wgpuDeviceCreateSampler(device, samplerDesc);
+}
+
+
 /**
  * Utility function to get a WebGPU adapter, so that
  *     WGPUAdapter adapter = requestAdapterSync(options);

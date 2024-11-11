@@ -10,6 +10,7 @@ struct MyUniforms {
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 @group(0) @binding(0) var<uniform> uMyUniforms: MyUniforms;
 @group(0) @binding(1) var gradientTexture: texture_2d<f32>;
+@group(0) @binding(2) var textureSampler: sampler;
 
 
 struct VertexInput {
@@ -55,8 +56,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //let color = in.color * shading;
 
     //let color = in.position.xyz /256.0;
-    let texelCoords = vec2i(in.uv * vec2f(textureDimensions(gradientTexture)));
-    var color = textureLoad(gradientTexture, texelCoords, 0).rgb;
-   //color.r = 1.0;
+    //let texelCoords = vec2i(in.uv * vec2f(textureDimensions(gradientTexture)));
+    //var color = textureLoad(gradientTexture, texelCoords, 0).rgb;
+    let color = textureSample(gradientTexture, textureSampler, in.uv).rgb;
     return vec4f(color, 1.0);
 }

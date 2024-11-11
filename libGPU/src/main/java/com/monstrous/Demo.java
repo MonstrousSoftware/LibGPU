@@ -111,10 +111,11 @@ public class Demo {
         requiredLimits.getLimits().setMaxBufferSize(300);
         requiredLimits.getLimits().setMaxVertexBufferArrayStride(11*Float.BYTES);
         requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
-        requiredLimits.getLimits().setMaxTextureDimension1D(480);
-        requiredLimits.getLimits().setMaxTextureDimension2D(640);
+        requiredLimits.getLimits().setMaxTextureDimension1D(2048);
+        requiredLimits.getLimits().setMaxTextureDimension2D(2048);
         requiredLimits.getLimits().setMaxTextureArrayLayers(1);
         requiredLimits.getLimits().setMaxSampledTexturesPerShaderStage(1);
+        requiredLimits.getLimits().setMaxSamplersPerShaderStage(1);
 
         requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
         requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
@@ -151,7 +152,7 @@ public class Demo {
         LibGPU.queue = queue;
 
 
-        texture = new Texture("monstrous.png");
+
 
 
         // use a lambda expression to define a callback function
@@ -184,7 +185,7 @@ public class Demo {
         initializePipeline();
         //playingWithBuffers();
 
-        //texture = new Texture("monstrous.png");
+        texture = new Texture(1024, 1024); //"monstrous.png");
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
@@ -422,8 +423,8 @@ public class Demo {
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(2);
-        bindGroupDesc.setEntries(binding, texture.getBinding(1));
+        bindGroupDesc.setEntryCount(3);
+        bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
         bindGroup = wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
@@ -591,12 +592,18 @@ public class Demo {
         texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
         texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
 
+        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(samplerBindingLayout);
+        samplerBindingLayout.setBinding(2);
+        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
+
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
         bindGroupLayoutDesc.setNextInChain();
         bindGroupLayoutDesc.setLabel("My BG Layout");
-        bindGroupLayoutDesc.setEntryCount(2);
-        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout);
+        bindGroupLayoutDesc.setEntryCount(3);
+        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
         bindGroupLayout = wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
 
 

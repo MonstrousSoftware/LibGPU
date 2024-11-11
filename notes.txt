@@ -300,3 +300,4 @@ Note: WGPUSurfaceConfiguration has a pointer to a list of enums.
 
 Image loading
 - We use stb_image.h for image loading. Also used by LibGDX. Supports png, gif, jpg, etc.
+note: we ignore format conversions for now. Also, not all stb formats seem to be supported by webgpu, e.g. RGBA4444
