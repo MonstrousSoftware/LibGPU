@@ -1,3 +1,4 @@
+#define DAWN
 
 #if __cplusplus < 201103L
   #error This library needs at least a C++11 compliant compiler
@@ -8,6 +9,7 @@
 #include <stdio.h>
 #include <cassert>
 #include <iostream>
+#include <stdalign.h>
 
 #define LOG(x)
 
@@ -21,6 +23,10 @@ using namespace std;
 #include "dawn/webgpu.h"
 #else
 #include "webgpu/webgpu.h"
+#endif
+
+#if defined(_WIN32)
+#   define EXPORT __declspec(dllexport)
 #endif
 
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -39,12 +45,12 @@ extern "C" {
  * Method:    add
  * Signature: (II)I
  */
- int add(int a, int b ){
+EXPORT int add(int a, int b ){
     return a +b;
  }
 
 
- void testStruct( WGPURequestAdapterOptions options ){
+EXPORT  void testStruct( WGPURequestAdapterOptions options ){
     printf("backend: %d\n", options.backendType);
     printf("power: %d\n", options.powerPreference);
     printf("fallback: %d\n", options.forceFallbackAdapter);
@@ -52,7 +58,7 @@ extern "C" {
  }
 
 
-  void testLimitsStruct( WGPUSupportedLimits *supported ){
+EXPORT   void testLimitsStruct( WGPUSupportedLimits *supported ){
      printf("supported: %p\n", supported);
      printf("supported.nextInChain: %p @ %p\n", supported->nextInChain, &(supported->nextInChain));
      printf("supported.limits.maxTextureDimension1D: %d\n", supported->limits.maxTextureDimension1D);
@@ -62,7 +68,7 @@ extern "C" {
 
 
 
-WGPUInstance CreateInstance( void ){
+EXPORT WGPUInstance CreateInstance( void ){
 
 #ifdef DAWN
         printf("Linked to dawn.dll\n");
@@ -74,45 +80,45 @@ WGPUInstance CreateInstance( void ){
         return instance;
 }
 
-void InstanceRelease( WGPUInstance instance ){
+EXPORT void InstanceRelease( WGPUInstance instance ){
         LOG( printf("releasing instance %p\n", instance); )
         wgpuInstanceRelease(instance);
 }
 
-void AdapterRelease( WGPUAdapter adapter ){
+EXPORT void AdapterRelease( WGPUAdapter adapter ){
     LOG( printf("releasing adapter %p\n", adapter); )
     wgpuAdapterRelease(adapter);
 }
 
-void DeviceRelease( WGPUDevice device ){
+EXPORT void DeviceRelease( WGPUDevice device ){
     LOG( printf("releasing device %p\n", device); )
     wgpuDeviceRelease(device);
 }
 
-void DeviceTick( WGPUDevice device ){
+EXPORT void DeviceTick( WGPUDevice device ){
     LOG( printf("device tick\n", device); )
     wgpuDeviceTick(device);
 }
 
 
-WGPUQueue DeviceGetQueue(WGPUDevice device ){
+EXPORT WGPUQueue DeviceGetQueue(WGPUDevice device ){
      WGPUQueue q = wgpuDeviceGetQueue(device);
      LOG( printf("get queue => %p\n", q); )
      return q;
  }
 
- void DeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata){
+ EXPORT void DeviceSetUncapturedErrorCallback(WGPUDevice device, WGPUErrorCallback callback, void * userdata){
      LOG( printf("registering callback for device errors\n"); )
      wgpuDeviceSetUncapturedErrorCallback(device, callback, userdata);
  }
 
-void QueueRelease( WGPUQueue queue ){
+EXPORT void QueueRelease( WGPUQueue queue ){
     LOG( printf("releasing queue %p\n", queue); )
     wgpuQueueRelease(queue);
 }
 
 
-WGPUCommandEncoder DeviceCreateCommandEncoder(WGPUDevice device,  WGPUCommandEncoderDescriptor *encoderDescriptor ){
+EXPORT WGPUCommandEncoder DeviceCreateCommandEncoder(WGPUDevice device,  WGPUCommandEncoderDescriptor *encoderDescriptor ){
      LOG( printf("encode descriptor label: [%s]\n", encoderDescriptor->label); )
      WGPUCommandEncoder e = wgpuDeviceCreateCommandEncoder(device, encoderDescriptor);
      LOG( printf("get command encoder => %p\n", e); )
@@ -120,25 +126,25 @@ WGPUCommandEncoder DeviceCreateCommandEncoder(WGPUDevice device,  WGPUCommandEnc
      return e;
 }
 
-void CommandEncoderRelease(WGPUCommandEncoder encoder){
+EXPORT void CommandEncoderRelease(WGPUCommandEncoder encoder){
     LOG( printf("releasing encoder %p\n", encoder); )
     wgpuCommandEncoderRelease(encoder);
 }
 
-void RenderPassEncoderEnd(WGPURenderPassEncoder encoder){
+EXPORT void RenderPassEncoderEnd(WGPURenderPassEncoder encoder){
     wgpuRenderPassEncoderEnd(encoder);
 }
 
-void RenderPassEncoderRelease(WGPURenderPassEncoder encoder){
+EXPORT void RenderPassEncoderRelease(WGPURenderPassEncoder encoder){
     wgpuRenderPassEncoderRelease(encoder);
 }
 
-void CommandEncoderInsertDebugMarker(WGPUCommandEncoder encoder, char *marker){
+EXPORT void CommandEncoderInsertDebugMarker(WGPUCommandEncoder encoder, char *marker){
     //printf("insert debug marker [%s]\n", marker);
     wgpuCommandEncoderInsertDebugMarker(encoder, marker);
 }
 
-WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCommandBufferDescriptor *bufferDescriptor){
+EXPORT WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCommandBufferDescriptor *bufferDescriptor){
     WGPUCommandBuffer buf = wgpuCommandEncoderFinish(encoder, bufferDescriptor);
     LOG( printf("encoder finish => command %p\n", buf); )
     return buf;
@@ -147,7 +153,7 @@ WGPUCommandBuffer CommandEncoderFinish(WGPUCommandEncoder encoder, WGPUCommandBu
 void dumpColAtt( WGPURenderPassColorAttachment colAtt){
     cout << "nextInChain=" << colAtt.nextInChain << endl;
     cout << "depthSlice=" << colAtt.depthSlice << endl;
-    printf("clearValue @ %p size %ld\n", &colAtt.clearValue, sizeof(WGPUColor));
+    printf("clearValue @ %p size %lu\n", &colAtt.clearValue, (unsigned long)sizeof(WGPUColor));
     printf("clearValue rgba @ %p, %p, %p, %p \n", &colAtt.clearValue.r,  &colAtt.clearValue.g,  &colAtt.clearValue.b,  &colAtt.clearValue.a);
     cout << "clearValue: r=" << colAtt.clearValue.r
      << "g=" << colAtt.clearValue.g
@@ -157,7 +163,7 @@ void dumpColAtt( WGPURenderPassColorAttachment colAtt){
     cout << "storeOp=" << colAtt.storeOp << endl;
 }
 
-WGPURenderPassEncoder  CommandEncoderBeginRenderPass(WGPUCommandEncoder encoder, WGPURenderPassDescriptor *renderPassDescriptor){
+EXPORT WGPURenderPassEncoder  CommandEncoderBeginRenderPass(WGPUCommandEncoder encoder, WGPURenderPassDescriptor *renderPassDescriptor){
     WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
     LOG( dumpColAtt(renderPassDescriptor->colorAttachments[0]); )
     return pass;
@@ -165,7 +171,7 @@ WGPURenderPassEncoder  CommandEncoderBeginRenderPass(WGPUCommandEncoder encoder,
 
 
 
-void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
+EXPORT void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
 //    printf("submit %d commands to queue\n", (int)count);
 //    printf("commands at %p\n", commands);
 //    printf("command[0] = %p\n", commands[0]);
@@ -174,32 +180,32 @@ void QueueSubmit(WGPUQueue queue, size_t count, WGPUCommandBuffer *commands){
 
 
 
-void QueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallback callback, void * userdata){
+EXPORT void QueueOnSubmittedWorkDone(WGPUQueue queue, WGPUQueueWorkDoneCallback callback, void * userdata){
     LOG( printf("registering callback for queue submitted work done\n"); )
     wgpuQueueOnSubmittedWorkDone(queue, callback, userdata);
 }
 
-void CommandBufferRelease(WGPUCommandBuffer commandBuffer){
+EXPORT void CommandBufferRelease(WGPUCommandBuffer commandBuffer){
     //printf("releasing command buffer %p\n", commandBuffer);
     wgpuCommandBufferRelease(commandBuffer);
 }
 
-void SurfaceRelease(WGPUSurface surface){
+EXPORT void SurfaceRelease(WGPUSurface surface){
     //printf("releasing surface %p\n", surface);
     wgpuSurfaceRelease(surface);
 }
 
-void SurfaceConfigure(WGPUSurface surface, WGPUSurfaceConfiguration *config){
+EXPORT void SurfaceConfigure(WGPUSurface surface, WGPUSurfaceConfiguration *config){
     LOG( printf("configure surface %p\n", surface); )
     wgpuSurfaceConfigure(surface, config);
 }
 
-void SurfaceUnconfigure(WGPUSurface surface){
+EXPORT void SurfaceUnconfigure(WGPUSurface surface){
     LOG( printf("unconfiguring surface %p\n", surface); )
     wgpuSurfaceUnconfigure(surface);
 }
 
-int SurfaceGetPreferredFormat(WGPUSurface surface, WGPUAdapter adapter){
+EXPORT int SurfaceGetPreferredFormat(WGPUSurface surface, WGPUAdapter adapter){
     //cout << "SurfaceGetPreferredFormat " << surface << ", " << adapter << endl;
 
     WGPUTextureFormat format = wgpuSurfaceGetPreferredFormat(surface, adapter);
@@ -208,42 +214,34 @@ int SurfaceGetPreferredFormat(WGPUSurface surface, WGPUAdapter adapter){
     return format;
 }
 
-void SurfaceGetCurrentTexture(WGPUSurface surface, WGPUSurfaceTexture *surfaceTexture ){
+EXPORT void SurfaceGetCurrentTexture(WGPUSurface surface, WGPUSurfaceTexture *surfaceTexture ){
     //cout << "SurfaceGetCurrentTexture " << endl;
 
     wgpuSurfaceGetCurrentTexture(surface, surfaceTexture);
 }
 
-WGPUTextureFormat TextureGetFormat(WGPUTexture texture){
+EXPORT WGPUTextureFormat TextureGetFormat(WGPUTexture texture){
     //cout << "TextureGetFormat " << endl;
     WGPUTextureFormat format = wgpuTextureGetFormat(texture);
     return format;
 }
 
-WGPUTextureView TextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor *viewDescriptor){
+EXPORT WGPUTextureView TextureCreateView(WGPUTexture texture, WGPUTextureViewDescriptor *viewDescriptor){
     WGPUTextureView view = wgpuTextureCreateView(texture, viewDescriptor);
     return view;
 }
 
-void TextureViewRelease(WGPUTextureView view){
+EXPORT void TextureViewRelease(WGPUTextureView view){
     //cout << "TextureViewRelease " << endl;
     wgpuTextureViewRelease(view);
 }
 
-void SurfacePresent(WGPUSurface surface){
+EXPORT void SurfacePresent(WGPUSurface surface){
     //cout << "SurfacePresent " << endl;
     wgpuSurfacePresent(surface);
 }
 
-WGPUBuffer DeviceCreateBuffer(WGPUDevice device, const WGPUBufferDescriptor *bufferDesc){
-    return wgpuDeviceCreateBuffer(device, bufferDesc);
-}
-
-void BufferRelease(WGPUBuffer buffer){
-    wgpuBufferRelease(buffer);
-}
-
-WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
+EXPORT WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supportedLimits) {
     //printf("get limits for adapter %p\n", adapter);
 
     bool ok = wgpuAdapterGetLimits(adapter, supportedLimits);
@@ -257,7 +255,7 @@ WGPUBool    AdapterGetLimits(WGPUAdapter adapter, WGPUSupportedLimits *supported
     return ok;
 }
 
-void AdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties *properties){
+EXPORT void AdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties *properties){
 //	WGPUAdapterProperties properties = {};
 //	properties.nextInChain = nullptr;
 
@@ -271,7 +269,7 @@ void AdapterGetProperties(WGPUAdapter adapter, WGPUAdapterProperties *properties
 }
 
 
-WGPUBool    DeviceGetLimits(WGPUDevice device, WGPUSupportedLimits *supportedLimits) {
+EXPORT WGPUBool    DeviceGetLimits(WGPUDevice device, WGPUSupportedLimits *supportedLimits) {
     //printf("get limits for device %p\n", device);
 
     bool ok = wgpuDeviceGetLimits(device, supportedLimits);
@@ -286,32 +284,167 @@ WGPUBool    DeviceGetLimits(WGPUDevice device, WGPUSupportedLimits *supportedLim
 }
 
 
-void RenderPassEncoderSetPipeline(WGPURenderPassEncoder  renderPass, WGPURenderPipeline pipeline){
+EXPORT void RenderPassEncoderSetPipeline(WGPURenderPassEncoder  renderPass, WGPURenderPipeline pipeline){
     wgpuRenderPassEncoderSetPipeline(renderPass, pipeline);
 }
 
-void RenderPassEncoderDraw(WGPURenderPassEncoder renderPass, uint32_t numVertices,uint32_t numInstances, uint32_t firstVertex, uint32_t firstInstance){
+EXPORT void RenderPassEncoderDraw(WGPURenderPassEncoder renderPass, uint32_t numVertices,uint32_t numInstances, uint32_t firstVertex, uint32_t firstInstance){
     wgpuRenderPassEncoderDraw(renderPass, numVertices, numInstances, firstVertex, firstInstance);
 }
 
+EXPORT void RenderPassEncoderDrawIndexed(WGPURenderPassEncoder renderPass, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t baseVertex, uint32_t firstInstance){
+   wgpuRenderPassEncoderDrawIndexed(renderPass, indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
+}
 
-WGPURenderPipeline DeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor *pipelineDesc){
+EXPORT void RenderPassEncoderSetIndexBuffer(WGPURenderPassEncoder renderPassEncoder, WGPUBuffer buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size) {
+    wgpuRenderPassEncoderSetIndexBuffer( renderPassEncoder,  buffer,  format,  offset,  size);
+};
+
+
+EXPORT WGPURenderPipeline DeviceCreateRenderPipeline(WGPUDevice device, WGPURenderPipelineDescriptor *pipelineDesc){
+//    WGPUVertexState vertex = pipelineDesc->vertex;
+//    std::cout << " - buffer Count: " << vertex.bufferCount << std::endl;
+//    WGPUVertexBufferLayout layout = vertex.buffers[0];
+//    std::cout << " - attribute Count: " << layout.attributeCount << std::endl;
+//
+//    WGPUVertexAttribute atty[2], va;
+//    atty[0].format = WGPUVertexFormat_Float32x2;
+//    atty[0].offset = -1;
+//    atty[0].shaderLocation = 8;
+//        atty[1].format = WGPUVertexFormat_Float32x3;
+//        atty[1].offset = -1;
+//        atty[1].shaderLocation = 9;
+//    unsigned char const *p2 = (unsigned char const *)&atty;
+//
+//     printf("sizeof VA %ld \n", sizeof(va));
+//     printf("alignof VA %ld \n", alignof(WGPUVertexAttribute));
+
+//    for(int i = 0; i < 48; i++){
+//        unsigned char k = *p2;
+//        printf("atty[%d]: %d\n", i, k);
+//                p2++;
+//    }
+
+//    printf("attribs @ %p\n", layout.attributes);
+//    unsigned char const *p = (unsigned char const *)layout.attributes;
+//    for(int i = 0; i < 48; i++){
+//        unsigned char k = *p;
+//
+//        printf("attribs[%d]: %d\n", i, k);
+//                p++;
+//    }
+//    for(int i = 0; i < layout.attributeCount; i++){
+//        std::cout << " - attribute " << i << std::endl;
+//        printf("attribs[%d] @ %p\n", i, &(layout.attributes[i]) );
+//        WGPUVertexAttribute attrib = layout.attributes[i];
+//        std::cout << "    - attribute " << attrib.format  << "," << attrib.offset << ","<< attrib.shaderLocation << std::endl;
+//
+//    }
     WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, pipelineDesc);
     return pipeline;
 }
 
-WGPUShaderModule DeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor *shaderDesc){
+EXPORT WGPUShaderModule DeviceCreateShaderModule(WGPUDevice device, WGPUShaderModuleDescriptor *shaderDesc){
     return wgpuDeviceCreateShaderModule(device, shaderDesc);
 }
 
-void RenderPipelineRelease(WGPURenderPipeline pipeline){
+EXPORT void RenderPipelineRelease(WGPURenderPipeline pipeline){
     wgpuRenderPipelineRelease(pipeline);
 }
 
-void ShaderModuleRelease(WGPUShaderModule shaderModule){
+EXPORT void ShaderModuleRelease(WGPUShaderModule shaderModule){
     wgpuShaderModuleRelease(shaderModule);
 }
 
+EXPORT WGPUBuffer DeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor *bufferDesc){
+    WGPUBuffer buf =  wgpuDeviceCreateBuffer(device, bufferDesc);
+    printf("created buffer at %p\n", buf);
+    return buf;
+}
+
+EXPORT void BufferRelease(WGPUBuffer buffer){
+    wgpuBufferRelease(buffer);
+}
+
+EXPORT void QueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t bufferOffset, void const * data, size_t size){
+    wgpuQueueWriteBuffer(queue, buffer, bufferOffset, data, size);
+}
+
+EXPORT void CommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size) {
+    printf("copy buf to buf: encoder %p src %p srcOffset %lld dst %p dstOffset %lld amnt %lld", commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+    wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+//        wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+}
+
+EXPORT void BufferMapAsync(WGPUBuffer buffer, WGPUMapMode wgpuMapMode, size_t offset, size_t size, WGPUBufferMapCallback callback, void * userData){
+    wgpuBufferMapAsync(buffer, wgpuMapMode, offset, size, callback, userData);
+}
+
+EXPORT void const * BufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size){
+    void const * ptr = wgpuBufferGetConstMappedRange(buffer, offset, size);
+    printf("buffer const map range: %p\n", ptr);
+    return ptr;
+}
+
+EXPORT void BufferUnmap(WGPUBuffer buffer){
+    wgpuBufferUnmap(buffer);
+}
+
+
+EXPORT  uint64_t BufferGetSize(WGPUBuffer buffer) {
+    return wgpuBufferGetSize(buffer);
+}
+
+EXPORT void RenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEncoder, uint32_t slot, WGPU_NULLABLE WGPUBuffer buffer, uint64_t offset, uint64_t size){
+    wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, slot, buffer, offset, size);
+}
+
+EXPORT void BindGroupRelease(WGPUBindGroup bindGroup){
+    wgpuBindGroupRelease(bindGroup);
+}
+
+EXPORT void BindGroupLayoutRelease(WGPUBindGroupLayout bindGroupLayout){
+    wgpuBindGroupLayoutRelease(bindGroupLayout);
+}
+
+
+EXPORT void PipelineLayoutRelease(WGPUPipelineLayout layout){
+    wgpuPipelineLayoutRelease(layout);
+}
+
+EXPORT WGPUBindGroupLayout DeviceCreateBindGroupLayout(WGPUDevice device, WGPUBindGroupLayoutDescriptor *bindGroupLayoutDesc){
+    return wgpuDeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+}
+
+EXPORT void RenderPassEncoderSetBindGroup(WGPURenderPassEncoder renderPassEncoder, uint32_t groupIndex, WGPU_NULLABLE WGPUBindGroup group, size_t dynamicOffsetCount, uint32_t const * dynamicOffsets) {
+    wgpuRenderPassEncoderSetBindGroup( renderPassEncoder,  groupIndex,   group,  dynamicOffsetCount,  dynamicOffsets);
+}
+
+EXPORT WGPUBindGroup DeviceCreateBindGroup(WGPUDevice device, WGPUBindGroupDescriptor *bindGroupDesc){
+    return wgpuDeviceCreateBindGroup(device, bindGroupDesc);
+}
+
+EXPORT WGPUPipelineLayout DeviceCreatePipelineLayout(WGPUDevice device, WGPUPipelineLayoutDescriptor const * descriptor){
+    return wgpuDeviceCreatePipelineLayout(device, descriptor);
+}
+
+
+EXPORT WGPUTexture DeviceCreateTexture(WGPUDevice device, WGPUTextureDescriptor const * descriptor){
+    return wgpuDeviceCreateTexture(device, descriptor);
+}
+
+
+EXPORT void TextureDestroy(WGPUTexture texture){
+    wgpuTextureDestroy(texture);
+}
+
+EXPORT void TextureRelease(WGPUTexture texture){
+    wgpuTextureRelease(texture);
+}
+
+EXPORT void QueueWriteTexture(WGPUQueue queue, WGPUImageCopyTexture const * destination, void const * data, size_t dataSize, WGPUTextureDataLayout const * dataLayout, WGPUExtent3D const  *writeSize){
+    wgpuQueueWriteTexture(queue, destination, data, dataSize, dataLayout, writeSize);
+}
 
 /**
  * Utility function to get a WebGPU adapter, so that
@@ -319,7 +452,7 @@ void ShaderModuleRelease(WGPUShaderModule shaderModule){
  * is roughly equivalent to
  *     const adapter = await navigator.gpu.requestAdapter(options);
  */
-WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions const * options) {
+EXPORT WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions const * options) {
 
 //    WGPURequestAdapterOptions theOptions, *options;
 //    options = &theOptions;
@@ -390,7 +523,7 @@ WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterOptions 
  *     const device = await adapter.requestDevice(descriptor);
  * It is very similar to requestAdapter
  */
-WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor) {
+EXPORT WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * descriptor) {
     struct UserData {
         WGPUDevice device = nullptr;
         bool requestEnded = false;
@@ -420,7 +553,7 @@ WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor const * d
     return userData.device;
 }
 
-    WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, void * hwnd){
+EXPORT    WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, void * hwnd){
             LOG( printf("getting surface from GLFW window %p (HWND)\n", hwnd); )
             LOG( printf("instance => %p\n", instance); )
             if(hwnd == nullptr)
