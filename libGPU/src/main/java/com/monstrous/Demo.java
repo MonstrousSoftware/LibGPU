@@ -1,12 +1,12 @@
 package com.monstrous;
 
+import com.monstrous.graphics.Texture;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
-import jnr.ffi.Struct;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,11 +44,13 @@ public class Demo {
     private Matrix4 projectionMatrix;
     private Matrix4 viewMatrix;
     private Matrix4 modelMatrix;
-    private Pointer texture;
-    private Pointer textureView;
+//    private Pointer texture;
+//    private Pointer textureView;
+    private Texture texture;
 
     public void init(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library into the libc variable
+        LibGPU.wgpu = wgpu;
         runtime = Runtime.getRuntime(wgpu);
         WgpuJava.setRuntime(runtime);
 
@@ -126,6 +128,7 @@ public class Demo {
         deviceDescriptor.setRequiredLimits(requiredLimits);
 
         device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
+        LibGPU.device = device;
         wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
 
         // use a lambda expression to define a callback function
@@ -143,6 +146,7 @@ public class Demo {
         System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
 
         queue = wgpu.DeviceGetQueue(device);
+        LibGPU.queue = queue;
 
         // use a lambda expression to define a callback function
         WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
@@ -174,7 +178,9 @@ public class Demo {
         initializePipeline();
         //playingWithBuffers();
 
-        createTexture();
+        texture = new Texture();
+
+//        createTexture();
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
@@ -407,10 +413,10 @@ public class Demo {
         binding.setOffset(0);
         binding.setSize(uniformBufferSize);
 
-        WGPUBindGroupEntry texBinding = WGPUBindGroupEntry.createDirect();
-        texBinding.setNextInChain();
-        texBinding.setBinding(1);  // binding index
-        texBinding.setTextureView(textureView);
+//        WGPUBindGroupEntry texBinding = WGPUBindGroupEntry.createDirect();
+//        texBinding.setNextInChain();
+//        texBinding.setBinding(1);  // binding index
+//        texBinding.setTextureView(texture.getTextureView());
 
 
         // A bind group contains one or multiple bindings
@@ -419,7 +425,7 @@ public class Demo {
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(2);
-        bindGroupDesc.setEntries(binding, texBinding);
+        bindGroupDesc.setEntries(binding, texture.getBinding(1));
         bindGroup = wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
@@ -615,71 +621,71 @@ public class Demo {
 
     }
 
-    private void createTexture() {
-
-        // Create the texture
-        WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
-        textureDesc.setNextInChain();
-        textureDesc.setDimension(WGPUTextureDimension._2D);
-        textureDesc.setFormat(WGPUTextureFormat.RGBA8Unorm);
-        textureDesc.setMipLevelCount(1);
-        textureDesc.setSampleCount(1);
-        textureDesc.getSize().setWidth(256);
-        textureDesc.getSize().setHeight(256);
-        textureDesc.getSize().setDepthOrArrayLayers(1);
-        textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
-        textureDesc.setViewFormatCount(0);
-        textureDesc.setViewFormats(WgpuJava.createNullPointer());
-        texture = wgpu.DeviceCreateTexture(device, textureDesc);
-
-        // Create the view of the depth texture manipulated by the rasterizer
-        WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
-        textureViewDesc.setAspect(WGPUTextureAspect.All);
-        textureViewDesc.setBaseArrayLayer(0);
-        textureViewDesc.setArrayLayerCount(1);
-        textureViewDesc.setBaseMipLevel(0);
-        textureViewDesc.setMipLevelCount(1);
-        textureViewDesc.setDimension( WGPUTextureViewDimension._2D);
-        textureViewDesc.setFormat( textureDesc.getFormat() );
-        textureView = wgpu.TextureCreateView(texture, textureViewDesc);
-
-        byte[] pixels = new byte[4 * 256 * 256];
-        int offset = 0;
-        for (int y = 0; y < 256; y++) {
-            for (int x = 0; x < 256; x++) {
-                pixels[offset++] = (byte) ((x/16) % 2 == (y/16) % 2 ? 255 : 0);
-                pixels[offset++] = (byte) (((x-y)/16) % 2 == 0 ? 255 : 0);
-                pixels[offset++] = (byte) (((x+y)/16) % 2 == 0 ? 255 : 0);
-                pixels[offset++] = (byte) 255;
-            }
-        }
-
-        // Arguments telling which part of the texture we upload to
-        // (together with the last argument of writeTexture)
-        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
-        destination.setTexture(texture);
-        destination.setMipLevel(0);
-        destination.getOrigin().setX(0);
-        destination.getOrigin().setY(0);
-        destination.getOrigin().setZ(0);
-        destination.setAspect(WGPUTextureAspect.All);   // not relevant
-
-        // Arguments telling how the C++ side pixel memory is laid out
-        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
-        source.setOffset(0);
-        source.setBytesPerRow(4*256);
-        source.setRowsPerImage(256);
-
-        Pointer pixelPtr = WgpuJava.createByteArrayPointer(pixels);
-
-        WGPUExtent3D ext = WGPUExtent3D.createDirect();
-        ext.setWidth(256);
-        ext.setHeight(256);
-        ext.setDepthOrArrayLayers(1);
-
-        // N.B. using textureDesc.getSize() as last param doesn't work!
-        wgpu.QueueWriteTexture(queue, destination, pixelPtr, 256*256*4, source, ext);
-    }
+//    private void createTexture() {
+//
+//        // Create the texture
+//        WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
+//        textureDesc.setNextInChain();
+//        textureDesc.setDimension(WGPUTextureDimension._2D);
+//        textureDesc.setFormat(WGPUTextureFormat.RGBA8Unorm);
+//        textureDesc.setMipLevelCount(1);
+//        textureDesc.setSampleCount(1);
+//        textureDesc.getSize().setWidth(256);
+//        textureDesc.getSize().setHeight(256);
+//        textureDesc.getSize().setDepthOrArrayLayers(1);
+//        textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
+//        textureDesc.setViewFormatCount(0);
+//        textureDesc.setViewFormats(WgpuJava.createNullPointer());
+//        texture = wgpu.DeviceCreateTexture(device, textureDesc);
+//
+//        // Create the view of the depth texture manipulated by the rasterizer
+//        WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
+//        textureViewDesc.setAspect(WGPUTextureAspect.All);
+//        textureViewDesc.setBaseArrayLayer(0);
+//        textureViewDesc.setArrayLayerCount(1);
+//        textureViewDesc.setBaseMipLevel(0);
+//        textureViewDesc.setMipLevelCount(1);
+//        textureViewDesc.setDimension( WGPUTextureViewDimension._2D);
+//        textureViewDesc.setFormat( textureDesc.getFormat() );
+//        textureView = wgpu.TextureCreateView(texture, textureViewDesc);
+//
+//        byte[] pixels = new byte[4 * 256 * 256];
+//        int offset = 0;
+//        for (int y = 0; y < 256; y++) {
+//            for (int x = 0; x < 256; x++) {
+//                pixels[offset++] = (byte) ((x/16) % 2 == (y/16) % 2 ? 255 : 0);
+//                pixels[offset++] = (byte) (((x-y)/16) % 2 == 0 ? 255 : 0);
+//                pixels[offset++] = (byte) (((x+y)/16) % 2 == 0 ? 255 : 0);
+//                pixels[offset++] = (byte) 255;
+//            }
+//        }
+//
+//        // Arguments telling which part of the texture we upload to
+//        // (together with the last argument of writeTexture)
+//        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+//        destination.setTexture(texture);
+//        destination.setMipLevel(0);
+//        destination.getOrigin().setX(0);
+//        destination.getOrigin().setY(0);
+//        destination.getOrigin().setZ(0);
+//        destination.setAspect(WGPUTextureAspect.All);   // not relevant
+//
+//        // Arguments telling how the C++ side pixel memory is laid out
+//        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+//        source.setOffset(0);
+//        source.setBytesPerRow(4*256);
+//        source.setRowsPerImage(256);
+//
+//        Pointer pixelPtr = WgpuJava.createByteArrayPointer(pixels);
+//
+//        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+//        ext.setWidth(256);
+//        ext.setHeight(256);
+//        ext.setDepthOrArrayLayers(1);
+//
+//        // N.B. using textureDesc.getSize() as last param doesn't work!
+//        wgpu.QueueWriteTexture(queue, destination, pixelPtr, 256*256*4, source, ext);
+//    }
 
 
     private void setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
@@ -855,14 +861,16 @@ public class Demo {
     }
 
     public void exit(){
+        texture.dispose();
+
         // cleanup
         // Destroy the depth texture and its view
         wgpu.TextureViewRelease(depthTextureView);
         wgpu.TextureDestroy(depthTexture);
         wgpu.TextureRelease(depthTexture);
-        wgpu.TextureViewRelease(textureView);
-        wgpu.TextureDestroy(texture);
-        wgpu.TextureRelease(texture);
+//        wgpu.TextureViewRelease(textureView);
+//        wgpu.TextureDestroy(texture);
+//        wgpu.TextureRelease(texture);
         wgpu.PipelineLayoutRelease(layout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BindGroupRelease(bindGroup);
