@@ -11,8 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-import static org.lwjgl.glfw.GLFW.glfwGetTime;
-
 
 public class Demo implements ApplicationListener {
     private String shaderSource = readShaderSource();
@@ -40,6 +38,7 @@ public class Demo implements ApplicationListener {
     private Matrix4 viewMatrix;
     private Matrix4 modelMatrix;
     private Texture texture;
+    private float currentTime;
 
     public void init() {
 
@@ -659,7 +658,7 @@ public class Demo implements ApplicationListener {
 
     private void setUniforms(){
 
-        float currentTime =  (float) glfwGetTime();
+
         updateMatrices2(currentTime);
 
         int offset = 0;
@@ -676,7 +675,9 @@ public class Demo implements ApplicationListener {
         wgpu.QueueWriteBuffer(queue, uniformBuffer, 0, uniformData, uniformBufferSize);
     }
 
-    public void render(){
+    public void render( float deltaTime ){
+        currentTime += deltaTime;
+
         // loop
         Pointer targetView = getNextSurfaceTextureView();
         if (targetView.address() == 0) {

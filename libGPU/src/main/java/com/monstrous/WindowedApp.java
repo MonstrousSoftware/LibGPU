@@ -20,6 +20,7 @@ public class WindowedApp {
     // The window handle
     private long window;
     private long windowHandle;
+    private double currentTime;
 
     public void openWindow(ApplicationConfiguration config){
         System.out.println("Application init");
@@ -101,6 +102,12 @@ public class WindowedApp {
         // Poll for window events. The key callback above will only be
         // invoked during this call.
         glfwPollEvents();
+    }
+
+    public float getDeltaTime() {
+        double prevTime = currentTime;
+        currentTime = glfwGetTime();
+        return (float)(currentTime - prevTime);
     }
 
     public void closeWindow(){

@@ -120,7 +120,7 @@ Installed it in C:\Coding\mingw64 and added C:\Coding\mingw64\bin to the system 
 
 g++ --version  => 4.8.2
 
-Make sure the run configuration of Main is changed so that the working
+Make sure the run configuration of com.monstrous.Launcher is changed so that the working
 directory points to src\main\c where the nativec.dll is located.
 
 
@@ -164,9 +164,9 @@ The linker needs those .LIB files or else it will complain about 'error LNK2019:
 Make sure to use the .lib file that corresponds to the dll, e.g. the glfw3dll.lib of 6Kb not glfw3.lib of 200Kb which is a static library.
 
 
-Running Main:
+Running com.monstrous.Launcher:
 The gradle run task doesn't work yet (cannot find nativec.dll)
-But you can right click on the Main class and select Main.main(). The Intellij run configuration was updated with the working dir.
+But you can right click on the com.monstrous.Launcher class and select com.monstrous.Launcher.main(). The Intellij run configuration was updated with the working dir.
 
 To do:
 - improve gradle builds, modularize project
@@ -262,8 +262,8 @@ DLL Link error on startup:
     [nativec]
 
 1. Make sure nativec.dll is compiled and present in src/main/c (run compileDawn.bat) (to do: do by gradle task instead)
-2. Run Main from the project window by right-click, Run Main:Main()
-3. Make sure the config of Main has working directory: C:\Coding\IdeaProjects\CallingWebGPU\libGPU\src\main\c
+2. Run com.monstrous.Launcher from the project window by right-click, Run com.monstrous.Launcher:com.monstrous.Launcher()
+3. Make sure the config of com.monstrous.Launcher has working directory: C:\Coding\IdeaProjects\CallingWebGPU\libGPU\src\main\c
 
 Or Gradle task libGPU/application/run
 

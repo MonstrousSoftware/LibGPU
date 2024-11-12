@@ -24,7 +24,7 @@ public class Application {
         // the window or has pressed the ESCAPE key.
         while (!winApp.shouldClose()) {
 
-            listener.render();
+            listener.render( winApp.getDeltaTime() );
 
 
             // Poll for window events. The key callback above will only be
