@@ -1,5 +1,6 @@
 package com.monstrous;
 
+import com.monstrous.graphics.SpriteBatch;
 import com.monstrous.graphics.Texture;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.WgpuJava;
@@ -39,6 +40,7 @@ public class Demo implements ApplicationListener {
     private Matrix4 modelMatrix;
     private Texture texture;
     private float currentTime;
+    private SpriteBatch batch;
 
     public void init() {
 
@@ -167,7 +169,7 @@ public class Demo implements ApplicationListener {
         initializePipeline();
         //playingWithBuffers();
 
-        texture = new Texture("jackRussel.png");
+        texture = new Texture("jackRussel.png", false);
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
@@ -198,6 +200,9 @@ public class Demo implements ApplicationListener {
 
 
         initBindGroups();
+
+        batch = new SpriteBatch();
+
     }
 
     private int ceilToNextMultiple(int value, int step){
@@ -535,7 +540,7 @@ public class Demo implements ApplicationListener {
         depthTextureDesc.setFormat( depthTextureFormat );
         depthTextureDesc.setMipLevelCount(1);
         depthTextureDesc.setSampleCount(1);
-        depthTextureDesc.getSize().setWidth(640);
+        depthTextureDesc.getSize().setWidth(640);           // todo
         depthTextureDesc.getSize().setHeight(480);
         depthTextureDesc.getSize().setDepthOrArrayLayers(1);
         depthTextureDesc.setUsage( WGPUTextureUsage.RenderAttachment );
@@ -659,7 +664,7 @@ public class Demo implements ApplicationListener {
     private void setUniforms(){
 
 
-        updateMatrices2(currentTime);
+        updateMatrices(currentTime);
 
         int offset = 0;
         setUniformMatrix(uniformData, offset, projectionMatrix);
@@ -678,12 +683,21 @@ public class Demo implements ApplicationListener {
     public void render( float deltaTime ){
         currentTime += deltaTime;
 
-        // loop
         Pointer targetView = getNextSurfaceTextureView();
         if (targetView.address() == 0) {
             System.out.println("*** Invalid target view");
             return;
         }
+
+        // SpriteBatch testing
+        batch.begin();
+        batch.draw(texture, 100, 100, 100, 100);
+        batch.draw(texture, 300, 300, 50, 50);
+        batch.draw(texture, 400, 100, 150, 150);
+        batch.end();
+
+
+
         setUniforms();
 
         WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
@@ -723,38 +737,38 @@ public class Demo implements ApplicationListener {
         WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
         renderPassDescriptor.setNextInChain();
 
+        renderPassDescriptor.setLabel("Main Render Pass");
+
         renderPassDescriptor.setColorAttachmentCount(1);
         renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
         renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
+        renderPassDescriptor.setDepthStencilAttachment(); // depthStencilAttachment );
         renderPassDescriptor.setTimestampWrites();
 
         Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
 // [...] Use Render Pass
 
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+        batch.renderPass(renderPass);
 
-        // Set vertex buffer while encoding the render pass
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
-
-        int[] offset = new int[1];
-        offset[0] = 0;
-        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
-
-
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
-
-//        offsetPtr.putInt(0, uniformStride);
+//        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+//
+//
+//
+//        // Set vertex buffer while encoding the render pass
+//        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+//        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
+//
+//        int[] offset = new int[1];
+//        offset[0] = 0;
+//        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
+//
+//
 //        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
 //        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
 //
-
-        //wgpu.RenderPassEncoderDraw(renderPass, vertexCount, 1, 0, 0);
-
-        wgpu.RenderPassEncoderEnd(renderPass);
-        wgpu.RenderPassEncoderRelease(renderPass);
+//
+//        wgpu.RenderPassEncoderEnd(renderPass);
+//        wgpu.RenderPassEncoderRelease(renderPass);
 
         WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
         bufferDescriptor.setNextInChain();
@@ -785,6 +799,7 @@ public class Demo implements ApplicationListener {
     public void exit(){
         // cleanup
         texture.dispose();
+        batch.dispose();
 
         // Destroy the depth texture and its view
         wgpu.TextureViewRelease(depthTextureView);

@@ -23,13 +23,21 @@ public class Texture {
         this(256, 256);
     }
 
-    public Texture(int width, int height) {
+    public Texture(int width, int height){
+        this(width, height, true);
+    }
+
+    public Texture(int width, int height, boolean mipMapping) {
         this.width = width;
         this.height = height;
-        load(null);
+        load(null, mipMapping);
     }
 
     public Texture(String fileName) {
+        this(fileName, true);
+    }
+
+    public Texture(String fileName, boolean mipMapping) {
         this();
         byte[] fileData;
 
@@ -45,7 +53,7 @@ public class Texture {
             this.height = info.height.intValue();
             this.format = info.format.intValue();
             Pointer pixelPtr = info.pixels.get();
-            load(pixelPtr);
+            load(pixelPtr, mipMapping);
 
 
         } catch (IOException e) {
@@ -93,11 +101,13 @@ public class Texture {
         }
     }
 
-    private void load(Pointer pixelPtr) {
+    private void load(Pointer pixelPtr, boolean mipMapping) {
         if(LibGPU.device == null || LibGPU.queue == null )
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
-        int mipLevelCount = bitWidth(Math.max(width, height));      // todo test for non-square
+        int mipLevelCount = 1;
+        if(mipMapping)
+            mipLevelCount = bitWidth(Math.max(width, height));      // todo test for non-square, non POT etc.
 
         // Create the texture
         WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
@@ -114,7 +124,7 @@ public class Texture {
         textureDesc.setViewFormats(WgpuJava.createNullPointer());
         texture = LibGPU.wgpu.DeviceCreateTexture(LibGPU.device, textureDesc);
 
-        // Create the view of the depth texture manipulated by the rasterizer
+        // Create the view of the  texture manipulated by the rasterizer
         WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
         textureViewDesc.setAspect(WGPUTextureAspect.All);
         textureViewDesc.setBaseArrayLayer(0);

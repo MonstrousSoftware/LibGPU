@@ -8,9 +8,6 @@ version = '1.0'
 
 application {
     mainClass = 'com.monstrous.Launcher'
-    //systemProperty "java.library.path", "./src/main/c"
-    //applicationDefaultJvmArgs = ['-Djava.library-path=./src/main/c']
-    //executableDir = 'custom_bin_dir'
 }
 
 run {
@@ -27,15 +24,5 @@ dependencies {
 
     implementation project(':libGPU')
     implementation 'com.github.jnr:jnr-ffi:2.2.17'
-//    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-//
-//    implementation "org.lwjgl:lwjgl"
-//    implementation "org.lwjgl:lwjgl-glfw"
-//    implementation "org.lwjgl:lwjgl-opengl"
-//    implementation "org.lwjgl:lwjgl-stb"
-//    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-//    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
-//    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
-//    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
 }
 
