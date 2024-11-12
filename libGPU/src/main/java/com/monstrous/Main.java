@@ -1,20 +1,16 @@
 package com.monstrous;
 
+// Launcher
+
 public class Main {
-    private Application application;
-    private Demo demo;
 
 
     public static void main(String[] args) {
-       new Main().run();
-    }
+        ApplicationConfiguration config = new ApplicationConfiguration();
 
-    public void run(){
-        application = new Application();
-        demo = new Demo();
+        config.setSize(1200,600);
+        config.title = "My WebGPU application";
 
-        application.init(demo);             // need to think how best to separate the framework from the app
-        application.loop(demo);
-        application.exit(demo);
+        new Application(new Demo(), config);
     }
 }

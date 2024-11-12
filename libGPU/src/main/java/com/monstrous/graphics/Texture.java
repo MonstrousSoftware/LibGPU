@@ -148,17 +148,17 @@ public class Texture {
 
         WGPUExtent3D ext = WGPUExtent3D.createDirect();
 
-
-
         byte[] prevPixels = null;
         for(int mipLevel = 0; mipLevel < mipLevelCount; mipLevel++) {
-            //if (pixelPtr == null) {
+
                 byte[] pixels = new byte[4 * mipLevelWidth * mipLevelHeight];
+
                 int offset = 0;
                 for (int y = 0; y < mipLevelHeight; y++) {
                     for (int x = 0; x < mipLevelWidth; x++) {
                         if(mipLevel == 0) {
                             if(pixelPtr == null) {
+                                // generate test pattern
                                 pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
                                 pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
                                 pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
@@ -178,17 +178,17 @@ public class Texture {
                             int offset10 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+0));
                             int offset11 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+1));
 
-                            // Average
-                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01]+prevPixels[offset10]+prevPixels[offset11])/4);
-                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1]+prevPixels[offset10+1]+prevPixels[offset11+1])/4);
-                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2]+prevPixels[offset10+2]+prevPixels[offset11+2])/4);
+                            // Average r, g and b components
+                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01]+prevPixels[offset10]+prevPixels[offset11])/4);     // r
+                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1]+prevPixels[offset10+1]+prevPixels[offset11+1])/4); // g
+                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2]+prevPixels[offset10+2]+prevPixels[offset11+2])/4); // b
                             pixels[offset++] = (byte) 255;
                         }
 
                     }
                 }
                 pixelPtr = WgpuJava.createByteArrayPointer(pixels);
-            //}
+
 
             destination.setMipLevel(mipLevel);
 
@@ -216,8 +216,8 @@ public class Texture {
         samplerDesc.setMinFilter( WGPUFilterMode.Linear);
         samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);
 
-        samplerDesc.setLodMinClamp( 0.0f);
-        samplerDesc.setLodMaxClamp( 8.0f);
+        samplerDesc.setLodMinClamp(1);
+        samplerDesc.setLodMaxClamp(mipLevelCount);
         samplerDesc.setCompare( WGPUCompareFunction.Undefined);
         samplerDesc.setMaxAnisotropy( 1);
         sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
