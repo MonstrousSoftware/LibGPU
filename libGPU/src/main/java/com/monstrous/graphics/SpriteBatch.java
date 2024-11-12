@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+// todo ! multiple textures
+// todo optim: index data could be precalculated and static
+// todo texture regions
+
 public class SpriteBatch {
     private WGPU wgpu;
     private int maxSprites;
@@ -45,11 +49,10 @@ public class SpriteBatch {
 
         indexValues = new int[maxSprites * 6];    // 6 indices per sprite
         vertFloats = new float[maxSprites * 4 * vertexSize];
-        numRects = 0;
 
         projectionMatrix = new Matrix4();
 
-        texture = new Texture("monstrous.png");
+        texture = new Texture("jackRussel.png", false);
         createBuffers();
         makeBindGroupLayout();
         initBindGroups();
@@ -68,6 +71,7 @@ public class SpriteBatch {
         if (begun)
             throw new RuntimeException("Must end() before begin()");
         begun = true;
+        numRects = 0;
 
     }
 
@@ -77,6 +81,11 @@ public class SpriteBatch {
         begun = false;
         flush();
 
+    }
+
+
+    public void draw(Texture texture, int x, int y) {
+        draw(texture, x, y, texture.getWidth(), texture.getHeight());
     }
 
     public void draw(Texture texture, int x, int y, int w, int h) {
@@ -125,15 +134,15 @@ public class SpriteBatch {
     }
 
     private void flush() {
-
-        Pointer data = WgpuJava.createFloatArrayPointer(vertFloats);
         // Upload geometry data to the buffer
-        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, data, (int) numRects*4*vertexSize*Float.BYTES);
+        //Pointer data = WgpuJava.createFloatArrayPointer(vertFloats);
+        int numFloats = numRects * 4 * vertexSize;
+        Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
+        data.put(0, vertFloats, 0, numFloats);
+        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, data, (int) numFloats*Float.BYTES);
 
-
+        // Upload index data to the buffer
         Pointer idata = WgpuJava.createIntegerArrayPointer(indexValues);
-
-        // Upload data to the buffer
         wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, (int) numRects*6*Integer.BYTES);
 
     }
@@ -272,12 +281,6 @@ public class SpriteBatch {
         positionAttrib.setShaderLocation(0);
         offset += 2 * Float.BYTES;
 
-//        WGPUVertexAttribute colorAttrib = WGPUVertexAttribute.createDirect();   // freed where?
-//        colorAttrib.setFormat(WGPUVertexFormat.Float32x3);  // RGB
-//        colorAttrib.setOffset(offset);
-//        colorAttrib.setShaderLocation(1);
-//        offset += 3 * Float.BYTES;
-
         WGPUVertexAttribute uvAttrib = WGPUVertexAttribute.createDirect();   // freed where?
         uvAttrib.setFormat(WGPUVertexFormat.Float32x2); // UV
         uvAttrib.setOffset(offset);
@@ -336,49 +339,8 @@ public class SpriteBatch {
 
         pipelineDesc.setFragment(fragmentState);
 
-//        WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
-//        setDefault(depthStencilState);
-//        depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
-//        depthStencilState.setDepthWriteEnabled(1L);
-//        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;
-//        depthStencilState.setFormat(depthTextureFormat);
-//        // deactivate stencil
-//        depthStencilState.setStencilReadMask(0L);
-//        depthStencilState.setStencilWriteMask(0L);
-
         pipelineDesc.setDepthStencil();
 
-
-//        long[] formats = new long[1];
-//        formats[0] = depthTextureFormat.ordinal();
-//        Pointer formatPtr = WgpuJava.createLongArrayPointer(formats);
-//
-//        // Create the depth texture
-//        WGPUTextureDescriptor depthTextureDesc = WGPUTextureDescriptor.createDirect();
-//        depthTextureDesc.setNextInChain();
-//        depthTextureDesc.setDimension( WGPUTextureDimension._2D);
-//        depthTextureDesc.setFormat( depthTextureFormat );
-//        depthTextureDesc.setMipLevelCount(1);
-//        depthTextureDesc.setSampleCount(1);
-//        depthTextureDesc.getSize().setWidth(640);           // todo
-//        depthTextureDesc.getSize().setHeight(480);
-//        depthTextureDesc.getSize().setDepthOrArrayLayers(1);
-//        depthTextureDesc.setUsage( WGPUTextureUsage.RenderAttachment );
-//        depthTextureDesc.setViewFormatCount(1);
-//        depthTextureDesc.setViewFormats( formatPtr );
-//        depthTexture = wgpu.DeviceCreateTexture(device, depthTextureDesc);
-
-
-//        // Create the view of the depth texture manipulated by the rasterizer
-//        WGPUTextureViewDescriptor depthTextureViewDesc = WGPUTextureViewDescriptor.createDirect();
-//        depthTextureViewDesc.setAspect(WGPUTextureAspect.DepthOnly);
-//        depthTextureViewDesc.setBaseArrayLayer(0);
-//        depthTextureViewDesc.setArrayLayerCount(1);
-//        depthTextureViewDesc.setBaseMipLevel(0);
-//        depthTextureViewDesc.setMipLevelCount(1);
-//        depthTextureViewDesc.setDimension( WGPUTextureViewDimension._2D);
-//        depthTextureViewDesc.setFormat(depthTextureFormat);
-//        depthTextureView = wgpu.TextureCreateView(depthTexture, depthTextureViewDesc);
 
         pipelineDesc.getMultisample().setCount(1);
         pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);

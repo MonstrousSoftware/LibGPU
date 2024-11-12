@@ -693,7 +693,11 @@ public class Demo implements ApplicationListener {
         batch.begin();
         batch.draw(texture, 100, 100, 100, 100);
         batch.draw(texture, 300, 300, 50, 50);
-        batch.draw(texture, 400, 100, 150, 150);
+        batch.draw(texture, 400, 100, 64, 64);
+
+        for(int i = 0; i < 80; i++){
+            batch.draw(texture, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
+        }
         batch.end();
 
 

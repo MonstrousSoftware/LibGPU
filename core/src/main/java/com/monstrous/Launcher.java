@@ -7,7 +7,7 @@ public class Launcher {
         System.out.println("Hello, world!");
         ApplicationConfiguration config = new ApplicationConfiguration();
 
-        config.setSize(600,600);
+        config.setSize(640, 480);
         config.title = "My WebGPU application";
 
         new Application(new com.monstrous.Demo(), config);
