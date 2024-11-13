@@ -6,14 +6,12 @@ import com.monstrous.utils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 // todo optim: index data could be precalculated and static
+// todo support packed color to reduce vertex size
 
 public class SpriteBatch {
     private WGPU wgpu;
+    private ShaderProgram shader;
     private int maxSprites;
     private boolean begun;
     private int vertexSize;
@@ -47,6 +45,7 @@ public class SpriteBatch {
 
         // vertex: x, y, u, v, r, g, b, a
         vertexSize = 8; // floats
+        shader = new ShaderProgram("sprite.wgsl");
 
         indexValues = new int[maxSprites * 6];    // 6 indices per sprite
         vertFloats = new float[maxSprites * 4 * vertexSize];
@@ -310,27 +309,6 @@ public class SpriteBatch {
 
     private void initializePipeline() {
 
-        // Create Shader Module
-        WGPUShaderModuleDescriptor shaderDesc = WGPUShaderModuleDescriptor.createDirect();
-        shaderDesc.setLabel("My Shader");
-
-        String shaderSource = null;
-        try {
-            shaderSource = Files.readString(Paths.get("sprite.wgsl"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
-        WGPUShaderModuleWGSLDescriptor shaderCodeDesc = WGPUShaderModuleWGSLDescriptor.createDirect();
-        shaderCodeDesc.getChain().setNext();
-        shaderCodeDesc.getChain().setSType(WGPUSType.ShaderModuleWGSLDescriptor);
-        shaderCodeDesc.setCode(shaderSource);
-
-        shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
-
-        Pointer shaderModule = wgpu.DeviceCreateShaderModule(LibGPU.device, shaderDesc);
-
         // DEFINE VERTEX ATTRIBUTES
         //
         //  create an array of WGPUVertexAttribute
@@ -372,7 +350,7 @@ public class SpriteBatch {
         pipelineDesc.getVertex().setBufferCount(1);
         pipelineDesc.getVertex().setBuffers(vertexBufferLayout);
 
-        pipelineDesc.getVertex().setModule(shaderModule);
+        pipelineDesc.getVertex().setModule(shader.getShaderModule());
         pipelineDesc.getVertex().setEntryPoint("vs_main");
         pipelineDesc.getVertex().setConstantCount(0);
         pipelineDesc.getVertex().setConstants();
@@ -384,7 +362,7 @@ public class SpriteBatch {
 
         WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
         fragmentState.setNextInChain();
-        fragmentState.setModule(shaderModule);
+        fragmentState.setModule(shader.getShaderModule());
         fragmentState.setEntryPoint("fs_main");
         fragmentState.setConstantCount(0);
         fragmentState.setConstants();
@@ -430,7 +408,7 @@ public class SpriteBatch {
 
         pipelineDesc.setLayout(layout);
         pipeline = wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
-        wgpu.ShaderModuleRelease(shaderModule);
+//        wgpu.ShaderModuleRelease(shaderModule);
 
 
     }
@@ -465,5 +443,6 @@ public class SpriteBatch {
         wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
+        shader.dispose();
     }
 }

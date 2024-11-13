@@ -775,7 +775,7 @@ public class Demo implements ApplicationListener {
         // SpriteBatch testing
         batch.begin(renderPass);    // todo param for now
 
-        batch.setColor(1,0,0,1);
+        batch.setColor(1,0,0,0.1f);
         batch.draw(texture, 0, 0, 100, 100);
 
         batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
