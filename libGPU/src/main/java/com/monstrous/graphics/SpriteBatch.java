@@ -84,42 +84,50 @@ public class SpriteBatch {
     }
 
 
-    public void draw(Texture texture, int x, int y) {
+    public void draw(Texture texture, float x, float y) {
         draw(texture, x, y, texture.getWidth(), texture.getHeight());
     }
 
-    public void draw(Texture texture, int x, int y, int w, int h) {
+    public void draw(Texture texture, float x, float y, float w, float h){
+        this.draw(texture, x, y, w, h, 0f, 1f, 1f, 0f);
+    }
+
+    public void draw(TextureRegion region, float x, float y, float w, float h){
+        this.draw(region.texture, x, y, w, h, region.u, region.v, region.u2, region.v2  );
+    }
+
+    public void draw (Texture texture, float x, float y, float width, float height, float u, float v, float u2, float v2) {
         if (!begun)
             throw new RuntimeException("Must call begin() first");
 
-        addRect(x, y, w, h);
+        addRect(x, y, width, height, u, v, u2, v2);
         // todo for now all with the same texture
         //this.texture = texture;
     }
 
-    private void addRect(int x, int y, int w, int h) {
+    private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
         // u,v is 0 to 1 for now
 
         int i = numRects * 4 * vertexSize;
         vertFloats[i++] = x;
         vertFloats[i++] = y;
-        vertFloats[i++] = 0;    // u
-        vertFloats[i++] = 1;    // v
+        vertFloats[i++] = u;
+        vertFloats[i++] = v;
 
         vertFloats[i++] = x;
         vertFloats[i++] = y + h;
-        vertFloats[i++] = 0;
-        vertFloats[i++] = 0;
+        vertFloats[i++] = u;
+        vertFloats[i++] = v2;
 
-        vertFloats[i++] = x + h;
+        vertFloats[i++] = x + w;
         vertFloats[i++] = y + h;
-        vertFloats[i++] = 1;
-        vertFloats[i++] = 0;
+        vertFloats[i++] = u2;
+        vertFloats[i++] = v2;
 
-        vertFloats[i++] = x + h;
+        vertFloats[i++] = x + w;
         vertFloats[i++] = y;
-        vertFloats[i++] = 1;
-        vertFloats[i++] = 1;
+        vertFloats[i++] = u2;
+        vertFloats[i++] = v;
 
         int k = numRects * 6;
         int start = numRects * 4;

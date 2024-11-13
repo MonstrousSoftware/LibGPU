@@ -2,6 +2,7 @@ package com.monstrous;
 
 import com.monstrous.graphics.SpriteBatch;
 import com.monstrous.graphics.Texture;
+import com.monstrous.graphics.TextureRegion;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.WgpuJava;
 import com.monstrous.wgpu.*;
@@ -691,9 +692,15 @@ public class Demo implements ApplicationListener {
 
         // SpriteBatch testing
         batch.begin();
-        batch.draw(texture, 100, 100, 100, 100);
+        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
         batch.draw(texture, 300, 300, 50, 50);
         batch.draw(texture, 400, 100, 64, 64);
+
+        TextureRegion region = new TextureRegion(texture, 0, 0, 512, 512);
+        batch.draw(region, 200, 300, 64, 64);
+
+        TextureRegion region2 = new TextureRegion(texture, 0f, 1f, .5f, 0.5f);
+        batch.draw(region2, 400, 300, 64, 64);
 
         for(int i = 0; i < 80; i++){
             batch.draw(texture, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);

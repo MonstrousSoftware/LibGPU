@@ -1,21 +1,30 @@
 package com.monstrous.graphics;
 
 public class TextureRegion {
-    private Texture texture;
-    private float u,v;
-    private float u2, v2;
+    public Texture texture;
+    public float u,v;
+    public float u2, v2;
 
+    // pixel positions from bottom left, width and height in pixels
     public TextureRegion(Texture texture, int x, int y, int width, int height) {
         this.texture = texture;
         setRegion(x,y,width, height);
     }
 
+    // u, v in 0..1 starting top left
+    public TextureRegion(Texture texture, float u, float v, float u2, float v2) {
+        this.texture = texture;
+        setRegion(u, v, u2, v2);
+    }
+
+    // pixel positions from bottom left, width and height in pixels
     public void setRegion(int x, int y, int width, int height) {
         float tw = texture.getWidth();
         float th = texture.getHeight();
-        setRegion(x/tw, y/th, (x+width)/tw, (y+height)/th);
+        setRegion(x/tw, (th-y)/th, (x+width)/tw, (th-(y+height))/th);
     }
 
+    // u goes right, v goes down. Origin is at top left.
     public void setRegion(float u, float v, float u2, float v2) {
         this.u = u;
         this.v = v;
@@ -23,35 +32,4 @@ public class TextureRegion {
         this.v2 = v2;
     }
 
-    public float getU() {
-        return u;
-    }
-
-    public void setU(float u) {
-        this.u = u;
-    }
-
-    public float getV() {
-        return v;
-    }
-
-    public void setV(float v) {
-        this.v = v;
-    }
-
-    public float getU2() {
-        return u2;
-    }
-
-    public void setU2(float u2) {
-        this.u2 = u2;
-    }
-
-    public float getV2() {
-        return v2;
-    }
-
-    public void setV2(float v2) {
-        this.v2 = v2;
-    }
 }
