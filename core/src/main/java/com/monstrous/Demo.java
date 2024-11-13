@@ -30,6 +30,7 @@ public class Demo implements ApplicationListener {
     private Pointer layout;
     private Pointer bindGroupLayout;
     private Pointer bindGroup;
+    private Pointer bindGroup2;
     private int uniformBufferSize;  // in bytes
     private int uniformStride;
     private int uniformInstances;
@@ -40,6 +41,7 @@ public class Demo implements ApplicationListener {
     private Matrix4 viewMatrix;
     private Matrix4 modelMatrix;
     private Texture texture;
+    private Texture texture2;
     private float currentTime;
     private SpriteBatch batch;
 
@@ -170,7 +172,8 @@ public class Demo implements ApplicationListener {
         initializePipeline();
         //playingWithBuffers();
 
-        texture = new Texture("jackRussel.png", false);
+        texture = new Texture("monstrous.png", false);
+        texture2 = new Texture("jackRussel.png", false);
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
@@ -200,7 +203,8 @@ public class Demo implements ApplicationListener {
         initBuffers();
 
 
-        initBindGroups();
+        bindGroup = initBindGroups(texture);
+        bindGroup2 = initBindGroups(texture2);
 
         batch = new SpriteBatch();
 
@@ -397,7 +401,7 @@ public class Demo implements ApplicationListener {
 
     }
 
-    private void initBindGroups() {
+    private Pointer initBindGroups(Texture texture) {
         // Create a binding
         WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
         binding.setNextInChain();
@@ -413,8 +417,27 @@ public class Demo implements ApplicationListener {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(3);
         bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
-        bindGroup = wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
+        return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
+
+//    private void initBindGroup2() {
+//        // Create a binding
+//        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
+//        binding.setNextInChain();
+//        binding.setBinding(0);  // binding index
+//        binding.setBuffer(uniformBuffer);
+//        binding.setOffset(0);
+//        binding.setSize(uniformBufferSize);
+//
+//        // A bind group contains one or multiple bindings
+//        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
+//        bindGroupDesc.setNextInChain();
+//        bindGroupDesc.setLayout(bindGroupLayout);
+//        // There must be as many bindings as declared in the layout!
+//        bindGroupDesc.setEntryCount(3);
+//        bindGroupDesc.setEntries(binding, texture2.getBinding(1), texture2.getSamplerBinding(2));
+//        bindGroup2 = wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
+//    }
 
 
     private void initializePipeline() {
@@ -690,22 +713,7 @@ public class Demo implements ApplicationListener {
             return;
         }
 
-        // SpriteBatch testing
-        batch.begin();
-        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
-        batch.draw(texture, 300, 300, 50, 50);
-        batch.draw(texture, 400, 100, 64, 64);
 
-        TextureRegion region = new TextureRegion(texture, 0, 0, 512, 512);
-        batch.draw(region, 200, 300, 64, 64);
-
-        TextureRegion region2 = new TextureRegion(texture, 0f, 1f, .5f, 0.5f);
-        batch.draw(region2, 400, 300, 64, 64);
-
-        for(int i = 0; i < 80; i++){
-            batch.draw(texture, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
-        }
-        batch.end();
 
 
 
@@ -756,30 +764,60 @@ public class Demo implements ApplicationListener {
         renderPassDescriptor.setDepthStencilAttachment(); // depthStencilAttachment );
         renderPassDescriptor.setTimestampWrites();
 
+
         Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
 // [...] Use Render Pass
 
-        batch.renderPass(renderPass);
+
+
+
+
+        // SpriteBatch testing
+        batch.begin(renderPass);    // todo param for now
+
+
+        batch.draw(texture, 0, 0, 100, 100);
+        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
+        batch.draw(texture, 300, 300, 50, 50);
+
+        batch.draw(texture2, 400, 100, 100, 100);
+
+        TextureRegion region = new TextureRegion(texture2, 0, 0, 512, 512);
+        batch.draw(region, 200, 300, 64, 64);
+
+        TextureRegion region2 = new TextureRegion(texture2, 0f, 1f, .5f, 0.5f);
+        batch.draw(region2, 400, 300, 64, 64);
+
+        for(int i = 0; i < 80; i++){
+            batch.draw(texture2, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
+        }
+        batch.end();
+
 
 //        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
-//
-//
 //
 //        // Set vertex buffer while encoding the render pass
 //        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 //        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 //
-//        int[] offset = new int[1];
-//        offset[0] = 0;
-//        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
+//        Pointer bg = initBindGroups(texture);
+//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
+//        wgpu.RenderPassEncoderDrawIndexed(renderPass, 3, 1, 0, 0, 0);
+//        wgpu.BindGroupRelease(bg);
 //
+//        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+//        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 //
-//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
+//        bg = initBindGroups(texture2);
+//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
 //        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
-//
+//        wgpu.BindGroupRelease(bg);
 //
 //        wgpu.RenderPassEncoderEnd(renderPass);
+//
 //        wgpu.RenderPassEncoderRelease(renderPass);
+
+
 
         WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
         bufferDescriptor.setNextInChain();
@@ -809,13 +847,17 @@ public class Demo implements ApplicationListener {
 
     public void exit(){
         // cleanup
+        System.out.println("demo exit");
         texture.dispose();
+        texture2.dispose();
         batch.dispose();
+        System.out.println("demo exit2");
 
         // Destroy the depth texture and its view
         wgpu.TextureViewRelease(depthTextureView);
         wgpu.TextureDestroy(depthTexture);
         wgpu.TextureRelease(depthTexture);
+        System.out.println("demo exit3");
 
         wgpu.PipelineLayoutRelease(layout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
@@ -824,11 +866,13 @@ public class Demo implements ApplicationListener {
         wgpu.BufferRelease(vertexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.RenderPipelineRelease(pipeline);
+        System.out.println("demo exit4");
 //        wgpu.SurfaceUnconfigure(surface);
 //        wgpu.SurfaceRelease(surface);
         wgpu.QueueRelease(queue);
         wgpu.DeviceRelease(device);
         //wgpu.InstanceRelease(instance);
+        System.out.println("demo exit5");
     }
 
     private Pointer getNextSurfaceTextureView() {
@@ -907,7 +951,7 @@ public class Demo implements ApplicationListener {
 
         bindingLayout.getBuffer().setNextInChain();
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-        bindingLayout.getBuffer().setHasDynamicOffset(1L);
+        bindingLayout.getBuffer().setHasDynamicOffset(0L);
 
         bindingLayout.getSampler().setNextInChain();
         bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);

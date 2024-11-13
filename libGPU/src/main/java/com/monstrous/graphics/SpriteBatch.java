@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 
 // todo ! multiple textures
 // todo optim: index data could be precalculated and static
-// todo texture regions
 
 public class SpriteBatch {
     private WGPU wgpu;
@@ -31,6 +30,9 @@ public class SpriteBatch {
     private int uniformBufferSize;
     private Texture texture;
     private Matrix4 projectionMatrix;
+    private Pointer renderPass;
+    private int vbOffset;
+    private int ibOffset;
 
 
 
@@ -52,10 +54,10 @@ public class SpriteBatch {
 
         projectionMatrix = new Matrix4();
 
-        texture = new Texture("jackRussel.png", false);
+        //texture = new Texture("jackRussel.png", false);
         createBuffers();
         makeBindGroupLayout();
-        initBindGroups();
+
         initializePipeline();
 
         resize(640, 480);    // todo
@@ -67,12 +69,49 @@ public class SpriteBatch {
     }
 
 
-    public void begin() {
+    public void begin(Pointer renderPass) { // todo can we avoid this param?
+        this.renderPass = renderPass;
+
         if (begun)
             throw new RuntimeException("Must end() before begin()");
         begun = true;
         numRects = 0;
+        vbOffset = 0;
+        ibOffset = 0;
 
+        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+    }
+
+    public void flush() {
+        if(numRects == 0)
+            return;
+
+        // Upload geometry data to the buffer
+        int numFloats = numRects * 4 * vertexSize;
+        Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
+        data.put(0, vertFloats, 0, numFloats);
+        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, data, (int) numFloats*Float.BYTES);
+
+
+        // Upload index data to the buffer
+        Pointer idata = WgpuJava.createIntegerArrayPointer(indexValues);
+        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Integer.BYTES);
+
+
+        Pointer bg = makeBindGroup(texture);
+
+        // Set vertex buffer while encoding the render pass
+        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, ibOffset, (long)numRects*6*Integer.BYTES);
+
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, WgpuJava.createNullPointer());
+        wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
+        wgpu.BindGroupRelease(bg);
+
+
+        vbOffset += numFloats*Float.BYTES;
+        ibOffset += numRects*6*Integer.BYTES;
+        numRects = 0;   // reset
     }
 
     public void end() {
@@ -81,6 +120,8 @@ public class SpriteBatch {
         begun = false;
         flush();
 
+        wgpu.RenderPassEncoderEnd(renderPass);
+        wgpu.RenderPassEncoderRelease(renderPass);
     }
 
 
@@ -98,11 +139,16 @@ public class SpriteBatch {
 
     public void draw (Texture texture, float x, float y, float width, float height, float u, float v, float u2, float v2) {
         if (!begun)
-            throw new RuntimeException("Must call begin() first");
+            throw new RuntimeException("SpriteBatch: Must call begin() before draw().");
 
+        if(numRects == maxSprites)
+            throw new RuntimeException("SpriteBatch: Too many sprites.");
+
+        if(texture != this.texture)  // changing texture, need to flush what we have so far
+            flush();
+
+        this.texture = texture;
         addRect(x, y, width, height, u, v, u2, v2);
-        // todo for now all with the same texture
-        //this.texture = texture;
     }
 
     private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
@@ -141,19 +187,7 @@ public class SpriteBatch {
         numRects++;
     }
 
-    private void flush() {
-        // Upload geometry data to the buffer
-        //Pointer data = WgpuJava.createFloatArrayPointer(vertFloats);
-        int numFloats = numRects * 4 * vertexSize;
-        Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
-        data.put(0, vertFloats, 0, numFloats);
-        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, data, (int) numFloats*Float.BYTES);
 
-        // Upload index data to the buffer
-        Pointer idata = WgpuJava.createIntegerArrayPointer(indexValues);
-        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, (int) numRects*6*Integer.BYTES);
-
-    }
 
     private void setUniformMatrix(Pointer data, int offset, Matrix4 mat) {
         for (int i = 0; i < 16; i++) {
@@ -211,6 +245,7 @@ public class SpriteBatch {
         bindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
         bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
+        bindingLayout.getBuffer().setHasDynamicOffset(0L);
 
         WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(texBindingLayout);
@@ -234,7 +269,7 @@ public class SpriteBatch {
         bindGroupLayout = LibGPU.wgpu.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
-    private void initBindGroups() {
+    private Pointer makeBindGroup(Texture texture) {
         // Create a binding
         WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
         binding.setNextInChain();
@@ -250,7 +285,8 @@ public class SpriteBatch {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(3);
         bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
-        bindGroup = LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
+        // or update existing bindings?
+        return LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
     private void initializePipeline() {
@@ -357,7 +393,7 @@ public class SpriteBatch {
 
         long[] layouts = new long[1];
         layouts[0] = bindGroupLayout.address();
-        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);       // todo need this?
+        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);       // todo find better method
 
         // Create the pipeline layout
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
@@ -374,26 +410,7 @@ public class SpriteBatch {
 
     }
 
-    public void renderPass(Pointer renderPass) {
 
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
-
-        // Set vertex buffer while encoding the render pass
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
-
-        int[] offset = new int[1];
-        offset[0] = 0;
-        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);     // todo need this?
-
-
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
-
-
-        wgpu.RenderPassEncoderEnd(renderPass);
-        wgpu.RenderPassEncoderRelease(renderPass);
-    }
 
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
@@ -423,7 +440,6 @@ public class SpriteBatch {
         wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
-        wgpu.BindGroupRelease(bindGroup);
-        texture.dispose();
+        //wgpu.BindGroupRelease(bindGroup);
     }
 }

@@ -34,6 +34,7 @@ public class Application {
 
         System.out.println("Application exit");
         listener.exit();
+        System.out.println("Close Window");
         winApp.closeWindow();
     }
 
