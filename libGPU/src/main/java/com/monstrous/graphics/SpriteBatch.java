@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-// todo ! multiple textures
 // todo optim: index data could be precalculated and static
 
 public class SpriteBatch {
@@ -21,11 +20,11 @@ public class SpriteBatch {
     private float[] vertFloats;
     private int[] indexValues;
     private int numRects;
+    private Color tint;
     private Pointer vertexBuffer;
     private Pointer indexBuffer;
     private Pointer uniformBuffer;
     private Pointer bindGroupLayout;
-    private Pointer bindGroup;
     private Pointer pipeline;
     private int uniformBufferSize;
     private Texture texture;
@@ -46,15 +45,16 @@ public class SpriteBatch {
         begun = false;
         wgpu = LibGPU.wgpu;
 
-        // vertex: x, y, u, v
-        vertexSize = 4; // floats
+        // vertex: x, y, u, v, r, g, b, a
+        vertexSize = 8; // floats
 
         indexValues = new int[maxSprites * 6];    // 6 indices per sprite
         vertFloats = new float[maxSprites * 4 * vertexSize];
 
         projectionMatrix = new Matrix4();
 
-        //texture = new Texture("jackRussel.png", false);
+        tint = new Color(1,1,1,1);
+
         createBuffers();
         makeBindGroupLayout();
 
@@ -68,6 +68,9 @@ public class SpriteBatch {
         setUniforms();
     }
 
+    public void setColor(float r, float g, float b, float a){
+        tint.set(r,g,b,a);
+    }
 
     public void begin(Pointer renderPass) { // todo can we avoid this param?
         this.renderPass = renderPass;
@@ -98,15 +101,15 @@ public class SpriteBatch {
         wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Integer.BYTES);
 
 
-        Pointer bg = makeBindGroup(texture);
+        Pointer texBG = makeBindGroup(texture);
 
         // Set vertex buffer while encoding the render pass
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
         wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, ibOffset, (long)numRects*6*Integer.BYTES);
 
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, WgpuJava.createNullPointer());
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
         wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
-        wgpu.BindGroupRelease(bg);
+        wgpu.BindGroupRelease(texBG);
 
 
         vbOffset += numFloats*Float.BYTES;
@@ -159,21 +162,37 @@ public class SpriteBatch {
         vertFloats[i++] = y;
         vertFloats[i++] = u;
         vertFloats[i++] = v;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
 
         vertFloats[i++] = x;
         vertFloats[i++] = y + h;
         vertFloats[i++] = u;
         vertFloats[i++] = v2;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
 
         vertFloats[i++] = x + w;
         vertFloats[i++] = y + h;
         vertFloats[i++] = u2;
         vertFloats[i++] = v2;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
 
         vertFloats[i++] = x + w;
         vertFloats[i++] = y;
         vertFloats[i++] = u2;
         vertFloats[i++] = v;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
 
         int k = numRects * 6;
         int start = numRects * 4;
@@ -242,7 +261,7 @@ public class SpriteBatch {
         WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(bindingLayout);
         bindingLayout.setBinding(0);
-        bindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
+        bindingLayout.setVisibility(WGPUShaderStage.Vertex );
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
         bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
         bindingLayout.getBuffer().setHasDynamicOffset(0L);
@@ -263,11 +282,12 @@ public class SpriteBatch {
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
         bindGroupLayoutDesc.setNextInChain();
-        bindGroupLayoutDesc.setLabel("SpriteBatch binding group layout");
+        bindGroupLayoutDesc.setLabel("SpriteBatch texture binding group layout");
         bindGroupLayoutDesc.setEntryCount(3);
         bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
         bindGroupLayout = LibGPU.wgpu.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
+
 
     private Pointer makeBindGroup(Texture texture) {
         // Create a binding
@@ -285,7 +305,6 @@ public class SpriteBatch {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(3);
         bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
-        // or update existing bindings?
         return LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
@@ -315,7 +334,7 @@ public class SpriteBatch {
         // DEFINE VERTEX ATTRIBUTES
         //
         //  create an array of WGPUVertexAttribute
-        int attribCount = 2;
+        int attribCount = 3;
 
         WGPUVertexAttribute positionAttrib =  WGPUVertexAttribute.createDirect();
 
@@ -331,11 +350,17 @@ public class SpriteBatch {
         uvAttrib.setShaderLocation(1);
         offset += 2 * Float.BYTES;
 
+        WGPUVertexAttribute colorAttrib = WGPUVertexAttribute.createDirect();   // freed where?
+        colorAttrib.setFormat(WGPUVertexFormat.Float32x4); // RGBA
+        colorAttrib.setOffset(offset);
+        colorAttrib.setShaderLocation(2);
+        offset += 4 * Float.BYTES;
+
 
         WGPUVertexBufferLayout vertexBufferLayout = WGPUVertexBufferLayout.createDirect();
         vertexBufferLayout.setAttributeCount(attribCount);
 
-        vertexBufferLayout.setAttributes(positionAttrib, uvAttrib);
+        vertexBufferLayout.setAttributes(positionAttrib, uvAttrib, colorAttrib);
         vertexBufferLayout.setArrayStride(offset);
         vertexBufferLayout.setStepMode(WGPUVertexStepMode.Vertex);
 
@@ -417,7 +442,7 @@ public class SpriteBatch {
 
         bindingLayout.getBuffer().setNextInChain();
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-        bindingLayout.getBuffer().setHasDynamicOffset(1L);
+        bindingLayout.getBuffer().setHasDynamicOffset(0L);
 
         bindingLayout.getSampler().setNextInChain();
         bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);
@@ -440,6 +465,5 @@ public class SpriteBatch {
         wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
-        //wgpu.BindGroupRelease(bindGroup);
     }
 }

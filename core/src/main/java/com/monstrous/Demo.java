@@ -775,10 +775,12 @@ public class Demo implements ApplicationListener {
         // SpriteBatch testing
         batch.begin(renderPass);    // todo param for now
 
-
+        batch.setColor(1,0,0,1);
         batch.draw(texture, 0, 0, 100, 100);
+
         batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
         batch.draw(texture, 300, 300, 50, 50);
+        batch.setColor(1,1,1,1);
 
         batch.draw(texture2, 400, 100, 100, 100);
 
@@ -788,6 +790,7 @@ public class Demo implements ApplicationListener {
         TextureRegion region2 = new TextureRegion(texture2, 0f, 1f, .5f, 0.5f);
         batch.draw(region2, 400, 300, 64, 64);
 
+        batch.setColor(0,1,0,1);
         for(int i = 0; i < 80; i++){
             batch.draw(texture2, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
         }
