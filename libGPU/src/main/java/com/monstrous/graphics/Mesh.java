@@ -2,6 +2,8 @@ package com.monstrous.graphics;
 
 import com.monstrous.FileInput;
 import com.monstrous.LibGPU;
+import com.monstrous.wgpu.WGPUVertexBufferLayout;
+import com.monstrous.wgpu.WGPUVertexFormat;
 import com.monstrous.wgpuUtils.WgpuJava;
 import com.monstrous.wgpu.WGPUBufferDescriptor;
 import com.monstrous.wgpu.WGPUBufferUsage;
@@ -15,6 +17,7 @@ public class Mesh {
     private Pointer indexBuffer;
     private int vertexCount;
     private int indexCount;
+    private WGPUVertexBufferLayout vertexBufferLayout;
 
     public Mesh(String name) {
         load(name);
@@ -97,6 +100,20 @@ public class Mesh {
         Pointer idata = WgpuJava.createIntegerArrayPointer(indexData);
         // Upload data to the buffer
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
+    }
+
+    public WGPUVertexBufferLayout getVertexBufferLayout(){
+        if(vertexBufferLayout == null) {
+            VertexAttributes vertexAttributes = new VertexAttributes();
+            vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
+            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
+            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
+            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
+            vertexAttributes.end();
+
+            vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
+        }
+        return vertexBufferLayout;
     }
 
     public void dispose(){

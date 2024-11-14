@@ -2,6 +2,7 @@ package com.monstrous;
 
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
 import org.lwjgl.glfw.GLFWNativeWin32;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
@@ -10,6 +11,7 @@ import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -21,8 +23,17 @@ public class WindowedApp {
     private long window;
     private long windowHandle;
     private double currentTime;
+    private Application application;
 
-    public void openWindow(ApplicationConfiguration config){
+    private final GLFWFramebufferSizeCallback resizeCallback = new GLFWFramebufferSizeCallback() {
+        @Override
+        public void invoke (long windowHandle, int w, int h) {
+            application.resize(w, h);
+        }
+    };
+
+    public void openWindow(Application application, ApplicationConfiguration config){
+        this.application = application;
         System.out.println("Application init");
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
@@ -35,14 +46,18 @@ public class WindowedApp {
             throw new IllegalStateException("Unable to initialize GLFW");
 
 
+        //glfwSetWindowUserPointer(window, this);
+
         // Configure GLFW
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE); // the window will stay hidden after creation
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);       // because we will use webgpu
 
         // Create the window
         window = glfwCreateWindow(config.width, config.height, config.title, NULL, NULL);
+
+        glfwSetFramebufferSizeCallback(window, resizeCallback);
 
 
 
@@ -114,5 +129,6 @@ public class WindowedApp {
         // Terminate GLFW and free the error callback
         glfwTerminate();
         glfwSetErrorCallback(null).free();
+
     }
 }

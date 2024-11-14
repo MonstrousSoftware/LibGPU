@@ -2,14 +2,15 @@ package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
 import com.monstrous.math.Matrix4;
-import com.monstrous.wgpuUtils.WgpuJava;
+import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
+import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
 // todo optim: index data could be precalculated and static
 // todo support packed color to reduce vertex size
 
-public class SpriteBatch {
+public class SpriteBatch implements Disposable {
     private WGPU wgpu;
     private ShaderProgram shader;
     private int maxSprites;
@@ -365,7 +366,20 @@ public class SpriteBatch {
 
         pipelineDesc.setFragment(fragmentState);
 
-        pipelineDesc.setDepthStencil();
+        WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
+        setDefault(depthStencilState);
+        depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
+        depthStencilState.setDepthWriteEnabled(1L);
+        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;
+        depthStencilState.setFormat(depthTextureFormat);
+        // deactivate stencil
+        depthStencilState.setStencilReadMask(0L);
+        depthStencilState.setStencilWriteMask(0L);
+
+        pipelineDesc.setDepthStencil(depthStencilState);
+        // todo note: we don't need depth but we added it for compatibility
+
+        //pipelineDesc.setDepthStencil();
 
 
         pipelineDesc.getMultisample().setCount(1);
@@ -416,6 +430,26 @@ public class SpriteBatch {
 
     }
 
+    private void setDefault(WGPUStencilFaceState stencilFaceState) {
+        stencilFaceState.setCompare( WGPUCompareFunction.Always);
+        stencilFaceState.setFailOp( WGPUStencilOperation.Keep);
+        stencilFaceState.setDepthFailOp( WGPUStencilOperation.Keep);
+        stencilFaceState.setPassOp( WGPUStencilOperation.Keep);
+    }
+    private void setDefault(WGPUDepthStencilState  depthStencilState ) {
+        depthStencilState.setFormat(WGPUTextureFormat.Undefined);
+        depthStencilState.setDepthWriteEnabled(0L);
+        depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
+        depthStencilState.setStencilReadMask(0xFFFFFFFF);
+        depthStencilState.setStencilWriteMask(0xFFFFFFFF);
+        depthStencilState.setDepthBias(0);
+        depthStencilState.setDepthBiasSlopeScale(0);
+        depthStencilState.setDepthBiasClamp(0);
+        setDefault(depthStencilState.getStencilFront());
+        setDefault(depthStencilState.getStencilBack());
+    }
+
+    @Override
     public void dispose(){
 
         wgpu.BufferRelease(vertexBuffer);

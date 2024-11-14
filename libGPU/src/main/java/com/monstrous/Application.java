@@ -7,6 +7,7 @@ import jnr.ffi.Runtime;
 
 public class Application {
     public ApplicationConfiguration configuration;
+    private ApplicationListener listener;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
@@ -15,13 +16,14 @@ public class Application {
     public Application(ApplicationListener listener, ApplicationConfiguration config) {
         LibGPU.application = this;
         this.configuration = config;
+        this.listener = listener;
 
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
 
 
         WindowedApp winApp = new WindowedApp();
-        winApp.openWindow(config);
+        winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());
 
         listener.init();
@@ -42,7 +44,15 @@ public class Application {
         listener.exit();
         System.out.println("Close Window");
         winApp.closeWindow();
+        exitWebGPU();
     }
+
+    public void resize(int width, int height){
+        System.out.println("Application resize");
+        LibGPU.graphics.setSize(width, height);
+        listener.resize(width, height);
+    }
+
 
     private void initWebGPU(long windowHandle) {
         WGPU wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library
