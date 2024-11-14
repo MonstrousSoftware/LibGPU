@@ -1,4 +1,4 @@
-package com.monstrous.utils;
+package com.monstrous.wgpuUtils;
 
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
@@ -85,7 +85,7 @@ public abstract class WgpuJavaStruct extends Struct {
             jnr.ffi.Pointer value = WgpuJava.createDirectPointer(size * structs.length);
             byte[] data = new byte[size];
             for (int i = 0; i < structs.length; i++) {
-                Struct.getMemory(structs[i]).get(0L, data, 0, size);
+                Struct.getMemory(structs[i]).get(0L, data, 0, Struct.size(structs[0]));
                 value.put(size * i, data, 0, size);
             }
 

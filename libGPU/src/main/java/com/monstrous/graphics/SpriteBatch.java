@@ -2,7 +2,7 @@ package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
 import com.monstrous.math.Matrix4;
-import com.monstrous.utils.WgpuJava;
+import com.monstrous.wgpuUtils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
 
@@ -59,7 +59,7 @@ public class SpriteBatch {
 
         initializePipeline();
 
-        resize(640, 480);    // todo
+        resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }
 
     public void resize(int w, int h) {

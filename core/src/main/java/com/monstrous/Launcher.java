@@ -7,7 +7,7 @@ public class Launcher {
         System.out.println("Hello, world!");
         ApplicationConfiguration config = new ApplicationConfiguration();
 
-        config.setSize(1200, 600);
+        config.setSize(800, 600);
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
 

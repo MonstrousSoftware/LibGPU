@@ -1,31 +1,25 @@
 package com.monstrous;
 
-import com.monstrous.graphics.SpriteBatch;
-import com.monstrous.graphics.Texture;
-import com.monstrous.graphics.TextureRegion;
+import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
-import com.monstrous.utils.WgpuJava;
+import com.monstrous.wgpuUtils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 
 
 public class Demo implements ApplicationListener {
-    private String shaderSource = readShaderSource();
-
     private WGPU wgpu;
     private Pointer surface;
     private Pointer device;
     private Pointer queue;
     private Pointer pipeline;
     private WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
-    private Pointer vertexBuffer;
-    private Pointer indexBuffer;
-    private int indexCount;
+    private Mesh mesh;
+    private ShaderProgram shader;
     private Pointer uniformBuffer;
     private Pointer layout;
     private Pointer bindGroupLayout;
@@ -175,8 +169,11 @@ public class Demo implements ApplicationListener {
 
         wgpu.SurfaceConfigure(surface, config);
 
+
+        shader = new ShaderProgram("shader.wgsl");
+
         initializePipeline();
-        //playingWithBuffers();
+
 
         texture = new Texture("monstrous.png", false);
         texture2 = new Texture("jackRussel.png", false);
@@ -207,7 +204,9 @@ public class Demo implements ApplicationListener {
         System.out.println("min uniform alignment: "+minAlign);
         System.out.println("uniform stride: "+uniformStride);
         System.out.println("uniformBufferSize: "+uniformBufferSize);
-        initBuffers();
+        makeUniformBuffer();
+
+        mesh = new Mesh("pyramid.txt");
 
 
         bindGroup = initBindGroups(texture);
@@ -320,89 +319,13 @@ public class Demo implements ApplicationListener {
         return src;
     }
 
-    private void initBuffers() {
-        int dimensions = 3;
-        FileInput input = new FileInput("plane.txt");
-        int vertSize = 8+dimensions; // in floats
-        ArrayList<Integer> indexValues = new ArrayList<>();
-        ArrayList<Float> vertFloats = new ArrayList<>();
-        int mode = 0;
-        for(int lineNr = 0; lineNr < input.size(); lineNr++) {
-            String line = input.get(lineNr).strip();
-            if (line.contentEquals("[points]")) {
-                mode = 1;
-                continue;
-            }
-            if (line.contentEquals("[indices]")) {
-                mode = 2;
-                continue;
-            }
-            if(line.startsWith("#"))
-                continue;
-            if(line.length() == 0)
-                continue;
-            if(mode == 1){
-                String [] words = line.split("[ \t]+");
-                if(words.length != vertSize)
-                    System.out.println("Expected "+vertSize+" floats per vertex : "+line);
-                for(int i = 0; i < vertSize; i++)
-                    vertFloats.add(Float.parseFloat(words[i]));
-            } else if (mode == 2){
-                String [] words = line.split("[ \t]+");
-                if(words.length != 3)
-                    System.out.println("Expected 3 indices per line: "+line);
-                for(int i = 0; i < 3; i++)
-                    indexValues.add(Integer.parseInt(words[i]));
-            } else {
-                System.out.println("Unexpected input: "+line);
-            }
-        }
-
-        int vertexCount = vertFloats.size()/vertSize;
-        float[] vertexData = new float[ vertFloats.size() ];
-        for(int i = 0; i < vertFloats.size(); i++){
-            vertexData[i] = vertFloats.get(i);
-        }
-
-        indexCount = indexValues.size();
-        int [] indexData = new int[ indexCount ];
-        for(int i = 0; i < indexCount; i++){
-            indexData[i] = indexValues.get(i);
-        }
-
-        // Create vertex buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Vertex buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex );
-        bufferDesc.setSize(vertexData.length*Float.BYTES);
-        bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
-
-        Pointer data = WgpuJava.createFloatArrayPointer(vertexData);
-
-        // Upload geometry data to the buffer
-        wgpu.QueueWriteBuffer(queue, vertexBuffer, 0, data, (int)bufferDesc.getSize());
-
-        // Create index buffer
-        bufferDesc.setLabel("Index buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index );
-        bufferDesc.setSize(indexData.length*Integer.BYTES);
-        // in case we use a sort index:
-        //bufferDesc.size = (bufferDesc.size + 3) & ~3; // round up to the next multiple of 4
-        bufferDesc.setMappedAtCreation(0L);
-        indexBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
-
-        Pointer idata = WgpuJava.createIntegerArrayPointer(indexData);
-
-
-        // Upload data to the buffer
-        wgpu.QueueWriteBuffer(queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
+    private void makeUniformBuffer() {
 
         // Create uniform buffer
-        //WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Uniform buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize(uniformStride * uniformInstances);
+        bufferDesc.setSize((long) uniformStride * uniformInstances);
         bufferDesc.setMappedAtCreation(0L);
         uniformBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
 
@@ -429,22 +352,14 @@ public class Demo implements ApplicationListener {
 
     private void initializePipeline() {
 
-        // Create Shader Module
-        WGPUShaderModuleDescriptor shaderDesc = WGPUShaderModuleDescriptor.createDirect();
-        shaderDesc.setLabel("My Shader");
+        Pointer shaderModule = shader.getShaderModule();
 
-
-
-        WGPUShaderModuleWGSLDescriptor shaderCodeDesc = WGPUShaderModuleWGSLDescriptor.createDirect();
-        shaderCodeDesc.getChain().setNext();
-        shaderCodeDesc.getChain().setSType(WGPUSType.ShaderModuleWGSLDescriptor);
-        shaderCodeDesc.setCode(shaderSource);
-
-        //System.out.println("shaderSource: "+shaderSource);
-
-        shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
-
-        Pointer shaderModule = wgpu.DeviceCreateShaderModule(device, shaderDesc);
+        VertexAttributes attribs = new VertexAttributes();
+        attribs.add("position", WGPUVertexFormat.Float32x3, 0);
+        attribs.add("normal", WGPUVertexFormat.Float32x3, 1);
+        attribs.add("color", WGPUVertexFormat.Float32x3, 2);
+        attribs.add("uv", WGPUVertexFormat.Float32x2, 3);
+        attribs.end();
 
 
         //  create an array of WGPUVertexAttribute
@@ -488,8 +403,10 @@ public class Demo implements ApplicationListener {
         pipelineDesc.setNextInChain();
         pipelineDesc.setLabel("pipeline");
 
+        WGPUVertexBufferLayout vlayout = attribs.getVertexBufferLayout();
+
         pipelineDesc.getVertex().setBufferCount(1);
-        pipelineDesc.getVertex().setBuffers(vertexBufferLayout);
+        pipelineDesc.getVertex().setBuffers(vlayout);
 
         pipelineDesc.getVertex().setModule(shaderModule);
         pipelineDesc.getVertex().setEntryPoint("vs_main");
@@ -676,7 +593,7 @@ public class Demo implements ApplicationListener {
     private void setUniforms(){
 
 
-        updateMatrices(currentTime);
+        updateMatrices2(currentTime);
 
         int offset = 0;
         setUniformMatrix(uniformData, offset, projectionMatrix);
@@ -749,7 +666,7 @@ public class Demo implements ApplicationListener {
         renderPassDescriptor.setColorAttachmentCount(1);
         renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
         renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        renderPassDescriptor.setDepthStencilAttachment(); // depthStencilAttachment );
+        renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
         renderPassDescriptor.setTimestampWrites();
 
 
@@ -757,60 +674,65 @@ public class Demo implements ApplicationListener {
 // [...] Use Render Pass
 
 
-        System.nanoTime();
-
-
-        // SpriteBatch testing
-        batch.begin(renderPass);    // todo param for now
-//char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
-
-//        TextureRegion letterA = new TextureRegion(textureFont, 80f/256f, (33f+13f)/128f, (80+11f)/256f, 33f/128f);
-//        batch.draw(letterA, 100, 100);
-
-        batch.setColor(1,0,0,0.1f);
-        batch.draw(texture, 0, 0, 100, 100);
-
-        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
-        batch.draw(texture, 300, 300, 50, 50);
-        batch.setColor(1,1,1,1);
-
-        batch.draw(texture2, 400, 100, 100, 100);
-
-        TextureRegion region = new TextureRegion(texture2, 0, 0, 512, 512);
-        batch.draw(region, 200, 300, 64, 64);
-
-        TextureRegion region2 = new TextureRegion(texture2, 0f, 1f, .5f, 0.5f);
-        batch.draw(region2, 400, 300, 64, 64);
-
-//        batch.setColor(0,1,0,1);
-//        for(int i = 0; i < 800; i++){
-//            batch.draw(texture2, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
-//        }
-        batch.end();
-
-
-//        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
 //
-//        // Set vertex buffer while encoding the render pass
-//        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-//        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 //
-//        Pointer bg = initBindGroups(texture);
-//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
-//        wgpu.RenderPassEncoderDrawIndexed(renderPass, 3, 1, 0, 0, 0);
-//        wgpu.BindGroupRelease(bg);
+//        // SpriteBatch testing
+//        batch.begin(renderPass);    // todo param for now
+////char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
 //
-//        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-//        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
+////        TextureRegion letterA = new TextureRegion(textureFont, 80f/256f, (33f+13f)/128f, (80+11f)/256f, 33f/128f);
+////        batch.draw(letterA, 100, 100);
 //
-//        bg = initBindGroups(texture2);
-//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
-//        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
-//        wgpu.BindGroupRelease(bg);
+//        batch.setColor(1,0,0,0.1f);
+//        batch.draw(texture, 0, 0, 100, 100);
 //
-//        wgpu.RenderPassEncoderEnd(renderPass);
+//        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
+//        batch.draw(texture, 300, 300, 50, 50);
+//        batch.setColor(1,1,1,1);
 //
-//        wgpu.RenderPassEncoderRelease(renderPass);
+//        batch.draw(texture2, 400, 100, 100, 100);
+//
+////        TextureRegion region = new TextureRegion(texture2, 0, 0, 512, 512);
+////        batch.draw(region, 200, 300, 64, 64);
+////
+////        TextureRegion region2 = new TextureRegion(texture2, 0f, 1f, .5f, 0.5f);
+////        batch.draw(region2, 400, 300, 64, 64);
+//
+////        int W = LibGPU.graphics.getWidth();
+////        int H = LibGPU.graphics.getHeight();
+////        batch.setColor(0,1,0,1);
+////        for(int i = 0; i < 800; i++){
+////            batch.draw(texture2, (int) (Math.random()*W), (int) (Math.random()*H), 32, 32);
+////        }
+//        batch.end();
+
+
+        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+
+        Pointer vertexBuffer = mesh.getVertexBuffer();
+        Pointer indexBuffer = mesh.getIndexBuffer();
+        int indexCount = mesh.getIndexCount();
+
+        // Set vertex buffer while encoding the render pass
+        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
+
+        Pointer bg = initBindGroups(texture);
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
+        wgpu.RenderPassEncoderDrawIndexed(renderPass, 3, 1, 0, 0, 0);
+        wgpu.BindGroupRelease(bg);
+
+        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
+
+        bg = initBindGroups(texture2);
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
+        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+        wgpu.BindGroupRelease(bg);
+
+        wgpu.RenderPassEncoderEnd(renderPass);
+
+        wgpu.RenderPassEncoderRelease(renderPass);
 
 
 
@@ -854,6 +776,8 @@ public class Demo implements ApplicationListener {
         texture.dispose();
         texture2.dispose();
         batch.dispose();
+        mesh.dispose();
+
         System.out.println("demo exit2");
 
         // Destroy the depth texture and its view
@@ -865,8 +789,6 @@ public class Demo implements ApplicationListener {
         wgpu.PipelineLayoutRelease(layout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BindGroupRelease(bindGroup);
-        wgpu.BufferRelease(indexBuffer);
-        wgpu.BufferRelease(vertexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.RenderPipelineRelease(pipeline);
         System.out.println("demo exit4");

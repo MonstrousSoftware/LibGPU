@@ -1,7 +1,7 @@
 package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
-import com.monstrous.utils.WgpuJava;
+import com.monstrous.wgpuUtils.WgpuJava;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
 

@@ -1,4 +1,4 @@
-package com.monstrous.utils;
+package com.monstrous.wgpuUtils;
 
 
 import jnr.ffi.Pointer;

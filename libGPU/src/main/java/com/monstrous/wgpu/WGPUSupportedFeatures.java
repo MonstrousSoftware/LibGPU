@@ -6,7 +6,7 @@ package com.monstrous.wgpu;
 //    WGPUFeatureName const * features;
 //} WGPUSupportedFeatures WGPU_STRUCTURE_ATTRIBUTE;
 
-import com.monstrous.utils.WgpuJavaStruct;
+import com.monstrous.wgpuUtils.WgpuJavaStruct;
 import jnr.ffi.Struct;
 
 public class WGPUSupportedFeatures extends WgpuJavaStruct {
