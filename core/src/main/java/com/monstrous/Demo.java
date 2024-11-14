@@ -372,7 +372,7 @@ public class Demo implements ApplicationListener {
         Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
 // [...] Use Render Pass
 
-        boolean testSprites = false;
+        boolean testSprites = true;
         if(testSprites) {
 
 
@@ -475,17 +475,11 @@ public class Demo implements ApplicationListener {
         batch.dispose();
         mesh.dispose();
 
-        System.out.println("demo exit2");
-
-
-        System.out.println("demo exit3");
-
         wgpu.PipelineLayoutRelease(layout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BindGroupRelease(bindGroup);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.RenderPipelineRelease(pipeline);
-        System.out.println("demo exit4");
 
     }
 
