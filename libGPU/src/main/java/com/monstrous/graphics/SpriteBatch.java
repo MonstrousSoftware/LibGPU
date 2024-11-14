@@ -316,46 +316,18 @@ public class SpriteBatch {
 
     private void initializePipeline() {
 
-        // DEFINE VERTEX ATTRIBUTES
-        //
-        //  create an array of WGPUVertexAttribute
-        int attribCount = 3;
-
-        WGPUVertexAttribute positionAttrib =  WGPUVertexAttribute.createDirect();
-
-        int offset = 0;
-        positionAttrib.setFormat(WGPUVertexFormat.Float32x2);   // XY only
-        positionAttrib.setOffset(offset);
-        positionAttrib.setShaderLocation(0);
-        offset += 2 * Float.BYTES;
-
-        WGPUVertexAttribute uvAttrib = WGPUVertexAttribute.createDirect();   // freed where?
-        uvAttrib.setFormat(WGPUVertexFormat.Float32x2); // UV
-        uvAttrib.setOffset(offset);
-        uvAttrib.setShaderLocation(1);
-        offset += 2 * Float.BYTES;
-
-        WGPUVertexAttribute colorAttrib = WGPUVertexAttribute.createDirect();   // freed where?
-        colorAttrib.setFormat(WGPUVertexFormat.Float32x4); // RGBA
-        colorAttrib.setOffset(offset);
-        colorAttrib.setShaderLocation(2);
-        offset += 4 * Float.BYTES;
-
-
-        WGPUVertexBufferLayout vertexBufferLayout = WGPUVertexBufferLayout.createDirect();
-        vertexBufferLayout.setAttributeCount(attribCount);
-
-        vertexBufferLayout.setAttributes(positionAttrib, uvAttrib, colorAttrib);
-        vertexBufferLayout.setArrayStride(offset);
-        vertexBufferLayout.setStepMode(WGPUVertexStepMode.Vertex);
-
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
+        vertexAttributes.add("uv",          WGPUVertexFormat.Float32x2, 1 );
+        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 2 );
+        vertexAttributes.end();
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
         pipelineDesc.setNextInChain();
         pipelineDesc.setLabel("pipeline");
 
         pipelineDesc.getVertex().setBufferCount(1);
-        pipelineDesc.getVertex().setBuffers(vertexBufferLayout);
+        pipelineDesc.getVertex().setBuffers(vertexAttributes.getVertexBufferLayout());
 
         pipelineDesc.getVertex().setModule(shader.getShaderModule());
         pipelineDesc.getVertex().setEntryPoint("vs_main");

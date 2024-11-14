@@ -2,13 +2,9 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
-import com.monstrous.wgpuUtils.WgpuJava;
 import com.monstrous.wgpu.*;
+import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 
 public class Demo implements ApplicationListener {
@@ -59,7 +55,7 @@ public class Demo implements ApplicationListener {
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
         options.setNextInChain();
         options.setCompatibleSurface(LibGPU.surface);
-        options.setBackendType(WGPUBackendType.Vulkan);
+        options.setBackendType(LibGPU.application.configuration.backend);
 
         System.out.println("defined adapter options");
 
@@ -221,103 +217,7 @@ public class Demo implements ApplicationListener {
         return step * d;
     }
 
-    private void playingWithBuffers() {
 
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Some GPU-side data buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc );
-        bufferDesc.setSize(16);
-        bufferDesc.setMappedAtCreation(0L);
-        Pointer buffer1 = wgpu.DeviceCreateBuffer(device, bufferDesc);
-
-        bufferDesc.setLabel("Output buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
-        bufferDesc.setSize(16);
-        bufferDesc.setMappedAtCreation(0L);
-
-        Pointer buffer2 = wgpu.DeviceCreateBuffer(device, bufferDesc);
-
-        // Create some CPU-side data buffer (of size 16 bytes)
-        byte[] numbers = new byte[16];
-        for(int i = 0; i < 16; i++)
-            numbers[i] = (byte)i;
-        Pointer data = WgpuJava.createByteArrayPointer(numbers);
-        // `numbers` now contains [ 0, 1, 2, ... ]
-
-        // Copy this from `numbers` (RAM) to `buffer1` (VRAM)
-        wgpu.QueueWriteBuffer(queue, buffer1, 0, data, numbers.length);
-
-        Pointer encoder = wgpu.DeviceCreateCommandEncoder(device, null);
-
-        // After creating the command encoder
-
-        // [...] Copy buffer to buffer
-        // size must be multiple of 4
-        wgpu.CommandEncoderCopyBufferToBuffer(encoder, buffer1, 0, buffer2, 0, 16);
-
-
-        Pointer command = wgpu.CommandEncoderFinish(encoder, null);
-        wgpu.CommandEncoderRelease(encoder);
-
-        // BEWARE: we need this convoluted call sequence or it will crash
-        long[] buffers = new long[1];
-        buffers[0] = command.address();
-        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
-        wgpu.QueueSubmit(queue, 1, bufferPtr);
-
-
-        wgpu.CommandBufferRelease(command);
-
-        // use a lambda expression to define a callback function
-        WGPUBufferMapCallback onBuffer2Mapped = (WGPUBufferMapAsyncStatus status, Pointer userData) -> {
-            System.out.println("=== Buffer 2 mapped with status: " + status);
-            userData.putInt(0, 1);
-        };
-
-        int[] ready = new int[1];
-        ready[0] = 0;
-
-        Pointer udata = WgpuJava.createIntegerArrayPointer(ready);
-        System.out.println(udata);
-        wgpu.BufferMapAsync(buffer2, WGPUMapMode.Read, 0, 16, onBuffer2Mapped, udata);
-
-
-        int iters = 0;
-        // note you cannot test ready[0] because createIntegerArrayPointer made a copy
-        while(udata.getInt(0) == 0){
-            iters++;
-            wgpu.DeviceTick(device);
-        }
-        System.out.println(" Iterations: "+iters);
-
-        System.out.println(" received: " + String.valueOf(udata.getInt(0)));
-
-        // Get a pointer to wherever the driver mapped the GPU memory to the RAM
-        Pointer ram =  wgpu.BufferGetConstMappedRange(buffer2, 0, 16);
-        for(int i = 0; i < 16; i++){
-            byte num = ram.getByte(i);
-            System.out.print(num);
-            System.out.print(' ');
-        }
-        System.out.println();
-
-// Then do not forget to unmap the memory
-        wgpu.BufferUnmap(buffer2);
-
-        wgpu.BufferRelease(buffer1);
-        wgpu.BufferRelease(buffer2);
-
-    }
-
-    private String readShaderSource() {
-        String src = null;
-        try {
-            src = Files.readString(Paths.get("shader.wgsl"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return src;
-    }
 
     private void makeUniformBuffer() {
 
@@ -666,7 +566,7 @@ public class Demo implements ApplicationListener {
         renderPassDescriptor.setColorAttachmentCount(1);
         renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
         renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
+        renderPassDescriptor.setDepthStencilAttachment(); // depthStencilAttachment );
         renderPassDescriptor.setTimestampWrites();
 
 
@@ -674,65 +574,65 @@ public class Demo implements ApplicationListener {
 // [...] Use Render Pass
 
 
+
+
+        // SpriteBatch testing
+        batch.begin(renderPass);    // todo param for now
+//char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
+
+//        TextureRegion letterA = new TextureRegion(textureFont, 80f/256f, (33f+13f)/128f, (80+11f)/256f, 33f/128f);
+//        batch.draw(letterA, 100, 100);
+
+        batch.setColor(1,0,0,0.1f);
+        batch.draw(texture, 0, 0, 100, 100);
+
+        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
+        batch.draw(texture, 300, 300, 50, 50);
+        batch.setColor(1,1,1,1);
+
+        batch.draw(texture2, 400, 100, 100, 100);
+
+//        TextureRegion region = new TextureRegion(texture2, 0, 0, 512, 512);
+//        batch.draw(region, 200, 300, 64, 64);
 //
+//        TextureRegion region2 = new TextureRegion(texture2, 0f, 1f, .5f, 0.5f);
+//        batch.draw(region2, 400, 300, 64, 64);
+
+//        int W = LibGPU.graphics.getWidth();
+//        int H = LibGPU.graphics.getHeight();
+//        batch.setColor(0,1,0,1);
+//        for(int i = 0; i < 800; i++){
+//            batch.draw(texture2, (int) (Math.random()*W), (int) (Math.random()*H), 32, 32);
+//        }
+        batch.end();
+
+
+//        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
 //
-//        // SpriteBatch testing
-//        batch.begin(renderPass);    // todo param for now
-////char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
+//        Pointer vertexBuffer = mesh.getVertexBuffer();
+//        Pointer indexBuffer = mesh.getIndexBuffer();
+//        int indexCount = mesh.getIndexCount();
 //
-////        TextureRegion letterA = new TextureRegion(textureFont, 80f/256f, (33f+13f)/128f, (80+11f)/256f, 33f/128f);
-////        batch.draw(letterA, 100, 100);
+//        // Set vertex buffer while encoding the render pass
+//        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+//        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 //
-//        batch.setColor(1,0,0,0.1f);
-//        batch.draw(texture, 0, 0, 100, 100);
+//        Pointer bg = initBindGroups(texture);
+//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
+//        wgpu.RenderPassEncoderDrawIndexed(renderPass, 3, 1, 0, 0, 0);
+//        wgpu.BindGroupRelease(bg);
 //
-//        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
-//        batch.draw(texture, 300, 300, 50, 50);
-//        batch.setColor(1,1,1,1);
+//        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+//        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 //
-//        batch.draw(texture2, 400, 100, 100, 100);
+//        bg = initBindGroups(texture2);
+//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
+//        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+//        wgpu.BindGroupRelease(bg);
 //
-////        TextureRegion region = new TextureRegion(texture2, 0, 0, 512, 512);
-////        batch.draw(region, 200, 300, 64, 64);
-////
-////        TextureRegion region2 = new TextureRegion(texture2, 0f, 1f, .5f, 0.5f);
-////        batch.draw(region2, 400, 300, 64, 64);
+//        wgpu.RenderPassEncoderEnd(renderPass);
 //
-////        int W = LibGPU.graphics.getWidth();
-////        int H = LibGPU.graphics.getHeight();
-////        batch.setColor(0,1,0,1);
-////        for(int i = 0; i < 800; i++){
-////            batch.draw(texture2, (int) (Math.random()*W), (int) (Math.random()*H), 32, 32);
-////        }
-//        batch.end();
-
-
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
-
-        Pointer vertexBuffer = mesh.getVertexBuffer();
-        Pointer indexBuffer = mesh.getIndexBuffer();
-        int indexCount = mesh.getIndexCount();
-
-        // Set vertex buffer while encoding the render pass
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
-
-        Pointer bg = initBindGroups(texture);
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, 3, 1, 0, 0, 0);
-        wgpu.BindGroupRelease(bg);
-
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
-
-        bg = initBindGroups(texture2);
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
-        wgpu.BindGroupRelease(bg);
-
-        wgpu.RenderPassEncoderEnd(renderPass);
-
-        wgpu.RenderPassEncoderRelease(renderPass);
+//        wgpu.RenderPassEncoderRelease(renderPass);
 
 
 

@@ -17,8 +17,8 @@ public class VertexAttributes implements Disposable {
         attributes = new ArrayList<>();
     }
 
-    public void add(String name, WGPUVertexFormat format, int shaderLocation){
-        VertexAttribute va = new VertexAttribute(name, format, shaderLocation);
+    public void add(String label, WGPUVertexFormat format, int shaderLocation){
+        VertexAttribute va = new VertexAttribute(label, format, shaderLocation);
         attributes.add(va);
     }
 

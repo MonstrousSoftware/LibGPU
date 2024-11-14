@@ -1,5 +1,7 @@
 package com.monstrous;// com.monstrous.Launcher
 
+import com.monstrous.wgpu.WGPUBackendType;
+
 public class Launcher {
 
 
@@ -10,6 +12,7 @@ public class Launcher {
         config.setSize(800, 600);
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
+        config.backend = WGPUBackendType.Vulkan;
 
         new Application(new com.monstrous.Demo(), config);
     }

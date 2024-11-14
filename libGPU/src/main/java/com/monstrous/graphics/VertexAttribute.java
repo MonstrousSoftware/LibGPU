@@ -3,12 +3,12 @@ package com.monstrous.graphics;
 import com.monstrous.wgpu.WGPUVertexFormat;
 
 public class VertexAttribute {
-    public String name;
+    public String label;
     public WGPUVertexFormat format;
     public int shaderLocation;
 
     public VertexAttribute(String name, WGPUVertexFormat format, int shaderLocation) {
-        this.name = name;
+        this.label = name;
         this.format = format;
         this.shaderLocation = shaderLocation;
     }
