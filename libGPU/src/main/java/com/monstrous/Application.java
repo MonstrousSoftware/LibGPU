@@ -16,6 +16,10 @@ public class Application {
         LibGPU.application = this;
         this.configuration = config;
 
+        LibGPU.graphics = new Graphics();
+        LibGPU.graphics.setSize(config.width, config.height);
+
+
         WindowedApp winApp = new WindowedApp();
         winApp.openWindow(config);
         initWebGPU(winApp.getWindowHandle());

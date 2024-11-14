@@ -159,8 +159,8 @@ public class Demo implements ApplicationListener {
         WGPUSurfaceConfiguration config = WGPUSurfaceConfiguration.createDirect();
         config.setNextInChain();
 
-        config.setWidth(640);
-        config.setHeight(480);
+        config.setWidth(LibGPU.graphics.getWidth());
+        config.setHeight(LibGPU.graphics.getHeight());
 
         surfaceFormat = wgpu.SurfaceGetPreferredFormat(surface, adapter);
         System.out.println("Using format: " + surfaceFormat);
@@ -551,8 +551,8 @@ public class Demo implements ApplicationListener {
         depthTextureDesc.setFormat( depthTextureFormat );
         depthTextureDesc.setMipLevelCount(1);
         depthTextureDesc.setSampleCount(1);
-        depthTextureDesc.getSize().setWidth(640);           // todo
-        depthTextureDesc.getSize().setHeight(480);
+        depthTextureDesc.getSize().setWidth(LibGPU.graphics.getWidth());
+        depthTextureDesc.getSize().setHeight(LibGPU.graphics.getHeight());
         depthTextureDesc.getSize().setDepthOrArrayLayers(1);
         depthTextureDesc.setUsage( WGPUTextureUsage.RenderAttachment );
         depthTextureDesc.setViewFormatCount(1);
@@ -646,7 +646,8 @@ public class Demo implements ApplicationListener {
 
     private void updateMatrices2(float currentTime){
 
-        projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, 640f/480f);
+        float aspectRatio = (float)LibGPU.graphics.getWidth()/(float)LibGPU.graphics.getHeight();
+        projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, aspectRatio);
         //projectionMatrix.setToProjection(0.001f, 3.0f, 60f, 640f/480f);
         //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
         modelMatrix.idt();//.setToXRotation((float) ( -0.5f*Math.PI ));
@@ -781,10 +782,10 @@ public class Demo implements ApplicationListener {
         TextureRegion region2 = new TextureRegion(texture2, 0f, 1f, .5f, 0.5f);
         batch.draw(region2, 400, 300, 64, 64);
 
-        batch.setColor(0,1,0,1);
-        for(int i = 0; i < 800; i++){
-            batch.draw(texture2, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
-        }
+//        batch.setColor(0,1,0,1);
+//        for(int i = 0; i < 800; i++){
+//            batch.draw(texture2, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
+//        }
         batch.end();
 
 

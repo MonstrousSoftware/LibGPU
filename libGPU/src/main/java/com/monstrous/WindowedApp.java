@@ -81,11 +81,6 @@ public class WindowedApp {
             );
         } // the stack frame is popped automatically
 
-        // Make the OpenGL context current
-        //glfwMakeContextCurrent(window);
-        // Enable v-sync
-        //glfwSwapInterval(0);
-
         // Make the window visible
         //glfwShowWindow(window);
     }
