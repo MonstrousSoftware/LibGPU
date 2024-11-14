@@ -9,11 +9,11 @@ import jnr.ffi.Pointer;
 
 public class Demo implements ApplicationListener {
     private WGPU wgpu;
-    private Pointer surface;
+
     private Pointer device;
     private Pointer queue;
     private Pointer pipeline;
-    private WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
+
     private Mesh mesh;
     private ShaderProgram shader;
     private Pointer uniformBuffer;
@@ -25,8 +25,7 @@ public class Demo implements ApplicationListener {
     private int uniformStride;
     private int uniformInstances;
     private Pointer uniformData;
-    private Pointer depthTextureView;
-    private Pointer depthTexture;
+
     private Matrix4 projectionMatrix;
     private Matrix4 viewMatrix;
     private Matrix4 modelMatrix;
@@ -44,126 +43,9 @@ public class Demo implements ApplicationListener {
         frames = 0;
 
         wgpu = LibGPU.wgpu;
-        surface = LibGPU.surface;
+        device = LibGPU.device;
+        queue = LibGPU.queue;
 
-        // debug test
-        System.out.println("Hello world!");
-        int sum = wgpu.add(1200, 34);
-        System.out.println("sum = " + sum);
-
-        System.out.println("define adapter options");
-        WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
-        options.setNextInChain();
-        options.setCompatibleSurface(LibGPU.surface);
-        options.setBackendType(LibGPU.application.configuration.backend);
-
-        System.out.println("defined adapter options");
-
-        // Get Adapter
-        Pointer adapter = wgpu.RequestAdapterSync(LibGPU.instance, options);
-        System.out.println("adapter = " + adapter);
-
-        WGPUSupportedLimits supportedLimits = WGPUSupportedLimits.createDirect();
-        wgpu.AdapterGetLimits(adapter, supportedLimits);
-        System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
-
-        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
-        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
-        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
-        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
-
-
-        WGPUAdapterProperties adapterProperties = WGPUAdapterProperties.createDirect();
-        adapterProperties.setNextInChain();
-
-        wgpu.AdapterGetProperties(adapter, adapterProperties);
-
-        System.out.println("VendorID: " + adapterProperties.getVendorID());
-        System.out.println("Vendor name: " + adapterProperties.getVendorName());
-        System.out.println("Device ID: " + adapterProperties.getDeviceID());
-        System.out.println("Back end: " + adapterProperties.getBackendType());
-        System.out.println("Description: " + adapterProperties.getDriverDescription());
-
-        WGPURequiredLimits requiredLimits = WGPURequiredLimits.createDirect();
-        setDefault(requiredLimits.getLimits());
-        requiredLimits.getLimits().setMaxVertexAttributes(2);
-        requiredLimits.getLimits().setMaxVertexBuffers(2);
-        requiredLimits.getLimits().setMaxInterStageShaderComponents(8); //
-
-        // from vert to frag
-        requiredLimits.getLimits().setMaxBufferSize(300);
-        requiredLimits.getLimits().setMaxVertexBufferArrayStride(11*Float.BYTES);
-        requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
-        requiredLimits.getLimits().setMaxTextureDimension1D(2048);
-        requiredLimits.getLimits().setMaxTextureDimension2D(2048);
-        requiredLimits.getLimits().setMaxTextureArrayLayers(1);
-        requiredLimits.getLimits().setMaxSampledTexturesPerShaderStage(1);
-        requiredLimits.getLimits().setMaxSamplersPerShaderStage(1);
-
-        requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
-        requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
-        // Uniform structs have a size of maximum 16 float (more than what we need)
-        requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4*Float.BYTES);
-
-
-
-        // Get Device
-        WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor.createDirect();
-        deviceDescriptor.setNextInChain();
-        deviceDescriptor.setLabel("My Device");
-        deviceDescriptor.setRequiredLimits(requiredLimits);
-
-        device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
-        LibGPU.device = device;
-        wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
-
-        // use a lambda expression to define a callback function
-        WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
-            System.out.println("*** Device error: " + type + " : " + message);
-        };
-        wgpu.DeviceSetUncapturedErrorCallback(device, deviceCallback, null);
-
-        wgpu.DeviceGetLimits(device, supportedLimits);
-        System.out.println("device maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
-
-        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
-        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
-        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
-        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
-
-        queue = wgpu.DeviceGetQueue(device);
-        LibGPU.queue = queue;
-
-
-
-
-
-        // use a lambda expression to define a callback function
-        WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
-            System.out.println("=== Queue work finished with status: " + status);
-        };
-        wgpu.QueueOnSubmittedWorkDone(queue, queueCallback, null);
-
-
-        // configure the surface
-        WGPUSurfaceConfiguration config = WGPUSurfaceConfiguration.createDirect();
-        config.setNextInChain();
-
-        config.setWidth(LibGPU.graphics.getWidth());
-        config.setHeight(LibGPU.graphics.getHeight());
-
-        surfaceFormat = wgpu.SurfaceGetPreferredFormat(surface, adapter);
-        System.out.println("Using format: " + surfaceFormat);
-        config.setFormat(surfaceFormat);
-        // And we do not need any particular view format:
-        config.setViewFormatCount(0);
-        config.setViewFormats(WgpuJava.createNullPointer());
-        config.setUsage(WGPUTextureUsage.RenderAttachment);
-        config.setDevice(device);
-        config.setPresentMode(LibGPU.application.configuration.vsyncEnabled ? WGPUPresentMode.Fifo : WGPUPresentMode.Immediate);
-        config.setAlphaMode(WGPUCompositeAlphaMode.Auto);
-
-        wgpu.SurfaceConfigure(surface, config);
 
 
         shader = new ShaderProgram("shader.wgsl");
@@ -195,7 +77,7 @@ public class Demo implements ApplicationListener {
         float[] uniforms = new float[uniformBufferSize];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);
 
-        int minAlign = (int)supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
+         int minAlign = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
         uniformStride = ceilToNextMultiple(uniformBufferSize, minAlign);
         uniformInstances = 1;   // how many sets of uniforms?
 
@@ -290,7 +172,7 @@ public class Demo implements ApplicationListener {
         blendState.getAlpha().setOperation(WGPUBlendOperation.Add);
 
         WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
-        colorTarget.setFormat(surfaceFormat);
+        colorTarget.setFormat(LibGPU.surfaceFormat);
         colorTarget.setBlend(blendState);
         colorTarget.setWriteMask(WGPUColorWriteMask.All);
 
@@ -303,7 +185,9 @@ public class Demo implements ApplicationListener {
         setDefault(depthStencilState);
         depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
         depthStencilState.setDepthWriteEnabled(1L);
-        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;
+
+        //
+        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;       // todo
         depthStencilState.setFormat(depthTextureFormat);
         // deactivate stencil
         depthStencilState.setStencilReadMask(0L);
@@ -311,37 +195,6 @@ public class Demo implements ApplicationListener {
 
         pipelineDesc.setDepthStencil(depthStencilState);
 
-
-        long[] formats = new long[1];
-        formats[0] = depthTextureFormat.ordinal();
-        Pointer formatPtr = WgpuJava.createLongArrayPointer(formats);
-
-        // Create the depth texture
-        WGPUTextureDescriptor depthTextureDesc = WGPUTextureDescriptor.createDirect();
-        depthTextureDesc.setNextInChain();
-        depthTextureDesc.setDimension( WGPUTextureDimension._2D);
-        depthTextureDesc.setFormat( depthTextureFormat );
-        depthTextureDesc.setMipLevelCount(1);
-        depthTextureDesc.setSampleCount(1);
-        depthTextureDesc.getSize().setWidth(LibGPU.graphics.getWidth());
-        depthTextureDesc.getSize().setHeight(LibGPU.graphics.getHeight());
-        depthTextureDesc.getSize().setDepthOrArrayLayers(1);
-        depthTextureDesc.setUsage( WGPUTextureUsage.RenderAttachment );
-        depthTextureDesc.setViewFormatCount(1);
-        depthTextureDesc.setViewFormats( formatPtr );
-        depthTexture = wgpu.DeviceCreateTexture(device, depthTextureDesc);
-
-
-        // Create the view of the depth texture manipulated by the rasterizer
-        WGPUTextureViewDescriptor depthTextureViewDesc = WGPUTextureViewDescriptor.createDirect();
-        depthTextureViewDesc.setAspect(WGPUTextureAspect.DepthOnly);
-        depthTextureViewDesc.setBaseArrayLayer(0);
-        depthTextureViewDesc.setArrayLayerCount(1);
-        depthTextureViewDesc.setBaseMipLevel(0);
-        depthTextureViewDesc.setMipLevelCount(1);
-        depthTextureViewDesc.setDimension( WGPUTextureViewDimension._2D);
-        depthTextureViewDesc.setFormat(depthTextureFormat);
-        depthTextureView = wgpu.TextureCreateView(depthTexture, depthTextureViewDesc);
 
         pipelineDesc.getMultisample().setCount(1);
         pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
@@ -501,7 +354,7 @@ public class Demo implements ApplicationListener {
 
 
         WGPURenderPassDepthStencilAttachment depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
-        depthStencilAttachment.setView( depthTextureView );
+        depthStencilAttachment.setView( LibGPU.application.depthTextureView );
         depthStencilAttachment.setDepthClearValue(1.0f);
         depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
         depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
@@ -613,7 +466,7 @@ public class Demo implements ApplicationListener {
 
         // At the end of the frame
         wgpu.TextureViewRelease(targetView);
-        wgpu.SurfacePresent(surface);
+        wgpu.SurfacePresent(LibGPU.surface);
 
 
         if (System.nanoTime() - startTime > 1000000000) {
@@ -637,10 +490,7 @@ public class Demo implements ApplicationListener {
 
         System.out.println("demo exit2");
 
-        // Destroy the depth texture and its view
-        wgpu.TextureViewRelease(depthTextureView);
-        wgpu.TextureDestroy(depthTexture);
-        wgpu.TextureRelease(depthTexture);
+
         System.out.println("demo exit3");
 
         wgpu.PipelineLayoutRelease(layout);
@@ -649,10 +499,8 @@ public class Demo implements ApplicationListener {
         wgpu.BufferRelease(uniformBuffer);
         wgpu.RenderPipelineRelease(pipeline);
         System.out.println("demo exit4");
-//        wgpu.SurfaceUnconfigure(surface);
-//        wgpu.SurfaceRelease(surface);
-        wgpu.QueueRelease(queue);
-        wgpu.DeviceRelease(device);
+
+
         //wgpu.InstanceRelease(instance);
         System.out.println("demo exit5");
     }
@@ -667,7 +515,7 @@ public class Demo implements ApplicationListener {
 
 
         WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
-        wgpu.SurfaceGetCurrentTexture(surface, surfaceTexture);
+        wgpu.SurfaceGetCurrentTexture(LibGPU.surface, surfaceTexture);
         //System.out.println("get current texture: "+surfaceTexture.status.get());
         if(surfaceTexture.getStatus() != WGPUSurfaceGetCurrentTextureStatus.Success){
             System.out.println("*** No current texture");
@@ -693,46 +541,9 @@ public class Demo implements ApplicationListener {
     }
 
 
-   final static long WGPU_LIMIT_U32_UNDEFINED = 4294967295L;
-   final static long WGPU_LIMIT_U64_UNDEFINED = Long.MAX_VALUE;//.   18446744073709551615L;
-   // should be 18446744073709551615L but Java longs are signed so it is half that, will it work?
-    // todo
 
 
-    void setDefault(WGPULimits limits) {
-        limits.setMaxTextureDimension1D(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxTextureDimension2D(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxTextureDimension3D(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxTextureArrayLayers(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBindGroups(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBindGroupsPlusVertexBuffers(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBindingsPerBindGroup(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxDynamicUniformBuffersPerPipelineLayout(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxDynamicStorageBuffersPerPipelineLayout(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxSampledTexturesPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxSamplersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxStorageBuffersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxStorageTexturesPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxUniformBuffersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxUniformBufferBindingSize(WGPU_LIMIT_U64_UNDEFINED);
-        limits.setMaxStorageBufferBindingSize(WGPU_LIMIT_U64_UNDEFINED);
-        limits.setMinUniformBufferOffsetAlignment(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMinStorageBufferOffsetAlignment(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxVertexBuffers(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBufferSize(WGPU_LIMIT_U64_UNDEFINED);
-        limits.setMaxVertexAttributes(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxVertexBufferArrayStride(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxInterStageShaderComponents(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxInterStageShaderVariables(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxColorAttachments(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxColorAttachmentBytesPerSample(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupStorageSize(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeInvocationsPerWorkgroup(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupSizeX(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupSizeY(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupSizeZ(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupsPerDimension(WGPU_LIMIT_U32_UNDEFINED);
-    }
+
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
 
