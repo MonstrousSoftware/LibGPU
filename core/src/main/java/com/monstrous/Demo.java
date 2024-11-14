@@ -42,10 +42,16 @@ public class Demo implements ApplicationListener {
     private Matrix4 modelMatrix;
     private Texture texture;
     private Texture texture2;
+    private Texture textureFont;
     private float currentTime;
     private SpriteBatch batch;
+    private long startTime;
+    private int frames;
 
     public void init() {
+
+        startTime = System.nanoTime();
+        frames = 0;
 
         wgpu = LibGPU.wgpu;
         surface = LibGPU.surface;
@@ -59,7 +65,7 @@ public class Demo implements ApplicationListener {
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
         options.setNextInChain();
         options.setCompatibleSurface(LibGPU.surface);
-        options.setBackendType(WGPUBackendType.D3D12);
+        options.setBackendType(WGPUBackendType.Vulkan);
 
         System.out.println("defined adapter options");
 
@@ -164,7 +170,7 @@ public class Demo implements ApplicationListener {
         config.setViewFormats(WgpuJava.createNullPointer());
         config.setUsage(WGPUTextureUsage.RenderAttachment);
         config.setDevice(device);
-        config.setPresentMode(WGPUPresentMode.Fifo);
+        config.setPresentMode(LibGPU.application.configuration.vsyncEnabled ? WGPUPresentMode.Fifo : WGPUPresentMode.Immediate);
         config.setAlphaMode(WGPUCompositeAlphaMode.Auto);
 
         wgpu.SurfaceConfigure(surface, config);
@@ -174,6 +180,7 @@ public class Demo implements ApplicationListener {
 
         texture = new Texture("monstrous.png", false);
         texture2 = new Texture("jackRussel.png", false);
+        textureFont = new Texture("lsans-15.png", false);
 
         projectionMatrix = new Matrix4();
         modelMatrix = new Matrix4();
@@ -419,26 +426,6 @@ public class Demo implements ApplicationListener {
         bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
-
-//    private void initBindGroup2() {
-//        // Create a binding
-//        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
-//        binding.setNextInChain();
-//        binding.setBinding(0);  // binding index
-//        binding.setBuffer(uniformBuffer);
-//        binding.setOffset(0);
-//        binding.setSize(uniformBufferSize);
-//
-//        // A bind group contains one or multiple bindings
-//        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
-//        bindGroupDesc.setNextInChain();
-//        bindGroupDesc.setLayout(bindGroupLayout);
-//        // There must be as many bindings as declared in the layout!
-//        bindGroupDesc.setEntryCount(3);
-//        bindGroupDesc.setEntries(binding, texture2.getBinding(1), texture2.getSamplerBinding(2));
-//        bindGroup2 = wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
-//    }
-
 
     private void initializePipeline() {
 
@@ -769,11 +756,15 @@ public class Demo implements ApplicationListener {
 // [...] Use Render Pass
 
 
-
+        System.nanoTime();
 
 
         // SpriteBatch testing
         batch.begin(renderPass);    // todo param for now
+//char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
+
+//        TextureRegion letterA = new TextureRegion(textureFont, 80f/256f, (33f+13f)/128f, (80+11f)/256f, 33f/128f);
+//        batch.draw(letterA, 100, 100);
 
         batch.setColor(1,0,0,0.1f);
         batch.draw(texture, 0, 0, 100, 100);
@@ -791,7 +782,7 @@ public class Demo implements ApplicationListener {
         batch.draw(region2, 400, 300, 64, 64);
 
         batch.setColor(0,1,0,1);
-        for(int i = 0; i < 80; i++){
+        for(int i = 0; i < 800; i++){
             batch.draw(texture2, (int) (Math.random()*640), (int) (Math.random()*480), 32, 32);
         }
         batch.end();
@@ -843,6 +834,14 @@ public class Demo implements ApplicationListener {
         // At the end of the frame
         wgpu.TextureViewRelease(targetView);
         wgpu.SurfacePresent(surface);
+
+
+        if (System.nanoTime() - startTime > 1000000000) {
+            System.out.println("SpriteBatch : fps: " + frames  );
+            frames = 0;
+            startTime = System.nanoTime();
+        }
+        frames++;
 
         for(int i = 0; i < 10; i++)
             wgpu.DeviceTick(device);

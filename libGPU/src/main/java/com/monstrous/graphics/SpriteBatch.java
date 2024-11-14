@@ -135,9 +135,16 @@ public class SpriteBatch {
         this.draw(texture, x, y, w, h, 0f, 1f, 1f, 0f);
     }
 
+    public void draw(TextureRegion region, float x, float y){
+        this.draw(region.texture, x, y,
+                (region.u2-region.u)*region.texture.getWidth(), (region.v-region.v2)*region.texture.getHeight(),
+                region.u, region.v, region.u2, region.v2  );
+    }
+
     public void draw(TextureRegion region, float x, float y, float w, float h){
         this.draw(region.texture, x, y, w, h, region.u, region.v, region.u2, region.v2  );
     }
+
 
     public void draw (Texture texture, float x, float y, float width, float height, float u, float v, float u2, float v2) {
         if (!begun)

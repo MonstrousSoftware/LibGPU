@@ -6,13 +6,15 @@ import jnr.ffi.LibraryLoader;
 import jnr.ffi.Runtime;
 
 public class Application {
+    public ApplicationConfiguration configuration;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
     }
 
     public Application(ApplicationListener listener, ApplicationConfiguration config) {
-
+        LibGPU.application = this;
+        this.configuration = config;
 
         WindowedApp winApp = new WindowedApp();
         winApp.openWindow(config);

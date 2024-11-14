@@ -4,12 +4,14 @@ public class ApplicationConfiguration {
     public int width;
     public int height;
     public String title;
+    public boolean vsyncEnabled;
 
     public ApplicationConfiguration() {
         // set to defaults
         width = 640;
         height = 480;
         title = "Application";
+        vsyncEnabled = true;
     }
 
     public void setSize(int w, int h){
