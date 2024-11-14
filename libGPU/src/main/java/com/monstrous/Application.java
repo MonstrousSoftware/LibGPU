@@ -13,6 +13,7 @@ public class Application {
     public Pointer depthTextureView;
     public Pointer depthTexture;
     //public Pointer surface;
+    public Pointer targetView;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
@@ -31,13 +32,26 @@ public class Application {
         winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());
 
-        listener.init();
+        listener.create();
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
         while (!winApp.shouldClose()) {
 
+            targetView = getNextSurfaceTextureView();
+            if (targetView.address() == 0) {
+                System.out.println("*** Invalid target view");
+                return;
+            }
+
             listener.render( winApp.getDeltaTime() );
+
+
+            // At the end of the frame
+            wgpu.TextureViewRelease(targetView);
+            wgpu.SurfacePresent(LibGPU.surface);
+
+            wgpu.DeviceTick(LibGPU.device);
 
 
             // Poll for window events. The key callback above will only be
@@ -46,7 +60,7 @@ public class Application {
         }
 
         System.out.println("Application exit");
-        listener.exit();
+        listener.dispose();
         System.out.println("Close Window");
         winApp.closeWindow();
         exitWebGPU();
@@ -55,6 +69,11 @@ public class Application {
     public void resize(int width, int height){
         System.out.println("Application resize");
         LibGPU.graphics.setSize(width, height);
+        terminateDepthBuffer();
+        terminateSwapChain();
+        initSwapChain();
+        initDepthBuffer();
+
         listener.resize(width, height);
     }
 
@@ -80,10 +99,12 @@ public class Application {
     }
 
     private void exitWebGPU() {
+        terminateSwapChain();
         terminateDepthBuffer();
         terminateDevice();
-        terminateSwapChain();
 
+
+        wgpu.SurfaceRelease(LibGPU.surface);
         wgpu.InstanceRelease(LibGPU.instance);
     }
 
@@ -213,7 +234,35 @@ public class Application {
 
     private void terminateSwapChain(){
         wgpu.SurfaceUnconfigure(LibGPU.surface);
-        wgpu.SurfaceRelease(LibGPU.surface);
+
+    }
+
+    private Pointer getNextSurfaceTextureView() {
+        // [...] Get the next surface texture
+
+
+        WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
+        wgpu.SurfaceGetCurrentTexture(LibGPU.surface, surfaceTexture);
+        //System.out.println("get current texture: "+surfaceTexture.status.get());
+        if(surfaceTexture.getStatus() != WGPUSurfaceGetCurrentTextureStatus.Success){
+            System.out.println("*** No current texture");
+            return WgpuJava.createNullPointer();
+        }
+        // [...] Create surface texture view
+        WGPUTextureViewDescriptor viewDescriptor = WGPUTextureViewDescriptor.createDirect();
+        viewDescriptor.setNextInChain();
+        viewDescriptor.setLabel("Surface texture view");
+        Pointer tex = surfaceTexture.getTexture();
+        WGPUTextureFormat format = wgpu.TextureGetFormat(tex);
+        //System.out.println("Set format "+format);
+        viewDescriptor.setFormat(format);
+        viewDescriptor.setDimension(WGPUTextureViewDimension._2D);
+        viewDescriptor.setBaseMipLevel(0);
+        viewDescriptor.setMipLevelCount(1);
+        viewDescriptor.setBaseArrayLayer(0);
+        viewDescriptor.setArrayLayerCount(1);
+        viewDescriptor.setAspect(WGPUTextureAspect.All);
+        return wgpu.TextureCreateView(surfaceTexture.getTexture(), viewDescriptor);
     }
 
     private void initDepthBuffer(){

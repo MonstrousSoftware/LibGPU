@@ -37,7 +37,7 @@ public class Demo implements ApplicationListener {
     private long startTime;
     private int frames;
 
-    public void init() {
+    public void create() {
 
         startTime = System.nanoTime();
         frames = 0;
@@ -320,15 +320,6 @@ public class Demo implements ApplicationListener {
     public void render( float deltaTime ){
         currentTime += deltaTime;
 
-        Pointer targetView = getNextSurfaceTextureView();
-        if (targetView.address() == 0) {
-            System.out.println("*** Invalid target view");
-            return;
-        }
-
-
-
-
 
         setUniforms();
 
@@ -340,7 +331,7 @@ public class Demo implements ApplicationListener {
 
         WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
         renderPassColorAttachment.setNextInChain();
-        renderPassColorAttachment.setView(targetView);
+        renderPassColorAttachment.setView(LibGPU.application.targetView);
         renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
         renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
         renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
@@ -465,8 +456,6 @@ public class Demo implements ApplicationListener {
 
 
         // At the end of the frame
-        wgpu.TextureViewRelease(targetView);
-        wgpu.SurfacePresent(LibGPU.surface);
 
 
         if (System.nanoTime() - startTime > 1000000000) {
@@ -476,11 +465,9 @@ public class Demo implements ApplicationListener {
         }
         frames++;
 
-        for(int i = 0; i < 10; i++)
-            wgpu.DeviceTick(device);
     }
 
-    public void exit(){
+    public void dispose(){
         // cleanup
         System.out.println("demo exit");
         texture.dispose();
@@ -500,9 +487,6 @@ public class Demo implements ApplicationListener {
         wgpu.RenderPipelineRelease(pipeline);
         System.out.println("demo exit4");
 
-
-        //wgpu.InstanceRelease(instance);
-        System.out.println("demo exit5");
     }
 
     @Override
@@ -510,35 +494,7 @@ public class Demo implements ApplicationListener {
         System.out.println("demo got resize");
     }
 
-    private Pointer getNextSurfaceTextureView() {
-        // [...] Get the next surface texture
 
-
-        WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
-        wgpu.SurfaceGetCurrentTexture(LibGPU.surface, surfaceTexture);
-        //System.out.println("get current texture: "+surfaceTexture.status.get());
-        if(surfaceTexture.getStatus() != WGPUSurfaceGetCurrentTextureStatus.Success){
-            System.out.println("*** No current texture");
-            return WgpuJava.createNullPointer();
-        }
-        // [...] Create surface texture view
-        WGPUTextureViewDescriptor viewDescriptor = WGPUTextureViewDescriptor.createDirect();
-        viewDescriptor.setNextInChain();
-        viewDescriptor.setLabel("Surface texture view");
-        Pointer tex = surfaceTexture.getTexture();
-        WGPUTextureFormat format = wgpu.TextureGetFormat(tex);
-        //System.out.println("Set format "+format);
-        viewDescriptor.setFormat(format);
-        viewDescriptor.setDimension(WGPUTextureViewDimension._2D);
-        viewDescriptor.setBaseMipLevel(0);
-        viewDescriptor.setMipLevelCount(1);
-        viewDescriptor.setBaseArrayLayer(0);
-        viewDescriptor.setArrayLayerCount(1);
-        viewDescriptor.setAspect(WGPUTextureAspect.All);
-        Pointer targetView = wgpu.TextureCreateView(surfaceTexture.getTexture(), viewDescriptor);
-
-        return targetView;
-    }
 
 
 
