@@ -27,8 +27,6 @@ public class Demo implements ApplicationListener {
     private Pointer uniformData;
 
     private Camera camera;
-//    private Matrix4 projectionMatrix;
-//    private Matrix4 viewMatrix;
     private Matrix4 modelMatrix;
     private Texture texture;
     private Texture texture2;
@@ -48,7 +46,6 @@ public class Demo implements ApplicationListener {
         queue = LibGPU.queue;
 
 
-
         shader = new ShaderProgram("shader.wgsl");
 
         mesh = new Mesh("pyramid.txt");
@@ -63,10 +60,12 @@ public class Demo implements ApplicationListener {
 
         camera = new Camera();
         float aspectRatio = (float)LibGPU.graphics.getWidth()/(float)LibGPU.graphics.getHeight();
-        camera.projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, aspectRatio);
+        camera.projectionMatrix.setToPerspective(1.5f, 0.01f, 25.0f, aspectRatio);
         camera.position.set(0, 1, -3);
         camera.direction.set(0,0f, 1f);
         camera.update();
+
+        LibGPU.input.setInputProcessor(new CameraController(camera));
 
 
         modelMatrix = new Matrix4();

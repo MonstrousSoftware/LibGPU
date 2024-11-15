@@ -1,10 +1,7 @@
 package com.monstrous;
 
 import org.lwjgl.Version;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
-import org.lwjgl.glfw.GLFWNativeWin32;
-import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.glfw.*;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
@@ -29,6 +26,22 @@ public class WindowedApp {
         @Override
         public void invoke (long windowHandle, int w, int h) {
             application.resize(w, h);
+        }
+    };
+
+    private final GLFWCursorPosCallback mouseMoveCallback = new GLFWCursorPosCallback() {
+        @Override
+        public void invoke (long windowHandle, double x, double y) {
+            if(LibGPU.input.processor != null)
+                LibGPU.input.processor.mouseMove((float) x, (float) y);
+        }
+    };
+
+    private final GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
+        @Override
+        public void invoke (long windowHandle, double x, double y) {
+            if(LibGPU.input.processor != null)
+                LibGPU.input.processor.scrolled((float) x, (float) y);
         }
     };
 
@@ -58,6 +71,8 @@ public class WindowedApp {
         window = glfwCreateWindow(config.width, config.height, config.title, NULL, NULL);
 
         glfwSetFramebufferSizeCallback(window, resizeCallback);
+        glfwSetCursorPosCallback(window, mouseMoveCallback);
+        glfwSetScrollCallback(window, scrollCallback);
 
 
 

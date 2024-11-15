@@ -1,0 +1,52 @@
+package com.monstrous;
+
+import com.monstrous.InputProcessor;
+import com.monstrous.graphics.Camera;
+
+// Simple turn table camera controller
+
+public class CameraController implements InputProcessor {
+
+    private Camera camera;
+    private float anglex, angley;
+    private float distance = 5f;
+
+
+    public CameraController(Camera camera) {
+        this.camera = camera;
+        anglex = 0; angley = 0;
+    }
+
+    @Override
+    public void mouseMove(float x, float y) {
+        anglex = -2f * (float) Math.PI * x / LibGPU.graphics.getWidth();
+        angley = (float) Math.PI * (0.5f + y / LibGPU.graphics.getHeight());
+        update();
+    }
+
+    private void update(){
+
+        //System.out.println("cam controller: mouse: "+anglex+", "+angley);
+
+        float sinx = (float)Math.sin(anglex);
+        float cosx = (float)Math.cos(anglex);
+        float siny = (float)Math.sin(angley);
+        float cosy = (float)Math.cos(angley);
+
+        camera.position.x = distance * sinx * cosy;
+        camera.position.z = distance * cosx * cosy;
+        camera.position.y = distance * siny;
+
+        camera.update();
+    }
+
+    @Override
+    public void scrolled(float x, float y) {
+        System.out.println("cam controller: scroll: "+x+", "+y);
+        if(y < 0)
+            distance *= 1.1f;
+        else if (y > 0 && distance > 1)
+            distance *= 0.9f;
+        update();
+    }
+}

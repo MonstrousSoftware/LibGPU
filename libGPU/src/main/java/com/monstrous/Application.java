@@ -24,6 +24,7 @@ public class Application {
         this.configuration = config;
         this.listener = listener;
 
+        LibGPU.input = new Input();
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
 
