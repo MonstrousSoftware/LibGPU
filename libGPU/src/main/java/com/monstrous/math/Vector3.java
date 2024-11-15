@@ -6,9 +6,9 @@ public class Vector3 {
     public float z;
 
 
-    Vector3(){}
+    public Vector3(){}
 
-    Vector3(float x, float y, float z){
+    public Vector3(float x, float y, float z){
         this.set(x, y, z);
     }
 
@@ -45,6 +45,14 @@ public class Vector3 {
 
     public Vector3 scl (float scalar) {
         return this.set(this.x * scalar, this.y * scalar, this.z * scalar);
+    }
+
+    public Vector3 crs (float x, float y, float z) {
+        return this.set(this.y * z - this.z * y, this.z * x - this.x * z, this.x * y - this.y * x);
+    }
+
+    public Vector3 crs (Vector3 v) {
+        return this.set(this.y * v.z - this.z * v.y, this.z * v.x - this.x * v.z, this.x * v.y - this.y * v.x);
     }
 
 

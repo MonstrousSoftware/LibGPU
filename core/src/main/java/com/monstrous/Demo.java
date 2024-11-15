@@ -26,8 +26,9 @@ public class Demo implements ApplicationListener {
     private int uniformInstances;
     private Pointer uniformData;
 
-    private Matrix4 projectionMatrix;
-    private Matrix4 viewMatrix;
+    private Camera camera;
+//    private Matrix4 projectionMatrix;
+//    private Matrix4 viewMatrix;
     private Matrix4 modelMatrix;
     private Texture texture;
     private Texture texture2;
@@ -59,13 +60,21 @@ public class Demo implements ApplicationListener {
         texture2 = new Texture("jackRussel.png", false);
         textureFont = new Texture("lsans-15.png", false);
 
-        projectionMatrix = new Matrix4();
+
+        camera = new Camera();
+        float aspectRatio = (float)LibGPU.graphics.getWidth()/(float)LibGPU.graphics.getHeight();
+        camera.projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, aspectRatio);
+        camera.position.set(0, 1, -3);
+        camera.direction.set(0,0f, 1f);
+        camera.update();
+
+
         modelMatrix = new Matrix4();
 //        modelMatrix.scale(0.5f, 0.5f, 0.5f);
 //        modelMatrix.translate(1,0,0);
 //        modelMatrix.setToYRotation(0.59f);
         System.out.println(modelMatrix.toString());
-        viewMatrix = new Matrix4();
+        //viewMatrix = new Matrix4();
 
         // P matrix: 16 float
         // M matrix: 16 float
@@ -262,17 +271,17 @@ public class Demo implements ApplicationListener {
     }
 
     private void updateMatrices(float currentTime){
-        projectionMatrix.setToOrtho(-1.1f, 1.1f, -1.1f, 1.1f, -1, 1);
+        camera.projectionMatrix.setToOrtho(-1.1f, 1.1f, -1.1f, 1.1f, -1, 1);
 
         modelMatrix.setToXRotation((float) ( -0.5f*Math.PI ));  // tilt to face camera
-        viewMatrix.idt();
+        camera.viewMatrix.idt();
 
     }
 
     private void updateMatrices2(float currentTime){
 
         float aspectRatio = (float)LibGPU.graphics.getWidth()/(float)LibGPU.graphics.getHeight();
-        projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, aspectRatio);
+        camera.projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, aspectRatio);
         //projectionMatrix.setToProjection(0.001f, 3.0f, 60f, 640f/480f);
         //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
         modelMatrix.idt();//.setToXRotation((float) ( -0.5f*Math.PI ));
@@ -280,7 +289,7 @@ public class Demo implements ApplicationListener {
         Matrix4 RT = new Matrix4().setToXRotation((float) ( -0.5f*Math.PI ));
 
         //modelMatrix.idt().scale(0.5f);
-        viewMatrix.idt();
+        camera.viewMatrix.idt();
         Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.6f);
         Matrix4 R2 = new Matrix4().setToXRotation((float) (-0.5* Math.PI / 4.0)); // tilt the view
         Matrix4 S = new Matrix4().scale(1.6f);
@@ -292,21 +301,28 @@ public class Demo implements ApplicationListener {
 
         TC.mul(S);
         R2.mul(TC); // tilt
-        viewMatrix.set(R2);
+        camera.viewMatrix.set(R2);
         //viewMatrix.translate(0,0.2f, 0);
         //viewMatrix.setToZRotation((float) (Math.PI*0.5f));
         //viewMatrix.translate(0, 0, (float)Math.cos(currentTime)*0.5f );
     }
 
+    private void updateMatrices3(float currentTime){
+        Matrix4 RT = new Matrix4().setToXRotation((float) ( -0.5f*Math.PI ));
+        Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.6f);
+        Matrix4 T = new Matrix4().translate(0.8f, 0f, 0f);
+        modelMatrix.idt().mul(R1).mul(T).mul(RT);
+    }
+
     private void setUniforms(){
 
 
-        updateMatrices2(currentTime);
+        updateMatrices3(currentTime);
 
         int offset = 0;
-        setUniformMatrix(uniformData, offset, projectionMatrix);
+        setUniformMatrix(uniformData, offset, camera.projectionMatrix);
         offset += 16*Float.BYTES;
-        setUniformMatrix(uniformData, offset, viewMatrix);
+        setUniformMatrix(uniformData, offset, camera.viewMatrix);
         offset += 16*Float.BYTES;
         setUniformMatrix(uniformData, offset, modelMatrix);
         offset += 16*Float.BYTES;
@@ -372,7 +388,7 @@ public class Demo implements ApplicationListener {
         Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
 // [...] Use Render Pass
 
-        boolean testSprites = true;
+        boolean testSprites = false;
         if(testSprites) {
 
 
@@ -401,7 +417,7 @@ public class Demo implements ApplicationListener {
             int W = LibGPU.graphics.getWidth();
             int H = LibGPU.graphics.getHeight();
             batch.setColor(0, 1, 0, 1);
-            for (int i = 0; i < 800; i++) {
+            for (int i = 0; i < 8000; i++) {
                 batch.draw(texture2, (int) (Math.random() * W), (int) (Math.random() * H), 32, 32);
             }
             batch.end();

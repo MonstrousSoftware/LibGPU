@@ -28,6 +28,13 @@ public class Matrix4 {
     public static final int M33 = 15;
 
     public final float val[] = new float[16];
+    static final Vector3 l_vez = new Vector3();
+    static final Vector3 l_vex = new Vector3();
+    static final Vector3 l_vey = new Vector3();
+    static final Vector3 tmpVec = new Vector3();
+    static final Matrix4 tmpMat = new Matrix4();
+
+
 
     /**
      * Constructs an identity matrix
@@ -233,6 +240,66 @@ public class Matrix4 {
         val[M13] = ty;
         val[M23] = tz;
         val[M33] = 1;
+        return this;
+    }
+
+    /** Sets the matrix to a look at matrix with a direction and an up vector. Multiply with a translation matrix to get a camera
+     * model view matrix.
+     * @param direction The direction vector
+     * @param up The up vector
+     * @return This matrix for the purpose of chaining methods together. */
+    public Matrix4 setToLookAt (Vector3 direction, Vector3 up) {
+        l_vez.set(direction).nor();
+        l_vex.set(direction).crs(up).nor();
+        l_vey.set(l_vex).crs(l_vez).nor();
+        idt();
+        val[M00] = l_vex.x;
+        val[M01] = l_vex.y;
+        val[M02] = l_vex.z;
+        val[M10] = l_vey.x;
+        val[M11] = l_vey.y;
+        val[M12] = l_vey.z;
+        val[M20] = l_vez.x; // not: -l_vez.x
+        val[M21] = l_vez.y;
+        val[M22] = l_vez.z;
+        return this;
+    }
+
+    /** Sets this matrix to a look at matrix with the given position, target and up vector.
+     * @param position the position
+     * @param target the target
+     * @param up the up vector
+     * @return This matrix */
+    public Matrix4 setToLookAt (Vector3 position, Vector3 target, Vector3 up) {
+        tmpVec.set(target).sub(position);
+        setToLookAt(tmpVec, up);
+        translate(-position.x, -position.y, -position.z);
+        return this;
+    }
+
+    /** Sets this matrix to a translation matrix, overwriting it first by an identity matrix and then setting the 4th column to the
+     * translation vector.
+     * @param vector The translation vector
+     * @return This matrix for the purpose of chaining methods together. */
+    public Matrix4 setToTranslation (Vector3 vector) {
+        idt();
+        val[M03] = vector.x;
+        val[M13] = vector.y;
+        val[M23] = vector.z;
+        return this;
+    }
+
+    /** Sets this matrix to a translation matrix, overwriting it first by an identity matrix and then setting the 4th column to the
+     * translation vector.
+     * @param x The x-component of the translation vector.
+     * @param y The y-component of the translation vector.
+     * @param z The z-component of the translation vector.
+     * @return This matrix for the purpose of chaining methods together. */
+    public Matrix4 setToTranslation (float x, float y, float z) {
+        idt();
+        val[M03] = x;
+        val[M13] = y;
+        val[M23] = z;
         return this;
     }
 
