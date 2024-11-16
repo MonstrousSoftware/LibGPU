@@ -1,5 +1,5 @@
 
-struct MyUniforms {
+struct Uniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,
     modelMatrix: mat4x4f,
@@ -7,8 +7,9 @@ struct MyUniforms {
 };
 
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
-@group(0) @binding(0) var<uniform> uMyUniforms: MyUniforms;
-@group(0) @binding(1) var gradientTexture: texture_2d<f32>;
+
+@group(0) @binding(0) var<uniform> uUniforms: Uniforms;
+@group(0) @binding(1) var texture: texture_2d<f32>;
 @group(0) @binding(2) var textureSampler: sampler;
 
 
@@ -29,13 +30,13 @@ struct VertexOutput {
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
-   out.normal = (uMyUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
+   out.normal = (uUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
 
    var pos = vec4f(in.position, 1.0);
-   pos =  uMyUniforms.projectionMatrix * uMyUniforms.viewMatrix * uMyUniforms.modelMatrix * pos;
+   pos =  uUniforms.projectionMatrix * uUniforms.viewMatrix * uUniforms.modelMatrix * pos;
 
    out.position = pos;
-   out.uv = in.uv; //position.xy * 0.5 + 0.5;
+   out.uv = in.uv;
    out.color = in.color;
    return out;
 }
@@ -52,6 +53,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let shading = shading1 * lightColor1 + shading2 * lightColor2;
 
-    let color = textureSample(gradientTexture, textureSampler, in.uv).rgb;
+    let color = textureSample(texture, textureSampler, in.uv).rgb;
     return vec4f(color, 1.0);
 }

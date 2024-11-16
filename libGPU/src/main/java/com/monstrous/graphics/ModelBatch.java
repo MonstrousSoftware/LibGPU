@@ -9,6 +9,8 @@ import jnr.ffi.Pointer;
 
 public class ModelBatch implements Disposable {
 
+    private final int maxDynamicUniformBuffers = 64;   // limits nr of renderables!
+
     private WGPU wgpu;
     private Pointer device;
 
@@ -18,9 +20,13 @@ public class ModelBatch implements Disposable {
     private Pointer pipeline;
     private Pointer renderPass;
 
-    private int uniformBufferSize;  // in bytes
+    //private long uniformFrameBufferSize;  // in bytes, per frame
+    private int uniformBufferSize;  // in bytes, excluding stride
     private Pointer uniformData;
-    private Pointer uniformBuffer;
+    //private Pointer uniformFrameBuffer;
+    private Pointer uniformObjectBuffer;
+    private int uniformIndex;
+    private int uniformStride;
 
     private WGPUVertexBufferLayout vertexBufferLayout;  // assumes all meshes will confirm to this
     private Pointer pipelineLayout;
@@ -29,12 +35,12 @@ public class ModelBatch implements Disposable {
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
-        //queue = LibGPU.queue;
 
-        shader = new ShaderProgram("shaders/shader.wgsl");      // todo get from library storage
+        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
 
         makeUniformBuffer();
-        defineBindGroupLayout();
+
+        bindGroupLayout = defineBindGroupLayout();
         initializePipeline();
     }
 
@@ -43,6 +49,12 @@ public class ModelBatch implements Disposable {
         this.camera = camera;
         this.renderPass = LibGPU.renderPass;
         wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+        //writeFrameUniforms(camera);
+        uniformIndex = 0;
+//        Pointer frameBindGroupLayout = defineFrameBindGroupLayout();
+//        Pointer fbg = makeFrameBindGroup(frameBindGroupLayout);
+//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, fbg, 0, WgpuJava.createNullPointer());
+
     }
 
     public void render(Renderable renderable) {
@@ -52,13 +64,20 @@ public class ModelBatch implements Disposable {
 
     public void render(MeshPart meshPart, Texture texture, Matrix4 modelMatrix){
 
-        writeUniforms(camera, modelMatrix);  // e.g. projection and view matrix   // todo split into per frame vs per object
+        writeUniforms(camera, modelMatrix);  // renderable uniforms
+
+        if(uniformIndex == maxDynamicUniformBuffers)
+            throw new RuntimeException("Too many dynamic uniform buffers!");
 
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
-        Pointer bg = initBindGroups(texture);
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
+
+        Pointer bg = makeBindGroup(texture, bindGroupLayout);
+        int[] offset = new int[1];
+        offset[0] = uniformIndex*uniformStride;
+        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 1, offsetPtr);
 
         if(meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
@@ -68,6 +87,7 @@ public class ModelBatch implements Disposable {
         else
             wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, 1, meshPart.offset, 0);
         wgpu.BindGroupRelease(bg);      // we can release straight away?
+        uniformIndex++;
     }
 
     public void end(){
@@ -83,16 +103,38 @@ public class ModelBatch implements Disposable {
         wgpu.RenderPipelineRelease(pipeline);
         wgpu.PipelineLayoutRelease(pipelineLayout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
-        wgpu.BufferRelease(uniformBuffer);
+        //wgpu.BufferRelease(uniformFrameBuffer);
+        wgpu.BufferRelease(uniformObjectBuffer);
     }
 
 
-    private Pointer initBindGroups(Texture texture) {
+    // per frame bind group
+//    private Pointer makeFrameBindGroup(Pointer frameBindGroupLayout) {
+//        // Create a binding
+//        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
+//        binding.setNextInChain();
+//        binding.setBinding(0);  // binding index
+//        binding.setBuffer(uniformFrameBuffer);
+//        binding.setOffset(0);
+//        binding.setSize(uniformFrameBufferSize);
+//
+//        // A bind group contains one or multiple bindings
+//        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
+//        bindGroupDesc.setNextInChain();
+//        bindGroupDesc.setLayout(frameBindGroupLayout);
+//        // There must be as many bindings as declared in the layout!
+//        bindGroupDesc.setEntryCount(1);
+//        bindGroupDesc.setEntries(binding);
+//        return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
+//    }
+
+    // per renderabe bind group
+    private Pointer makeBindGroup(Texture texture, Pointer bindGroupLayout) {
         // Create a binding
         WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
         binding.setNextInChain();
         binding.setBinding(0);  // binding index
-        binding.setBuffer(uniformBuffer);
+        binding.setBuffer(uniformObjectBuffer);
         binding.setOffset(0);
         binding.setSize(uniformBufferSize);
 
@@ -112,17 +154,20 @@ public class ModelBatch implements Disposable {
         return step * d;
     }
     private void makeUniformBuffer() {
+
+
         // P matrix: 16 float
         // M matrix: 16 float
         // V matrix: 16 float
         // color: 4 floats
         uniformBufferSize = (3*16+4) * Float.BYTES;
+
         float[] uniforms = new float[uniformBufferSize];
-        uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer
+        uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
+
 
         int minAlign = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
-        int uniformStride = ceilToNextMultiple(uniformBufferSize, minAlign);
-        int uniformInstances = 1;   // how many sets of uniforms?
+        uniformStride = ceilToNextMultiple(uniformBufferSize, minAlign);
 
         System.out.println("min uniform alignment: "+minAlign);
         System.out.println("uniform stride: "+uniformStride);
@@ -131,11 +176,26 @@ public class ModelBatch implements Disposable {
 
         // Create uniform buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Uniform buffer");
+        bufferDesc.setLabel("Uniform object buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize((long) uniformStride * uniformInstances);
+        bufferDesc.setSize((long) uniformStride * maxDynamicUniformBuffers);
         bufferDesc.setMappedAtCreation(0L);
-        uniformBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
+        uniformObjectBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
+
+//        // Create uniform buffer
+//        uniformFrameBufferSize = (long) (2*16) * Float.BYTES;
+//        int stride = ceilToNextMultiple((int)uniformFrameBufferSize, minAlign);
+//        // P matrix: 16 float
+//        // M matrix: 16 float
+//
+//        bufferDesc.setLabel("Uniform frame buffer");
+//        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
+//        bufferDesc.setSize(stride); //uniformFrameBufferSize);
+//        bufferDesc.setMappedAtCreation(0L);
+//        uniformFrameBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
+//
+//        System.out.println("uniformFrameBufferSize: "+uniformFrameBufferSize);
+//        System.out.println("stride: "+stride);
 
     }
     private void setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
@@ -150,7 +210,18 @@ public class ModelBatch implements Disposable {
         }
     }
 
-    private void writeUniforms(Camera camera, Matrix4 modelMatrix){
+
+//    private void writeFrameUniforms(Camera camera){
+//        int offset = 0;
+//        setUniformMatrix(uniformData, offset, camera.projectionMatrix);
+//        offset += 16*Float.BYTES;
+//        setUniformMatrix(uniformData, offset, camera.viewMatrix);
+//        offset += 16*Float.BYTES;
+//
+//        wgpu.QueueWriteBuffer(LibGPU.queue, uniformFrameBuffer, 0, uniformData, offset);
+//    }
+
+    private void writeUniforms( Camera camera, Matrix4 modelMatrix){
         int offset = 0;
         setUniformMatrix(uniformData, offset, camera.projectionMatrix);
         offset += 16*Float.BYTES;
@@ -159,7 +230,9 @@ public class ModelBatch implements Disposable {
         setUniformMatrix(uniformData, offset, modelMatrix);
         offset += 16*Float.BYTES;
         setUniformColor(uniformData, offset, 0.0f, 1.0f, 0.4f, 1.0f);
-        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
+        offset += 4*Float.BYTES;
+
+        wgpu.QueueWriteBuffer(LibGPU.queue, uniformObjectBuffer, uniformIndex*uniformStride, uniformData, offset); //uniformBufferSize);
     }
 
     public WGPUVertexBufferLayout getVertexBufferLayout(){
@@ -176,11 +249,32 @@ public class ModelBatch implements Disposable {
         return vertexBufferLayout;
     }
 
+//    // Bind Group Layout:
+//    //  uniforms
+//    private Pointer defineFrameBindGroupLayout(){
+//        // Define binding layout
+//        WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(bindingLayout);
+//        bindingLayout.setBinding(0);
+//        bindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
+//        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
+//        bindingLayout.getBuffer().setMinBindingSize(128); //uniformFrameBufferSize);
+//
+//         // Create a bind group layout
+//        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
+//        bindGroupLayoutDesc.setNextInChain();
+//        bindGroupLayoutDesc.setLabel("ModelBatch Frame Bind Group Layout");
+//        bindGroupLayoutDesc.setEntryCount(1);
+//        bindGroupLayoutDesc.setEntries(bindingLayout);
+//        return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+//
+//    }
+
     // Bind Group Layout:
     //  uniforms
     //  texture
     //  sampler
-    private void defineBindGroupLayout(){
+    private Pointer defineBindGroupLayout(){
         // Define binding layout
         WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(bindingLayout);
@@ -208,7 +302,7 @@ public class ModelBatch implements Disposable {
         bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout");
         bindGroupLayoutDesc.setEntryCount(3);
         bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
-        bindGroupLayout = wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+        return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
 
     }
 
@@ -303,7 +397,7 @@ public class ModelBatch implements Disposable {
 
         bindingLayout.getBuffer().setNextInChain();
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-        bindingLayout.getBuffer().setHasDynamicOffset(0L);
+        bindingLayout.getBuffer().setHasDynamicOffset(1L);
 
         bindingLayout.getSampler().setNextInChain();
         bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);
