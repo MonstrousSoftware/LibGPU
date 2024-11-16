@@ -3,7 +3,7 @@ struct MyUniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,
     modelMatrix: mat4x4f,
-    time: f32,
+    //time: f32,
     color: vec4f,
 };
 
