@@ -23,10 +23,10 @@ public class ModelBatch implements Disposable {
     private int uniformBufferSize;  // in bytes
     private Pointer uniformData;
     private Pointer uniformBuffer;
-    private WGPUVertexBufferLayout vertexBufferLayout;
-    private Pointer layout;
+
+    private WGPUVertexBufferLayout vertexBufferLayout;  // assumes all meshes will confirm to this
+    private Pointer pipelineLayout;
     private Pointer bindGroupLayout;
-    //private float currentTime;
 
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
@@ -41,12 +41,10 @@ public class ModelBatch implements Disposable {
     }
 
 
-
     public void begin(Camera camera, Pointer renderPass){
         this.camera = camera;
         this.renderPass = renderPass;
         wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
-
     }
 
     public void render(Mesh mesh, Texture texture, Matrix4 modelMatrix){      // todo
@@ -79,7 +77,7 @@ public class ModelBatch implements Disposable {
         shader.dispose();
 
         wgpu.RenderPipelineRelease(pipeline);
-        wgpu.PipelineLayoutRelease(layout);
+        wgpu.PipelineLayoutRelease(pipelineLayout);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BufferRelease(uniformBuffer);
     }
@@ -331,15 +329,15 @@ public class ModelBatch implements Disposable {
         layouts[0] = bindGroupLayout.address();
         Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
 
-        // Create the pipeline layout
+        // Create the pipeline layout: 1 bind group
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
         layoutDesc.setNextInChain();
         layoutDesc.setLabel("Pipeline Layout");
         layoutDesc.setBindGroupLayoutCount(1);
         layoutDesc.setBindGroupLayouts(layoutPtr);
-        layout = wgpu.DeviceCreatePipelineLayout(device, layoutDesc);
+        pipelineLayout = wgpu.DeviceCreatePipelineLayout(device, layoutDesc);
 
-        pipelineDesc.setLayout(layout);
+        pipelineDesc.setLayout(pipelineLayout);
         pipeline = wgpu.DeviceCreateRenderPipeline(device, pipelineDesc);
         wgpu.ShaderModuleRelease(shaderModule);
     }

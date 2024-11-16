@@ -3,7 +3,6 @@ struct MyUniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,
     modelMatrix: mat4x4f,
-    //time: f32,
     color: vec4f,
 };
 
@@ -53,11 +52,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let shading = shading1 * lightColor1 + shading2 * lightColor2;
 
-    //let color = in.color * shading;
-
-    //let color = in.position.xyz /256.0;
-    //let texelCoords = vec2i(in.uv * vec2f(textureDimensions(gradientTexture)));
-    //var color = textureLoad(gradientTexture, texelCoords, 0).rgb;
     let color = textureSample(gradientTexture, textureSampler, in.uv).rgb;
     return vec4f(color, 1.0);
 }

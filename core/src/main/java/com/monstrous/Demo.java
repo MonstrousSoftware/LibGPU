@@ -10,13 +10,8 @@ import jnr.ffi.Pointer;
 public class Demo implements ApplicationListener {
     private WGPU wgpu;
 
-
-
     private Mesh mesh;
-    private ShaderProgram shader;
     private ModelBatch modelBatch;
-
-
 
     private Camera camera;
 
@@ -35,11 +30,6 @@ public class Demo implements ApplicationListener {
         frames = 0;
 
         wgpu = LibGPU.wgpu;
-//        device = LibGPU.device;
-//        queue = LibGPU.queue;
-
-
-        //shader = new ShaderProgram("shader.wgsl");
 
         mesh = new Mesh("pyramid.txt");
 
@@ -56,14 +46,6 @@ public class Demo implements ApplicationListener {
 
 
         modelMatrix = new Matrix4();
-
-        //System.out.println(modelMatrix.toString());
-        //viewMatrix = new Matrix4();
-
-
-
-//        bindGroup = initBindGroups(texture);
-//        bindGroup2 = initBindGroups(texture2);
 
         batch = new SpriteBatch();
 
@@ -180,34 +162,6 @@ public class Demo implements ApplicationListener {
             modelBatch.render(mesh, texture2, modelMatrix);
 
             modelBatch.end();
-
-//            setUniforms();
-//            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
-
-//            Pointer vertexBuffer = mesh.getVertexBuffer();
-//            Pointer indexBuffer = mesh.getIndexBuffer();
-//            int indexCount = mesh.getIndexCount();
-//
-//            // Set vertex buffer while encoding the render pass
-//            wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-//            wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
-//
-//            Pointer bg = initBindGroups(texture);
-//            wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
-//            wgpu.RenderPassEncoderDrawIndexed(renderPass, 3, 1, 0, 0, 0);
-//            wgpu.BindGroupRelease(bg);
-
-//            wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-//            wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
-//
-//            bg = initBindGroups(texture2);
-//            wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
-//            wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
-//            wgpu.BindGroupRelease(bg);
-
-//            wgpu.RenderPassEncoderEnd(renderPass);
-//
-//            wgpu.RenderPassEncoderRelease(renderPass);
         }
         wgpu.RenderPassEncoderEnd(renderPass);
         wgpu.RenderPassEncoderRelease(renderPass);
@@ -250,45 +204,12 @@ public class Demo implements ApplicationListener {
         batch.dispose();
         mesh.dispose();
         modelBatch.dispose();
-
-
-
     }
 
     @Override
     public void resize(int width, int height) {
         System.out.println("demo got resize");
     }
-
-
-
-
-
-
-
-
-//    private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
-//
-//        bindingLayout.getBuffer().setNextInChain();
-//        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-//        bindingLayout.getBuffer().setHasDynamicOffset(0L);
-//
-//        bindingLayout.getSampler().setNextInChain();
-//        bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);
-//
-//        bindingLayout.getStorageTexture().setNextInChain();
-//        bindingLayout.getStorageTexture().setAccess(WGPUStorageTextureAccess.Undefined);
-//        bindingLayout.getStorageTexture().setFormat(WGPUTextureFormat.Undefined);
-//        bindingLayout.getStorageTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
-//
-//        bindingLayout.getTexture().setNextInChain();
-//        bindingLayout.getTexture().setMultisampled(0L);
-//        bindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Undefined);
-//        bindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
-//
-//    }
-//
-
 
 
 }
