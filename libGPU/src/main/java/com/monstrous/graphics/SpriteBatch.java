@@ -72,8 +72,8 @@ public class SpriteBatch implements Disposable {
         tint.set(r,g,b,a);
     }
 
-    public void begin(Pointer renderPass) { // todo can we avoid this param?
-        this.renderPass = renderPass;
+    public void begin() {
+        this.renderPass = LibGPU.renderPass;
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");

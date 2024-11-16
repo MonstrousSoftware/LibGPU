@@ -45,8 +45,13 @@ public class Application {
                 return;
             }
 
+            Pointer encoder = prepareEncoder();
+            LibGPU.renderPass = prepareRenderPass(encoder);
+
             listener.render( winApp.getDeltaTime() );
 
+            finalizeRenderPass( LibGPU.renderPass );
+            finishEncoder(encoder);
 
             // At the end of the frame
             wgpu.TextureViewRelease(targetView);
@@ -309,6 +314,89 @@ public class Application {
         wgpu.TextureDestroy(depthTexture);
         wgpu.TextureRelease(depthTexture);
     }
+
+    private Pointer prepareEncoder() {
+        WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
+        encoderDescriptor.setNextInChain();
+        encoderDescriptor.setLabel("My Encoder");
+
+        return wgpu.DeviceCreateCommandEncoder(LibGPU.device, encoderDescriptor);
+    }
+
+    private Pointer prepareRenderPass(Pointer encoder){
+
+        WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
+        renderPassColorAttachment.setNextInChain();
+        renderPassColorAttachment.setView(LibGPU.application.targetView);
+        renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+        renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
+        renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
+
+        renderPassColorAttachment.getClearValue().setR(0.25);
+        renderPassColorAttachment.getClearValue().setG(0.25);
+        renderPassColorAttachment.getClearValue().setB(0.25);
+        renderPassColorAttachment.getClearValue().setA(1.0);
+
+        renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
+
+
+        WGPURenderPassDepthStencilAttachment depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
+        depthStencilAttachment.setView( LibGPU.application.depthTextureView );
+        depthStencilAttachment.setDepthClearValue(1.0f);
+        depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
+        depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
+        depthStencilAttachment.setDepthReadOnly(0L);
+        depthStencilAttachment.setStencilClearValue(0);
+        depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
+        depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
+        depthStencilAttachment.setStencilReadOnly(1L);
+
+
+
+        WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
+        renderPassDescriptor.setNextInChain();
+
+        renderPassDescriptor.setLabel("Main Render Pass");
+
+        renderPassDescriptor.setColorAttachmentCount(1);
+        renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
+        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
+        renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
+        renderPassDescriptor.setTimestampWrites();
+
+
+        return wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+    }
+
+    private void finalizeRenderPass(Pointer renderPass) {
+        wgpu.RenderPassEncoderEnd(renderPass);
+        wgpu.RenderPassEncoderRelease(renderPass);
+    }
+
+    private void finishEncoder(Pointer encoder){
+
+        WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
+        bufferDescriptor.setNextInChain();
+        bufferDescriptor.setLabel("Command Buffer");
+        Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
+        wgpu.CommandEncoderRelease(encoder);
+
+
+        long[] buffers = new long[1];
+        buffers[0] = commandBuffer.address();
+        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
+        //System.out.println("Pointer: "+bufferPtr.toString());
+        //System.out.println("Submitting command...");
+        wgpu.QueueSubmit(LibGPU.queue, 1, bufferPtr);
+
+        wgpu.CommandBufferRelease(commandBuffer);
+        //System.out.println("Command submitted...");
+
+    }
+
+
+
+
 
     final static long WGPU_LIMIT_U32_UNDEFINED = 4294967295L;
     final static long WGPU_LIMIT_U64_UNDEFINED = Long.MAX_VALUE;//.   18446744073709551615L;

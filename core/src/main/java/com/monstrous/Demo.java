@@ -70,53 +70,7 @@ public class Demo implements ApplicationListener {
     public void render( float deltaTime ){
         currentTime += deltaTime;
 
-        WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
-        encoderDescriptor.setNextInChain();
-        encoderDescriptor.setLabel("My Encoder");
 
-        Pointer encoder = wgpu.DeviceCreateCommandEncoder(LibGPU.device, encoderDescriptor);
-
-        WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
-        renderPassColorAttachment.setNextInChain();
-        renderPassColorAttachment.setView(LibGPU.application.targetView);
-        renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
-        renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
-        renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
-
-        renderPassColorAttachment.getClearValue().setR(0.25);
-        renderPassColorAttachment.getClearValue().setG(0.25);
-        renderPassColorAttachment.getClearValue().setB(0.25);
-        renderPassColorAttachment.getClearValue().setA(1.0);
-
-        renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
-
-
-        WGPURenderPassDepthStencilAttachment depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
-        depthStencilAttachment.setView( LibGPU.application.depthTextureView );
-        depthStencilAttachment.setDepthClearValue(1.0f);
-        depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
-        depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
-        depthStencilAttachment.setDepthReadOnly(0L);
-        depthStencilAttachment.setStencilClearValue(0);
-        depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
-        depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
-        depthStencilAttachment.setStencilReadOnly(1L);
-
-
-
-        WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
-        renderPassDescriptor.setNextInChain();
-
-        renderPassDescriptor.setLabel("Main Render Pass");
-
-        renderPassDescriptor.setColorAttachmentCount(1);
-        renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
-        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
-        renderPassDescriptor.setTimestampWrites();
-
-
-        Pointer renderPass = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
 // [...] Use Render Pass
 
         boolean testSprites = false;
@@ -124,7 +78,7 @@ public class Demo implements ApplicationListener {
 
 
             // SpriteBatch testing
-            batch.begin(renderPass);    // todo param for now
+            batch.begin();    // todo param for now
 //char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
 
 //        TextureRegion letterA = new TextureRegion(textureFont, 80f/256f, (33f+13f)/128f, (80+11f)/256f, 33f/128f);
@@ -157,33 +111,12 @@ public class Demo implements ApplicationListener {
 
             updateModelMatrix(currentTime);
 
-            modelBatch.begin(camera, renderPass);
+            modelBatch.begin(camera);
 
             modelBatch.render(mesh, texture2, modelMatrix);
 
             modelBatch.end();
         }
-        wgpu.RenderPassEncoderEnd(renderPass);
-        wgpu.RenderPassEncoderRelease(renderPass);
-
-        WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
-        bufferDescriptor.setNextInChain();
-        bufferDescriptor.setLabel("Command Buffer");
-        Pointer commandBuffer = wgpu.CommandEncoderFinish(encoder, bufferDescriptor);
-        wgpu.CommandEncoderRelease(encoder);
-
-
-        long[] buffers = new long[1];
-        buffers[0] = commandBuffer.address();
-        Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
-        //System.out.println("Pointer: "+bufferPtr.toString());
-        //System.out.println("Submitting command...");
-        wgpu.QueueSubmit(LibGPU.queue, 1, bufferPtr);
-
-        wgpu.CommandBufferRelease(commandBuffer);
-        //System.out.println("Command submitted...");
-
-
         // At the end of the frame
 
 

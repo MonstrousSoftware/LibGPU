@@ -41,9 +41,9 @@ public class ModelBatch implements Disposable {
     }
 
 
-    public void begin(Camera camera, Pointer renderPass){
+    public void begin(Camera camera){
         this.camera = camera;
-        this.renderPass = renderPass;
+        this.renderPass = LibGPU.renderPass;
         wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
     }
 
