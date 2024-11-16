@@ -2,37 +2,41 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
-import com.monstrous.wgpu.WGPU;
 
 
-public class TestModel implements ApplicationListener {
-    private WGPU wgpu;
+public class TestRenderable implements ApplicationListener {
 
-    private Mesh mesh;
     private ModelBatch modelBatch;
-
     private Camera camera;
-
     private Texture texture;
     private Texture texture2;
+    private Mesh mesh;
+    private MeshPart meshPart;
     private Matrix4 modelMatrix;
-
+    private Material material;
+    private Renderable renderable;
     private float currentTime;
-
     private long startTime;
     private int frames;
 
     public void create() {
-
         startTime = System.nanoTime();
         frames = 0;
 
-        wgpu = LibGPU.wgpu;
-
+        //mesh = new Mesh("pyramidNoIndex.txt");
         mesh = new Mesh("pyramid.txt");
-
+        if(mesh.getIndexCount() > 0)
+            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
+        else
+            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
         texture = new Texture("monstrous.png", false);
         texture2 = new Texture("jackRussel.png", false);
+
+        material = new Material(texture);
+
+        modelMatrix = new Matrix4();
+
+        renderable = new Renderable(meshPart, material, modelMatrix);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);
@@ -41,10 +45,8 @@ public class TestModel implements ApplicationListener {
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
-        modelMatrix = new Matrix4();
 
         modelBatch = new ModelBatch();
-
     }
 
 
@@ -68,7 +70,8 @@ public class TestModel implements ApplicationListener {
 
         modelBatch.begin(camera);
 
-        modelBatch.render(mesh, texture2, modelMatrix);
+        //modelBatch.render(meshPart, texture2, modelMatrix);
+        modelBatch.render(renderable);
 
         modelBatch.end();
 

@@ -11,10 +11,10 @@ public class ModelBatch implements Disposable {
 
     private WGPU wgpu;
     private Pointer device;
-    private Pointer queue;
+    //private Pointer queue;
 
     private Camera camera;
-    private Mesh mesh;
+    //private Mesh mesh;
 
     private ShaderProgram shader;
     private Pointer pipeline;
@@ -31,7 +31,7 @@ public class ModelBatch implements Disposable {
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
-        queue = LibGPU.queue;
+        //queue = LibGPU.queue;
 
         shader = new ShaderProgram("shader.wgsl");
 
@@ -47,22 +47,28 @@ public class ModelBatch implements Disposable {
         wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
     }
 
-    public void render(Mesh mesh, Texture texture, Matrix4 modelMatrix){      // todo
-        this.mesh = mesh;
+    public void render(Renderable renderable) {
+        render(renderable.meshPart, renderable.material.texture, renderable.modelTransform);
+    }
+
+
+    public void render(MeshPart meshPart, Texture texture, Matrix4 modelMatrix){
 
         writeUniforms(camera, modelMatrix);  // e.g. projection and view matrix   // todo split into per frame vs per object
 
-        Pointer vertexBuffer = mesh.getVertexBuffer();
-        Pointer indexBuffer = mesh.getIndexBuffer();
-        int indexCount = mesh.getIndexCount();
-
-        // Set vertex buffer while encoding the render pass
+        Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
 
         Pointer bg = initBindGroups(texture);
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, null);
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, indexCount, 1, 0, 0, 0);
+
+        if(meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
+            Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
+            wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
+            wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, 1, meshPart.offset, 0, 0);
+        }
+        else
+            wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, 1, meshPart.offset, 0);
         wgpu.BindGroupRelease(bg);      // we can release straight away?
     }
 

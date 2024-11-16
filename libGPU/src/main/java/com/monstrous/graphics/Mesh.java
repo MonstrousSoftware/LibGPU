@@ -16,7 +16,7 @@ public class Mesh {
     private Pointer vertexBuffer;
     private Pointer indexBuffer;
     private int vertexCount;
-    private int indexCount;
+    private int indexCount;     // can be zero if the vertices are not indexed
 
 
     public Mesh(String name) {

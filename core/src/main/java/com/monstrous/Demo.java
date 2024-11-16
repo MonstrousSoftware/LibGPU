@@ -11,6 +11,8 @@ public class Demo implements ApplicationListener {
     private WGPU wgpu;
 
     private Mesh mesh;
+    private MeshPart meshPart;
+    private Renderable renderable;
     private ModelBatch modelBatch;
 
     private Camera camera;
@@ -32,6 +34,8 @@ public class Demo implements ApplicationListener {
         wgpu = LibGPU.wgpu;
 
         mesh = new Mesh("pyramid.txt");
+
+
 
         texture = new Texture("monstrous.png", false);
         texture2 = new Texture("jackRussel.png", false);
@@ -110,7 +114,7 @@ public class Demo implements ApplicationListener {
 
             modelBatch.begin(camera);
 
-            modelBatch.render(mesh, texture2, modelMatrix);
+            modelBatch.render(meshPart, texture2, modelMatrix);
 
             modelBatch.end();
         }
