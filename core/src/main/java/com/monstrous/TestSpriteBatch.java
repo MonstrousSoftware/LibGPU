@@ -19,7 +19,7 @@ public class TestSpriteBatch implements ApplicationListener {
         frames = 0;
 
         texture = new Texture("textures/monstrous.png", false);
-        texture2 = new Texture("textures/jackRussel.png", false);
+        texture2 = new Texture("textures/jackRussel.png", true);
 
         batch = new SpriteBatch();
     }

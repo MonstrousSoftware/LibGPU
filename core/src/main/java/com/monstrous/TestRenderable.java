@@ -25,12 +25,12 @@ public class TestRenderable implements ApplicationListener {
         frames = 0;
 
         //mesh = new Mesh("pyramidNoIndex.txt");
-        mesh = new Mesh("models/pyramid.txt");
+        mesh = new Mesh("models/ducky.obj");
         if(mesh.getIndexCount() > 0)
             meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
         else
             meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
-        texture = new Texture("textures/monstrous.png", false);
+        texture = new Texture("textures/palette.png", false);
         texture2 = new Texture("textures/jackRussel.png", false);
 
 
@@ -38,7 +38,7 @@ public class TestRenderable implements ApplicationListener {
         renderable = new Renderable(meshPart, new Material(texture), modelMatrix);
 
         modelMatrix2 = new Matrix4();
-        renderable2 = new Renderable(meshPart, new Material(texture2), modelMatrix2);
+        renderable2 = new Renderable(meshPart, new Material(texture), modelMatrix2);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);
@@ -55,9 +55,9 @@ public class TestRenderable implements ApplicationListener {
 
 
     private void updateModelMatrix(Matrix4 modelMatrix, float currentTime){
-        Matrix4 RT = new Matrix4().setToXRotation((float) ( -0.5f*Math.PI ));
+        Matrix4 RT = new Matrix4().idt(); //setToXRotation((float) ( -0.5f*Math.PI ));
         Matrix4 R1 = new Matrix4().setToYRotation(currentTime);
-        Matrix4 T = new Matrix4().translate(0.8f, 0f, 0f);
+        Matrix4 T = new Matrix4().translate(1.8f, 0f, 0f);
         modelMatrix.idt().mul(R1).mul(T).mul(RT);
     }
 
@@ -66,7 +66,7 @@ public class TestRenderable implements ApplicationListener {
 
 
     public void render( float deltaTime ){
-        //currentTime += deltaTime;
+        currentTime += deltaTime;
 
         updateModelMatrix(modelMatrix, currentTime);
         updateModelMatrix(modelMatrix2, currentTime+3.14f);

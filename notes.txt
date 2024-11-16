@@ -304,3 +304,7 @@ note: we ignore format conversions for now. Also, not all stb formats seem to be
 
 11/11:
 - It seems the mip-mapping introduces some artifacts, e.g. red and green spots.
+
+
+
+OBJ parsing: note that faces can have more

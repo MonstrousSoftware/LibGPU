@@ -2,6 +2,7 @@ package com.monstrous.graphics;
 
 import com.monstrous.FileInput;
 import com.monstrous.LibGPU;
+import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.wgpu.WGPUVertexBufferLayout;
 import com.monstrous.wgpu.WGPUVertexFormat;
 import com.monstrous.wgpuUtils.WgpuJava;
@@ -23,16 +24,17 @@ public class Mesh {
         load(name);
     }
 
-    private void load(String fileName){
+    private void loadTxt(String fileName) {
         int dimensions = 3;
         FileInput input = new FileInput(fileName);
-        int vertSize = 8+dimensions; // in floats
+        // x y z nx ny nz r g b u v
+        int vertSize = 8 + dimensions; // in floats
         ArrayList<Integer> indexValues = new ArrayList<>();
         ArrayList<Float> vertFloats = new ArrayList<>();
         int mode = 0;
-        for(int lineNr = 0; lineNr < input.size(); lineNr++) {
+        for (int lineNr = 0; lineNr < input.size(); lineNr++) {
             String line = input.get(lineNr).strip();
-            if (line.contentEquals("[points]")) {
+            if (line.contentEquals("v")) {
                 mode = 1;
                 continue;
             }
@@ -40,37 +42,46 @@ public class Mesh {
                 mode = 2;
                 continue;
             }
-            if(line.startsWith("#"))
+            if (line.startsWith("#"))
                 continue;
-            if(line.isEmpty())
+            if (line.isEmpty())
                 continue;
-            if(mode == 1){
-                String [] words = line.split("[ \t]+");
-                if(words.length != vertSize)
-                    System.out.println("Expected "+vertSize+" floats per vertex : "+line);
-                for(int i = 0; i < vertSize; i++)
+            if (mode == 1) {
+                String[] words = line.split("[ \t]+");
+                if (words.length != vertSize)
+                    System.out.println("Expected " + vertSize + " floats per vertex : " + line);
+                for (int i = 0; i < vertSize; i++)
                     vertFloats.add(Float.parseFloat(words[i]));
-            } else if (mode == 2){
-                String [] words = line.split("[ \t]+");
-                if(words.length != 3)
-                    System.out.println("Expected 3 indices per line: "+line);
-                for(int i = 0; i < 3; i++)
+            } else if (mode == 2) {
+                String[] words = line.split("[ \t]+");
+                if (words.length != 3)
+                    System.out.println("Expected 3 indices per line: " + line);
+                for (int i = 0; i < 3; i++)
                     indexValues.add(Integer.parseInt(words[i]));
             } else {
-                System.out.println("Unexpected input: "+line);
+                System.out.println("Unexpected input: " + line);
             }
         }
+        //storeMesh(vertFloats, vertSize, indexValues);
+    }
 
-        vertexCount = vertFloats.size()/vertSize;
-        float[] vertexData = new float[ vertFloats.size() ];
-        for(int i = 0; i < vertFloats.size(); i++){
-            vertexData[i] = vertFloats.get(i);
+    private void load(String fileName) {
+        MeshData data = ObjLoader.load(fileName);
+        storeMesh(data);
+    }
+
+    private void storeMesh(MeshData data){
+
+        vertexCount = data.vertFloats.size()/data.vertSize;
+        float[] vertexData = new float[ data.vertFloats.size() ];
+        for(int i = 0; i < data.vertFloats.size(); i++){
+            vertexData[i] = data.vertFloats.get(i);
         }
 
-        indexCount = indexValues.size();
+        indexCount = data.indexValues.size();
         int [] indexData = new int[ indexCount ];
         for(int i = 0; i < indexCount; i++){
-            indexData[i] = indexValues.get(i);
+            indexData[i] = data.indexValues.get(i);
         }
 
         // Create vertex buffer
@@ -81,10 +92,10 @@ public class Mesh {
         bufferDesc.setMappedAtCreation(0L);
         vertexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
-        Pointer data = WgpuJava.createFloatArrayPointer(vertexData);
+        Pointer dataBuf = WgpuJava.createFloatArrayPointer(vertexData);
 
         // Upload geometry data to the buffer
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, data, (int)bufferDesc.getSize());
+        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, dataBuf, (int)bufferDesc.getSize());
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
