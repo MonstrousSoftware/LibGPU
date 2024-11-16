@@ -24,13 +24,13 @@ public class TestRenderable implements ApplicationListener {
         frames = 0;
 
         //mesh = new Mesh("pyramidNoIndex.txt");
-        mesh = new Mesh("pyramid.txt");
+        mesh = new Mesh("models/pyramid.txt");
         if(mesh.getIndexCount() > 0)
             meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
         else
             meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
-        texture = new Texture("monstrous.png", false);
-        texture2 = new Texture("jackRussel.png", false);
+        texture = new Texture("textures/monstrous.png", false);
+        texture2 = new Texture("textures/jackRussel.png", false);
 
         material = new Material(texture);
 

@@ -46,7 +46,7 @@ public class SpriteBatch implements Disposable {
 
         // vertex: x, y, u, v, r, g, b, a
         vertexSize = 8; // floats
-        shader = new ShaderProgram("sprite.wgsl");
+        shader = new ShaderProgram("shaders/sprite.wgsl");
 
         indexValues = new int[maxSprites * 6];    // 6 indices per sprite
         vertFloats = new float[maxSprites * 4 * vertexSize];

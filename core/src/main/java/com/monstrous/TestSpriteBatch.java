@@ -18,8 +18,8 @@ public class TestSpriteBatch implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        texture = new Texture("monstrous.png", false);
-        texture2 = new Texture("jackRussel.png", false);
+        texture = new Texture("textures/monstrous.png", false);
+        texture2 = new Texture("textures/jackRussel.png", false);
 
         batch = new SpriteBatch();
     }

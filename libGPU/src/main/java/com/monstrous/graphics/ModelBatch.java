@@ -11,10 +11,8 @@ public class ModelBatch implements Disposable {
 
     private WGPU wgpu;
     private Pointer device;
-    //private Pointer queue;
 
     private Camera camera;
-    //private Mesh mesh;
 
     private ShaderProgram shader;
     private Pointer pipeline;
@@ -33,7 +31,7 @@ public class ModelBatch implements Disposable {
         device = LibGPU.device;
         //queue = LibGPU.queue;
 
-        shader = new ShaderProgram("shader.wgsl");
+        shader = new ShaderProgram("shaders/shader.wgsl");      // todo get from library storage
 
         makeUniformBuffer();
         defineBindGroupLayout();
@@ -152,53 +150,7 @@ public class ModelBatch implements Disposable {
         }
     }
 
-//    private void updateMatrices(float currentTime){
-//        camera.projectionMatrix.setToOrtho(-1.1f, 1.1f, -1.1f, 1.1f, -1, 1);
-//
-//        modelMatrix.setToXRotation((float) ( -0.5f*Math.PI ));  // tilt to face camera
-//        camera.viewMatrix.idt();
-//
-//    }
-//
-//    private void updateMatrices2(float currentTime){
-//
-//        float aspectRatio = (float)LibGPU.graphics.getWidth()/(float)LibGPU.graphics.getHeight();
-//        camera.projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, aspectRatio);
-//        //projectionMatrix.setToProjection(0.001f, 3.0f, 60f, 640f/480f);
-//        //modelMatrix.setToYRotation(currentTime*0.2f).scale(0.5f);
-//        modelMatrix.idt();//.setToXRotation((float) ( -0.5f*Math.PI ));
-//
-//        Matrix4 RT = new Matrix4().setToXRotation((float) ( -0.5f*Math.PI ));
-//
-//        //modelMatrix.idt().scale(0.5f);
-//        camera.viewMatrix.idt();
-//        Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.6f);
-//        Matrix4 R2 = new Matrix4().setToXRotation((float) (-0.5* Math.PI / 4.0)); // tilt the view
-//        Matrix4 S = new Matrix4().scale(1.6f);
-//        Matrix4 T = new Matrix4().translate(0.8f, 0f, 0f);
-//        Matrix4 TC = new Matrix4().translate(0.0f, -1f, 3f);
-//
-//
-//        modelMatrix.idt().mul(R1).mul(T).mul(RT);
-//
-//        TC.mul(S);
-//        R2.mul(TC); // tilt
-//        camera.viewMatrix.set(R2);
-//        //viewMatrix.translate(0,0.2f, 0);
-//        //viewMatrix.setToZRotation((float) (Math.PI*0.5f));
-//        //viewMatrix.translate(0, 0, (float)Math.cos(currentTime)*0.5f );
-//    }
-
-//    private void updateMatrices3(float currentTime){
-//        Matrix4 RT = new Matrix4().setToXRotation((float) ( -0.5f*Math.PI ));
-//        Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.6f);
-//        Matrix4 T = new Matrix4().translate(0.8f, 0f, 0f);
-//        modelMatrix.idt().mul(R1).mul(T).mul(RT);
-//    }
-
     private void writeUniforms(Camera camera, Matrix4 modelMatrix){
-//        updateMatrices3(currentTime);
-
         int offset = 0;
         setUniformMatrix(uniformData, offset, camera.projectionMatrix);
         offset += 16*Float.BYTES;
@@ -206,9 +158,6 @@ public class ModelBatch implements Disposable {
         offset += 16*Float.BYTES;
         setUniformMatrix(uniformData, offset, modelMatrix);
         offset += 16*Float.BYTES;
-//        uniformData.putFloat(offset, currentTime);
-//        offset += 4*Float.BYTES;
-        // 3 floats of padding
         setUniformColor(uniformData, offset, 0.0f, 1.0f, 0.4f, 1.0f);
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
     }
