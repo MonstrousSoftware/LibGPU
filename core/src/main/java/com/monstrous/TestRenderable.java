@@ -35,7 +35,7 @@ public class TestRenderable implements ApplicationListener {
 
 
         modelMatrix = new Matrix4();
-        renderable = new Renderable(meshPart, new Material(texture), modelMatrix);
+        renderable = new Renderable(meshPart, new Material(texture2), modelMatrix);
 
         modelMatrix2 = new Matrix4();
         renderable2 = new Renderable(meshPart, new Material(texture), modelMatrix2);

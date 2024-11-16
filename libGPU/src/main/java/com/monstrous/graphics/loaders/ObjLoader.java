@@ -1,7 +1,6 @@
 package com.monstrous.graphics.loaders;
 
 import com.monstrous.FileInput;
-import com.monstrous.graphics.MeshData;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 
@@ -9,9 +8,14 @@ import java.util.ArrayList;
 
 public class ObjLoader {
 
-    public static MeshData load(String fileName) {
+    public static MeshData load(String filePath) {
+        int slash = filePath.lastIndexOf('/');
+        String path = filePath.substring(0,slash+1);
+        String name = filePath.substring(slash+1);
+        MaterialData materialData = null;
+
         int dimensions = 3;
-        FileInput input = new FileInput(fileName);
+        FileInput input = new FileInput(filePath);
         // x y z nx ny nz r g b u v
         int vertSize = 8 + dimensions; // in floats
         ArrayList<Integer> indexValues = new ArrayList<>();
@@ -51,8 +55,8 @@ public class ObjLoader {
                 uv.add( new Vector2(x,y));
             } else if (line.startsWith("f ")) {
                 String[] faces = line.split("[ \t]+");
-//                if (faces.length != 4)
-//                    System.out.println("Expected 3 indices per face: " + line);
+                if (faces.length != 4 && faces.length != 5)
+                    System.out.println("Expected 3 or 4 indices per face: " + line);
                 for(int i = 1; i < faces.length; i++) {
                     String face = faces[i];
                     String[] indices = face.split("/");
@@ -68,6 +72,7 @@ public class ObjLoader {
                     vertFloats.add(vn.y);
                     vertFloats.add(vn.z);
 
+                    // dummy color
                     vertFloats.add(0f);
                     vertFloats.add(0f);
                     vertFloats.add(0f);
@@ -76,8 +81,6 @@ public class ObjLoader {
                     Vector2 tc = uv.get(uvindex);
                     vertFloats.add(tc.x);
                     vertFloats.add(1.0f-tc.y);
-
-                    //indexValues.add(indexOut++);
                 }
                 if(faces.length == 4){  // triangle
                     indexValues.add(indexOut++);
@@ -93,14 +96,23 @@ public class ObjLoader {
                     indexValues.add(indexOut+3);
                     indexOut += 4;
                 }
+            } else if (line.startsWith("o ")) {
+                String[] words = line.split("[ \t]+");
+                name = words[1];
+            } else if (line.startsWith("mtllib ")) {
+                String[] words = line.split("[ \t]+");
+                String materialFileName = words[1];
+                materialData = MtlLoader.load(path + materialFileName);
             } else
-                continue;
+                continue;   // ignore
         }
 
         MeshData data = new MeshData();
         data.vertSize = vertSize;
         data.vertFloats = vertFloats;
         data.indexValues = indexValues;
+        data.objectName = name;
+        data.materialData = materialData;
         return data;
     }
 
