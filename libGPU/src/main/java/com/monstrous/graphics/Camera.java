@@ -5,11 +5,13 @@ import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
 public class Camera {
-    static final public Vector3 origin = new Vector3(0,0,0);
-
     public Vector3 position;
     public Vector3 direction;
     public Vector3 up;
+    public int viewportWidth = 1;
+    public int viewportHeight = 1;
+    public float near;
+    public float far;
     public Matrix4 projectionMatrix;
     public Matrix4 viewMatrix;
 
@@ -19,15 +21,15 @@ public class Camera {
         position = new Vector3(0f,0f,0f);
         direction = new Vector3(0,0,1);
         up = new Vector3(0, 1, 0);
+        near = 0.1f;
+        far = 100;
 
-//        float aspectRatio = (float) LibGPU.graphics.getWidth()/(float)LibGPU.graphics.getHeight();
-//        projectionMatrix.setToPerspective(1.5f, 0.01f, 9.0f, aspectRatio);
-//
         update();
-
     }
 
+    // make sure the position & direction are reflected into the view matrix
     public void update(){
-        viewMatrix.setToLookAt(position, origin, up);
+        viewMatrix.setToLookAt(direction, up);
+        viewMatrix.translate(-position.x, -position.y, -position.z);
     }
 }

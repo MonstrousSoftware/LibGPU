@@ -123,8 +123,7 @@ public class SpriteBatch implements Disposable {
         begun = false;
         flush();
 
-        wgpu.RenderPassEncoderEnd(renderPass);
-        wgpu.RenderPassEncoderRelease(renderPass);
+
     }
 
 

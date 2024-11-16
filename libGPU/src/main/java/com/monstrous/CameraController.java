@@ -25,18 +25,13 @@ public class CameraController implements InputProcessor {
     }
 
     private void update(){
-
-        //System.out.println("cam controller: mouse: "+anglex+", "+angley);
-
         float sinx = (float)Math.sin(anglex);
         float cosx = (float)Math.cos(anglex);
         float siny = (float)Math.sin(angley);
         float cosy = (float)Math.cos(angley);
 
-        camera.position.x = distance * sinx * cosy;
-        camera.position.z = distance * cosx * cosy;
-        camera.position.y = distance * siny;
-
+        camera.direction.set(-sinx*cosy, -siny, -cosx*cosy);
+        camera.position.set(camera.direction).scl(-distance);
         camera.update();
     }
 

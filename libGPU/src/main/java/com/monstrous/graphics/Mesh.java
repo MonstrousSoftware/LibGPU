@@ -17,7 +17,7 @@ public class Mesh {
     private Pointer indexBuffer;
     private int vertexCount;
     private int indexCount;
-    private WGPUVertexBufferLayout vertexBufferLayout;
+
 
     public Mesh(String name) {
         load(name);
@@ -102,19 +102,7 @@ public class Mesh {
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
     }
 
-    public WGPUVertexBufferLayout getVertexBufferLayout(){
-        if(vertexBufferLayout == null) {
-            VertexAttributes vertexAttributes = new VertexAttributes();
-            vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
-            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
-            vertexAttributes.end();
 
-            vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
-        }
-        return vertexBufferLayout;
-    }
 
     public void dispose(){
         LibGPU.wgpu.BufferRelease(indexBuffer);
