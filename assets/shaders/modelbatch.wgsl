@@ -47,16 +47,16 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-    let kD = 1.0;
-    let kS = 0.7;
-    let hardness = 32.0;
-    let ambient = 0.0;
+    let kD = 0.5;
+    let kS = 0.9;
+    let hardness = 16.0;
+    let ambient = 0.1;
 
 
     let V = normalize(in.viewDirection);
     let normal = normalize(in.normal);
     let lightColor = vec3f(1.0, 1.0, 1.0);
-    let lightDirection = vec3f(0.5, 0.5, 0.0);
+    let lightDirection = vec3f(0.2, 0.9, 0.0);
 
 
 
@@ -78,5 +78,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         color += baseColor * kD * diffuse + kS * specular;
 
     color += baseColor * ambient;
+
+    //color = N;
     return vec4f(color, 1.0);
 }
