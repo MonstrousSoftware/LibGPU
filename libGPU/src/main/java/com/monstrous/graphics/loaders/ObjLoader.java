@@ -66,21 +66,33 @@ public class ObjLoader {
                     vertFloats.add(v.x);
                     vertFloats.add(v.y);
                     vertFloats.add(v.z);
-                    int nindex = Integer.parseInt(indices[2])-1;
-                    Vector3 vn = normals.get(nindex);
-                    vertFloats.add(vn.x);
-                    vertFloats.add(vn.y);
-                    vertFloats.add(vn.z);
+                    if(indices.length > 1) {
+                        int nindex = Integer.parseInt(indices[2]) - 1;
+                        Vector3 vn = normals.get(nindex);
+                        vertFloats.add(vn.x);
+                        vertFloats.add(vn.y);
+                        vertFloats.add(vn.z);
+                    } else {
+                        // dummy normal
+                        vertFloats.add(0f);
+                        vertFloats.add(0f);
+                        vertFloats.add(0f);
+                    }
 
                     // dummy color
                     vertFloats.add(0f);
                     vertFloats.add(0f);
                     vertFloats.add(0f);
 
-                    int uvindex = Integer.parseInt(indices[1])-1;
-                    Vector2 tc = uv.get(uvindex);
-                    vertFloats.add(tc.x);
-                    vertFloats.add(1.0f-tc.y);
+                    if(indices.length > 2) {
+                        int uvindex = Integer.parseInt(indices[1]) - 1;
+                        Vector2 tc = uv.get(uvindex);
+                        vertFloats.add(tc.x);
+                        vertFloats.add(1.0f - tc.y);
+                    } else {
+                        vertFloats.add(0f);
+                        vertFloats.add(0f);
+                    }
                 }
                 if(faces.length == 4){  // triangle
                     indexValues.add(indexOut++);

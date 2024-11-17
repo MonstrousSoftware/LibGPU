@@ -21,7 +21,7 @@ public class TestLighting implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/ducky.obj");
+        model = new Model("models/plane.obj");
         model2 = new Model("models/pyramid.obj");
 
         modelMatrix = new Matrix4();

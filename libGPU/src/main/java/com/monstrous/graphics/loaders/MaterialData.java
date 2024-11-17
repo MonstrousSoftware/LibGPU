@@ -15,5 +15,6 @@ public class MaterialData {
     public float transparency;
     public Color opticalDensity;
     public int illuminationModel;
-    public String diffuseMap;
+    public String diffuseMapFilePath;
+    public String normalMapFilePath;
 }

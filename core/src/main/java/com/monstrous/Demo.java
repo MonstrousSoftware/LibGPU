@@ -116,7 +116,7 @@ public class Demo implements ApplicationListener {
 
             modelBatch.begin(camera);
 
-            modelBatch.render(meshPart, texture2, modelMatrix);
+            modelBatch.render(meshPart, new Material(texture2), modelMatrix);
 
             modelBatch.end();
         }

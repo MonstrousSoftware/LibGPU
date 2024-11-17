@@ -31,7 +31,7 @@ public class ModelBatch implements Disposable {
     private Pointer pipelineLayout;
     private Pointer bindGroupLayout;
     private Pointer bindGroup;
-    private Texture prevTexture;
+    private Material prevMaterial;
 
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
@@ -51,23 +51,23 @@ public class ModelBatch implements Disposable {
         this.renderPass = LibGPU.renderPass;
         wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
         uniformIndex = 0;
-        prevTexture = null;
+        prevMaterial = null;
     }
 
     public void render(ModelInstance instance){
-        render(instance.model.meshPart, instance.model.material.texture, instance.modelTransform);
+        render(instance.model.meshPart, instance.model.material, instance.modelTransform);
     }
 
-    public void render(ModelInstance instance, Texture texture){
-        render(instance.model.meshPart, texture, instance.modelTransform);
+    public void render(ModelInstance instance, Material material){
+        render(instance.model.meshPart, material, instance.modelTransform);
     }
 
     public void render(Renderable renderable) {
-        render(renderable.meshPart, renderable.material.texture, renderable.modelTransform);
+        render(renderable.meshPart, renderable.material, renderable.modelTransform);
     }
 
 
-    public void render(MeshPart meshPart, Texture texture, Matrix4 modelMatrix){
+    public void render(MeshPart meshPart, Material material, Matrix4 modelMatrix){
 
         writeUniforms(camera, modelMatrix);  // renderable uniforms
 
@@ -78,8 +78,8 @@ public class ModelBatch implements Disposable {
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
         // make a new bind group every time we change texture
-        if(texture != prevTexture)
-            bindGroup = makeBindGroup(texture, bindGroupLayout);   // bind group for textures and uniforms
+        if(material != prevMaterial)
+            bindGroup = makeBindGroup(material, bindGroupLayout);   // bind group for textures and uniforms
 
         // set dynamic offset into uniform buffer
         int[] offset = new int[1];
@@ -115,7 +115,7 @@ public class ModelBatch implements Disposable {
 
 
     // per renderabe bind group
-    private Pointer makeBindGroup(Texture texture, Pointer bindGroupLayout) {
+    private Pointer makeBindGroup(Material material, Pointer bindGroupLayout) {
         // Create a binding
         WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
         binding.setNextInChain();
@@ -124,13 +124,15 @@ public class ModelBatch implements Disposable {
         binding.setOffset(0);
         binding.setSize(uniformBufferSize);
 
+        Texture diffuse = material.diffuseTexture;
+
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(3);
-        bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
+        bindGroupDesc.setEntries(binding, diffuse.getBinding(1), diffuse.getSamplerBinding(2));
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
