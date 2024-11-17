@@ -17,9 +17,11 @@ struct Uniforms {
 
 struct VertexInput {
     @location(0) position: vec3f,
-    @location(1) normal: vec3f,
-    @location(2) color: vec3f,
-    @location(3) uv: vec2f,
+    @location(1) tangent: vec3f,
+    @location(2) bitangent: vec3f,
+    @location(3) normal: vec3f,
+    @location(4) color: vec3f,
+    @location(5) uv: vec2f,
 };
 
 struct VertexOutput {

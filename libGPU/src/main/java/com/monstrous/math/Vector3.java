@@ -12,6 +12,8 @@ public class Vector3 {
         this.set(x, y, z);
     }
 
+    public Vector3(Vector3 v){ this.set(v); }
+
     public Vector3 set(float x, float y, float z){
         this.x = x;
         this.y = y;
@@ -21,6 +23,10 @@ public class Vector3 {
 
     public Vector3 set(Vector3 v){
         return set(v.x, v.y, v.z);
+    }
+
+    public Vector3 cpy(){
+        return new Vector3(this);
     }
 
     public Vector3 add(Vector3 v){

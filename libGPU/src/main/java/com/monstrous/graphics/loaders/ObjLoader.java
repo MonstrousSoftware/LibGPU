@@ -6,6 +6,15 @@ import com.monstrous.math.Vector3;
 
 import java.util.ArrayList;
 
+
+//
+//@location(0) position: vec3f,
+//@location(1) tangent: vec3f,
+//@location(2) bitangent: vec3f,
+//@location(3) normal: vec3f,
+//@location(4) color: vec3f,
+//@location(5) uv: vec2f,
+
 public class ObjLoader {
 
     public static MeshData load(String filePath) {
@@ -66,6 +75,16 @@ public class ObjLoader {
                     vertFloats.add(v.x);
                     vertFloats.add(v.y);
                     vertFloats.add(v.z);
+                    Vector3 tangent = new Vector3();
+                    Vector3 bitangent = new Vector3();
+                    vertFloats.add(tangent.x);
+                    vertFloats.add(tangent.y);
+                    vertFloats.add(tangent.z);
+
+                    vertFloats.add(bitangent.x);
+                    vertFloats.add(bitangent.y);
+                    vertFloats.add(bitangent.z);
+
                     if(indices.length > 1) {
                         int nindex = Integer.parseInt(indices[2]) - 1;
                         Vector3 vn = normals.get(nindex);
@@ -126,6 +145,19 @@ public class ObjLoader {
         data.objectName = name;
         data.materialData = materialData;
         return data;
+    }
+    static class Point {
+        Vector3 position;
+        Vector2 uv;
+    }
+    private void calculateBTN(Point corners[3]){
+        Vector3 edge1 = corners[1].position.sub(corners[0].position);
+        Vector3 edge2 = corners[2].position.sub(corners[0].position);
+
+        Vector2 eUV1 = corners[1].uv.sub(corners[0].uv);
+        Vector2 eUV2 = corners[2].uv.sub(corners[0].uv);
+
+        Vector3 T = new Vector3(edge1.cpy().scl(eUV2.y).sub(new Vector3(edge2).scl(eUV1.y)));
     }
 
 }

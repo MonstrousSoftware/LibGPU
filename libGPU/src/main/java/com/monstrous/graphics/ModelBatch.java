@@ -214,9 +214,11 @@ public class ModelBatch implements Disposable {
         if(vertexBufferLayout == null) {
             VertexAttributes vertexAttributes = new VertexAttributes();
             vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
-            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
+            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
+            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
+            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 3);
+            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 4);
+            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 5);
             vertexAttributes.end();
 
             vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
