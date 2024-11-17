@@ -19,11 +19,10 @@ public class ObjLoader {
 
     static class Vertex {
         Vector3 position;
-        Vector3 tangent;
-        Vector3 bitangent;
         Vector3 normal;
         Vector2 uv;
     }
+
     public static MeshData load(String filePath) {
         int slash = filePath.lastIndexOf('/');
         String path = filePath.substring(0,slash+1);
@@ -155,41 +154,49 @@ public class ObjLoader {
     }
 
     private static void addTBN( MeshData data ){
-        // add tangent and binormal to vertices of each triangle
+        // add tangent and bitangent to vertices of each triangle
         Vertex[] corners = new Vertex[3];
-        for (int j = 0; j < 3; j++)
+        for (int j = 0; j < 3; j++) {
             corners[j] = new Vertex();
+            corners[j].position = new Vector3();
+            corners[j].normal = new Vector3();
+            corners[j].uv = new Vector2();
+        }
+
         Vector3 T = new Vector3();
         Vector3 B = new Vector3();
 
-        for(int index = 0; index < data.indexValues.size(); index+= 3) {
+        for(int tri = 0; tri < data.indexValues.size(); tri += 3) {
             for (int j = 0; j < 3; j++) {
-                corners[j].position.x = data.vertFloats.get((index + j) * data.vertSize + 0);
-                corners[j].position.y = data.vertFloats.get((index + j) * data.vertSize + 1);
-                corners[j].position.z = data.vertFloats.get((index + j) * data.vertSize + 2);
+                int index = data.indexValues.get(tri+j);
+                corners[j].position.x = data.vertFloats.get(index * data.vertSize + 0);
+                corners[j].position.y = data.vertFloats.get(index * data.vertSize + 1);
+                corners[j].position.z = data.vertFloats.get(index * data.vertSize + 2);
 
-                corners[j].normal.x = data.vertFloats.get((index + j) * data.vertSize + 9);
-                corners[j].normal.y = data.vertFloats.get((index + j) * data.vertSize + 10);
-                corners[j].normal.z = data.vertFloats.get((index + j) * data.vertSize + 11);
+                corners[j].normal.x = data.vertFloats.get(index * data.vertSize + 9);
+                corners[j].normal.y = data.vertFloats.get(index * data.vertSize + 10);
+                corners[j].normal.z = data.vertFloats.get(index * data.vertSize + 11);
 
-                corners[j].uv.x = data.vertFloats.get((index + j) * data.vertSize + 15);
-                corners[j].uv.y = data.vertFloats.get((index + j) * data.vertSize + 16);
+                corners[j].uv.x = data.vertFloats.get(index * data.vertSize + 15);
+                corners[j].uv.y = data.vertFloats.get(index * data.vertSize + 16);
             }
             calculateBTN(corners, T, B);
 
             for (int j = 0; j < 3; j++) {
-                data.vertFloats.set((index+j)*data.vertSize + 3, T.x);
-                data.vertFloats.set((index+j)*data.vertSize + 4, T.y);
-                data.vertFloats.set((index+j)*data.vertSize + 5, T.z);
+                int index = data.indexValues.get(tri+j);
+                data.vertFloats.set(index*data.vertSize + 3, T.x);
+                data.vertFloats.set(index*data.vertSize + 4, T.y);
+                data.vertFloats.set(index*data.vertSize + 5, T.z);
 
-                data.vertFloats.set((index+j)*data.vertSize + 6, B.x);
-                data.vertFloats.set((index+j)*data.vertSize + 7, B.y);
-                data.vertFloats.set((index+j)*data.vertSize + 8, B.z);
+                data.vertFloats.set(index*data.vertSize + 6, B.x);
+                data.vertFloats.set(index*data.vertSize + 7, B.y);
+                data.vertFloats.set(index*data.vertSize + 8, B.z);
             }
         }
     }
 
     private static Vector3 Ntmp = new Vector3();
+    private static Vector3 N = new Vector3();
 
     private static void calculateBTN(Vertex corners[], Vector3 T, Vector3 B) {
         Vector3 edge1 = corners[1].position.sub(corners[0].position);
@@ -200,12 +207,19 @@ public class ObjLoader {
 
         T.set(edge1.cpy().scl(eUV2.y).sub(edge2.cpy().scl(eUV1.y)));
         B.set(edge2.cpy().scl(eUV1.x).sub(edge1.cpy().scl(eUV2.x)));
-        //N = T.cpy().cross(B);
+        T.scl(-1);
+        B.scl(-1);
+        N.set(T).crs(B);
 
         // average normal
         Ntmp.set(corners[0].normal).add(corners[1].normal).add(corners[2].normal).scl(1/3f);
 
-        float dot = Vector3.dot(T, Ntmp);
+//        if(Ntmp.dot(N) < 0){
+//            T.scl(-1);
+//            B.scl(-1);
+//        }
+
+        float dot = T.dot(Ntmp);
         T.sub(Ntmp.cpy().scl(dot));
         T.nor();
         // T = normalize(T - dot(T, N) * N);

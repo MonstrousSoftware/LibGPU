@@ -26,7 +26,7 @@ public class Model implements Disposable {
         else
             meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
 
-        Material material = new Material(meshData.materialData);
+        material = new Material(meshData.materialData);
 
         nodePart = new NodePart(meshPart, material);
     }

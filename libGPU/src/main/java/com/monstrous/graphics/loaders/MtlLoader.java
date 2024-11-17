@@ -56,8 +56,8 @@ public class MtlLoader {
                 material.illuminationModel = Integer.parseInt(words[1]);
            } else if (line.startsWith("map_Kd")) {
                 material.diffuseMapFilePath = line.substring(7).trim();
-            } else if (line.startsWith("norm")) {                                       // note: also map_Kn is in use
-                material.normalMapFilePath = line.substring(5).trim();
+            } else if (line.startsWith("map_Bump")) {                                       // note: also map_Kn or norm are in use
+                material.normalMapFilePath = line.substring(9).trim();
             }else if (line.startsWith("newmtl")) {
                 String[] words = line.split("[ \t]+");
                 material.name = words[1];

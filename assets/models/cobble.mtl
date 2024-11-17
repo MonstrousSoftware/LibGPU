@@ -11,4 +11,4 @@ Ni 1.450000
 d 1.000000
 illum 2
 map_Kd textures\\cobblestone_floor_08_diff_2k.jpg
-norm textures\\cobblestone_floor_08_nor_gl_2k.png
+map_Bump textures\\cobblestone_floor_08_nor_gl_2k.png

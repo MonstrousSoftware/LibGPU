@@ -26,15 +26,21 @@ struct VertexInput {
 
 struct VertexOutput {
     @builtin(position) position: vec4f,
-    @location(0) color: vec3f,
-    @location(1) normal: vec3f,
-    @location(2) uv : vec2f,
-    @location(3) viewDirection : vec3f,
+    @location(0) tangent: vec3f,
+    @location(1) bitangent: vec3f,
+    @location(2) normal: vec3f,
+    @location(3) uv : vec2f,
+    @location(4) viewDirection : vec3f,
+    @location(5) color: vec3f,
+
 };
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
+
+   out.tangent = (uUniforms.modelMatrix * vec4f(in.tangent, 0.0)).xyz;
+   out.bitangent = (uUniforms.modelMatrix * vec4f(in.bitangent, 0.0)).xyz;
    out.normal = (uUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
 
    let worldPosition =  uUniforms.modelMatrix * vec4f(in.position, 1.0);
@@ -52,20 +58,30 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 1.0;
     let kS = 0.9;
-    let hardness = 16.0;
+    let hardness = 6.0;
     let ambient = 0.0;
-    let normalMapStrength = 0.5;
+    let normalMapStrength = 0.8;
 
     let V = normalize(in.viewDirection);
     //let N = normalize(in.normal);
     let lightColor = vec3f(1.0, 1.0, 1.0);
-    let lightDirection = vec3f(0.2, 0.9, 0.0);
+    let lightDirection = vec3f(0.0, -1.0, 0.0);
 
 
 
     let baseColor = textureSample(texture, textureSampler, in.uv).rgb;
     let encodedN = textureSample(normalTexture, textureSampler, in.uv).rgb;
-    let N = normalize(mix(in.normal, encodedN - 0.5, normalMapStrength));
+    let localN = encodedN * 2.0 - 1.0;
+    // The TBN matrix converts directions from the local space to the world space
+    let localToWorld = mat3x3f(
+        normalize(in.tangent),
+        normalize(in.bitangent),
+        normalize(in.normal),
+    );
+    let worldN = localToWorld * localN;
+    let N = mix(in.normal, worldN, normalMapStrength);
+
+
     var color = vec3f(0.0);
     // for each light
 
@@ -82,6 +98,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     color += baseColor * ambient;
 
-    color = N*0.5 + 0.5;
+    //color = N*0.5 + 0.5;
     return vec4f(color, 1.0);
 }
