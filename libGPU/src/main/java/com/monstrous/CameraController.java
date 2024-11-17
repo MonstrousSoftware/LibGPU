@@ -9,12 +9,13 @@ public class CameraController implements InputProcessor {
 
     private Camera camera;
     private float anglex, angley;
-    private float distance = 5f;
+    private float distance;
 
 
     public CameraController(Camera camera) {
         this.camera = camera;
         anglex = 0; angley = 0;
+        distance = camera.position.len();
     }
 
     @Override

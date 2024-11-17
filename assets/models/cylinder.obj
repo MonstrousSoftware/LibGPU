@@ -1,5 +1,6 @@
 # Blender v3.4.0 OBJ File: ''
 # www.blender.org
+mtllib cobble.mtl
 o Cylinder_Cylinder.001
 v 0.000000 -1.000000 0.000000
 v 0.000000 1.000000 0.000000
