@@ -1,23 +1,17 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
-import com.monstrous.graphics.loaders.MeshData;
-import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.math.Matrix4;
 
-
-public class TestRenderable implements ApplicationListener {
+public class TestModelInstance implements ApplicationListener {
 
     private ModelBatch modelBatch;
     private Camera camera;
-    private Texture texture;
-    private Texture texture2;
-    private Mesh mesh;
-    private MeshPart meshPart;
     private Matrix4 modelMatrix;
     private Matrix4 modelMatrix2;
-    private Renderable renderable;
-    private Renderable renderable2;
+    private Model model;
+    private ModelInstance modelInstance1;
+    private ModelInstance modelInstance2;
     private float currentTime;
     private long startTime;
     private int frames;
@@ -26,24 +20,13 @@ public class TestRenderable implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-
-        //mesh = new Mesh("pyramidNoIndex.txt");
-        MeshData meshData = ObjLoader.load("models/ducky.obj");
-        mesh = new Mesh(meshData);
-
-        if(mesh.getIndexCount() > 0)
-            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
-        else
-            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
-        texture = new Texture("textures/palette.png", false);
-        texture2 = new Texture("textures/jackRussel.png", false);
-
+        model = new Model("models/ducky.obj");
 
         modelMatrix = new Matrix4();
-        renderable = new Renderable(meshPart, new Material(texture2), modelMatrix);
+        modelInstance1 = new ModelInstance(model, modelMatrix);
 
         modelMatrix2 = new Matrix4();
-        renderable2 = new Renderable(meshPart, new Material(texture), modelMatrix2);
+        modelInstance2 = new ModelInstance(model, modelMatrix2);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);
@@ -51,7 +34,6 @@ public class TestRenderable implements ApplicationListener {
         camera.update();
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
-
 
         modelBatch = new ModelBatch();
     }
@@ -78,10 +60,8 @@ public class TestRenderable implements ApplicationListener {
 
         modelBatch.begin(camera);
 
-        //modelBatch.render(meshPart, texture2, modelMatrix);
-
-        modelBatch.render(renderable);
-        modelBatch.render(renderable2);
+        modelBatch.render(modelInstance1);
+        modelBatch.render(modelInstance2);
 
         modelBatch.end();
 
@@ -98,10 +78,7 @@ public class TestRenderable implements ApplicationListener {
 
     public void dispose(){
         // cleanup
-        System.out.println("demo exit");
-        texture.dispose();
-        texture2.dispose();
-        mesh.dispose();
+        model.dispose();
         modelBatch.dispose();
     }
 
@@ -112,3 +89,4 @@ public class TestRenderable implements ApplicationListener {
 
 
 }
+

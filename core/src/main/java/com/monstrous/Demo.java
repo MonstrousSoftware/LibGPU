@@ -1,6 +1,8 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.loaders.MeshData;
+import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.math.Matrix4;
 import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
@@ -33,8 +35,8 @@ public class Demo implements ApplicationListener {
 
         wgpu = LibGPU.wgpu;
 
-        mesh = new Mesh("pyramid.txt");
-
+        MeshData meshData = ObjLoader.load("pyramid.txt");
+        mesh = new Mesh(meshData);
 
 
         texture = new Texture("monstrous.png", false);

@@ -57,7 +57,7 @@ public class Texture {
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Texture file not found: "+fileName);
         }
     }
 

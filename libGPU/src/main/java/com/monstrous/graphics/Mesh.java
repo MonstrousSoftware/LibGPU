@@ -17,23 +17,22 @@ public class Mesh {
     private int indexCount;     // can be zero if the vertices are not indexed
 
 
-    public Mesh(String name) {
-        load(name);
-    }
+//    public Mesh(String name) {
+//        load(name);
+//    }
 
 
-    private void loadTxt(String fileName) {
-        MeshData data = TxtLoader.load(fileName);
-        storeMesh(data);
-    }
-    private void load(String fileName) {
-        MeshData data = ObjLoader.load(fileName);
-        storeMesh(data);
+//    private void loadTxt(String fileName) {
+//        MeshData data = TxtLoader.load(fileName);
+//        storeMesh(data);
+//    }
+//    private void load(String fileName) {
+//        this(ObjLoader.load(fileName));
+//
+//        System.out.println("Loaded "+data.objectName);
+//    }
 
-        System.out.println("Loaded "+data.objectName);
-    }
-
-    private void storeMesh(MeshData data){
+    public Mesh(MeshData data){
 
         vertexCount = data.vertFloats.size()/data.vertSize;
         float[] vertexData = new float[ data.vertFloats.size() ];

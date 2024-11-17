@@ -53,6 +53,14 @@ public class ModelBatch implements Disposable {
         prevTexture = null;
     }
 
+    public void render(ModelInstance instance){
+        render(instance.model.meshPart, instance.model.material.texture, instance.modelTransform);
+    }
+
+    public void render(ModelInstance instance, Texture texture){
+        render(instance.model.meshPart, texture, instance.modelTransform);
+    }
+
     public void render(Renderable renderable) {
         render(renderable.meshPart, renderable.material.texture, renderable.modelTransform);
     }

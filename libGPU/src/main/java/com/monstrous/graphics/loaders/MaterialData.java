@@ -3,17 +3,17 @@ package com.monstrous.graphics.loaders;
 
 import com.monstrous.graphics.Color;
 
+// Storage of data from MTL file. Most is not supported.
+
 public class MaterialData {
-    String name;
-    Color ambient;
-    Color diffuse;
-    Color specular;
-    Color emissive;
-    float specularExponent;
-    float transparency;
-    Color opticalDensity;
-    int illuminationModel;
-    String diffuseMap;
-
-
+    public String name;
+    public Color ambient;
+    public Color diffuse;
+    public Color specular;
+    public Color emissive;
+    public float specularExponent;
+    public float transparency;
+    public Color opticalDensity;
+    public int illuminationModel;
+    public String diffuseMap;
 }
