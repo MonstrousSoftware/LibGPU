@@ -17,16 +17,22 @@ import java.util.ArrayList;
 
 public class ObjLoader {
 
+    static class Vertex {
+        Vector3 position;
+        Vector3 tangent;
+        Vector3 bitangent;
+        Vector3 normal;
+        Vector2 uv;
+    }
     public static MeshData load(String filePath) {
         int slash = filePath.lastIndexOf('/');
         String path = filePath.substring(0,slash+1);
         String name = filePath.substring(slash+1);
         MaterialData materialData = null;
 
-        int dimensions = 3;
         FileInput input = new FileInput(filePath);
-        // x y z nx ny nz r g b u v
-        int vertSize = 8 + dimensions; // in floats
+        // x y z tx ty tz bx by bz nx ny nz r g b u v
+        int vertSize = 17; // in floats
         ArrayList<Integer> indexValues = new ArrayList<>();
         ArrayList<Float> vertFloats = new ArrayList<>();
         ArrayList<Vector3> positions = new ArrayList<>();
@@ -75,15 +81,14 @@ public class ObjLoader {
                     vertFloats.add(v.x);
                     vertFloats.add(v.y);
                     vertFloats.add(v.z);
-                    Vector3 tangent = new Vector3();
-                    Vector3 bitangent = new Vector3();
-                    vertFloats.add(tangent.x);
-                    vertFloats.add(tangent.y);
-                    vertFloats.add(tangent.z);
 
-                    vertFloats.add(bitangent.x);
-                    vertFloats.add(bitangent.y);
-                    vertFloats.add(bitangent.z);
+                    vertFloats.add(0f); // placeholder for T
+                    vertFloats.add(0f);
+                    vertFloats.add(0f);
+
+                    vertFloats.add(0f); // placeholder for B
+                    vertFloats.add(0f);
+                    vertFloats.add(0f);
 
                     if(indices.length > 1) {
                         int nindex = Integer.parseInt(indices[2]) - 1;
@@ -144,20 +149,68 @@ public class ObjLoader {
         data.indexValues = indexValues;
         data.objectName = name;
         data.materialData = materialData;
+
+        addTBN(data);
         return data;
     }
-    static class Point {
-        Vector3 position;
-        Vector2 uv;
+
+    private static void addTBN( MeshData data ){
+        // add tangent and binormal to vertices of each triangle
+        Vertex[] corners = new Vertex[3];
+        for (int j = 0; j < 3; j++)
+            corners[j] = new Vertex();
+        Vector3 T = new Vector3();
+        Vector3 B = new Vector3();
+
+        for(int index = 0; index < data.indexValues.size(); index+= 3) {
+            for (int j = 0; j < 3; j++) {
+                corners[j].position.x = data.vertFloats.get((index + j) * data.vertSize + 0);
+                corners[j].position.y = data.vertFloats.get((index + j) * data.vertSize + 1);
+                corners[j].position.z = data.vertFloats.get((index + j) * data.vertSize + 2);
+
+                corners[j].normal.x = data.vertFloats.get((index + j) * data.vertSize + 9);
+                corners[j].normal.y = data.vertFloats.get((index + j) * data.vertSize + 10);
+                corners[j].normal.z = data.vertFloats.get((index + j) * data.vertSize + 11);
+
+                corners[j].uv.x = data.vertFloats.get((index + j) * data.vertSize + 15);
+                corners[j].uv.y = data.vertFloats.get((index + j) * data.vertSize + 16);
+            }
+            calculateBTN(corners, T, B);
+
+            for (int j = 0; j < 3; j++) {
+                data.vertFloats.set((index+j)*data.vertSize + 3, T.x);
+                data.vertFloats.set((index+j)*data.vertSize + 4, T.y);
+                data.vertFloats.set((index+j)*data.vertSize + 5, T.z);
+
+                data.vertFloats.set((index+j)*data.vertSize + 6, B.x);
+                data.vertFloats.set((index+j)*data.vertSize + 7, B.y);
+                data.vertFloats.set((index+j)*data.vertSize + 8, B.z);
+            }
+        }
     }
-    private void calculateBTN(Point corners[3]){
+
+    private static Vector3 Ntmp = new Vector3();
+
+    private static void calculateBTN(Vertex corners[], Vector3 T, Vector3 B) {
         Vector3 edge1 = corners[1].position.sub(corners[0].position);
         Vector3 edge2 = corners[2].position.sub(corners[0].position);
 
         Vector2 eUV1 = corners[1].uv.sub(corners[0].uv);
         Vector2 eUV2 = corners[2].uv.sub(corners[0].uv);
 
-        Vector3 T = new Vector3(edge1.cpy().scl(eUV2.y).sub(new Vector3(edge2).scl(eUV1.y)));
+        T.set(edge1.cpy().scl(eUV2.y).sub(edge2.cpy().scl(eUV1.y)));
+        B.set(edge2.cpy().scl(eUV1.x).sub(edge1.cpy().scl(eUV2.x)));
+        //N = T.cpy().cross(B);
+
+        // average normal
+        Ntmp.set(corners[0].normal).add(corners[1].normal).add(corners[2].normal).scl(1/3f);
+
+        float dot = Vector3.dot(T, Ntmp);
+        T.sub(Ntmp.cpy().scl(dot));
+        T.nor();
+        // T = normalize(T - dot(T, N) * N);
+        //B = cross(N,T);
+        B.set(Ntmp).crs(T);
     }
 
 }
