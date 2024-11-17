@@ -8,7 +8,7 @@ import com.monstrous.utils.Disposable;
 public class Model implements Disposable {
     public String filePath;
     public Mesh mesh;
-    public MeshPart meshPart;       // just one for now
+    public NodePart nodePart;
     public Material material;
 
     public Model(String filePath) {
@@ -20,12 +20,15 @@ public class Model implements Disposable {
         System.out.println("Loaded "+meshData.objectName);
 
         // create a meshPart to cover whole mesh (temp)
+        MeshPart meshPart;
         if(mesh.getIndexCount() > 0)
             meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
         else
             meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
 
-        material = new Material(meshData.materialData);
+        Material material = new Material(meshData.materialData);
+
+        nodePart = new NodePart(meshPart, material);
     }
 
     @Override
