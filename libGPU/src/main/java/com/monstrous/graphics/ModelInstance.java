@@ -6,6 +6,10 @@ public class ModelInstance {
     public Model model;
     public Matrix4 modelTransform;
 
+    public ModelInstance(Model model){
+        this(model, new Matrix4());
+    }
+
     public ModelInstance(Model model, Matrix4 transform) {
         this.model = model;
         this.modelTransform = transform;

@@ -153,9 +153,9 @@ public class Application {
 
         WGPURequiredLimits requiredLimits = WGPURequiredLimits.createDirect();
         setDefault(requiredLimits.getLimits());
-        requiredLimits.getLimits().setMaxVertexAttributes(2);
+        requiredLimits.getLimits().setMaxVertexAttributes(8);
         requiredLimits.getLimits().setMaxVertexBuffers(2);
-        requiredLimits.getLimits().setMaxInterStageShaderComponents(8); //
+        requiredLimits.getLimits().setMaxInterStageShaderComponents(20); //
 
         // from vert to frag
         requiredLimits.getLimits().setMaxBufferSize(300);
