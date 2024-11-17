@@ -14,6 +14,6 @@ public class Launcher {
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.D3D12;
 
-        new Application(new TestModelInstance(), config);
+        new Application(new TestLighting(), config);
     }
 }

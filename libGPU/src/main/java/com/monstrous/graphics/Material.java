@@ -7,9 +7,13 @@ public class Material implements Disposable {
     public Texture texture;
 
     public Material(MaterialData materialData) {
-        if(materialData.diffuseMap == null)
-            throw new RuntimeException("Require diffuseMap in MTL "+materialData.name);
-        this.texture = new Texture(materialData.diffuseMap);
+        String fileName;
+        if(materialData == null || materialData.diffuseMap == null) {
+            fileName = "textures\\rgb.png";
+        }
+        else
+            fileName = materialData.diffuseMap;
+        this.texture = new Texture(fileName, false);            // todo until mipmapping is fixed
     }
 
     public Material(Texture texture) {

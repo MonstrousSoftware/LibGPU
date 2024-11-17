@@ -67,7 +67,7 @@ public class ObjLoader {
                     vertFloats.add(v.y);
                     vertFloats.add(v.z);
                     int nindex = Integer.parseInt(indices[2])-1;
-                    Vector3 vn = positions.get(nindex);
+                    Vector3 vn = normals.get(nindex);
                     vertFloats.add(vn.x);
                     vertFloats.add(vn.y);
                     vertFloats.add(vn.z);

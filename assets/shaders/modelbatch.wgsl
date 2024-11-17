@@ -43,16 +43,29 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
+    let kD = 1.0;
+    let kS = 0.5;
+
     let normal = normalize(in.normal);
-    let lightColor1 = vec3f(1.0, 0.9, 0.6);
-    let lightColor2 = vec3f(0.6, 0.9, 1.0);
-    let lightDirection1 = vec3f(0.5, -0.9, 0.1);
-    let lightDirection2 = vec3f(0.2, 0.4, 0.3);
-    let shading1 = max(0.0, dot(lightDirection1, normal));
-    let shading2 = max(0.0, dot(lightDirection2, normal));
+    let lightColor = vec3f(1.0, 1.0, 1.0);
+ //   let lightColor2 = vec3f(0.6, 0.9, 1.0);
+    let lightDirection = vec3f(0.5, 0.5, 0.0);
+//    let lightDirection2 = vec3f(0.2, 0.4, 0.3);
+//    let shading1 = max(0.0, dot(lightDirection1, normal));
+//    let shading2 = max(0.0, dot(lightDirection2, normal));
 
-    let shading = shading1 * lightColor1 + shading2 * lightColor2;
 
-    let color = textureSample(texture, textureSampler, in.uv).rgb;
+    let baseColor = textureSample(texture, textureSampler, in.uv).rgb;
+
+    var color = vec3f(0.0);
+    // for each light
+
+        let diffuse = max(0.0, dot(lightDirection, normal)) * lightColor;
+        let specular = 0.0;
+        let shading = diffuse + specular;
+
+
+        color += baseColor * kD * diffuse + kS * specular;
+
     return vec4f(color, 1.0);
 }

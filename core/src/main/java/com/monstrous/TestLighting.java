@@ -3,7 +3,7 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
 
-public class TestModelInstance implements ApplicationListener {
+public class TestLighting implements ApplicationListener {
 
     private ModelBatch modelBatch;
     private Camera camera;
@@ -21,7 +21,7 @@ public class TestModelInstance implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/ducky.obj");
+        model = new Model("models/fourareen.obj");
         model2 = new Model("models/pyramid.obj");
 
         modelMatrix = new Matrix4();
@@ -45,8 +45,8 @@ public class TestModelInstance implements ApplicationListener {
 
     private void updateModelMatrix(Matrix4 modelMatrix, float currentTime){
         Matrix4 RT = new Matrix4().idt(); //setToXRotation((float) ( -0.5f*Math.PI ));
-        Matrix4 R1 = new Matrix4().setToYRotation(currentTime);
-        Matrix4 T = new Matrix4().translate(1.8f, 0f, 0f);
+        Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.3f);
+        Matrix4 T = new Matrix4(); //.translate(1.8f, 0f, 0f);
         modelMatrix.idt().mul(R1).mul(T).mul(RT);
     }
 
@@ -63,7 +63,7 @@ public class TestModelInstance implements ApplicationListener {
         modelBatch.begin(camera);
 
         modelBatch.render(modelInstance1);
-        modelBatch.render(modelInstance2);
+       // modelBatch.render(modelInstance2);
 
         modelBatch.end();
 
