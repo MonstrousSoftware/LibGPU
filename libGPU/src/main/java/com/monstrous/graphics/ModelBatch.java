@@ -29,6 +29,8 @@ public class ModelBatch implements Disposable {
     private WGPUVertexBufferLayout vertexBufferLayout;  // assumes all meshes will confirm to this
     private Pointer pipelineLayout;
     private Pointer bindGroupLayout;
+    private Pointer bindGroup;
+    private Texture prevTexture;
 
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
@@ -48,6 +50,7 @@ public class ModelBatch implements Disposable {
         this.renderPass = LibGPU.renderPass;
         wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
         uniformIndex = 0;
+        prevTexture = null;
     }
 
     public void render(Renderable renderable) {
@@ -65,12 +68,15 @@ public class ModelBatch implements Disposable {
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
+        // make a new bind group every time we change texture
+        if(texture != prevTexture)
+            bindGroup = makeBindGroup(texture, bindGroupLayout);   // bind group for textures and uniforms
 
-        Pointer bg = makeBindGroup(texture, bindGroupLayout);
+        // set dynamic offset into uniform buffer
         int[] offset = new int[1];
         offset[0] = uniformIndex*uniformStride;
         Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 1, offsetPtr);
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bindGroup, 1, offsetPtr);
 
         if(meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
@@ -79,13 +85,12 @@ public class ModelBatch implements Disposable {
         }
         else
             wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, 1, meshPart.offset, 0);
-        wgpu.BindGroupRelease(bg);      // we can release straight away?
+
         uniformIndex++;
     }
 
     public void end(){
-
-
+        wgpu.BindGroupRelease(bindGroup);
     }
 
 
