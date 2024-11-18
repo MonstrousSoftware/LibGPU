@@ -11,8 +11,6 @@ import java.nio.file.Paths;
 
 public class GLTFLoader {
 
-
-
     public static GLTF load(String filePath) {
         int slash = filePath.lastIndexOf('/');
         String path = filePath.substring(0, slash + 1);
@@ -33,69 +31,77 @@ public class GLTFLoader {
 
 
         JSONArray ims = (JSONArray)file.get("images");
-        System.out.println("images: "+ims.size());
-        for(int i = 0; i < ims.size(); i++){
-            JSONObject image = (JSONObject)ims.get(i);
-            String imagepath = (String)image.get("uri");
-            System.out.println("image path: "+imagepath);
-            // load texture file
-            GLTFImage im = new GLTFImage();
-            im.uri = path + imagepath;
-            gltf.images.add(im);
-        }
+        if(ims != null) {
+            System.out.println("images: " + ims.size());
+            for (int i = 0; i < ims.size(); i++) {
+                JSONObject image = (JSONObject) ims.get(i);
+                String imagepath = (String) image.get("uri");
+                System.out.println("image path: " + imagepath);
+                // load texture file
+                GLTFImage im = new GLTFImage();
+                im.uri = path + imagepath;
+                gltf.images.add(im);
+            }
 
 
-        JSONArray sampls = (JSONArray)file.get("samplers");
-        System.out.println("samplers: "+sampls.size());
-        for(int i = 0; i < sampls.size(); i++){
-            GLTFSampler sampler = new GLTFSampler();
+            JSONArray sampls = (JSONArray) file.get("samplers");
+            System.out.println("samplers: " + sampls.size());
+            for (int i = 0; i < sampls.size(); i++) {
+                GLTFSampler sampler = new GLTFSampler();
 
-            JSONObject smpl = (JSONObject)sampls.get(i);
-            sampler.name = (String)smpl.get("name");
-            Long wrapS = (Long) smpl.get("wrapS");
-            sampler.wrapS = wrapS == null ? 10497 : wrapS.intValue();
-            Long wrapT = (Long) smpl.get("wrapS");
-            sampler.wrapT = wrapT == null ? 10497 : wrapT.intValue();
+                JSONObject smpl = (JSONObject) sampls.get(i);
+                sampler.name = (String) smpl.get("name");
+                Long wrapS = (Long) smpl.get("wrapS");
+                sampler.wrapS = wrapS == null ? 10497 : wrapS.intValue();
+                Long wrapT = (Long) smpl.get("wrapS");
+                sampler.wrapT = wrapT == null ? 10497 : wrapT.intValue();
 
-            gltf.samplers.add(sampler);
+                gltf.samplers.add(sampler);
+            }
         }
 
         JSONArray textures = (JSONArray)file.get("textures");
-        System.out.println("textures: "+textures.size());
-        for(int i = 0; i < textures.size(); i++){
-            GLTFTexture texture = new GLTFTexture();
+        if (textures != null) {
+            System.out.println("textures: " + textures.size());
+            for (int i = 0; i < textures.size(); i++) {
+                GLTFTexture texture = new GLTFTexture();
 
-            JSONObject tex = (JSONObject)textures.get(i);
-            texture.name = (String)tex.get("name");
-            long src = (Long) tex.get("source");
-            texture.source = (int)src;
-            long sampler = (Long)tex.get("sampler");
-            texture.sampler = (int)sampler;
+                JSONObject tex = (JSONObject) textures.get(i);
+                texture.name = (String) tex.get("name");
+                long src = (Long) tex.get("source");
+                texture.source = (int) src;
+                long sampler = (Long) tex.get("sampler");
+                texture.sampler = (int) sampler;
 
-            gltf.textures.add(texture);
+                gltf.textures.add(texture);
+            }
         }
 
         JSONArray mats = (JSONArray)file.get("materials");
-        System.out.println("materials: "+mats.size());
-        for(int i = 0; i < mats.size(); i++){
-            JSONObject mat = (JSONObject)mats.get(i);
-            String nm = (String)mat.get("name");
-            System.out.println("material name: "+nm);
-            JSONObject pbrMR = (JSONObject)mat.get("pbrMetallicRoughness");
-            JSONObject base = (JSONObject)pbrMR.get("baseColorTexture");
-            long baseIndex = (Long)base.get("index");
-            System.out.println("material name: "+nm+" pbr.base.index = "+baseIndex);
-            JSONObject metal = (JSONObject)pbrMR.get("metallicRoughnessTexture");
-            long metalIndex = (Long)metal.get("index");                               // ignored
-            System.out.println("material name: "+nm+" pbr.metal.index = "+metalIndex);
+        if (mats != null) {
 
-            GLTFMaterialPBR pbr = new GLTFMaterialPBR();
-            pbr.baseColorTexture = (int) baseIndex;
-            pbr.metallicRoughnessTexture = (int) metalIndex;
 
-            GLTFMaterial material = new GLTFMaterial();
-            material.pbrMetallicRoughness = pbr;
-            gltf.materials.add(material);
+            System.out.println("materials: " + mats.size());
+            for (int i = 0; i < mats.size(); i++) {
+                JSONObject mat = (JSONObject) mats.get(i);
+                String nm = (String) mat.get("name");
+                System.out.println("material name: " + nm);
+                JSONObject pbrMR = (JSONObject) mat.get("pbrMetallicRoughness");
+                JSONObject base = (JSONObject) pbrMR.get("baseColorTexture");
+                long baseIndex = (Long) base.get("index");
+                System.out.println("material name: " + nm + " pbr.base.index = " + baseIndex);
+                JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
+                long metalIndex = (Long) metal.get("index");                               // ignored
+                System.out.println("material name: " + nm + " pbr.metal.index = " + metalIndex);
+
+                GLTFMaterialPBR pbr = new GLTFMaterialPBR();
+                pbr.baseColorTexture = (int) baseIndex;
+                pbr.metallicRoughnessTexture = (int) metalIndex;
+
+                GLTFMaterial material = new GLTFMaterial();
+                material.pbrMetallicRoughness = pbr;
+                gltf.materials.add(material);
+            }
         }
 
         JSONArray meshes = (JSONArray)file.get("meshes");
@@ -138,7 +144,7 @@ public class GLTFLoader {
 
             JSONObject buf = (JSONObject)buffers.get(i);
             buffer.name = (String)buf.get("name");
-            buffer.uri = (String)buf.get("uri");
+            buffer.uri = path + (String)buf.get("uri");
             Long len = (Long)buf.get("byteLength");
             buffer.byteLength = (len == null ? 0 : len.intValue());
 

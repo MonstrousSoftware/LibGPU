@@ -1,10 +1,14 @@
 package com.monstrous.graphics;
 
-import com.monstrous.graphics.loaders.GLTF;
-import com.monstrous.graphics.loaders.GLTFLoader;
-import com.monstrous.graphics.loaders.MeshData;
-import com.monstrous.graphics.loaders.ObjLoader;
+import com.monstrous.graphics.loaders.*;
+import com.monstrous.graphics.loaders.gltf.GLTFAccessor;
+import com.monstrous.graphics.loaders.gltf.GLTFAttribute;
+import com.monstrous.graphics.loaders.gltf.GLTFBufferView;
+import com.monstrous.math.Vector2;
+import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
+
+import java.util.ArrayList;
 
 // A model combines meshpart(s) and material
 public class Model implements Disposable {
@@ -17,11 +21,140 @@ public class Model implements Disposable {
         this.filePath = filePath;
 
         GLTF gltf = GLTFLoader.load(filePath);      // TMP
+        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.getFirst().uri);           // assume 1 buffer
 
-        MeshData meshData = ObjLoader.load(filePath);      // TMP
+        int indexAccessorId = gltf.meshes.getFirst().primitives.getFirst().indices; // assume 1 mesh & 1 primitive
+        GLTFAccessor indexAccessor = gltf.accessors.get(indexAccessorId);
+        GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
+        if(view.buffer != 0)
+            throw new RuntimeException("GLTF: Can only support buffer 0");
+        int offset = view.byteOffset;
+        offset += indexAccessor.byteOffset;
 
 
-        //meshData = ObjLoader.load(filePath);
+        MeshData meshData = new MeshData();
+
+        if(indexAccessor.componentType != GLTF.USHORT16)
+            throw new RuntimeException("GLTF: Can only support short index");
+
+        rawBuffer.byteBuffer.position(offset);
+        for(int i = 0; i < indexAccessor.count; i++){
+            // assuming ushort
+            int index = rawBuffer.byteBuffer.getShort();
+            System.out.println("index "+index);
+            meshData.indexValues.add(index);
+        }
+
+        int positionAccessorId = -1;
+        int uvAccessorId = -1;
+        ArrayList<GLTFAttribute> attributes = gltf.meshes.getFirst().primitives.getFirst().attributes;
+        for(GLTFAttribute attribute : attributes){
+            if(attribute.name.contentEquals("POSITION")){
+                positionAccessorId = attribute.value;
+            }
+            if(attribute.name.contentEquals("TEXCOORD_0")){
+                uvAccessorId = attribute.value;
+            }
+        }
+        if(positionAccessorId < 0)
+            throw new RuntimeException("GLTF: need POSITION attribute");
+        GLTFAccessor positionAccessor = gltf.accessors.get(positionAccessorId);
+        view = gltf.bufferViews.get(positionAccessor.bufferView);
+        if(view.buffer != 0)
+            throw new RuntimeException("GLTF: Can only support buffer 0");
+        offset = view.byteOffset;
+        offset += positionAccessor.byteOffset;
+
+        System.out.println("Position offset: "+offset);
+        System.out.println("Position count: "+positionAccessor.count);
+
+        if(positionAccessor.componentType != GLTF.FLOAT32 || !positionAccessor.type.contentEquals("VEC3"))
+            throw new RuntimeException("GLTF: Can only support float positions as VEC3");
+
+        ArrayList<Vector3> positions = new ArrayList<>();
+        rawBuffer.byteBuffer.position(offset);
+        for(int i = 0; i < positionAccessor.count; i++){
+            // assuming float32
+            float f1 = rawBuffer.byteBuffer.getFloat();
+            float f2 = rawBuffer.byteBuffer.getFloat();
+            float f3 = rawBuffer.byteBuffer.getFloat();
+            System.out.println("float  "+f1 + " "+ f2 + " "+f3);
+            positions.add(new Vector3(f1, f2, f3));
+        }
+
+        if(uvAccessorId < 0)
+            throw new RuntimeException("GLTF: need TEXCOORD_0 attribute");
+        GLTFAccessor uvAccessor = gltf.accessors.get(uvAccessorId);
+        view = gltf.bufferViews.get(uvAccessor.bufferView);
+        if(view.buffer != 0)
+            throw new RuntimeException("GLTF: Can only support buffer 0");
+        offset = view.byteOffset;
+        offset += uvAccessor.byteOffset;
+
+        System.out.println("UV offset: "+offset);
+
+        if(uvAccessor.componentType != GLTF.FLOAT32 || !uvAccessor.type.contentEquals("VEC2"))
+            throw new RuntimeException("GLTF: Can only support float positions as VEC2");
+
+        ArrayList<Vector2> textureCoordinates = new ArrayList<>();
+        rawBuffer.byteBuffer.position(offset);
+        for(int i = 0; i < uvAccessor.count; i++){
+            // assuming float32
+            float f1 = rawBuffer.byteBuffer.getFloat();
+            float f2 = rawBuffer.byteBuffer.getFloat();
+            System.out.println("float  "+f1 + " "+ f2 );
+            textureCoordinates.add(new Vector2(f1, f2));
+        }
+
+        // x y z nx ny nz r g b u v
+        meshData.vertSize = 11; // in floats
+        meshData.objectName = gltf.nodes.getFirst().name;
+
+        for(int i = 0; i < positions.size(); i++){
+            Vector3 pos = positions.get(i);
+            meshData.vertFloats.add(pos.x);
+            meshData.vertFloats.add(pos.y);
+            meshData.vertFloats.add(pos.z);
+
+            meshData.vertFloats.add(0f);
+            meshData.vertFloats.add(0f);
+            meshData.vertFloats.add(0f);
+
+            meshData.vertFloats.add(0f);
+            meshData.vertFloats.add(0f);
+            meshData.vertFloats.add(0f);
+
+            Vector2 uv = textureCoordinates.get(i);
+            meshData.vertFloats.add(uv.x);
+            meshData.vertFloats.add(uv.y);
+            //System.out.println("uv float  "+uv.x + " "+ uv.y );
+
+        }
+
+        MaterialData mat = new MaterialData();
+        mat.diffuseMapFilePath = gltf.images.getFirst().uri;
+        meshData.materialData = mat;
+
+        mesh = new Mesh(meshData);
+
+        System.out.println("Loaded "+meshData.objectName);
+
+        // create a meshPart to cover whole mesh (temp)
+        MeshPart meshPart;
+        if(mesh.getIndexCount() > 0)
+            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
+        else
+            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
+
+        material = new Material(meshData.materialData);
+
+        nodePart = new NodePart(meshPart, material);
+    }
+
+    public Model(String filePath, boolean isObj) {
+        this.filePath = filePath;
+
+        MeshData meshData = ObjLoader.load(filePath);
         mesh = new Mesh(meshData);
 
         System.out.println("Loaded "+meshData.objectName);

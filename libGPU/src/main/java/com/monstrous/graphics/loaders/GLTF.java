@@ -5,6 +5,14 @@ import com.monstrous.graphics.loaders.gltf.*;
 import java.util.ArrayList;
 
 public class GLTF {
+
+    public static int SBYTE8 = 5120;
+    public static int UBYTE8 = 5121;
+    public static int USHORT16 = 5123;
+    public static int UINT32 = 5125;
+    public static int FLOAT32 = 5126;
+
+
     int scene;
     public ArrayList<GLTFTexture> textures;
     public ArrayList<GLTFMaterial> materials;

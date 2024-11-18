@@ -37,7 +37,7 @@ public class ModelBatch implements Disposable {
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
 
-        shader = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
+        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
 
         makeUniformBuffer();
 
@@ -113,6 +113,53 @@ public class ModelBatch implements Disposable {
         wgpu.BufferRelease(uniformObjectBuffer);
     }
 
+    // Bind Group Layout:
+    //  uniforms
+    //  texture
+    //  normal map
+    //  sampler
+    private Pointer defineBindGroupLayout(){
+        // Define binding layout
+        WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(bindingLayout);
+        bindingLayout.setBinding(0);
+        bindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
+        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
+        bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
+
+        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(texBindingLayout);
+        texBindingLayout.setBinding(1);
+        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+
+
+//        WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(normalTexBindingLayout);
+//        normalTexBindingLayout.setBinding(2);
+//        normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+//        normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+//        normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+
+
+        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(samplerBindingLayout);
+        samplerBindingLayout.setBinding(2);
+        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
+
+        // Create a bind group layout
+        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
+        bindGroupLayoutDesc.setNextInChain();
+        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout");
+        bindGroupLayoutDesc.setEntryCount(3);
+        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout,
+//                normalTexBindingLayout,
+                samplerBindingLayout);
+        return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+
+    }
 
     // per renderabe bind group
     private Pointer makeBindGroup(Material material, Pointer bindGroupLayout) {
@@ -125,16 +172,17 @@ public class ModelBatch implements Disposable {
         binding.setSize(uniformBufferSize);
 
         Texture diffuse = material.diffuseTexture;
-        Texture normal = material.normalTexture;
+        //Texture normal = material.normalTexture;
 
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(4);
+        bindGroupDesc.setEntryCount(3);
         bindGroupDesc.setEntries(binding, diffuse.getBinding(1),
-                normal.getBinding(2),diffuse.getSamplerBinding(3));
+                //normal.getBinding(2),
+                diffuse.getSamplerBinding(2));
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
@@ -214,11 +262,11 @@ public class ModelBatch implements Disposable {
         if(vertexBufferLayout == null) {
             VertexAttributes vertexAttributes = new VertexAttributes();
             vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
-            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
-            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 3);
-            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 4);
-            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 5);
+//            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
+//            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
+            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
+            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
+            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
             vertexAttributes.end();
 
             vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
@@ -226,52 +274,7 @@ public class ModelBatch implements Disposable {
         return vertexBufferLayout;
     }
 
-    // Bind Group Layout:
-    //  uniforms
-    //  texture
-    //  normal map
-    //  sampler
-    private Pointer defineBindGroupLayout(){
-        // Define binding layout
-        WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(bindingLayout);
-        bindingLayout.setBinding(0);
-        bindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
-        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
-        bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
 
-        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(texBindingLayout);
-        texBindingLayout.setBinding(1);
-        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-
-        WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(normalTexBindingLayout);
-        normalTexBindingLayout.setBinding(2);
-        normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-
-        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(samplerBindingLayout);
-        samplerBindingLayout.setBinding(3);
-        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
-
-        // Create a bind group layout
-        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
-        bindGroupLayoutDesc.setNextInChain();
-        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout");
-        bindGroupLayoutDesc.setEntryCount(4);
-        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout,
-                                normalTexBindingLayout, samplerBindingLayout);
-        return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
-
-    }
 
     private void initializePipeline() {
 
