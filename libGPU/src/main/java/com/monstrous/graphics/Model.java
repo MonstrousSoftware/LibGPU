@@ -1,5 +1,7 @@
 package com.monstrous.graphics;
 
+import com.monstrous.graphics.loaders.GLTF;
+import com.monstrous.graphics.loaders.GLTFLoader;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.utils.Disposable;
@@ -14,7 +16,12 @@ public class Model implements Disposable {
     public Model(String filePath) {
         this.filePath = filePath;
 
-        MeshData meshData = ObjLoader.load(filePath);
+        GLTF gltf = GLTFLoader.load(filePath);      // TMP
+
+        MeshData meshData = ObjLoader.load(filePath);      // TMP
+
+
+        //meshData = ObjLoader.load(filePath);
         mesh = new Mesh(meshData);
 
         System.out.println("Loaded "+meshData.objectName);

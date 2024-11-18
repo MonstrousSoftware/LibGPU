@@ -11,7 +11,7 @@
 #include <iostream>
 #include <stdalign.h>
 
-#define LOG(x)
+#define LOG(x) x
 
 using namespace std;
 
@@ -76,7 +76,7 @@ EXPORT WGPUInstance CreateInstance( void ){
         printf("Linked to wgpu-native.dll\n");
 #endif
         WGPUInstance instance = wgpuCreateInstance(nullptr);
-        //printf("creating instance %p\n", instance);
+        printf("creating instance %p\n", instance);
         return instance;
 }
 

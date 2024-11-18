@@ -14,12 +14,12 @@ public interface WGPU { // A representation of the C interface in Java
     void testStruct(WGPURequestAdapterOptions options);
     void testLimitsStruct(WGPUSupportedLimits supported);
 
-    Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
-
     Pointer CreateInstance();
+    Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
     void InstanceRelease(Pointer instance);
-
     Pointer RequestAdapterSync(Pointer instance, WGPURequestAdapterOptions options);
+
+
     void AdapterRelease(Pointer adapter);
     boolean    AdapterGetLimits(Pointer adapter, WGPUSupportedLimits limits);
     void AdapterGetProperties(Pointer adapter, WGPUAdapterProperties properties);

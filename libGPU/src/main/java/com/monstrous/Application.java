@@ -29,6 +29,8 @@ public class Application {
         LibGPU.graphics.setSize(config.width, config.height);
 
 
+        TestJson json = new TestJson();
+
         WindowedApp winApp = new WindowedApp();
         winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());

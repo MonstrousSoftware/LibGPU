@@ -46,7 +46,7 @@ public class Texture {
             Pointer data = WgpuJava.createByteArrayPointer(fileData);
 
             image = LibGPU.wgpu.gdx2d_load(data, len);        // use native function to parse image file
-            System.out.println("loaded: "+image);
+            //System.out.println("loaded: "+image);
 
             PixmapInfo info = PixmapInfo.createAt(image);
             this.width = info.width.intValue();
@@ -235,7 +235,7 @@ public class Texture {
 
     public void dispose(){
         if(image != null) {
-            System.out.println("free: "+image);
+            //System.out.println("free: "+image);
             LibGPU.wgpu.gdx2d_free(image);
         }
         LibGPU.wgpu.TextureViewRelease(textureView);
