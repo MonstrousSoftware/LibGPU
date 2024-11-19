@@ -56,27 +56,33 @@ public class Mesh {
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, dataBuf, (int)bufferDesc.getSize());
 
 
+        int indexSize = data.indexSize;  // bytes
         indexCount = data.indexValues.size();
-        short [] indexData = new short[ indexCount ];
-        for(int i = 0; i < indexCount; i++){
-            indexData[i] = (short)(int)data.indexValues.get(i);
+        int indexBufferSize = indexCount*indexSize;
+        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
+
+        Pointer idata = WgpuJava.createDirectPointer(indexBufferSize);
+        if(indexSize == 2){
+            indexFormat = WGPUIndexFormat.Uint16;
+            for(int i = 0; i < indexCount; i++){
+                idata.putShort((long) i * indexSize, (short)(int)data.indexValues.get(i));
+            }
+        } else if (indexSize == 4){
+            indexFormat = WGPUIndexFormat.Uint32;
+            for(int i = 0; i < indexCount; i++){
+                idata.putInt((long) i * indexSize, (int)data.indexValues.get(i));
+            }
         }
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index );
-        int indexBufferSize = indexData.length*Short.BYTES;
-        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
         bufferDesc.setSize(indexBufferSize);
         // in case we use a sort index:
 
         bufferDesc.setMappedAtCreation(0L);
         indexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
-        Pointer idata = WgpuJava.createDirectPointer(indexBufferSize);
-        for(int i = 0; i < indexData.length; i++){
-            idata.putShort((long) i * Short.BYTES, indexData[i]);           // todo we could save this copy, see above
-        }
         // Upload data to the buffer
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
     }

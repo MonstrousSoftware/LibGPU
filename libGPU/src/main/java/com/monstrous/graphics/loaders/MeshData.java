@@ -13,5 +13,6 @@ public class MeshData {
     public ArrayList<Integer> indexValues = new ArrayList<>();
     public String objectName;
     public MaterialData materialData;
+    public int indexSize;   // in bytes per index, e.g. 2 for Uint16
 
 }
