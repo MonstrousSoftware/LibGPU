@@ -12,8 +12,8 @@ public class ModelBatch implements Disposable {
 
     private final int maxDynamicUniformBuffers = 64;   // limits nr of renderables!
 
-    private WGPU wgpu;
-    private Pointer device;
+    private final WGPU wgpu;
+    private final Pointer device;
 
     private Camera camera;
 
@@ -32,47 +32,34 @@ public class ModelBatch implements Disposable {
     private Material prevMaterial;
     private boolean hasNormalMap;
 
-    private Pipeline pipeline;
+    private final Pipelines pipelines;
+    private Pipeline prevPipeline;
 
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
+        pipelines = new Pipelines();
 
 
         makeUniformBuffer();
-
-//        VertexAttributes vertexAttributes = new VertexAttributes();
-//        vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-////            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
-////            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
-//        vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-//        vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
-//        vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
-//        vertexAttributes.end();
-//
-//        bindGroupLayout = createBindGroupLayout();
-//
-//        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
-//
-//        pipeline = new Pipeline(vertexAttributes, bindGroupLayout, shader);
     }
 
     // create or reuse pipeline on demand when we know the model
-    private void setPipeline(VertexAttributes vertexAttributes){
-//        if(pipeline != null)
-//            return pipeline;
-        // todo dispose
+    private void setPipeline(VertexAttributes vertexAttributes) {
 
         bindGroupLayout = createBindGroupLayout(vertexAttributes.hasNormalMap);
         hasNormalMap = vertexAttributes.hasNormalMap;
 
-        if(hasNormalMap)
+        if (hasNormalMap)
             shader = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
         else
             shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
 
-        pipeline =  new Pipeline(vertexAttributes, bindGroupLayout, shader);
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, bindGroupLayout, shader);
+        if (pipeline != prevPipeline) { // avoid unneeded switches
+            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+            prevPipeline = pipeline;
+        }
     }
 
 
@@ -82,6 +69,7 @@ public class ModelBatch implements Disposable {
 
         uniformIndex = 0;
         prevMaterial = null;
+        prevPipeline = null;
     }
 
     public void render(ModelInstance instance){
@@ -138,7 +126,7 @@ public class ModelBatch implements Disposable {
     @Override
     public void dispose() {
         shader.dispose();
-        pipeline.dispose();
+        pipelines.dispose();
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BufferRelease(uniformObjectBuffer);
     }

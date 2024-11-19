@@ -101,7 +101,12 @@ public class Pipeline implements Disposable {
 
         pipelineDesc.setLayout(pipelineLayout);
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
-        //LibGPU.wgpu.ShaderModuleRelease(shaderModule);  not ours to release
+    }
+
+    public boolean canRender(VertexAttributes vertexAttributes){
+        // crude check, to be refined
+        return (vertexAttributes.attributes.size() == this.vertexAttributes.attributes.size() &&
+                vertexAttributes.hasNormalMap == this.vertexAttributes.hasNormalMap);
     }
 
     public Pointer getPipeline(){

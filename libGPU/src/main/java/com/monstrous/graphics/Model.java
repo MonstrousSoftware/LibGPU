@@ -21,6 +21,8 @@ public class Model implements Disposable {
     public Model(String filePath) {
         this.filePath = filePath.toLowerCase();
 
+        // check file extension to choose loader
+
         if (this.filePath.endsWith("obj")) {
             readObj(filePath);
         } else if (this.filePath.endsWith("gltf")) {
