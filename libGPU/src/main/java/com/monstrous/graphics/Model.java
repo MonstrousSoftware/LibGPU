@@ -5,6 +5,7 @@ import com.monstrous.graphics.loaders.gltf.*;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
+import com.monstrous.wgpu.WGPUIndexFormat;
 import com.monstrous.wgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
@@ -12,8 +13,7 @@ import java.util.ArrayList;
 // A model combines meshpart(s) and material
 public class Model implements Disposable {
     public String filePath;
-    public Mesh mesh;
-    //public NodePart nodePart;
+    public ArrayList<Mesh> meshes;
     public Node rootNode;
     public Material material;
 
@@ -31,11 +31,9 @@ public class Model implements Disposable {
 
     }
 
-    private void readGLTF(String filePath) {
-        GLTF gltf = GLTFLoader.load(filePath);      // TMP
-        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.getFirst().uri);           // assume 1 buffer
+    private Mesh loadMesh(GLTF gltf, GLTFRawBuffer rawBuffer, int meshNr){
 
-        int indexAccessorId = gltf.meshes.getFirst().primitives.getFirst().indices; // assume 1 mesh & 1 primitive
+        int indexAccessorId = gltf.meshes.get(meshNr).primitives.getFirst().indices; // assume 1 primitive per mesh
         GLTFAccessor indexAccessor = gltf.accessors.get(indexAccessorId);
         GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
         if(view.buffer != 0)
@@ -43,9 +41,7 @@ public class Model implements Disposable {
         int offset = view.byteOffset;
         offset += indexAccessor.byteOffset;
 
-
         MeshData meshData = new MeshData();
-
         if(indexAccessor.componentType != GLTF.USHORT16)
             throw new RuntimeException("GLTF: Can only support short index");
 
@@ -59,7 +55,7 @@ public class Model implements Disposable {
 
         int positionAccessorId = -1;
         int uvAccessorId = -1;
-        ArrayList<GLTFAttribute> attributes = gltf.meshes.getFirst().primitives.getFirst().attributes;
+        ArrayList<GLTFAttribute> attributes = gltf.meshes.get(meshNr).primitives.getFirst().attributes;
         for(GLTFAttribute attribute : attributes){
             if(attribute.name.contentEquals("POSITION")){
                 positionAccessorId = attribute.value;
@@ -161,18 +157,33 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
         meshData.vertexAttributes.end();
 
-        mesh = new Mesh(meshData);
+        Mesh mesh = new Mesh(meshData);
+        mesh.indexFormat = WGPUIndexFormat.Uint16;
+        return mesh;
+    }
 
-        System.out.println("Loaded "+meshData.objectName);
+    private void readGLTF(String filePath) {
+        GLTF gltf = GLTFLoader.load(filePath);      // TMP
+        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.getFirst().uri);           // assume 1 buffer
+
+        meshes = new ArrayList<>();
+
+        for(int i = 0; i < gltf.meshes.size(); i++){
+            Mesh m = loadMesh(gltf, rawBuffer, i );
+            meshes.add(m);
+        }
+
 
         // create a meshPart to cover whole mesh (temp)
-        MeshPart meshPart;
-        if(mesh.getIndexCount() > 0)
-            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
-        else
-            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
+//        MeshPart meshPart;
+//        if(mesh.getIndexCount() > 0)
+//            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
+//        else
+//            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
 
-        material = new Material(meshData.materialData);
+        MaterialData mat = new MaterialData();
+        mat.diffuseMapFilePath = gltf.images.getFirst().uri;
+        material = new Material(mat);
 
 //        for(GLTFScene scene : gltf.scenes ){
 //
@@ -196,10 +207,12 @@ public class Model implements Disposable {
         if(gltfNode.mesh >= 0){
             GLTFMesh gltfMesh = gltf.meshes.get(gltfNode.mesh);
             GLTFPrimitive submesh = gltfMesh.primitives.getFirst();
-            GLTFAccessor accessor = gltf.accessors.get(submesh.indices);
-            GLTFBufferView view = gltf.bufferViews.get(accessor.bufferView);
+            GLTFAccessor indexAccessor = gltf.accessors.get(submesh.indices);
+            GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
+            if(!indexAccessor.type.contentEquals("SCALAR"))
+                throw new RuntimeException("GLTF: Expect primitve.indices to refer to SCALAR accessor");
 
-            MeshPart meshPart = new MeshPart(mesh, view.byteOffset+accessor.byteOffset, view.byteLength);   // todo assumes 1 global mesh
+            MeshPart meshPart = new MeshPart(meshes.get(gltfNode.mesh), indexAccessor.byteOffset, indexAccessor.count);
             node.nodePart = new NodePart(meshPart, material);   // todo global material
         }
         for(int j : gltfNode.children ){
@@ -226,7 +239,8 @@ public class Model implements Disposable {
         meshData.vertexAttributes.end();
         meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
 
-        mesh = new Mesh(meshData);
+        Mesh mesh = new Mesh(meshData);
+        meshes.add(mesh);
 
 
 
@@ -248,7 +262,8 @@ public class Model implements Disposable {
 
     @Override
     public void dispose() {
-        mesh.dispose();
+        for(Mesh mesh: meshes)
+            mesh.dispose();
         material.dispose();
     }
 }

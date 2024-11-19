@@ -120,7 +120,7 @@ public class ModelBatch implements Disposable {
 
         if(meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
-            wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, 0, wgpu.BufferGetSize(indexBuffer));
+            wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
             wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, 1, meshPart.offset, 0, 0);
         }
         else

@@ -4,6 +4,7 @@ import com.monstrous.LibGPU;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.wgpu.WGPUBufferDescriptor;
 import com.monstrous.wgpu.WGPUBufferUsage;
+import com.monstrous.wgpu.WGPUIndexFormat;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
@@ -14,6 +15,7 @@ public class Mesh {
     private int vertexCount;
     private int indexCount;     // can be zero if the vertices are not indexed
     public VertexAttributes vertexAttributes;
+    public WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
 
 
 //    public Mesh(String name) {
@@ -41,13 +43,6 @@ public class Mesh {
         for(int i = 0; i < data.vertFloats.size(); i++){
             vertexData[i] = data.vertFloats.get(i);
         }
-
-        indexCount = data.indexValues.size();
-        int [] indexData = new int[ indexCount ];
-        for(int i = 0; i < indexCount; i++){
-            indexData[i] = data.indexValues.get(i);
-        }
-
         // Create vertex buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Vertex buffer");
@@ -57,14 +52,20 @@ public class Mesh {
         vertexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         Pointer dataBuf = WgpuJava.createFloatArrayPointer(vertexData);
-
         // Upload geometry data to the buffer
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, dataBuf, (int)bufferDesc.getSize());
+
+
+        indexCount = data.indexValues.size();
+        short [] indexData = new short[ indexCount ];
+        for(int i = 0; i < indexCount; i++){
+            indexData[i] = (short)(int)data.indexValues.get(i);
+        }
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index );
-        int indexBufferSize = indexData.length*Integer.BYTES;
+        int indexBufferSize = indexData.length*Short.BYTES;
         indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
         bufferDesc.setSize(indexBufferSize);
         // in case we use a sort index:
@@ -72,7 +73,10 @@ public class Mesh {
         bufferDesc.setMappedAtCreation(0L);
         indexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
-        Pointer idata = WgpuJava.createIntegerArrayPointer(indexData);
+        Pointer idata = WgpuJava.createDirectPointer(indexBufferSize);
+        for(int i = 0; i < indexData.length; i++){
+            idata.putShort((long) i * Short.BYTES, indexData[i]);           // todo we could save this copy, see above
+        }
         // Upload data to the buffer
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
     }

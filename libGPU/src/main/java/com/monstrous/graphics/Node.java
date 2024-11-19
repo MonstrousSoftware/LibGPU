@@ -1,6 +1,7 @@
 package com.monstrous.graphics;
 
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Quaternion;
 import com.monstrous.math.Vector3;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ public class Node {
     public Matrix4 worldTransform;
     public Vector3 translation;
     public Vector3 scale;
+    public Quaternion rotation;
 
     NodePart nodePart;
 
@@ -25,6 +27,7 @@ public class Node {
         worldTransform = new Matrix4();
         translation = new Vector3(0,0,0);
         scale = new Vector3(1,1,1);
+        rotation = new Quaternion(0,0,0,1);
         nodePart = null;
     }
 
@@ -36,6 +39,8 @@ public class Node {
     public void updateMatrices(boolean recurse){
         localTransform.setToTranslation(translation);
         localTransform.scale(scale);
+        // todo rotation
+
         if(parent != null)
             worldTransform.set(parent.worldTransform).mul(localTransform);
         else

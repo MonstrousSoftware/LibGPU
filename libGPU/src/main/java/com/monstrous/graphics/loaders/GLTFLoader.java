@@ -1,6 +1,7 @@
 package com.monstrous.graphics.loaders;
 
 import com.monstrous.graphics.loaders.gltf.*;
+import com.monstrous.math.Quaternion;
 import com.monstrous.math.Vector3;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -228,6 +229,17 @@ public class GLTFLoader {
                 double z = (double)sc.get(2);
                 node.scale = new Vector3((float)x, (float)y,(float)z);
                 System.out.println("node scale "+node.name+ node.scale);
+            }
+            JSONArray rot = (JSONArray)nd.get("rotation");
+            if(rot != null){
+                if(rot.size() != 4)
+                    throw new RuntimeException("GLTF: Expected node.rotation with 4 elements");
+                double x = (double)rot.get(0);
+                double y = (double)rot.get(1);
+                double z = (double)rot.get(2);
+                double w = (double)rot.get(3);
+                node.rotation = new Quaternion((float)x, (float)y,(float)z, (float)w);
+                System.out.println("node rotation "+node.name);
             }
             JSONArray ch = (JSONArray)nd.get("children");
             if(ch != null){
