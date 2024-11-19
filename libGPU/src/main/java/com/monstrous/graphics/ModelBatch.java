@@ -73,11 +73,22 @@ public class ModelBatch implements Disposable {
     }
 
     public void render(ModelInstance instance){
-        render(instance.model.node.nodePart.meshPart, instance.model.node.nodePart.material, instance.modelTransform);
+        render(instance.model.rootNode);
     }
 
     public void render(ModelInstance instance, Material material){
-        render(instance.model.node.nodePart.meshPart, material, instance.modelTransform);
+        render(instance.model.rootNode.nodePart.meshPart, material, instance.modelTransform);
+    }
+
+    public void render(Node node){
+        if(node.nodePart != null)
+            render(node.nodePart, node.worldTransform);
+        for(Node child : node.children)
+            render(child);
+    }
+
+    public void render(NodePart nodePart, Matrix4 transform){
+        render(nodePart.meshPart, nodePart.material, transform);
     }
 
     public void render(Renderable renderable) {

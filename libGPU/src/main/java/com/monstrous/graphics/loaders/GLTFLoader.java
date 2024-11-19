@@ -1,6 +1,7 @@
 package com.monstrous.graphics.loaders;
 
 import com.monstrous.graphics.loaders.gltf.*;
+import com.monstrous.math.Vector3;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -204,22 +205,36 @@ public class GLTFLoader {
 
             JSONObject nd = (JSONObject)nodes.get(i);
             node.name = (String)nd.get("name");
-            node.camera = getInt(nd, "camera", 0);
-            node.skin = getInt(nd, "skin", 0);
-            node.mesh = getInt(nd, "mesh", 0);
+            node.camera = getInt(nd, "camera", -1);
+            node.skin = getInt(nd, "skin", -1);
+            node.mesh = getInt(nd, "mesh", -1);
 
             JSONArray tr = (JSONArray)nd.get("translation");
             if(tr != null){
                 if(tr.size() != 3)
                     throw new RuntimeException("GLTF: Expected node.translation with 3 elements");
-                double xo = (double) tr.get(0);
-                double yo = (double)tr.get(1);
-                double zo = (double)tr.get(2);
-                float x = (float) xo;
-                float y = (float) yo;
-                float z = (float) zo;
-                node.translation.set(x, y, z);
+                double x = (double)tr.get(0);
+                double y = (double)tr.get(1);
+                double z = (double)tr.get(2);
+                node.translation = new Vector3((float)x, (float)y,(float)z);
                 System.out.println("node translation "+node.name+ node.translation);
+            }
+            JSONArray sc = (JSONArray)nd.get("scale");
+            if(sc != null){
+                if(sc.size() != 3)
+                    throw new RuntimeException("GLTF: Expected node.scale with 3 elements");
+                double x = (double)sc.get(0);
+                double y = (double)sc.get(1);
+                double z = (double)sc.get(2);
+                node.scale = new Vector3((float)x, (float)y,(float)z);
+                System.out.println("node scale "+node.name+ node.scale);
+            }
+            JSONArray ch = (JSONArray)nd.get("children");
+            if(ch != null){
+                for(int j = 0; j < ch.size(); j++){
+                    Long id = (Long)ch.get(j);
+                    node.children.add(id.intValue());
+                }
             }
 
             gltf.nodes.add(node);

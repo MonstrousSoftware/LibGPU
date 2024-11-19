@@ -13,7 +13,7 @@ public class GLTF {
     public static int FLOAT32 = 5126;
 
 
-    int scene;
+    public int scene;
     public ArrayList<GLTFTexture> textures;
     public ArrayList<GLTFMaterial> materials;
     public ArrayList<GLTFImage> images;

@@ -307,6 +307,9 @@ public class Matrix4 {
         return this.scale(scale, scale, scale);
     }
 
+    public Matrix4 scale (Vector3 sc) {
+        return scale( sc.x, sc.y, sc.z );
+    }
 
     /** Postmultiplies this matrix with a scale matrix. Postmultiplication is also used by OpenGL ES' 1.x
      * glTranslate/glRotate/glScale.

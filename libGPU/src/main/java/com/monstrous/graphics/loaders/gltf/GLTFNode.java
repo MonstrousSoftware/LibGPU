@@ -19,10 +19,6 @@ public class GLTFNode {
 
     public GLTFNode() {
         children = new ArrayList<>();
-
-        matrix = new Matrix4();
-        scale = new Vector3(1f, 1f, 1f);
-        translation = new Vector3(0,0,0);
-        rotation = new Quaternion(0,0,0,1);
+        mesh = -1;
     }
 }

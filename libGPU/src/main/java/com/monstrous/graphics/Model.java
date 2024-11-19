@@ -1,9 +1,7 @@
 package com.monstrous.graphics;
 
 import com.monstrous.graphics.loaders.*;
-import com.monstrous.graphics.loaders.gltf.GLTFAccessor;
-import com.monstrous.graphics.loaders.gltf.GLTFAttribute;
-import com.monstrous.graphics.loaders.gltf.GLTFBufferView;
+import com.monstrous.graphics.loaders.gltf.*;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
@@ -16,7 +14,7 @@ public class Model implements Disposable {
     public String filePath;
     public Mesh mesh;
     //public NodePart nodePart;
-    public Node node;
+    public Node rootNode;
     public Material material;
 
     public Model(String filePath) {
@@ -176,9 +174,42 @@ public class Model implements Disposable {
 
         material = new Material(meshData.materialData);
 
-        node = new Node();
-        node.nodePart = new NodePart(meshPart, material);
+//        for(GLTFScene scene : gltf.scenes ){
+//
+//        }
+        GLTFScene scene = gltf.scenes.get(gltf.scene);
+        int nodeId = scene.nodes.getFirst();
+        GLTFNode gltfNode = gltf.nodes.get(nodeId);
+
+        rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
+        rootNode.updateMatrices(true);
+        System.out.println("loaded "+filePath);
     }
+
+    private Node addNode(GLTF gltf, GLTFNode gltfNode){
+        Node node = new Node();
+        node.name = gltfNode.name;
+        if(gltfNode.translation != null)
+            node.translation.set(gltfNode.translation);
+        if(gltfNode.scale != null)
+            node.scale.set(gltfNode.scale);
+        if(gltfNode.mesh >= 0){
+            GLTFMesh gltfMesh = gltf.meshes.get(gltfNode.mesh);
+            GLTFPrimitive submesh = gltfMesh.primitives.getFirst();
+            GLTFAccessor accessor = gltf.accessors.get(submesh.indices);
+            GLTFBufferView view = gltf.bufferViews.get(accessor.bufferView);
+
+            MeshPart meshPart = new MeshPart(mesh, view.byteOffset+accessor.byteOffset, view.byteLength);   // todo assumes 1 global mesh
+            node.nodePart = new NodePart(meshPart, material);   // todo global material
+        }
+        for(int j : gltfNode.children ){
+            GLTFNode gltfChild = gltf.nodes.get(j);
+            Node child = addNode(gltf, gltfChild);
+            node.addChild(child);
+        }
+        return node;
+    }
+
 
     private void readObj(String filePath) {
 
@@ -210,8 +241,8 @@ public class Model implements Disposable {
 
         material = new Material(meshData.materialData);
 
-        node = new Node();
-        node.nodePart = new NodePart(meshPart, material);
+        rootNode = new Node();
+        rootNode.nodePart = new NodePart(meshPart, material);
 
     }
 

@@ -3,40 +3,46 @@ package com.monstrous.graphics;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
+import java.util.ArrayList;
+
 public class Node {
     public Node parent;
-    public Node children;
-    public Node next;
-    public Node previous;
+    public ArrayList<Node> children;
 
+    public String name;
     public Matrix4 localTransform;
-    public Matrix4 globalTransform;
+    public Matrix4 worldTransform;
     public Vector3 translation;
+    public Vector3 scale;
 
     NodePart nodePart;
 
     public Node() {
         parent = null;
-        children = null;
-        next = null;
-        previous = null;
+        children = new ArrayList<>(2);
 
         localTransform = new Matrix4();
-        globalTransform = new Matrix4();
+        worldTransform = new Matrix4();
         translation = new Vector3(0,0,0);
+        scale = new Vector3(1,1,1);
         nodePart = null;
     }
 
     public void addChild(Node child){
         child.parent = this;
-        if(children == null){
-            children = child;
-        } else {
-            Node sibling = children;
-            while (sibling.next != null)
-                sibling = sibling.next;
-            sibling.next = child;
-            child.previous = sibling;
+        children.add(child);
+    }
+
+    public void updateMatrices(boolean recurse){
+        localTransform.setToTranslation(translation);
+        localTransform.scale(scale);
+        if(parent != null)
+            worldTransform.set(parent.worldTransform).mul(localTransform);
+        else
+            worldTransform.set(localTransform);
+        if(recurse){
+            for(Node child : children)
+                child.updateMatrices(true);
         }
     }
 
