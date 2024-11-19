@@ -2,11 +2,9 @@ package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.loaders.MeshData;
-import com.monstrous.graphics.loaders.ObjLoader;
-import com.monstrous.graphics.loaders.TxtLoader;
-import com.monstrous.wgpuUtils.WgpuJava;
 import com.monstrous.wgpu.WGPUBufferDescriptor;
 import com.monstrous.wgpu.WGPUBufferUsage;
+import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
 public class Mesh {
@@ -15,6 +13,7 @@ public class Mesh {
     private Pointer indexBuffer;
     private int vertexCount;
     private int indexCount;     // can be zero if the vertices are not indexed
+    public VertexAttributes vertexAttributes;
 
 
 //    public Mesh(String name) {
@@ -33,6 +32,9 @@ public class Mesh {
 //    }
 
     public Mesh(MeshData data){
+
+        vertexAttributes = data.vertexAttributes;
+        // todo could calculate vertSize from attributes
 
         vertexCount = data.vertFloats.size()/data.vertSize;
         float[] vertexData = new float[ data.vertFloats.size() ];

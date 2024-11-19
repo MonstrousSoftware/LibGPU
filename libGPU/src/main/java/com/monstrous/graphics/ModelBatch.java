@@ -30,6 +30,7 @@ public class ModelBatch implements Disposable {
     private Pointer bindGroupLayout;
     private Pointer bindGroup;
     private Material prevMaterial;
+    private boolean hasNormalMap;
 
     private Pipeline pipeline;
 
@@ -40,27 +41,45 @@ public class ModelBatch implements Disposable {
 
         makeUniformBuffer();
 
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-//            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
-//            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
-        vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-        vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
-        vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
-        vertexAttributes.end();
+//        VertexAttributes vertexAttributes = new VertexAttributes();
+//        vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
+////            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
+////            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
+//        vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
+//        vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
+//        vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
+//        vertexAttributes.end();
+//
+//        bindGroupLayout = createBindGroupLayout();
+//
+//        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+//
+//        pipeline = new Pipeline(vertexAttributes, bindGroupLayout, shader);
+    }
 
-        bindGroupLayout = createBindGroupLayout();
+    // create or reuse pipeline on demand when we know the model
+    private void setPipeline(VertexAttributes vertexAttributes){
+//        if(pipeline != null)
+//            return pipeline;
+        // todo dispose
 
-        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+        bindGroupLayout = createBindGroupLayout(vertexAttributes.hasNormalMap);
+        hasNormalMap = vertexAttributes.hasNormalMap;
 
-        pipeline = new Pipeline(vertexAttributes, bindGroupLayout, shader);
+        if(hasNormalMap)
+            shader = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
+        else
+            shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+
+        pipeline =  new Pipeline(vertexAttributes, bindGroupLayout, shader);
+        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
     }
 
 
     public void begin(Camera camera){
         this.camera = camera;
         this.renderPass = LibGPU.renderPass;
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+
         uniformIndex = 0;
         prevMaterial = null;
     }
@@ -84,6 +103,8 @@ public class ModelBatch implements Disposable {
 
         if(uniformIndex == maxDynamicUniformBuffers)
             throw new RuntimeException("Too many dynamic uniform buffers!");
+
+        setPipeline(meshPart.mesh.vertexAttributes);
 
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
@@ -129,34 +150,38 @@ public class ModelBatch implements Disposable {
     //  texture
     //  normal map
     //  sampler
-    private Pointer createBindGroupLayout(){
+    private Pointer createBindGroupLayout(boolean hasNormalMap){
+        int location = 0;
+
         // Define binding layout
         WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(bindingLayout);
-        bindingLayout.setBinding(0);
+        bindingLayout.setBinding(location++);
         bindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
         bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
 
         WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(texBindingLayout);
-        texBindingLayout.setBinding(1);
+        texBindingLayout.setBinding(location++);
         texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
         texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
         texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
 
-
-//        WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-//        setDefault(normalTexBindingLayout);
-//        normalTexBindingLayout.setBinding(2);
-//        normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-//        normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-//        normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+        WGPUBindGroupLayoutEntry normalTexBindingLayout = null;
+        if(hasNormalMap) {
+            normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+            setDefault(normalTexBindingLayout);
+            normalTexBindingLayout.setBinding(location++);
+            normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+            normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+            normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+        }
 
 
         WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(samplerBindingLayout);
-        samplerBindingLayout.setBinding(2);
+        samplerBindingLayout.setBinding(location++);
         samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
         samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
 
@@ -164,10 +189,12 @@ public class ModelBatch implements Disposable {
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
         bindGroupLayoutDesc.setNextInChain();
         bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout");
-        bindGroupLayoutDesc.setEntryCount(3);
-        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout,
-//                normalTexBindingLayout,
-                samplerBindingLayout);
+        bindGroupLayoutDesc.setEntryCount(location);
+
+        if(hasNormalMap)
+            bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, normalTexBindingLayout, samplerBindingLayout);
+        else
+            bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
         return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
 
     }
@@ -183,17 +210,20 @@ public class ModelBatch implements Disposable {
         binding.setSize(uniformBufferSize);
 
         Texture diffuse = material.diffuseTexture;
-        //Texture normal = material.normalTexture;
 
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(3);
-        bindGroupDesc.setEntries(binding, diffuse.getBinding(1),
-                //normal.getBinding(2),
-                diffuse.getSamplerBinding(2));
+        if(hasNormalMap) {
+            bindGroupDesc.setEntryCount(4);
+            bindGroupDesc.setEntries(binding, diffuse.getBinding(1), material.normalTexture.getBinding(2),  diffuse.getSamplerBinding(3));
+        }
+        else {
+            bindGroupDesc.setEntryCount(3);
+            bindGroupDesc.setEntries(binding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2));
+        }
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 

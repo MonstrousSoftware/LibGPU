@@ -7,6 +7,7 @@ import com.monstrous.graphics.loaders.gltf.GLTFBufferView;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
+import com.monstrous.wgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
 
@@ -135,6 +136,13 @@ public class Model implements Disposable {
         mat.diffuseMapFilePath = gltf.images.getFirst().uri;
         meshData.materialData = mat;
 
+        meshData.vertexAttributes = new VertexAttributes();
+        meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
+        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
+        meshData.vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
+        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
+        meshData.vertexAttributes.end();
+
         mesh = new Mesh(meshData);
 
         System.out.println("Loaded "+meshData.objectName);
@@ -149,12 +157,22 @@ public class Model implements Disposable {
         material = new Material(meshData.materialData);
 
         nodePart = new NodePart(meshPart, material);
+
+
     }
 
     public Model(String filePath, boolean isObj) {
         this.filePath = filePath;
 
         MeshData meshData = ObjLoader.load(filePath);
+        meshData.vertexAttributes = new VertexAttributes();
+        meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
+        meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
+        meshData.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
+        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 3);
+        meshData.vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 4);
+        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 5);
+        meshData.vertexAttributes.end();
         mesh = new Mesh(meshData);
 
         System.out.println("Loaded "+meshData.objectName);
@@ -169,6 +187,7 @@ public class Model implements Disposable {
         material = new Material(meshData.materialData);
 
         nodePart = new NodePart(meshPart, material);
+
     }
 
     @Override

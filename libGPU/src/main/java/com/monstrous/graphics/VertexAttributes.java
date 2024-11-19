@@ -12,14 +12,18 @@ public class VertexAttributes implements Disposable {
 
     public ArrayList<VertexAttribute> attributes;
     private WGPUVertexBufferLayout vertexBufferLayout;
+    public boolean hasNormalMap;        // HACK
 
     public VertexAttributes() {
         attributes = new ArrayList<>();
+        hasNormalMap = false;
     }
 
     public void add(String label, WGPUVertexFormat format, int shaderLocation){
         VertexAttribute va = new VertexAttribute(label, format, shaderLocation);
         attributes.add(va);
+        if(label.contentEquals("tangent"))
+            hasNormalMap = true;
     }
 
     public void end(){

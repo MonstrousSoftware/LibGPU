@@ -18,7 +18,7 @@ public class TestNormalMap implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/Cube.gltf"); //fourareen.obj");
+        model = new Model("models/Cube.gltf"); //"models/fourareen.obj");
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);
