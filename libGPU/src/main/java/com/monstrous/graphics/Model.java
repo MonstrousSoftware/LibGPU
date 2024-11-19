@@ -15,7 +15,8 @@ import java.util.ArrayList;
 public class Model implements Disposable {
     public String filePath;
     public Mesh mesh;
-    public NodePart nodePart;
+    //public NodePart nodePart;
+    public Node node;
     public Material material;
 
     public Model(String filePath) {
@@ -54,7 +55,7 @@ public class Model implements Disposable {
         for(int i = 0; i < indexAccessor.count; i++){
             // assuming ushort
             int index = rawBuffer.byteBuffer.getShort();
-            System.out.println("index "+index);
+            //System.out.println("index "+index);
             meshData.indexValues.add(index);
         }
 
@@ -91,7 +92,7 @@ public class Model implements Disposable {
             float f1 = rawBuffer.byteBuffer.getFloat();
             float f2 = rawBuffer.byteBuffer.getFloat();
             float f3 = rawBuffer.byteBuffer.getFloat();
-            System.out.println("float  "+f1 + " "+ f2 + " "+f3);
+            //System.out.println("float  "+f1 + " "+ f2 + " "+f3);
             positions.add(new Vector3(f1, f2, f3));
         }
 
@@ -115,7 +116,7 @@ public class Model implements Disposable {
             // assuming float32
             float f1 = rawBuffer.byteBuffer.getFloat();
             float f2 = rawBuffer.byteBuffer.getFloat();
-            System.out.println("float  "+f1 + " "+ f2 );
+            //System.out.println("float  "+f1 + " "+ f2 );
             textureCoordinates.add(new Vector2(f1, f2));
         }
 
@@ -144,13 +145,12 @@ public class Model implements Disposable {
 
         }
 
-        for(int i = 0; i < meshData.indexValues.size(); i++){
-            int index = meshData.indexValues.get(i);
-            Vector3 pos = positions.get(index);
-            Vector2 uv = textureCoordinates.get(index);
-            System.out.println("Index "+index+"  pos "+pos+" uv "+uv);
-
-        }
+//        for(int i = 0; i < meshData.indexValues.size(); i++){
+//            int index = meshData.indexValues.get(i);
+//            Vector3 pos = positions.get(index);
+//            Vector2 uv = textureCoordinates.get(index);
+//            System.out.println("Index "+index+"  pos "+pos+" uv "+uv);
+//        }
 
         MaterialData mat = new MaterialData();
         mat.diffuseMapFilePath = gltf.images.getFirst().uri;
@@ -176,9 +176,8 @@ public class Model implements Disposable {
 
         material = new Material(meshData.materialData);
 
-        nodePart = new NodePart(meshPart, material);
-
-
+        node = new Node();
+        node.nodePart = new NodePart(meshPart, material);
     }
 
     private void readObj(String filePath) {
@@ -211,7 +210,8 @@ public class Model implements Disposable {
 
         material = new Material(meshData.materialData);
 
-        nodePart = new NodePart(meshPart, material);
+        node = new Node();
+        node.nodePart = new NodePart(meshPart, material);
 
     }
 

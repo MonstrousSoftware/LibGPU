@@ -1,5 +1,6 @@
 package com.monstrous;
 
+import com.monstrous.graphics.Color;
 import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.LibraryLoader;
@@ -14,6 +15,7 @@ public class Application {
     public Pointer depthTexture;
     //public Pointer surface;
     public Pointer targetView;
+    public Color clearColor;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
@@ -28,6 +30,7 @@ public class Application {
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
 
+        clearColor = new Color(1, 1, 1, 1);
 
         TestJson json = new TestJson();
 
@@ -334,10 +337,10 @@ public class Application {
         renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
         renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
-        renderPassColorAttachment.getClearValue().setR(0.25);
-        renderPassColorAttachment.getClearValue().setG(0.25);
-        renderPassColorAttachment.getClearValue().setB(0.25);
-        renderPassColorAttachment.getClearValue().setA(1.0);
+        renderPassColorAttachment.getClearValue().setR(clearColor.r);
+        renderPassColorAttachment.getClearValue().setG(clearColor.g);
+        renderPassColorAttachment.getClearValue().setB(clearColor.b);
+        renderPassColorAttachment.getClearValue().setA(clearColor.a);
 
         renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
 

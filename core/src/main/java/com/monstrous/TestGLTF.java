@@ -2,6 +2,7 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.utils.ScreenUtils;
 
 public class TestGLTF implements ApplicationListener {
 
@@ -18,7 +19,7 @@ public class TestGLTF implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/suzanne.gltf");
+        model = new Model("models/lantern/Lantern.gltf");
 
         //model2 = new Model("models/fourareen.obj");
 
@@ -29,7 +30,7 @@ public class TestGLTF implements ApplicationListener {
 //        modelInstance2 = new ModelInstance(model2, modelMatrix2);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
-        camera.position.set(0, 0.5f, -3);
+        camera.position.set(0, 0.5f, -6);
         camera.direction.set(0,0f, 1f);
         camera.update();
 
@@ -53,7 +54,8 @@ public class TestGLTF implements ApplicationListener {
 
 
     public void render( float deltaTime ){
-        //currentTime += deltaTime;
+        currentTime += deltaTime;
+        ScreenUtils.clear(.7f, .7f, .7f, 1);
 
         updateModelMatrix(modelMatrix, currentTime);
 

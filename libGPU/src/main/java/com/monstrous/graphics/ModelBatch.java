@@ -73,11 +73,11 @@ public class ModelBatch implements Disposable {
     }
 
     public void render(ModelInstance instance){
-        render(instance.model.nodePart.meshPart, instance.model.nodePart.material, instance.modelTransform);
+        render(instance.model.node.nodePart.meshPart, instance.model.node.nodePart.material, instance.modelTransform);
     }
 
     public void render(ModelInstance instance, Material material){
-        render(instance.model.nodePart.meshPart, material, instance.modelTransform);
+        render(instance.model.node.nodePart.meshPart, material, instance.modelTransform);
     }
 
     public void render(Renderable renderable) {

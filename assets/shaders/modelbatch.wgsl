@@ -47,10 +47,10 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-    let kD = 0.5;
+    let kD = 0.9;
     let kS = 0.9;
     let hardness = 16.0;
-    let ambient = 0.6;
+    let ambient = 0.2;
 
 
     let V = normalize(in.viewDirection);

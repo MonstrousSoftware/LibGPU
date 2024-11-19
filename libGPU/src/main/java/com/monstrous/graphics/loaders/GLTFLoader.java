@@ -45,18 +45,20 @@ public class GLTFLoader {
 
 
             JSONArray sampls = (JSONArray) file.get("samplers");
-            System.out.println("samplers: " + sampls.size());
-            for (int i = 0; i < sampls.size(); i++) {
-                GLTFSampler sampler = new GLTFSampler();
+            if(sampls != null) {
+                System.out.println("samplers: " + sampls.size());
+                for (int i = 0; i < sampls.size(); i++) {
+                    GLTFSampler sampler = new GLTFSampler();
 
-                JSONObject smpl = (JSONObject) sampls.get(i);
-                sampler.name = (String) smpl.get("name");
-                Long wrapS = (Long) smpl.get("wrapS");
-                sampler.wrapS = wrapS == null ? 10497 : wrapS.intValue();
-                Long wrapT = (Long) smpl.get("wrapS");
-                sampler.wrapT = wrapT == null ? 10497 : wrapT.intValue();
+                    JSONObject smpl = (JSONObject) sampls.get(i);
+                    sampler.name = (String) smpl.get("name");
+                    Long wrapS = (Long) smpl.get("wrapS");
+                    sampler.wrapS = wrapS == null ? 10497 : wrapS.intValue();
+                    Long wrapT = (Long) smpl.get("wrapS");
+                    sampler.wrapT = wrapT == null ? 10497 : wrapT.intValue();
 
-                gltf.samplers.add(sampler);
+                    gltf.samplers.add(sampler);
+                }
             }
         }
 
@@ -68,10 +70,8 @@ public class GLTFLoader {
 
                 JSONObject tex = (JSONObject) textures.get(i);
                 texture.name = (String) tex.get("name");
-                long src = (Long) tex.get("source");
-                texture.source = (int) src;
-                long sampler = (Long) tex.get("sampler");
-                texture.sampler = (int) sampler;
+                texture.source = getInt(tex, "source", 0);
+                texture.sampler = getInt(tex, "sampler", 0);
 
                 gltf.textures.add(texture);
             }
@@ -207,6 +207,20 @@ public class GLTFLoader {
             node.camera = getInt(nd, "camera", 0);
             node.skin = getInt(nd, "skin", 0);
             node.mesh = getInt(nd, "mesh", 0);
+
+            JSONArray tr = (JSONArray)nd.get("translation");
+            if(tr != null){
+                if(tr.size() != 3)
+                    throw new RuntimeException("GLTF: Expected node.translation with 3 elements");
+                double xo = (double) tr.get(0);
+                double yo = (double)tr.get(1);
+                double zo = (double)tr.get(2);
+                float x = (float) xo;
+                float y = (float) yo;
+                float z = (float) zo;
+                node.translation.set(x, y, z);
+                System.out.println("node translation "+node.name+ node.translation);
+            }
 
             gltf.nodes.add(node);
         }
