@@ -3,7 +3,7 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
 
-public class TestNormalMap implements ApplicationListener {
+public class TestGLTF implements ApplicationListener {
 
     private ModelBatch modelBatch;
     private Camera camera;
@@ -18,7 +18,7 @@ public class TestNormalMap implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/fourareen.obj");
+        model = new Model("models/Cube.gltf");
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);

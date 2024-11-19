@@ -19,8 +19,18 @@ public class Model implements Disposable {
     public Material material;
 
     public Model(String filePath) {
-        this.filePath = filePath;
+        this.filePath = filePath.toLowerCase();
 
+        if (this.filePath.endsWith("obj")) {
+            readObj(filePath);
+        } else if (this.filePath.endsWith("gltf")) {
+            readGLTF(filePath);
+        } else
+            throw new RuntimeException("Model: file name extension not supported : "+filePath);
+
+    }
+
+    private void readGLTF(String filePath) {
         GLTF gltf = GLTFLoader.load(filePath);      // TMP
         GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.getFirst().uri);           // assume 1 buffer
 
@@ -161,8 +171,9 @@ public class Model implements Disposable {
 
     }
 
-    public Model(String filePath, boolean isObj) {
-        this.filePath = filePath;
+    private void readObj(String filePath) {
+
+        // todo fix if obj has no normal map we dont need tangent and bitangent and we should also not add this in vertex buffer
 
         MeshData meshData = ObjLoader.load(filePath);
         meshData.vertexAttributes = new VertexAttributes();
@@ -173,7 +184,11 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 4);
         meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 5);
         meshData.vertexAttributes.end();
+        meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
+
         mesh = new Mesh(meshData);
+
+
 
         System.out.println("Loaded "+meshData.objectName);
 
