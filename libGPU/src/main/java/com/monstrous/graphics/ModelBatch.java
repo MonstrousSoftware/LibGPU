@@ -18,7 +18,6 @@ public class ModelBatch implements Disposable {
     private Camera camera;
 
     private ShaderProgram shader;
-    private Pointer pipeline;
     private Pointer renderPass;
 
     private int uniformBufferSize;  // in bytes, excluding stride
@@ -27,29 +26,41 @@ public class ModelBatch implements Disposable {
     private int uniformIndex;
     private int uniformStride;
 
-    private WGPUVertexBufferLayout vertexBufferLayout;  // assumes all meshes will confirm to this
-    private Pointer pipelineLayout;
+    private WGPUVertexBufferLayout vertexBufferLayout;  // assumes all meshes will confirm to this, only used by pipeline
     private Pointer bindGroupLayout;
     private Pointer bindGroup;
     private Material prevMaterial;
+
+    private Pipeline pipeline;
 
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
 
-        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
 
         makeUniformBuffer();
 
-        bindGroupLayout = defineBindGroupLayout();
-        initializePipeline();
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
+//            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
+//            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
+        vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
+        vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
+        vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
+        vertexAttributes.end();
+
+        bindGroupLayout = createBindGroupLayout();
+
+        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+
+        pipeline = new Pipeline(vertexAttributes, bindGroupLayout, shader);
     }
 
 
     public void begin(Camera camera){
         this.camera = camera;
         this.renderPass = LibGPU.renderPass;
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
         uniformIndex = 0;
         prevMaterial = null;
     }
@@ -106,19 +117,19 @@ public class ModelBatch implements Disposable {
     @Override
     public void dispose() {
         shader.dispose();
-
-        wgpu.RenderPipelineRelease(pipeline);
-        wgpu.PipelineLayoutRelease(pipelineLayout);
+        pipeline.dispose();
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
         wgpu.BufferRelease(uniformObjectBuffer);
     }
+
+
 
     // Bind Group Layout:
     //  uniforms
     //  texture
     //  normal map
     //  sampler
-    private Pointer defineBindGroupLayout(){
+    private Pointer createBindGroupLayout(){
         // Define binding layout
         WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(bindingLayout);
@@ -191,6 +202,7 @@ public class ModelBatch implements Disposable {
         int d = value / step + (value % step == 0 ? 0 : 1);
         return step * d;
     }
+
     private void makeUniformBuffer() {
 
 
@@ -276,91 +288,6 @@ public class ModelBatch implements Disposable {
 
 
 
-    private void initializePipeline() {
-
-        Pointer shaderModule = shader.getShaderModule();
-
-        WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
-        pipelineDesc.setNextInChain();
-        pipelineDesc.setLabel("pipeline");
-
-        pipelineDesc.getVertex().setBufferCount(1);
-        pipelineDesc.getVertex().setBuffers(getVertexBufferLayout());
-
-        pipelineDesc.getVertex().setModule(shaderModule);
-        pipelineDesc.getVertex().setEntryPoint("vs_main");
-        pipelineDesc.getVertex().setConstantCount(0);
-        pipelineDesc.getVertex().setConstants();
-
-        pipelineDesc.getPrimitive().setTopology(WGPUPrimitiveTopology.TriangleList);
-        pipelineDesc.getPrimitive().setStripIndexFormat(WGPUIndexFormat.Undefined);
-        pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
-        pipelineDesc.getPrimitive().setCullMode(WGPUCullMode.None);
-
-        WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
-        fragmentState.setNextInChain();
-        fragmentState.setModule(shaderModule);
-        fragmentState.setEntryPoint("fs_main");
-        fragmentState.setConstantCount(0);
-        fragmentState.setConstants();
-
-        // blend
-        WGPUBlendState blendState = WGPUBlendState.createDirect();
-        blendState.getColor().setSrcFactor(WGPUBlendFactor.SrcAlpha);
-        blendState.getColor().setDstFactor(WGPUBlendFactor.OneMinusSrcAlpha);
-        blendState.getColor().setOperation(WGPUBlendOperation.Add);
-        blendState.getAlpha().setSrcFactor(WGPUBlendFactor.Zero);
-        blendState.getAlpha().setDstFactor(WGPUBlendFactor.One);
-        blendState.getAlpha().setOperation(WGPUBlendOperation.Add);
-
-        WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
-        colorTarget.setFormat(LibGPU.surfaceFormat);
-        colorTarget.setBlend(blendState);
-        colorTarget.setWriteMask(WGPUColorWriteMask.All);
-
-        fragmentState.setTargetCount(1);
-        fragmentState.setTargets(colorTarget);
-
-        pipelineDesc.setFragment(fragmentState);
-
-        WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
-        setDefault(depthStencilState);
-        depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
-        depthStencilState.setDepthWriteEnabled(1L);
-
-        //
-        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;       // todo
-        depthStencilState.setFormat(depthTextureFormat);
-        // deactivate stencil
-        depthStencilState.setStencilReadMask(0L);
-        depthStencilState.setStencilWriteMask(0L);
-
-        pipelineDesc.setDepthStencil(depthStencilState);
-
-
-        pipelineDesc.getMultisample().setCount(1);
-        pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
-        pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
-
-
-
-        long[] layouts = new long[1];
-        layouts[0] = bindGroupLayout.address();
-        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
-
-        // Create the pipeline layout: 1 bind group
-        WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
-        layoutDesc.setNextInChain();
-        layoutDesc.setLabel("Pipeline Layout");
-        layoutDesc.setBindGroupLayoutCount(1);
-        layoutDesc.setBindGroupLayouts(layoutPtr);
-        pipelineLayout = wgpu.DeviceCreatePipelineLayout(device, layoutDesc);
-
-        pipelineDesc.setLayout(pipelineLayout);
-        pipeline = wgpu.DeviceCreateRenderPipeline(device, pipelineDesc);
-        wgpu.ShaderModuleRelease(shaderModule);
-    }
-
 
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
@@ -382,27 +309,6 @@ public class ModelBatch implements Disposable {
         bindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Undefined);
         bindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
 
-    }
-
-    private void setDefault(WGPUStencilFaceState stencilFaceState) {
-        stencilFaceState.setCompare( WGPUCompareFunction.Always);
-        stencilFaceState.setFailOp( WGPUStencilOperation.Keep);
-        stencilFaceState.setDepthFailOp( WGPUStencilOperation.Keep);
-        stencilFaceState.setPassOp( WGPUStencilOperation.Keep);
-    }
-
-
-    private void setDefault(WGPUDepthStencilState  depthStencilState ) {
-        depthStencilState.setFormat(WGPUTextureFormat.Undefined);
-        depthStencilState.setDepthWriteEnabled(0L);
-        depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
-        depthStencilState.setStencilReadMask(0xFFFFFFFF);
-        depthStencilState.setStencilWriteMask(0xFFFFFFFF);
-        depthStencilState.setDepthBias(0);
-        depthStencilState.setDepthBiasSlopeScale(0);
-        depthStencilState.setDepthBiasClamp(0);
-        setDefault(depthStencilState.getStencilFront());
-        setDefault(depthStencilState.getStencilBack());
     }
 
 }
