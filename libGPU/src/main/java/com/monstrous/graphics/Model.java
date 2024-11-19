@@ -144,6 +144,14 @@ public class Model implements Disposable {
 
         }
 
+        for(int i = 0; i < meshData.indexValues.size(); i++){
+            int index = meshData.indexValues.get(i);
+            Vector3 pos = positions.get(index);
+            Vector2 uv = textureCoordinates.get(index);
+            System.out.println("Index "+index+"  pos "+pos+" uv "+uv);
+
+        }
+
         MaterialData mat = new MaterialData();
         mat.diffuseMapFilePath = gltf.images.getFirst().uri;
         meshData.materialData = mat;

@@ -103,7 +103,7 @@ public class Pipeline implements Disposable {
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
     }
 
-    public boolean canRender(VertexAttributes vertexAttributes){
+    public boolean canRender(VertexAttributes vertexAttributes){    // perhaps we need more params
         // crude check, to be refined
         return (vertexAttributes.attributes.size() == this.vertexAttributes.attributes.size() &&
                 vertexAttributes.hasNormalMap == this.vertexAttributes.hasNormalMap);

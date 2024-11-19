@@ -80,4 +80,9 @@ public class Vector3 {
     public static float dot (Vector3 a, Vector3 b) {
         return a.x * b.x + a.y * b.y + a.z * b.z;
     }
+
+    @Override
+    public String toString () {
+        return "(" + x + "," + y + "," + z + ")";
+    }
 }

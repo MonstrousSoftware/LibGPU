@@ -50,7 +50,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 0.5;
     let kS = 0.9;
     let hardness = 16.0;
-    let ambient = 0.1;
+    let ambient = 0.6;
 
 
     let V = normalize(in.viewDirection);

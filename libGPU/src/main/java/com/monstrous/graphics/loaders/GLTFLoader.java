@@ -83,20 +83,22 @@ public class GLTFLoader {
 
             System.out.println("materials: " + mats.size());
             for (int i = 0; i < mats.size(); i++) {
+
+                GLTFMaterialPBR pbr = new GLTFMaterialPBR();
+
                 JSONObject mat = (JSONObject) mats.get(i);
                 String nm = (String) mat.get("name");
                 System.out.println("material name: " + nm);
                 JSONObject pbrMR = (JSONObject) mat.get("pbrMetallicRoughness");
                 JSONObject base = (JSONObject) pbrMR.get("baseColorTexture");
-                long baseIndex = (Long) base.get("index");
-                System.out.println("material name: " + nm + " pbr.base.index = " + baseIndex);
+                pbr.baseColorTexture = getInt(base, "index", 0);
+                System.out.println("material name: " + nm );
                 JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
-                long metalIndex = (Long) metal.get("index");                               // ignored
-                System.out.println("material name: " + nm + " pbr.metal.index = " + metalIndex);
-
-                GLTFMaterialPBR pbr = new GLTFMaterialPBR();
-                pbr.baseColorTexture = (int) baseIndex;
-                pbr.metallicRoughnessTexture = (int) metalIndex;
+                if(metal != null) {
+                    long metalIndex = (Long) metal.get("index");                               // ignored
+                    System.out.println("material name: " + nm + " pbr.metal.index = " + metalIndex);
+                    pbr.metallicRoughnessTexture = (int) metalIndex;
+                }
 
                 GLTFMaterial material = new GLTFMaterial();
                 material.pbrMetallicRoughness = pbr;
@@ -234,4 +236,5 @@ public class GLTFLoader {
         Long value = (Long)obj.get(key);
         return (value == null ? fallback : value.intValue());
     }
+
 }
