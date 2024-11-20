@@ -24,9 +24,9 @@ public class TestRenderSwitching implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/lantern/Lantern.gltf");
+        model = new Model("models/cubes.gltf");
 
-        model2 = new Model("models/Cube.gltf");
+        //model2 = new Model("models/Cube.gltf");
 
         modelMatrix = new Matrix4();
         instances = new ArrayList<>();

@@ -17,7 +17,7 @@ public class Node {
     public Vector3 scale;
     public Quaternion rotation;
 
-    NodePart nodePart;
+    public ArrayList<NodePart> nodeParts;
 
     public Node() {
         parent = null;
@@ -28,7 +28,7 @@ public class Node {
         translation = new Vector3(0,0,0);
         scale = new Vector3(1,1,1);
         rotation = new Quaternion(0,0,0,1);
-        nodePart = null;
+        nodeParts = null;
     }
 
     public void addChild(Node child){
@@ -51,11 +51,14 @@ public class Node {
     }
 
     public void getRenderables( ArrayList<Renderable> renderables, Matrix4 modelTransform ){
-        if(nodePart != null) {
-            Renderable renderable = new Renderable(nodePart.meshPart, nodePart.material, modelTransform);       // todo pooling
-            // combine globalTransform from node with modelTransform from model instance
-            renderable.modelTransform.mul(globalTransform);
-            renderables.add(renderable);
+        if(nodeParts != null) {
+
+            for(NodePart nodePart : nodeParts) {
+                Renderable renderable = new Renderable(nodePart.meshPart, nodePart.material, modelTransform);       // todo pooling
+                // combine globalTransform from node with modelTransform from model instance
+                renderable.modelTransform.mul(globalTransform);
+                renderables.add(renderable);
+            }
         }
         for(Node child : children)
             child.getRenderables(renderables, modelTransform);

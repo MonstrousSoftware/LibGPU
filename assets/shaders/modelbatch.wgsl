@@ -49,7 +49,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
    out.position = pos;
    out.uv = in.uv;
-   out.color = in.color;
+   out.color = uMaterial.baseColor.rgb;
    out.viewDirection = cameraPosition - worldPosition.xyz;
    return out;
 }
@@ -59,7 +59,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 0.9;
     let kS = 0.9;
     let hardness = 16.0;
-    let ambient = 0.2;
+    let ambient = 0.8;
 
 
     let V = normalize(in.viewDirection);
@@ -69,7 +69,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
 
 
-    let baseColor = textureSample(texture, textureSampler, in.uv).rgb;
+    let baseColor = textureSample(texture, textureSampler, in.uv).rgb * in.color;
 
     var color = vec3f(0.0);
     // for each light

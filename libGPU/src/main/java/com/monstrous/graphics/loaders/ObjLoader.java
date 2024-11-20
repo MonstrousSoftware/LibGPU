@@ -23,11 +23,15 @@ public class ObjLoader {
         Vector2 uv;
     }
 
-    public static MeshData load(String filePath) {
+    public static MeshData load(String filePath){
+        ArrayList<MaterialData> materials = new ArrayList<>();
+        return load(filePath, materials);
+    }
+
+    public static MeshData load(String filePath, ArrayList<MaterialData> materials) {
         int slash = filePath.lastIndexOf('/');
         String path = filePath.substring(0,slash+1);
         String name = filePath.substring(slash+1);
-        MaterialData materialData = null;
 
         FileInput input = new FileInput(filePath);
         // x y z tx ty tz bx by bz nx ny nz r g b u v
@@ -137,7 +141,8 @@ public class ObjLoader {
             } else if (line.startsWith("mtllib ")) {
                 String[] words = line.split("[ \t]+");
                 String materialFileName = words[1];
-                materialData = MtlLoader.load(path + materialFileName);
+                MaterialData materialData = MtlLoader.load(path + materialFileName);
+                materials.add(materialData);
             } else
                 continue;   // ignore
         }
@@ -147,7 +152,6 @@ public class ObjLoader {
         data.vertFloats = vertFloats;
         data.indexValues = indexValues;
         data.objectName = name;
-        data.materialData = materialData;
 
         addTBN(data);
         return data;

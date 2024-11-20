@@ -120,24 +120,23 @@ public class ModelBatch implements Disposable {
 
     public void render(ModelInstance instance){
         instance.getRenderables((ArrayList<Renderable>) renderables);
-        //emit(instance.model.rootNode);
     }
 
-    public void renderDirect(ModelInstance instance){
-        emit(instance.model.rootNode);
-    }
-
-
-    public void emit(Node node){
-        if(node.nodePart != null)
-            emit(node.nodePart, node.globalTransform);
-        for(Node child : node.children)
-            emit(child);
-    }
-
-    public void emit(NodePart nodePart, Matrix4 transform){
-        emit(nodePart.meshPart, nodePart.material, transform);
-    }
+//    public void renderDirect(ModelInstance instance){
+//        emit(instance.model.rootNode);
+//    }
+//
+//
+//    public void emit(Node node){
+//        if(node.nodePart != null)
+//            emit(node.nodePart, node.globalTransform);
+//        for(Node child : node.children)
+//            emit(child);
+//    }
+//
+//    public void emit(NodePart nodePart, Matrix4 transform){
+//        emit(nodePart.meshPart, nodePart.material, transform);
+//    }
 
 
     public void render(Renderable renderable) {
@@ -174,7 +173,7 @@ public class ModelBatch implements Disposable {
 
     private void flush() {
         // sort renderables to minimize material switching, to do: depth sorting etc.
-        //renderables.sort(comparator);
+        renderables.sort(comparator);
         for(Renderable renderable : renderables)
             emit(renderable);
         renderables.clear();

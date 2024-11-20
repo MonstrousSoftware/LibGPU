@@ -9,10 +9,10 @@ public class Material implements Disposable, Comparable {
     public Texture normalTexture;
 
     public Material(MaterialData materialData) {
-        baseColor = new Color(1,1,1,1);
+        baseColor = new Color(materialData.diffuse);
         String fileName;
         if(materialData == null || materialData.diffuseMapFilePath == null) {
-            fileName = "textures\\rgb.png";
+            fileName = "textures\\white.png";
         }
         else
             fileName = materialData.diffuseMapFilePath;

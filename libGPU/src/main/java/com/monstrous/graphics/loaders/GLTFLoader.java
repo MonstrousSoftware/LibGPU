@@ -1,5 +1,6 @@
 package com.monstrous.graphics.loaders;
 
+import com.monstrous.graphics.Color;
 import com.monstrous.graphics.loaders.gltf.*;
 import com.monstrous.math.Quaternion;
 import com.monstrous.math.Vector3;
@@ -93,7 +94,18 @@ public class GLTFLoader {
                 System.out.println("material name: " + nm);
                 JSONObject pbrMR = (JSONObject) mat.get("pbrMetallicRoughness");
                 JSONObject base = (JSONObject) pbrMR.get("baseColorTexture");
-                pbr.baseColorTexture = getInt(base, "index", 0);
+                if(base != null)
+                    pbr.baseColorTexture = getInt(base, "index", 0);
+                JSONArray bc = (JSONArray)pbrMR.get("baseColorFactor");
+                if(bc != null){
+                    if(bc.size() != 4)
+                        throw new RuntimeException("GLTF: Expected baseColorFactor with 4 elements");
+                    double r = (Double)bc.get(0);
+                    double g = (Double)bc.get(1);
+                    double b = (Double)bc.get(2);
+                    double a = (Double)bc.get(3);           // todo breaks if file says "1" because then it gets type Long
+                    pbr.baseColorFactor = new Color((float)r, (float)g, (float)g, (float)a);
+                }
                 System.out.println("material name: " + nm );
                 JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
                 if(metal != null) {

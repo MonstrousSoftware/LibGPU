@@ -8,17 +8,21 @@ import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-// A model combines meshpart(s) and material
+// A model combines meshpart(s) and material(s)
 public class Model implements Disposable {
     public String filePath;
     public ArrayList<Mesh> meshes;
     public Node rootNode;
-    public Material material;       // todo could be multiple
+    public ArrayList<Material> materials;
+    private Map<GLTFPrimitive, Mesh> meshMap = new HashMap<>();
 
     public Model(String filePath) {
         this.filePath = filePath.toLowerCase();
         meshes = new ArrayList<>();
+        materials = new ArrayList<>();
 
         // check file extension to choose loader
 
@@ -31,9 +35,92 @@ public class Model implements Disposable {
 
     }
 
-    private Mesh loadMesh(GLTF gltf, GLTFRawBuffer rawBuffer, int meshNr){
 
-        int indexAccessorId = gltf.meshes.get(meshNr).primitives.getFirst().indices; // assume 1 primitive per mesh
+    private void readGLTF(String filePath) {
+        meshMap.clear();
+        GLTF gltf = GLTFLoader.load(filePath);      // TMP
+        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.getFirst().uri);           // assume 1 buffer
+
+        for(GLTFMesh gltfMesh : gltf.meshes){
+            for(GLTFPrimitive primitive : gltfMesh.primitives){
+                Mesh m = loadMesh(gltf, rawBuffer, primitive );
+                meshes.add(m);
+                meshMap.put(primitive, m);
+            }
+        }
+
+//        for(int i = 0; i < gltf.meshes.size(); i++){
+//            for(int j = 0; j < )
+//            Mesh m = loadMesh(gltf, rawBuffer, i );
+//            meshes.add(m);
+//        }
+
+        ArrayList<MaterialData> mtlData = new ArrayList<>();
+        for(GLTFMaterial gltfMat :  gltf.materials){
+            MaterialData mat = new MaterialData();
+            if(gltfMat.pbrMetallicRoughness.baseColorFactor != null)
+                mat.diffuse = gltfMat.pbrMetallicRoughness.baseColorFactor;
+            if(gltfMat.pbrMetallicRoughness.baseColorTexture >= 0)
+                mat.diffuseMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.pbrMetallicRoughness.baseColorTexture).source).uri;
+            mtlData.add(mat);
+        }
+
+        for(MaterialData mtl: mtlData) {
+            Material material = new Material(mtl);
+            materials.add(material);
+        }
+
+//        for(GLTFScene scene : gltf.scenes ){
+//
+//        }
+        GLTFScene scene = gltf.scenes.get(gltf.scene);
+        int nodeId = scene.nodes.getFirst();
+        GLTFNode gltfNode = gltf.nodes.get(nodeId);
+
+        rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
+        rootNode.updateMatrices(true);
+        System.out.println("loaded "+filePath);
+    }
+
+    private Node addNode(GLTF gltf, GLTFNode gltfNode){
+        Node node = new Node();
+        node.name = gltfNode.name;
+
+        // optional transforms
+        if(gltfNode.translation != null)
+            node.translation.set(gltfNode.translation);
+        if(gltfNode.scale != null)
+            node.scale.set(gltfNode.scale);
+        if(gltfNode.rotation != null)
+            node.rotation.set(gltfNode.rotation);
+
+        if(gltfNode.mesh >= 0){
+            node.nodeParts = new ArrayList<>();
+            GLTFMesh gltfMesh = gltf.meshes.get(gltfNode.mesh);
+            for( GLTFPrimitive primitive : gltfMesh.primitives) {
+                GLTFAccessor indexAccessor = gltf.accessors.get(primitive.indices);
+                GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
+                if (!indexAccessor.type.contentEquals("SCALAR"))
+                    throw new RuntimeException("GLTF: Expect primitive.indices to refer to SCALAR accessor");
+
+                Mesh m = meshMap.get(primitive);
+                MeshPart meshPart = new MeshPart(m, indexAccessor.byteOffset, indexAccessor.count);
+                node.nodeParts.add( new NodePart(meshPart, materials.get(primitive.material)) );
+            }
+        }
+        // now add any children
+        for(int j : gltfNode.children ){
+            GLTFNode gltfChild = gltf.nodes.get(j);
+            Node child = addNode(gltf, gltfChild);
+            node.addChild(child);
+        }
+        return node;
+    }
+
+
+    private Mesh loadMesh(GLTF gltf, GLTFRawBuffer rawBuffer, GLTFPrimitive primitive){
+
+        int indexAccessorId = primitive.indices;
         GLTFAccessor indexAccessor = gltf.accessors.get(indexAccessorId);
         GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
         if(view.buffer != 0)
@@ -55,7 +142,7 @@ public class Model implements Disposable {
 
         int positionAccessorId = -1;
         int uvAccessorId = -1;
-        ArrayList<GLTFAttribute> attributes = gltf.meshes.get(meshNr).primitives.getFirst().attributes;
+        ArrayList<GLTFAttribute> attributes = primitive.attributes;
         for(GLTFAttribute attribute : attributes){
             if(attribute.name.contentEquals("POSITION")){
                 positionAccessorId = attribute.value;
@@ -146,9 +233,9 @@ public class Model implements Disposable {
 //            System.out.println("Index "+index+"  pos "+pos+" uv "+uv);
 //        }
 
-        MaterialData mat = new MaterialData();
-        mat.diffuseMapFilePath = gltf.images.getFirst().uri;
-        meshData.materialData = mat;
+//        MaterialData mat = new MaterialData();
+//        mat.diffuseMapFilePath = gltf.images.getFirst().uri;
+//        meshData.materialData = mat;
 
         meshData.vertexAttributes = new VertexAttributes();
         meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
@@ -157,75 +244,16 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
         meshData.vertexAttributes.end();
 
-        meshData.indexSize = 2;
+        meshData.indexSize = 2; // 16 bit index
         return new Mesh(meshData);
-    }
-
-    private void readGLTF(String filePath) {
-        GLTF gltf = GLTFLoader.load(filePath);      // TMP
-        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.getFirst().uri);           // assume 1 buffer
-
-
-        for(int i = 0; i < gltf.meshes.size(); i++){
-            Mesh m = loadMesh(gltf, rawBuffer, i );
-            meshes.add(m);
-        }
-
-
-        MaterialData mat = new MaterialData();
-        mat.diffuseMapFilePath = gltf.images.getFirst().uri;
-        material = new Material(mat);
-
-//        for(GLTFScene scene : gltf.scenes ){
-//
-//        }
-        GLTFScene scene = gltf.scenes.get(gltf.scene);
-        int nodeId = scene.nodes.getFirst();
-        GLTFNode gltfNode = gltf.nodes.get(nodeId);
-
-        rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
-        rootNode.updateMatrices(true);
-        System.out.println("loaded "+filePath);
-    }
-
-    private Node addNode(GLTF gltf, GLTFNode gltfNode){
-        Node node = new Node();
-        node.name = gltfNode.name;
-
-        // optional transforms
-        if(gltfNode.translation != null)
-            node.translation.set(gltfNode.translation);
-        if(gltfNode.scale != null)
-            node.scale.set(gltfNode.scale);
-        if(gltfNode.rotation != null)
-            node.rotation.set(gltfNode.rotation);
-
-        if(gltfNode.mesh >= 0){
-            GLTFMesh gltfMesh = gltf.meshes.get(gltfNode.mesh);
-            GLTFPrimitive submesh = gltfMesh.primitives.getFirst();
-            GLTFAccessor indexAccessor = gltf.accessors.get(submesh.indices);
-            GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
-            if(!indexAccessor.type.contentEquals("SCALAR"))
-                throw new RuntimeException("GLTF: Expect primitive.indices to refer to SCALAR accessor");
-
-            MeshPart meshPart = new MeshPart(meshes.get(gltfNode.mesh), indexAccessor.byteOffset, indexAccessor.count);
-            node.nodePart = new NodePart(meshPart, material);   // todo global material
-        }
-        // now add any children
-        for(int j : gltfNode.children ){
-            GLTFNode gltfChild = gltf.nodes.get(j);
-            Node child = addNode(gltf, gltfChild);
-            node.addChild(child);
-        }
-        return node;
     }
 
 
     private void readObj(String filePath) {
 
         // todo fix if obj has no normal map we dont need tangent and bitangent and we should also not add this in vertex buffer
-
-        MeshData meshData = ObjLoader.load(filePath);
+        ArrayList<MaterialData> mtlData = new ArrayList<>();
+        MeshData meshData = ObjLoader.load(filePath, mtlData);
         meshData.vertexAttributes = new VertexAttributes();
         meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
         meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
@@ -234,7 +262,7 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 4);
         meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 5);
         meshData.vertexAttributes.end();
-        meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
+        //meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
         meshData.indexSize = 4;
         Mesh mesh = new Mesh(meshData);
         meshes.add(mesh);
@@ -250,10 +278,14 @@ public class Model implements Disposable {
         else
             meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
 
-        material = new Material(meshData.materialData);
+        for(MaterialData mtl: mtlData) {
+            Material material = new Material(mtl);
+            materials.add(material);
+        }
 
         rootNode = new Node();
-        rootNode.nodePart = new NodePart(meshPart, material);
+        rootNode.nodeParts = new ArrayList<>();
+        rootNode.nodeParts.add( new NodePart(meshPart, materials.getFirst()) );       // todo arbitrary choice for first material
 
     }
 
@@ -261,6 +293,7 @@ public class Model implements Disposable {
     public void dispose() {
         for(Mesh mesh: meshes)
             mesh.dispose();
-        material.dispose();
+        for(Material material: materials)
+            material.dispose();
     }
 }

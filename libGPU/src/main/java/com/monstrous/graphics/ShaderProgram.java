@@ -47,6 +47,8 @@ public class ShaderProgram {
             shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
         shaderModule = LibGPU.wgpu.DeviceCreateShaderModule(LibGPU.device, shaderDesc);
+        if(shaderModule == null)
+            throw new RuntimeException("ShaderModule: compile failed "+name);
     }
 
     public Pointer getShaderModule(){
