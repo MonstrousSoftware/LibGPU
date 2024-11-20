@@ -9,7 +9,7 @@ import java.util.ArrayList;
 // Cache for pipelines
 
 public class Pipelines implements Disposable {
-    private ArrayList<Pipeline> pipelines;
+    private ArrayList<Pipeline> pipelines;      // todo or use map?
 
     public Pipelines() {
         pipelines = new ArrayList<>();

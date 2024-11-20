@@ -24,19 +24,24 @@ public class SpriteBatch implements Disposable {
     private Pointer indexBuffer;
     private Pointer uniformBuffer;
     private Pointer bindGroupLayout;
-    private Pointer pipeline;
+    private VertexAttributes vertexAttributes;
+    //private Pointer pipeline;
     private int uniformBufferSize;
     private Texture texture;
     private Matrix4 projectionMatrix;
     private Pointer renderPass;
     private int vbOffset;
     private int ibOffset;
+    private Pipelines pipelines;
+    private Pipeline prevPipeline;
+
 
 
 
 
     public SpriteBatch() {
         this(8192); // default nr
+
     }
 
     public SpriteBatch(int maxSprites) {
@@ -56,9 +61,16 @@ public class SpriteBatch implements Disposable {
         tint = new Color(1,1,1,1);
 
         createBuffers();
-        makeBindGroupLayout();
 
-        initializePipeline();
+        bindGroupLayout = createBindGroupLayout();
+
+        vertexAttributes = new VertexAttributes();
+        vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
+        vertexAttributes.add("uv",          WGPUVertexFormat.Float32x2, 1 );
+        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 2 );
+        vertexAttributes.end();
+
+        pipelines = new Pipelines();
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }
@@ -82,12 +94,14 @@ public class SpriteBatch implements Disposable {
         vbOffset = 0;
         ibOffset = 0;
 
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+        prevPipeline = null;
     }
 
     public void flush() {
         if(numRects == 0)
             return;
+
+        setPipeline();
 
         // Upload geometry data to the buffer
         int numFloats = numRects * 4 * vertexSize;
@@ -124,6 +138,16 @@ public class SpriteBatch implements Disposable {
         flush();
 
 
+    }
+
+    // create or reuse pipeline on demand when we know the model
+    private void setPipeline() {
+
+        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, bindGroupLayout, shader);
+        if (pipeline != prevPipeline) { // avoid unneeded switches
+            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+            prevPipeline = pipeline;
+        }
     }
 
 
@@ -262,7 +286,7 @@ public class SpriteBatch implements Disposable {
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
     }
 
-    private void makeBindGroupLayout() {
+    private Pointer createBindGroupLayout() {
         // Define binding layout
         WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(bindingLayout);
@@ -291,7 +315,7 @@ public class SpriteBatch implements Disposable {
         bindGroupLayoutDesc.setLabel("SpriteBatch texture binding group layout");
         bindGroupLayoutDesc.setEntryCount(3);
         bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
-        bindGroupLayout = LibGPU.wgpu.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+        return LibGPU.wgpu.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
 
@@ -313,99 +337,6 @@ public class SpriteBatch implements Disposable {
         bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
         return LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
-
-    private void initializePipeline() {
-
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add("uv",          WGPUVertexFormat.Float32x2, 1 );
-        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 2 );
-        vertexAttributes.end();
-
-        WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
-        pipelineDesc.setNextInChain();
-        pipelineDesc.setLabel("pipeline");
-
-        pipelineDesc.getVertex().setBufferCount(1);
-        pipelineDesc.getVertex().setBuffers(vertexAttributes.getVertexBufferLayout());
-
-        pipelineDesc.getVertex().setModule(shader.getShaderModule());
-        pipelineDesc.getVertex().setEntryPoint("vs_main");
-        pipelineDesc.getVertex().setConstantCount(0);
-        pipelineDesc.getVertex().setConstants();
-
-        pipelineDesc.getPrimitive().setTopology(WGPUPrimitiveTopology.TriangleList);
-        pipelineDesc.getPrimitive().setStripIndexFormat(WGPUIndexFormat.Undefined);
-        pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
-        pipelineDesc.getPrimitive().setCullMode(WGPUCullMode.None);
-
-        WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
-        fragmentState.setNextInChain();
-        fragmentState.setModule(shader.getShaderModule());
-        fragmentState.setEntryPoint("fs_main");
-        fragmentState.setConstantCount(0);
-        fragmentState.setConstants();
-
-        // blend
-        WGPUBlendState blendState = WGPUBlendState.createDirect();
-        blendState.getColor().setSrcFactor(WGPUBlendFactor.SrcAlpha);
-        blendState.getColor().setDstFactor(WGPUBlendFactor.OneMinusSrcAlpha);
-        blendState.getColor().setOperation(WGPUBlendOperation.Add);
-        blendState.getAlpha().setSrcFactor(WGPUBlendFactor.Zero);
-        blendState.getAlpha().setDstFactor(WGPUBlendFactor.One);
-        blendState.getAlpha().setOperation(WGPUBlendOperation.Add);
-
-        WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
-        colorTarget.setFormat(WGPUTextureFormat.BGRA8Unorm); //  surfaceFormat);            // todo
-        colorTarget.setBlend(blendState);
-        colorTarget.setWriteMask(WGPUColorWriteMask.All);
-
-        fragmentState.setTargetCount(1);
-        fragmentState.setTargets(colorTarget);
-
-        pipelineDesc.setFragment(fragmentState);
-
-        WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
-        setDefault(depthStencilState);
-        depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
-        depthStencilState.setDepthWriteEnabled(1L);
-        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;
-        depthStencilState.setFormat(depthTextureFormat);
-        // deactivate stencil
-        depthStencilState.setStencilReadMask(0L);
-        depthStencilState.setStencilWriteMask(0L);
-
-        pipelineDesc.setDepthStencil(depthStencilState);
-        // todo note: we don't need depth but we added it for compatibility
-
-        //pipelineDesc.setDepthStencil();
-
-
-        pipelineDesc.getMultisample().setCount(1);
-        pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
-        pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
-
-
-        long[] layouts = new long[1];
-        layouts[0] = bindGroupLayout.address();
-        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);       // todo find better method
-
-        // Create the pipeline layout
-        WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
-        layoutDesc.setNextInChain();
-        layoutDesc.setLabel("Pipeline Layout");
-        layoutDesc.setBindGroupLayoutCount(1);
-        layoutDesc.setBindGroupLayouts(layoutPtr);
-        Pointer layout = wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
-
-        pipelineDesc.setLayout(layout);
-        pipeline = wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
-//        wgpu.ShaderModuleRelease(shaderModule);
-
-
-    }
-
-
 
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
@@ -429,28 +360,9 @@ public class SpriteBatch implements Disposable {
 
     }
 
-    private void setDefault(WGPUStencilFaceState stencilFaceState) {
-        stencilFaceState.setCompare( WGPUCompareFunction.Always);
-        stencilFaceState.setFailOp( WGPUStencilOperation.Keep);
-        stencilFaceState.setDepthFailOp( WGPUStencilOperation.Keep);
-        stencilFaceState.setPassOp( WGPUStencilOperation.Keep);
-    }
-    private void setDefault(WGPUDepthStencilState  depthStencilState ) {
-        depthStencilState.setFormat(WGPUTextureFormat.Undefined);
-        depthStencilState.setDepthWriteEnabled(0L);
-        depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
-        depthStencilState.setStencilReadMask(0xFFFFFFFF);
-        depthStencilState.setStencilWriteMask(0xFFFFFFFF);
-        depthStencilState.setDepthBias(0);
-        depthStencilState.setDepthBiasSlopeScale(0);
-        depthStencilState.setDepthBiasClamp(0);
-        setDefault(depthStencilState.getStencilFront());
-        setDefault(depthStencilState.getStencilBack());
-    }
-
     @Override
     public void dispose(){
-
+        pipelines.dispose();
         wgpu.BufferRelease(vertexBuffer);
         wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(uniformBuffer);
