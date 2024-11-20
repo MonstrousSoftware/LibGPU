@@ -184,6 +184,7 @@ public class Model implements Disposable {
         GLTFNode gltfNode = gltf.nodes.get(nodeId);
 
         rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
+        rootNode.rotation.set(0,1,0,0);
         rootNode.updateMatrices(true);
         System.out.println("loaded "+filePath);
     }
@@ -191,10 +192,15 @@ public class Model implements Disposable {
     private Node addNode(GLTF gltf, GLTFNode gltfNode){
         Node node = new Node();
         node.name = gltfNode.name;
+
+        // optional transforms
         if(gltfNode.translation != null)
             node.translation.set(gltfNode.translation);
         if(gltfNode.scale != null)
             node.scale.set(gltfNode.scale);
+        if(gltfNode.rotation != null)
+            node.rotation.set(gltfNode.rotation);
+
         if(gltfNode.mesh >= 0){
             GLTFMesh gltfMesh = gltf.meshes.get(gltfNode.mesh);
             GLTFPrimitive submesh = gltfMesh.primitives.getFirst();
@@ -206,6 +212,7 @@ public class Model implements Disposable {
             MeshPart meshPart = new MeshPart(meshes.get(gltfNode.mesh), indexAccessor.byteOffset, indexAccessor.count);
             node.nodePart = new NodePart(meshPart, material);   // todo global material
         }
+        // now add any children
         for(int j : gltfNode.children ){
             GLTFNode gltfChild = gltf.nodes.get(j);
             Node child = addNode(gltf, gltfChild);

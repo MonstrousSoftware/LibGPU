@@ -116,6 +116,88 @@ public class Matrix4 {
         return this;
     }
 
+    /** Sets the matrix to a rotation matrix representing the translation and quaternion.
+     * @param translationX The X component of the translation that is to be used to set this matrix.
+     * @param translationY The Y component of the translation that is to be used to set this matrix.
+     * @param translationZ The Z component of the translation that is to be used to set this matrix.
+     * @param quaternionX The X component of the quaternion that is to be used to set this matrix.
+     * @param quaternionY The Y component of the quaternion that is to be used to set this matrix.
+     * @param quaternionZ The Z component of the quaternion that is to be used to set this matrix.
+     * @param quaternionW The W component of the quaternion that is to be used to set this matrix.
+     * @return This matrix for the purpose of chaining methods together. */
+    public Matrix4 set (float translationX, float translationY, float translationZ, float quaternionX, float quaternionY,
+                        float quaternionZ, float quaternionW) {
+        final float xs = quaternionX * 2f, ys = quaternionY * 2f, zs = quaternionZ * 2f;
+        final float wx = quaternionW * xs, wy = quaternionW * ys, wz = quaternionW * zs;
+        final float xx = quaternionX * xs, xy = quaternionX * ys, xz = quaternionX * zs;
+        final float yy = quaternionY * ys, yz = quaternionY * zs, zz = quaternionZ * zs;
+
+        val[M00] = 1f - (yy + zz);
+        val[M01] = xy - wz;
+        val[M02] = xz + wy;
+        val[M03] = translationX;
+
+        val[M10] = xy + wz;
+        val[M11] = 1f - (xx + zz);
+        val[M12] = yz - wx;
+        val[M13] = translationY;
+
+        val[M20] = xz - wy;
+        val[M21] = yz + wx;
+        val[M22] = 1f - (xx + yy);
+        val[M23] = translationZ;
+
+        val[M30] = 0f;
+        val[M31] = 0f;
+        val[M32] = 0f;
+        val[M33] = 1f;
+        return this;
+    }
+
+    public Matrix4 set (Vector3 translation, Quaternion quaternion, Vector3 scale){
+        return this.set(translation.x, translation.y, translation.z, quaternion.x, quaternion.y, quaternion.z, quaternion.w, scale.x, scale.y, scale.z);
+    }
+
+    /** Sets the matrix to a rotation matrix representing the translation and quaternion.
+     * @param translationX The X component of the translation that is to be used to set this matrix.
+     * @param translationY The Y component of the translation that is to be used to set this matrix.
+     * @param translationZ The Z component of the translation that is to be used to set this matrix.
+     * @param quaternionX The X component of the quaternion that is to be used to set this matrix.
+     * @param quaternionY The Y component of the quaternion that is to be used to set this matrix.
+     * @param quaternionZ The Z component of the quaternion that is to be used to set this matrix.
+     * @param quaternionW The W component of the quaternion that is to be used to set this matrix.
+     * @param scaleX The X component of the scaling that is to be used to set this matrix.
+     * @param scaleY The Y component of the scaling that is to be used to set this matrix.
+     * @param scaleZ The Z component of the scaling that is to be used to set this matrix.
+     * @return This matrix for the purpose of chaining methods together. */
+    public Matrix4 set (float translationX, float translationY, float translationZ, float quaternionX, float quaternionY,
+                        float quaternionZ, float quaternionW, float scaleX, float scaleY, float scaleZ) {
+        final float xs = quaternionX * 2f, ys = quaternionY * 2f, zs = quaternionZ * 2f;
+        final float wx = quaternionW * xs, wy = quaternionW * ys, wz = quaternionW * zs;
+        final float xx = quaternionX * xs, xy = quaternionX * ys, xz = quaternionX * zs;
+        final float yy = quaternionY * ys, yz = quaternionY * zs, zz = quaternionZ * zs;
+
+        val[M00] = scaleX * (1.0f - (yy + zz));
+        val[M01] = scaleY * (xy - wz);
+        val[M02] = scaleZ * (xz + wy);
+        val[M03] = translationX;
+
+        val[M10] = scaleX * (xy + wz);
+        val[M11] = scaleY * (1.0f - (xx + zz));
+        val[M12] = scaleZ * (yz - wx);
+        val[M13] = translationY;
+
+        val[M20] = scaleX * (xz - wy);
+        val[M21] = scaleY * (yz + wx);
+        val[M22] = scaleZ * (1.0f - (xx + yy));
+        val[M23] = translationZ;
+
+        val[M30] = 0f;
+        val[M31] = 0f;
+        val[M32] = 0f;
+        val[M33] = 1f;
+        return this;
+    }
 
     public Matrix4 setToZRotation(float angleInRadians) {
         float c = (float) Math.cos(angleInRadians);

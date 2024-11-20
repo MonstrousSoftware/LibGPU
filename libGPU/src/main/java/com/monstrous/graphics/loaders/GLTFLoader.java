@@ -239,7 +239,7 @@ public class GLTFLoader {
                 double z = (double)rot.get(2);
                 double w = (double)rot.get(3);
                 node.rotation = new Quaternion((float)x, (float)y,(float)z, (float)w);
-                System.out.println("node rotation "+node.name);
+                System.out.println("node rotation "+node.name+node.rotation);
             }
             JSONArray ch = (JSONArray)nd.get("children");
             if(ch != null){

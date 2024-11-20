@@ -34,6 +34,10 @@ public class Quaternion {
         return this;
     }
 
+    public Quaternion set (Quaternion quaternion){
+        return this.set(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+    }
+
     /** Sets the quaternion to an identity Quaternion
      * @return this quaternion for chaining */
     public Quaternion idt () {
@@ -86,6 +90,11 @@ public class Quaternion {
             z /= len;
         }
         return this;
+    }
+
+    @Override
+    public String toString () {
+        return "(" + x + "," + y + "," + z + "," + w + ")";
     }
 
 }

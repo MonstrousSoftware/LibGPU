@@ -37,9 +37,8 @@ public class Node {
     }
 
     public void updateMatrices(boolean recurse){
-        localTransform.setToTranslation(translation);
-        localTransform.scale(scale);
-        // todo rotation
+        //Quaternion rot = new Quaternion();
+        localTransform.set(translation, rotation, scale);
 
         if(parent != null)
             worldTransform.set(parent.worldTransform).mul(localTransform);
