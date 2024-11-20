@@ -59,15 +59,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 0.9;
     let kS = 0.9;
     let hardness = 16.0;
-    let ambient = 0.8;
+    let ambient = 0.1;
 
 
     let V = normalize(in.viewDirection);
     let normal = normalize(in.normal);
     let lightColor = vec3f(1.0, 1.0, 1.0);
     let lightDirection = vec3f(0.2, 0.9, 0.0);
-
-
 
     let baseColor = textureSample(texture, textureSampler, in.uv).rgb * in.color;
 

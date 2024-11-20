@@ -104,7 +104,7 @@ public class GLTFLoader {
                     double g = (Double)bc.get(1);
                     double b = (Double)bc.get(2);
                     double a = (Double)bc.get(3);           // todo breaks if file says "1" because then it gets type Long
-                    pbr.baseColorFactor = new Color((float)r, (float)g, (float)g, (float)a);
+                    pbr.baseColorFactor = new Color((float)r, (float)g, (float)b, (float)a);
                 }
                 System.out.println("material name: " + nm );
                 JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");

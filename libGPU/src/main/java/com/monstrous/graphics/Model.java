@@ -49,12 +49,6 @@ public class Model implements Disposable {
             }
         }
 
-//        for(int i = 0; i < gltf.meshes.size(); i++){
-//            for(int j = 0; j < )
-//            Mesh m = loadMesh(gltf, rawBuffer, i );
-//            meshes.add(m);
-//        }
-
         ArrayList<MaterialData> mtlData = new ArrayList<>();
         for(GLTFMaterial gltfMat :  gltf.materials){
             MaterialData mat = new MaterialData();
@@ -141,11 +135,15 @@ public class Model implements Disposable {
         }
 
         int positionAccessorId = -1;
+        int normalAccessorId = -1;
         int uvAccessorId = -1;
         ArrayList<GLTFAttribute> attributes = primitive.attributes;
         for(GLTFAttribute attribute : attributes){
             if(attribute.name.contentEquals("POSITION")){
                 positionAccessorId = attribute.value;
+            }
+            if(attribute.name.contentEquals("NORMAL")){
+                normalAccessorId = attribute.value;
             }
             if(attribute.name.contentEquals("TEXCOORD_0")){
                 uvAccessorId = attribute.value;
@@ -176,6 +174,31 @@ public class Model implements Disposable {
             //System.out.println("float  "+f1 + " "+ f2 + " "+f3);
             positions.add(new Vector3(f1, f2, f3));
         }
+
+        ArrayList<Vector3> normals = new ArrayList<>();
+        if(normalAccessorId >= 0) {
+            GLTFAccessor normalAccessor = gltf.accessors.get(normalAccessorId);
+            view = gltf.bufferViews.get(normalAccessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += normalAccessor.byteOffset;
+
+
+            if (normalAccessor.componentType != GLTF.FLOAT32 || !positionAccessor.type.contentEquals("VEC3"))
+                throw new RuntimeException("GLTF: Can only support float normals as VEC3");
+
+            rawBuffer.byteBuffer.position(offset);
+            for (int i = 0; i < normalAccessor.count; i++) {
+                // assuming float32
+                float f1 = rawBuffer.byteBuffer.getFloat();
+                float f2 = rawBuffer.byteBuffer.getFloat();
+                float f3 = rawBuffer.byteBuffer.getFloat();
+                //System.out.println("float  "+f1 + " "+ f2 + " "+f3);
+                normals.add(new Vector3(f1, f2, f3));
+            }
+        }
+
 
         if(uvAccessorId < 0)
             throw new RuntimeException("GLTF: need TEXCOORD_0 attribute");
@@ -211,9 +234,16 @@ public class Model implements Disposable {
             meshData.vertFloats.add(pos.y);
             meshData.vertFloats.add(pos.z);
 
-            meshData.vertFloats.add(0f);
-            meshData.vertFloats.add(0f);
-            meshData.vertFloats.add(0f);
+            if(normals.size() == 0){
+                meshData.vertFloats.add(0f);
+                meshData.vertFloats.add(0f);
+                meshData.vertFloats.add(0f);
+            } else {
+                Vector3 normal = normals.get(i);
+                meshData.vertFloats.add(normal.x);
+                meshData.vertFloats.add(normal.y);
+                meshData.vertFloats.add(normal.z);
+            }
 
             meshData.vertFloats.add(0f);
             meshData.vertFloats.add(0f);
