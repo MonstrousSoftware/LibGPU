@@ -26,7 +26,7 @@ public class TestRenderSwitching implements ApplicationListener {
 
         model = new Model("models/cubes.gltf");
 
-        //model2 = new Model("models/Cube.gltf");
+        model2 = new Model("models/fourareen.obj");
 
         modelMatrix = new Matrix4();
         instances = new ArrayList<>();
@@ -35,7 +35,7 @@ public class TestRenderSwitching implements ApplicationListener {
 //        instances.add( new ModelInstance(model, 15,0,15) );
 //        instances.add( new ModelInstance(model2, 30,0,15) );
 //        instances.add( new ModelInstance(model, 10,0,0) );
-//        instances.add( new ModelInstance(model2, 10,0,30) );
+        instances.add( new ModelInstance(model2, 2,0,3) );
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 0.5f, -6);

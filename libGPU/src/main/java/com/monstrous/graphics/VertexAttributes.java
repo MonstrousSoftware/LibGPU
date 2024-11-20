@@ -17,6 +17,7 @@ public class VertexAttributes implements Disposable {
     public VertexAttributes() {
         attributes = new ArrayList<>();
         hasNormalMap = false;
+        vertexBufferLayout = null;
     }
 
     public void add(String label, WGPUVertexFormat format, int shaderLocation){
@@ -27,6 +28,13 @@ public class VertexAttributes implements Disposable {
     }
 
     public void end(){
+
+    }
+
+    public WGPUVertexBufferLayout getVertexBufferLayout(){
+        if(vertexBufferLayout != null)
+            return vertexBufferLayout;
+
         WGPUVertexAttribute[] attribs = new WGPUVertexAttribute[attributes.size()];
 
         int offset = 0;
@@ -47,11 +55,6 @@ public class VertexAttributes implements Disposable {
         vertexBufferLayout.setAttributes(attribs);
         vertexBufferLayout.setArrayStride(offset);
         vertexBufferLayout.setStepMode(WGPUVertexStepMode.Vertex);
-    }
-
-    public WGPUVertexBufferLayout getVertexBufferLayout(){
-        if(vertexBufferLayout == null)
-            end();
         return vertexBufferLayout;
     }
 

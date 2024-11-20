@@ -224,7 +224,7 @@ public class Model implements Disposable {
             textureCoordinates.add(new Vector2(f1, f2));
         }
 
-        // x y z nx ny nz r g b u v
+        // x y z nx ny nz u v
         meshData.vertSize = 11; // in floats
         meshData.objectName = gltf.nodes.getFirst().name;
 
@@ -245,10 +245,6 @@ public class Model implements Disposable {
                 meshData.vertFloats.add(normal.z);
             }
 
-            meshData.vertFloats.add(0f);
-            meshData.vertFloats.add(0f);
-            meshData.vertFloats.add(0f);
-
             Vector2 uv = textureCoordinates.get(i);
             meshData.vertFloats.add(uv.x);
             meshData.vertFloats.add(uv.y);
@@ -256,22 +252,11 @@ public class Model implements Disposable {
 
         }
 
-//        for(int i = 0; i < meshData.indexValues.size(); i++){
-//            int index = meshData.indexValues.get(i);
-//            Vector3 pos = positions.get(index);
-//            Vector2 uv = textureCoordinates.get(index);
-//            System.out.println("Index "+index+"  pos "+pos+" uv "+uv);
-//        }
-
-//        MaterialData mat = new MaterialData();
-//        mat.diffuseMapFilePath = gltf.images.getFirst().uri;
-//        meshData.materialData = mat;
-
+        // todo adjust this based on the file contents:
         meshData.vertexAttributes = new VertexAttributes();
         meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
         meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-        meshData.vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
-        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
+        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 2);
         meshData.vertexAttributes.end();
 
         meshData.indexSize = 2; // 16 bit index
@@ -289,8 +274,7 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
         meshData.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
         meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 3);
-        meshData.vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 4);
-        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 5);
+        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 4);
         meshData.vertexAttributes.end();
         //meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
         meshData.indexSize = 4;

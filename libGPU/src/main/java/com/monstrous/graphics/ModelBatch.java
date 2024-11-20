@@ -27,7 +27,8 @@ public class ModelBatch implements Disposable {
     private final int uniformAlignment;
 
 
-    private ShaderProgram shader;
+    private ShaderProgram shaderStd;
+    private ShaderProgram shaderNormalMap;
     private Pointer renderPass;
 
     private Pointer uniformData;            // scratch buffer in native memory
@@ -37,7 +38,6 @@ public class ModelBatch implements Disposable {
     private int materialUniformIndex;
     private int modelUniformIndex;
 
-    private WGPUVertexBufferLayout vertexBufferLayout;  // assumes all meshes will confirm to this, only used by pipeline
     private Pointer frameBindGroupLayout;
     private Pointer materialBindGroupLayout;
     private Pointer modelBindGroupLayout;
@@ -73,19 +73,18 @@ public class ModelBatch implements Disposable {
         float[] uniforms = new float[MAX_UB_SIZE/Float.BYTES];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
 
-        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+        shaderStd = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+        shaderNormalMap = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
     }
 
     // create or reuse pipeline on demand when we know the model
     private void setPipeline(VertexAttributes vertexAttributes) {
 
-
-//        hasNormalMap = vertexAttributes.hasNormalMap;
-//
-//        if (hasNormalMap)
-//            shader = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
-//        else
-//            shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+        ShaderProgram shader;
+        if(vertexAttributes.hasNormalMap)
+            shader = shaderNormalMap;
+        else
+            shader = shaderStd;
 
         Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader);
         if (pipeline != prevPipeline) { // avoid unneeded switches
@@ -197,15 +196,14 @@ public class ModelBatch implements Disposable {
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, modelBindGroup, 1, offsetPtr);
         modelUniformIndex++;
 
-
-
         // make a new bind group every time we change texture
         if(material != prevMaterial) {
             prevMaterial = material;
             writeMaterialUniforms(materialUniformBuffer, materialUniformIndex, material.baseColor);
+            materialBindGroupLayout = createMaterialBindGroupLayout(meshPart.mesh.vertexAttributes.hasNormalMap);       // todo smarter
             if(materialBindGroup != null)
                 wgpu.BindGroupRelease(materialBindGroup);
-            materialBindGroup = makeMaterialBindGroup(material, materialBindGroupLayout, materialUniformBuffer);   // bind group for textures and uniforms
+            materialBindGroup = makeMaterialBindGroup(material, materialBindGroupLayout, materialUniformBuffer, meshPart.mesh.vertexAttributes.hasNormalMap);   // bind group for textures and uniforms
 
             // set dynamic offset into uniform buffer
             //int[] offset = new int[1];
@@ -234,7 +232,8 @@ public class ModelBatch implements Disposable {
 
     @Override
     public void dispose() {
-        shader.dispose();
+        shaderStd.dispose();
+        shaderNormalMap.dispose();
         pipelines.dispose();
         wgpu.BindGroupLayoutRelease(frameBindGroupLayout);
         wgpu.BindGroupLayoutRelease(materialBindGroupLayout);
@@ -366,7 +365,7 @@ public class ModelBatch implements Disposable {
 
 
     // per material bind group
-    private Pointer makeMaterialBindGroup(Material material, Pointer bindGroupLayout, Pointer materialUniformBuffer) {
+    private Pointer makeMaterialBindGroup(Material material, Pointer bindGroupLayout, Pointer materialUniformBuffer, boolean hasNormalMap) {
         // Create a binding
         WGPUBindGroupEntry uniformBinding = WGPUBindGroupEntry.createDirect();
         uniformBinding.setNextInChain();
@@ -384,7 +383,7 @@ public class ModelBatch implements Disposable {
         // There must be as many bindings as declared in the layout!
         if(hasNormalMap) {
             bindGroupDesc.setEntryCount(4);
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.normalTexture.getBinding(2) );
+            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.normalTexture.getBinding(3) );
         }
         else {
             bindGroupDesc.setEntryCount(3);
@@ -505,21 +504,21 @@ public class ModelBatch implements Disposable {
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, uniformIndex*uniformStride, uniformData, MODEL_UB_SIZE);
     }
 
-    public WGPUVertexBufferLayout getVertexBufferLayout(){
-        if(vertexBufferLayout == null) {
-            VertexAttributes vertexAttributes = new VertexAttributes();
-            vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-//            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
-//            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
-            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
-            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 3);
-            vertexAttributes.end();
-
-            vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
-        }
-        return vertexBufferLayout;
-    }
+//    public WGPUVertexBufferLayout getVertexBufferLayout(){
+//        if(vertexBufferLayout == null) {
+//            VertexAttributes vertexAttributes = new VertexAttributes();
+//            vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
+////            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
+////            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
+//            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
+////            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
+//            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 2);
+//            vertexAttributes.end();
+//
+//            vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
+//        }
+//        return vertexBufferLayout;
+//    }
 
 
 

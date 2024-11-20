@@ -1,18 +1,27 @@
 
-struct Uniforms {
+struct FrameUniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,
-    modelMatrix: mat4x4f,
-    color: vec4f,
+    combinedMatrix : mat4x4f,
     cameraPosition : vec3f,
+};
+
+struct MaterialUniforms {
+    baseColor: vec4f,
+};
+
+struct ModelUniforms {
+    modelMatrix: mat4x4f,
 };
 
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 
-@group(0) @binding(0) var<uniform> uUniforms: Uniforms;
-@group(0) @binding(1) var texture: texture_2d<f32>;
-@group(0) @binding(2) var normalTexture: texture_2d<f32>;
-@group(0) @binding(3) var textureSampler: sampler;
+@group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
+@group(1) @binding(0) var<uniform> uMaterial: MaterialUniforms;
+@group(1) @binding(1) var texture: texture_2d<f32>;
+@group(1) @binding(2) var textureSampler: sampler;
+@group(1) @binding(3) var normalTexture: texture_2d<f32>;       // <--
+@group(2) @binding(0) var<uniform> uModel: ModelUniforms;
 
 
 struct VertexInput {
@@ -20,8 +29,7 @@ struct VertexInput {
     @location(1) tangent: vec3f,
     @location(2) bitangent: vec3f,
     @location(3) normal: vec3f,
-    @location(4) color: vec3f,
-    @location(5) uv: vec2f,
+    @location(4) uv: vec2f,
 };
 
 struct VertexOutput {
@@ -32,24 +40,23 @@ struct VertexOutput {
     @location(3) uv : vec2f,
     @location(4) viewDirection : vec3f,
     @location(5) color: vec3f,
-
 };
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
 
-   out.tangent = (uUniforms.modelMatrix * vec4f(in.tangent, 0.0)).xyz;
-   out.bitangent = (uUniforms.modelMatrix * vec4f(in.bitangent, 0.0)).xyz;
-   out.normal = (uUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
+   out.tangent = (uModel.modelMatrix * vec4f(in.tangent, 0.0)).xyz;
+   out.bitangent = (uModel.modelMatrix * vec4f(in.bitangent, 0.0)).xyz;
+   out.normal = (uModel.modelMatrix * vec4f(in.normal, 0.0)).xyz;
 
-   let worldPosition =  uUniforms.modelMatrix * vec4f(in.position, 1.0);
-   let pos =  uUniforms.projectionMatrix * uUniforms.viewMatrix * worldPosition;
-   let cameraPosition = uUniforms.cameraPosition;
+   let worldPosition =  uModel.modelMatrix * vec4f(in.position, 1.0);
+   let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
+   let cameraPosition = uFrame.cameraPosition;
 
    out.position = pos;
    out.uv = in.uv;
-   out.color = in.color;
+   out.color = uMaterial.baseColor.rgb;
    out.viewDirection = cameraPosition - worldPosition.xyz;
    return out;
 }
@@ -69,7 +76,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
 
 
-    let baseColor = textureSample(texture, textureSampler, in.uv).rgb;
+    let baseColor = textureSample(texture, textureSampler, in.uv).rgb * in.color;
     let encodedN = textureSample(normalTexture, textureSampler, in.uv).rgb;
     let localN = encodedN * 2.0 - 1.0;
     // The TBN matrix converts directions from the local space to the world space
