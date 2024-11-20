@@ -4,13 +4,18 @@ import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.ScreenUtils;
 
-public class TestGLTF implements ApplicationListener {
+import java.util.ArrayList;
+
+
+// test that we can render multiple models efficiently, i.e. without too many material or pipeline switches.
+
+public class TestRenderSwitching implements ApplicationListener {
 
     private ModelBatch modelBatch;
     private Camera camera;
-    private Matrix4 modelMatrix;
-    private Model model;
-    private ModelInstance modelInstance1;
+    private Matrix4 modelMatrix, modelMatrix2;
+    private Model model, model2;
+    private ArrayList<ModelInstance> instances;
     private float currentTime;
     private long startTime;
     private int frames;
@@ -21,14 +26,21 @@ public class TestGLTF implements ApplicationListener {
 
         model = new Model("models/lantern/Lantern.gltf");
 
+        model2 = new Model("models/Cube.gltf");
 
         modelMatrix = new Matrix4();
-        modelInstance1 = new ModelInstance(model, 0,0,0);
-
+        instances = new ArrayList<>();
+        instances.add( new ModelInstance(model, 0,0,0) );
+        instances.add( new ModelInstance(model, 15,0,0) );
+        instances.add( new ModelInstance(model, 15,0,15) );
+        instances.add( new ModelInstance(model, 30,0,15) );
+        instances.add( new ModelInstance(model2, 10,0,0) );
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 0.5f, -6);
         camera.direction.set(0,0f, 1f);
+        camera.far = 1000f;
+
         camera.update();
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
@@ -58,7 +70,7 @@ public class TestGLTF implements ApplicationListener {
 
         modelBatch.begin(camera);
 
-        modelBatch.render(modelInstance1);
+        modelBatch.render(instances);
 
         modelBatch.end();
 

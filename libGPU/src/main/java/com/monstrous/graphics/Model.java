@@ -184,7 +184,6 @@ public class Model implements Disposable {
         GLTFNode gltfNode = gltf.nodes.get(nodeId);
 
         rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
-        rootNode.rotation.set(0,1,0,0);
         rootNode.updateMatrices(true);
         System.out.println("loaded "+filePath);
     }

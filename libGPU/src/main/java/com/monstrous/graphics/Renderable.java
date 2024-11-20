@@ -10,6 +10,6 @@ public class Renderable {
     public Renderable(MeshPart meshPart, Material material, Matrix4 modelTransform) {
         this.meshPart = meshPart;
         this.material = material;
-        this.modelTransform = modelTransform;
+        this.modelTransform = new Matrix4(modelTransform);  // need a copy because it may be changed
     }
 }

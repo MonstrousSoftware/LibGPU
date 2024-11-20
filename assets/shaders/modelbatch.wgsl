@@ -88,7 +88,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     color += baseColor * ambient;
 
-    color = uMaterial.baseColor.rgb;
+    //color = uMaterial.baseColor.rgb;
 
     return vec4f(color, 1.0);
 }

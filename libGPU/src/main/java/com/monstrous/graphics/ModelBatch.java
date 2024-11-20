@@ -8,6 +8,8 @@ import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
+import java.util.ArrayList;
+
 public class ModelBatch implements Disposable {
 
     private final int FRAME_UB_SIZE = (3*16+4) * Float.BYTES;
@@ -46,6 +48,8 @@ public class ModelBatch implements Disposable {
 
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
+    private ArrayList<Renderable> renderables;
+
 
     public ModelBatch () {
         wgpu = LibGPU.wgpu;
@@ -53,6 +57,7 @@ public class ModelBatch implements Disposable {
         uniformAlignment = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
 
         pipelines = new Pipelines();
+        renderables = new ArrayList<>();
 
         frameUniformBuffer = createUniformBuffer( FRAME_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
@@ -90,6 +95,8 @@ public class ModelBatch implements Disposable {
 
         this.renderPass = LibGPU.renderPass;
 
+        renderables.clear();
+
         materialUniformIndex = 0;       // reset offset into uniform buffer
         modelUniformIndex = 0;
         prevMaterial = null;
@@ -105,23 +112,35 @@ public class ModelBatch implements Disposable {
         modelBindGroup = makeModelBindGroup(modelBindGroupLayout, modelUniformBuffer);      // bind group remains unchanged, uniform buffer offset changes
     }
 
-    public void render(ModelInstance instance){
-        render(instance.model.rootNode);
+    public void render(ArrayList<ModelInstance> instances) {
+        for(ModelInstance instance : instances)
+            render(instance);
     }
 
-    public void render(ModelInstance instance, Material material){
-        render(instance.model.rootNode.nodePart.meshPart, material, instance.modelTransform);
+    public void render(ModelInstance instance){
+        instance.getRenderables(renderables);
+        render(renderables, true);
+        renderables.clear();
     }
+
+//    public void render(ModelInstance instance, Material material){
+//        render(instance.model.rootNode.nodePart.meshPart, material, instance.modelTransform);
+//    }
 
     public void render(Node node){
         if(node.nodePart != null)
-            render(node.nodePart, node.worldTransform);
+            render(node.nodePart, node.globalTransform);
         for(Node child : node.children)
             render(child);
     }
 
     public void render(NodePart nodePart, Matrix4 transform){
         render(nodePart.meshPart, nodePart.material, transform);
+    }
+
+    public void render(ArrayList<Renderable> renderables, boolean dummy) {
+        for(Renderable renderable : renderables)
+            render(renderable);
     }
 
     public void render(Renderable renderable) {
@@ -145,6 +164,7 @@ public class ModelBatch implements Disposable {
 
         // make a new bind group every time we change texture
         if(material != prevMaterial) {
+            prevMaterial = material;
             writeMaterialUniforms(materialUniformBuffer, materialUniformIndex, material.baseColor);
             if(materialBindGroup != null)
                 wgpu.BindGroupRelease(materialBindGroup);

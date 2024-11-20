@@ -12,7 +12,7 @@ public class Node {
 
     public String name;
     public Matrix4 localTransform;
-    public Matrix4 worldTransform;
+    public Matrix4 globalTransform;
     public Vector3 translation;
     public Vector3 scale;
     public Quaternion rotation;
@@ -24,7 +24,7 @@ public class Node {
         children = new ArrayList<>(2);
 
         localTransform = new Matrix4();
-        worldTransform = new Matrix4();
+        globalTransform = new Matrix4();
         translation = new Vector3(0,0,0);
         scale = new Vector3(1,1,1);
         rotation = new Quaternion(0,0,0,1);
@@ -41,13 +41,24 @@ public class Node {
         localTransform.set(translation, rotation, scale);
 
         if(parent != null)
-            worldTransform.set(parent.worldTransform).mul(localTransform);
+            globalTransform.set(parent.globalTransform).mul(localTransform);
         else
-            worldTransform.set(localTransform);
+            globalTransform.set(localTransform);
         if(recurse){
             for(Node child : children)
                 child.updateMatrices(true);
         }
+    }
+
+    public void getRenderables( ArrayList<Renderable> renderables, Matrix4 modelTransform ){
+        if(nodePart != null) {
+            Renderable renderable = new Renderable(nodePart.meshPart, nodePart.material, modelTransform);       // todo pooling
+            // combine globalTransform from node with modelTransform from model instance
+            renderable.modelTransform.mul(globalTransform);
+            renderables.add(renderable);
+        }
+        for(Node child : children)
+            child.getRenderables(renderables, modelTransform);
     }
 
 
