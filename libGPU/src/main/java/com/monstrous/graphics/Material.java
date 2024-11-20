@@ -3,7 +3,7 @@ package com.monstrous.graphics;
 import com.monstrous.graphics.loaders.MaterialData;
 import com.monstrous.utils.Disposable;
 
-public class Material implements Disposable {
+public class Material implements Disposable, Comparable {
     public Color baseColor;
     public Texture diffuseTexture;
     public Texture normalTexture;
@@ -38,5 +38,12 @@ public class Material implements Disposable {
         diffuseTexture.dispose();
         if(normalTexture != null)
             normalTexture.dispose();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        Material other = (Material)o;
+
+        return hashCode() - other.hashCode();
     }
 }

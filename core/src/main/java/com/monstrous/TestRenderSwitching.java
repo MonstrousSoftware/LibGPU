@@ -31,10 +31,11 @@ public class TestRenderSwitching implements ApplicationListener {
         modelMatrix = new Matrix4();
         instances = new ArrayList<>();
         instances.add( new ModelInstance(model, 0,0,0) );
-        instances.add( new ModelInstance(model, 15,0,0) );
-        instances.add( new ModelInstance(model, 15,0,15) );
-        instances.add( new ModelInstance(model, 30,0,15) );
-        instances.add( new ModelInstance(model2, 10,0,0) );
+//        instances.add( new ModelInstance(model2, 15,0,0) );
+//        instances.add( new ModelInstance(model, 15,0,15) );
+//        instances.add( new ModelInstance(model2, 30,0,15) );
+//        instances.add( new ModelInstance(model, 10,0,0) );
+//        instances.add( new ModelInstance(model2, 10,0,30) );
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 0.5f, -6);
@@ -77,7 +78,7 @@ public class TestRenderSwitching implements ApplicationListener {
         // At the end of the frame
 
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch : fps: " + frames  );
+            System.out.println("fps: " + frames  );
             frames = 0;
             startTime = System.nanoTime();
         }

@@ -9,6 +9,8 @@ import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class ModelBatch implements Disposable {
 
@@ -48,7 +50,7 @@ public class ModelBatch implements Disposable {
 
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
-    private ArrayList<Renderable> renderables;
+    private List<Renderable> renderables;
 
 
     public ModelBatch () {
@@ -95,8 +97,6 @@ public class ModelBatch implements Disposable {
 
         this.renderPass = LibGPU.renderPass;
 
-        renderables.clear();
-
         materialUniformIndex = 0;       // reset offset into uniform buffer
         modelUniformIndex = 0;
         prevMaterial = null;
@@ -105,7 +105,6 @@ public class ModelBatch implements Disposable {
         writeFrameUniforms(frameUniformBuffer, camera);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer);
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, frameBindGroup, 0, null);
-
 
         materialBindGroup = null;
 
@@ -118,39 +117,76 @@ public class ModelBatch implements Disposable {
     }
 
     public void render(ModelInstance instance){
-        instance.getRenderables(renderables);
-        render(renderables, true);
+        instance.getRenderables((ArrayList<Renderable>) renderables);
+        //emit(instance.model.rootNode);
+    }
+
+    public void renderDirect(ModelInstance instance){
+        emit(instance.model.rootNode);
+    }
+
+
+    public void emit(Node node){
+        if(node.nodePart != null)
+            emit(node.nodePart, node.globalTransform);
+        for(Node child : node.children)
+            emit(child);
+    }
+
+    public void emit(NodePart nodePart, Matrix4 transform){
+        emit(nodePart.meshPart, nodePart.material, transform);
+    }
+
+
+    public void render(Renderable renderable) {
+        renderables.add( renderable );
+    }
+
+
+    public void render(MeshPart meshPart, Material material, Matrix4 modelMatrix) {
+        renderables.add( new Renderable(meshPart, material, modelMatrix));
+    }
+
+
+    public void end(){
+        flush();
+
+        wgpu.BindGroupRelease(frameBindGroup);
+        wgpu.BindGroupRelease(modelBindGroup);
+        if(materialBindGroup != null)
+            wgpu.BindGroupRelease(materialBindGroup);
+        //System.out.println("materials: "+materialUniformIndex+"\t\tmodels: "+modelUniformIndex);
+    }
+
+
+    // sort comparator to sort on material
+    //
+    private static class RenderableComparator implements Comparator<Renderable> {
+        @Override
+        public int compare(Renderable r1, Renderable r2) {
+            return r1.material.hashCode() - r2.material.hashCode();
+        }
+    }
+
+    private final RenderableComparator comparator = new RenderableComparator();
+
+    private void flush() {
+        // sort renderables to minimize material switching, to do: depth sorting etc.
+        //renderables.sort(comparator);
+        for(Renderable renderable : renderables)
+            emit(renderable);
         renderables.clear();
     }
 
-//    public void render(ModelInstance instance, Material material){
-//        render(instance.model.rootNode.nodePart.meshPart, material, instance.modelTransform);
-//    }
-
-    public void render(Node node){
-        if(node.nodePart != null)
-            render(node.nodePart, node.globalTransform);
-        for(Node child : node.children)
-            render(child);
+    // this will actually generate the draw calls for the renderable
+    private void emit(Renderable renderable) {
+        emit(renderable.meshPart, renderable.material, renderable.modelTransform);
     }
 
-    public void render(NodePart nodePart, Matrix4 transform){
-        render(nodePart.meshPart, nodePart.material, transform);
-    }
-
-    public void render(ArrayList<Renderable> renderables, boolean dummy) {
-        for(Renderable renderable : renderables)
-            render(renderable);
-    }
-
-    public void render(Renderable renderable) {
-        render(renderable.meshPart, renderable.material, renderable.modelTransform);
-    }
+    public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix){
 
 
-    public void render(MeshPart meshPart, Material material, Matrix4 modelMatrix){
-
-        writeModelUniforms(modelUniformBuffer, modelUniformIndex, modelMatrix);  // renderable uniforms
+        writeModelUniforms(modelUniformBuffer, modelUniformIndex, modelMatrix);  // update renderable uniforms
 
         // set dynamic offset into uniform buffer
         int[] offset = new int[1];
@@ -184,6 +220,7 @@ public class ModelBatch implements Disposable {
 
         setPipeline(meshPart.mesh.vertexAttributes);
 
+
         if(meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
             wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
@@ -191,14 +228,6 @@ public class ModelBatch implements Disposable {
         }
         else
             wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, 1, meshPart.offset, 0);
-    }
-
-    public void end(){
-        wgpu.BindGroupRelease(frameBindGroup);
-        wgpu.BindGroupRelease(modelBindGroup);
-        if(materialBindGroup != null)
-            wgpu.BindGroupRelease(materialBindGroup);
-        System.out.println("materials: "+materialUniformIndex+"\t\tmodels: "+modelUniformIndex);
     }
 
 
