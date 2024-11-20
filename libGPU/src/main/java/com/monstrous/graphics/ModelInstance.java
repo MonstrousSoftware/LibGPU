@@ -10,6 +10,12 @@ public class ModelInstance {
         this(model, new Matrix4());
     }
 
+
+    public ModelInstance(Model model, float x, float y, float z) {
+        this.model = model;
+        this.modelTransform = new Matrix4().translate(x,y,z);
+    }
+
     public ModelInstance(Model model, Matrix4 transform) {
         this.model = model;
         this.modelTransform = transform;

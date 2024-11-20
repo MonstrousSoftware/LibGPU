@@ -143,6 +143,8 @@ public class SpriteBatch implements Disposable {
     // create or reuse pipeline on demand when we know the model
     private void setPipeline() {
 
+        // todo could force switch on blending change
+
         Pipeline pipeline = pipelines.getPipeline(vertexAttributes, bindGroupLayout, shader);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());

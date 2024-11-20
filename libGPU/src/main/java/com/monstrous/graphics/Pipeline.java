@@ -3,21 +3,19 @@ package com.monstrous.graphics;
 import com.monstrous.LibGPU;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
-import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
 public class Pipeline implements Disposable {
 
     private VertexAttributes vertexAttributes;
-    private Pointer bindGroupLayout;
     private ShaderProgram shader;
     private Pointer pipelineLayout;
     private Pointer pipeline;
 
     // assuming 1 bind group
-    public Pipeline(VertexAttributes vertexAttributes, Pointer bindGroupLayout, ShaderProgram shader) {
+    public Pipeline(VertexAttributes vertexAttributes, Pointer pipelineLayout, ShaderProgram shader) {
         this.vertexAttributes = vertexAttributes;
-        this.bindGroupLayout = bindGroupLayout;
+        this.pipelineLayout = pipelineLayout;
         this.shader = shader;
 
         Pointer shaderModule = shader.getShaderModule();
@@ -85,19 +83,6 @@ public class Pipeline implements Disposable {
         pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 
-
-
-        long[] layouts = new long[1];
-        layouts[0] = bindGroupLayout.address();
-        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
-
-        // Create the pipeline layout to define the bind groups needed : 1 bind group
-        WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
-        layoutDesc.setNextInChain();
-        layoutDesc.setLabel("Pipeline Layout");
-        layoutDesc.setBindGroupLayoutCount(1);
-        layoutDesc.setBindGroupLayouts(layoutPtr);
-        pipelineLayout = LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
 
         pipelineDesc.setLayout(pipelineLayout);
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);

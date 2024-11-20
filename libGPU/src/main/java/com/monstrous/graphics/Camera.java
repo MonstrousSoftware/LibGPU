@@ -1,6 +1,5 @@
 package com.monstrous.graphics;
 
-import com.monstrous.LibGPU;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
@@ -14,10 +13,12 @@ public class Camera {
     public float far;
     public Matrix4 projectionMatrix;
     public Matrix4 viewMatrix;
+    public Matrix4 combinedMatrix;      // P x V
 
     public Camera() {
         projectionMatrix = new Matrix4();
         viewMatrix = new Matrix4();
+        combinedMatrix = new Matrix4();
         position = new Vector3(0f,0f,0f);
         direction = new Vector3(0,0,1);
         up = new Vector3(0, 1, 0);
@@ -31,5 +32,7 @@ public class Camera {
     public void update(){
         viewMatrix.setToLookAt(direction, up);
         viewMatrix.translate(-position.x, -position.y, -position.z);
+        combinedMatrix.set(projectionMatrix);
+        Matrix4.mul(combinedMatrix.val, viewMatrix.val);
     }
 }

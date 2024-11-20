@@ -1,17 +1,26 @@
 
-struct Uniforms {
+struct FrameUniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,
-    modelMatrix: mat4x4f,
-    color: vec4f,
+    combinedMatrix : mat4x4f,
     cameraPosition : vec3f,
+};
+
+struct MaterialUniforms {
+    baseColor: vec4f,
+};
+
+struct ModelUniforms {
+    modelMatrix: mat4x4f,
 };
 
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 
-@group(0) @binding(0) var<uniform> uUniforms: Uniforms;
-@group(0) @binding(1) var texture: texture_2d<f32>;
-@group(0) @binding(2) var textureSampler: sampler;
+@group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
+@group(1) @binding(0) var<uniform> uMaterial: MaterialUniforms;
+@group(1) @binding(1) var texture: texture_2d<f32>;
+@group(1) @binding(2) var textureSampler: sampler;
+@group(2) @binding(0) var<uniform> uModel: ModelUniforms;
 
 
 struct VertexInput {
@@ -32,11 +41,11 @@ struct VertexOutput {
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
-   out.normal = (uUniforms.modelMatrix * vec4f(in.normal, 0.0)).xyz;
+   out.normal = (uModel.modelMatrix * vec4f(in.normal, 0.0)).xyz;
 
-   let worldPosition =  uUniforms.modelMatrix * vec4f(in.position, 1.0);
-   let pos =  uUniforms.projectionMatrix * uUniforms.viewMatrix * worldPosition;
-   let cameraPosition = uUniforms.cameraPosition;
+   let worldPosition =  uModel.modelMatrix * vec4f(in.position, 1.0);
+   let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
+   let cameraPosition = uFrame.cameraPosition;
 
    out.position = pos;
    out.uv = in.uv;
@@ -79,7 +88,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     color += baseColor * ambient;
 
-    //color = N;
+    color = uMaterial.baseColor.rgb;
 
     return vec4f(color, 1.0);
 }

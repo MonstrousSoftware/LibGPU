@@ -4,10 +4,12 @@ import com.monstrous.graphics.loaders.MaterialData;
 import com.monstrous.utils.Disposable;
 
 public class Material implements Disposable {
+    public Color baseColor;
     public Texture diffuseTexture;
     public Texture normalTexture;
 
     public Material(MaterialData materialData) {
+        baseColor = new Color(1,1,1,1);
         String fileName;
         if(materialData == null || materialData.diffuseMapFilePath == null) {
             fileName = "textures\\rgb.png";
@@ -23,7 +25,12 @@ public class Material implements Disposable {
     }
 
     public Material(Texture texture) {
+        baseColor = new Color(1,1,1,1);
         this.diffuseTexture = texture;
+    }
+
+    public Material(Color baseColor) {
+        this.baseColor = new Color(baseColor);
     }
 
     @Override
