@@ -72,18 +72,20 @@ public class ModelBatch implements Disposable {
 
         float[] uniforms = new float[MAX_UB_SIZE/Float.BYTES];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
+
+        shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
     }
 
     // create or reuse pipeline on demand when we know the model
     private void setPipeline(VertexAttributes vertexAttributes) {
 
 
-        hasNormalMap = vertexAttributes.hasNormalMap;
-
-        if (hasNormalMap)
-            shader = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
-        else
-            shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
+//        hasNormalMap = vertexAttributes.hasNormalMap;
+//
+//        if (hasNormalMap)
+//            shader = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
+//        else
+//            shader = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
 
         Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader);
         if (pipeline != prevPipeline) { // avoid unneeded switches
