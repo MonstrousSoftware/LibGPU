@@ -14,7 +14,7 @@ import java.util.List;
 
 public class ModelBatch implements Disposable {
 
-    private final int FRAME_UB_SIZE = (3*16+4) * Float.BYTES;
+    private final int FRAME_UB_SIZE = (3*16+8+8) * Float.BYTES;
     private final int MATERIAL_UB_SIZE = 4 * Float.BYTES;
     private final int MODEL_UB_SIZE = 16 * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
@@ -53,16 +53,22 @@ public class ModelBatch implements Disposable {
     private final List<Renderable> renderables;
     private final RenderablePool pool;
     public int numPipelineSwitches;
+    public Environment environment;
 
+    private DirectionalLight directionalLight;
+    private DirectionalLight defaultDirectionalLight;
 
-    public ModelBatch () {
+    public ModelBatch (){
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
         uniformAlignment = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
 
+
         pipelines = new Pipelines();
         renderables = new ArrayList<>();
         pool = new RenderablePool(1000);
+
+        defaultDirectionalLight = new DirectionalLight(new Color(1,1,1,1), new Vector3(0, -1, 0));
 
         frameUniformBuffer = createUniformBuffer( FRAME_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
@@ -82,10 +88,19 @@ public class ModelBatch implements Disposable {
 
 
 
-
     public void begin(Camera camera){
+        begin(camera, null);
+    }
 
+    public void begin(Camera camera, Environment environment){
+        this.environment = environment;
         this.renderPass = LibGPU.renderPass;
+
+        if(environment != null)
+            directionalLight = (DirectionalLight) environment.lights.getFirst();        // HACK
+        else
+            directionalLight = defaultDirectionalLight;
+
 
         materialUniformIndex = 0;       // reset offset into uniform buffer
         modelUniformIndex = 0;
@@ -456,42 +471,46 @@ public class ModelBatch implements Disposable {
         return wgpu.DeviceCreateBuffer(device, bufferDesc);
     }
 
-    private void setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
+    private int setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
         data.putFloat(offset+0*Float.BYTES, r);
         data.putFloat(offset+1*Float.BYTES, g);
         data.putFloat(offset+2*Float.BYTES, b);
         data.putFloat(offset+3*Float.BYTES, a);
+        return 4*Float.BYTES;
     }
 
-    private void setUniformColor(Pointer data, int offset, Color color ){
+    private int setUniformColor(Pointer data, int offset, Color color ){
         data.putFloat(offset+0*Float.BYTES, color.r);
         data.putFloat(offset+1*Float.BYTES, color.g);
         data.putFloat(offset+2*Float.BYTES, color.b);
         data.putFloat(offset+3*Float.BYTES, color.a);
+        return 4*Float.BYTES;
     }
 
-    private void setUniformVec3(Pointer data, int offset, Vector3 vec ){
+    private int setUniformVec3(Pointer data, int offset, Vector3 vec ){
         data.putFloat(offset+0*Float.BYTES, vec.x);
         data.putFloat(offset+1*Float.BYTES, vec.y);
         data.putFloat(offset+2*Float.BYTES, vec.z);
+        return 4*Float.BYTES;   // round up
     }
 
-    private void setUniformMatrix(Pointer data, int offset, Matrix4 mat ){
+    private int setUniformMatrix(Pointer data, int offset, Matrix4 mat ){
         for(int i = 0; i < 16; i++){
             data.putFloat(offset+i*Float.BYTES, mat.val[i]);
         }
+        return 16*Float.BYTES;
     }
+
+
 
     private void writeFrameUniforms( Pointer uniformBuffer, Camera camera ){
         int offset = 0;
-        setUniformMatrix(uniformData, offset, camera.projectionMatrix);
-        offset += 16*Float.BYTES;
-        setUniformMatrix(uniformData, offset, camera.viewMatrix);
-        offset += 16*Float.BYTES;
-        setUniformMatrix(uniformData, offset, camera.combinedMatrix);
-        offset += 16*Float.BYTES;
-        setUniformVec3(uniformData, offset, camera.position);
-        offset += 3*Float.BYTES;
+        offset += setUniformMatrix(uniformData, offset, camera.projectionMatrix);
+        offset += setUniformMatrix(uniformData, offset, camera.viewMatrix);
+        offset += setUniformMatrix(uniformData, offset, camera.combinedMatrix);
+        offset += setUniformVec3(uniformData, offset, camera.position);
+        offset += setUniformColor(uniformData, offset, directionalLight.color);
+        offset += setUniformVec3(uniformData, offset, directionalLight.direction);
 
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, FRAME_UB_SIZE);
     }

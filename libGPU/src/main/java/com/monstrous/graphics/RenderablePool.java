@@ -18,7 +18,11 @@ public class RenderablePool {
     public Renderable obtain(){
         if(pool.isEmpty())
             return new Renderable();
-        return pool.removeLast();
+        Renderable renderable = pool.removeLast();
+        renderable.material = null;
+        renderable.modelTransform = null;
+        renderable.meshPart = null;
+        return renderable;
     }
 
     public void free(Renderable renderable){

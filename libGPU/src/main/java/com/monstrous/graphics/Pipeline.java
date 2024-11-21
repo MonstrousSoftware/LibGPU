@@ -12,7 +12,7 @@ public class Pipeline implements Disposable {
     private Pointer pipelineLayout;
     private Pointer pipeline;
 
-    // assuming 1 bind group
+
     public Pipeline(VertexAttributes vertexAttributes, Pointer pipelineLayout, ShaderProgram shader) {
         this.vertexAttributes = vertexAttributes;
         this.pipelineLayout = pipelineLayout;

@@ -2,14 +2,17 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 
 import java.util.ArrayList;
 
-public class TestGLTF implements ApplicationListener {
+public class TestEnvironment implements ApplicationListener {
 
     private ModelBatch modelBatch;
     private Camera camera;
+    private Environment environment;
+    private DirectionalLight directionalLight;
     private Matrix4 modelMatrix;
     private Model model, model2;
     private ModelInstance modelInstance1;
@@ -22,6 +25,10 @@ public class TestGLTF implements ApplicationListener {
     public void create() {
         startTime = System.nanoTime();
         frames = 0;
+
+        environment = new Environment();
+        directionalLight = new DirectionalLight(new Color(.7f,.7f,1,1), new Vector3(0, -1, 0));
+        environment.add(directionalLight);
 
         instances = new ArrayList<>();
 
@@ -78,7 +85,7 @@ public class TestGLTF implements ApplicationListener {
 
         updateModelMatrix(modelMatrix, currentTime);
 
-        modelBatch.begin(camera);
+        modelBatch.begin(camera, environment);
         modelBatch.render(instances);
         modelBatch.end();
 

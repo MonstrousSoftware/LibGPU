@@ -1,9 +1,16 @@
 
+struct DirectionalLight {
+    color: vec4f,
+    direction: vec3f,
+}
+
+
 struct FrameUniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,
     combinedMatrix : mat4x4f,
     cameraPosition : vec3f,
+    directionalLight : DirectionalLight,
 };
 
 struct MaterialUniforms {
@@ -74,8 +81,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let V = normalize(in.viewDirection);
     //let N = normalize(in.normal);
-    let lightColor = vec3f(1.0, 1.0, 1.0);
-    let lightDirection = vec3f(0.0, 1.0, 0.0);
+    let lightColor = uFrame.directionalLight.color.rgb; //vec3f(1.0, 1.0, 1.0);
+    let lightDirection = -1*uFrame.directionalLight.direction.xyz; //rvec3f(0.0, 1.0, 0.0);
 
     let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgb * in.color;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
