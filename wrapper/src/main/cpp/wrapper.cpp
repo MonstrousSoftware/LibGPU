@@ -358,7 +358,7 @@ EXPORT void ShaderModuleRelease(WGPUShaderModule shaderModule){
 
 EXPORT WGPUBuffer DeviceCreateBuffer(WGPUDevice device, WGPUBufferDescriptor *bufferDesc){
     WGPUBuffer buf =  wgpuDeviceCreateBuffer(device, bufferDesc);
-    printf("created buffer at %p\n", buf);
+    //printf("created buffer at %p\n", buf);
     return buf;
 }
 

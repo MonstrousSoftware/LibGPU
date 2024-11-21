@@ -21,7 +21,7 @@ public class TestGLTF implements ApplicationListener {
         frames = 0;
 
         //model = new Model("models/lantern/Lantern.gltf");
-        model = new Model("models/officeMaze/officeMaze.gltf");
+        model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
         //model = new Model("models/Sponza/Sponza.gltf");
         //model2 = new Model("models/fourareen.obj");
 
