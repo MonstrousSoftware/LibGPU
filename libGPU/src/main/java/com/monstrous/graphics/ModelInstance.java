@@ -24,6 +24,7 @@ public class ModelInstance {
     }
 
     public void getRenderables( ArrayList<Renderable> renderables ){
-        model.rootNode.getRenderables(renderables, modelTransform);
+        for(Node rootNode : model.rootNodes)
+            rootNode.getRenderables(renderables, modelTransform);
     }
 }

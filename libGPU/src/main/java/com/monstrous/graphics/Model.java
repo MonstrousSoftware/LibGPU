@@ -15,7 +15,7 @@ import java.util.Map;
 public class Model implements Disposable {
     public String filePath;
     public ArrayList<Mesh> meshes;
-    public Node rootNode;
+    public ArrayList<Node> rootNodes;
     public ArrayList<Material> materials;
     private Map<GLTFPrimitive, Mesh> meshMap = new HashMap<>();
 
@@ -73,12 +73,16 @@ public class Model implements Disposable {
 //        for(GLTFScene scene : gltf.scenes ){
 //
 //        }
-        GLTFScene scene = gltf.scenes.get(gltf.scene);
-        int nodeId = scene.nodes.getFirst();
-        GLTFNode gltfNode = gltf.nodes.get(nodeId);
 
-        rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
-        rootNode.updateMatrices(true);
+        rootNodes = new ArrayList<>();
+        GLTFScene scene = gltf.scenes.get(gltf.scene);
+        for( int nodeId : scene.nodes ) {
+            GLTFNode gltfNode = gltf.nodes.get(nodeId);
+
+            Node rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
+            rootNode.updateMatrices(true);
+            rootNodes.add(rootNode);
+        }
         System.out.println("loaded "+filePath);
     }
 
@@ -344,9 +348,11 @@ public class Model implements Disposable {
             materials.add(material);
         }
 
-        rootNode = new Node();
+        rootNodes = new ArrayList<>();
+        Node rootNode = new Node();
         rootNode.nodeParts = new ArrayList<>();
         rootNode.nodeParts.add( new NodePart(meshPart, materials.getFirst()) );       // todo arbitrary choice for first material
+        rootNodes.add(rootNode);
 
     }
 
@@ -356,5 +362,7 @@ public class Model implements Disposable {
             mesh.dispose();
         for(Material material: materials)
             material.dispose();
+//        for(Node node: rootNodes)
+//            node.dispose();
     }
 }

@@ -219,9 +219,9 @@ public class Texture {
 
         // Create a sampler
         WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
-        samplerDesc.setAddressModeU( WGPUAddressMode.ClampToEdge);
-        samplerDesc.setAddressModeV( WGPUAddressMode.ClampToEdge);
-        samplerDesc.setAddressModeW( WGPUAddressMode.ClampToEdge);
+        samplerDesc.setAddressModeU( WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeV( WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeW( WGPUAddressMode.Repeat);
         samplerDesc.setMagFilter( WGPUFilterMode.Linear);
         samplerDesc.setMinFilter( WGPUFilterMode.Linear);
         samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);

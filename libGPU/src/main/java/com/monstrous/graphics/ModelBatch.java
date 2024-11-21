@@ -300,6 +300,7 @@ public class ModelBatch implements Disposable {
         samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
         samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
 
+
         // normal texture binding is included even if it is not used
         WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(normalTexBindingLayout);

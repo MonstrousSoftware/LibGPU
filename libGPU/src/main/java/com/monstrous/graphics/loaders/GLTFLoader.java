@@ -102,13 +102,7 @@ public class GLTFLoader {
                     pbr.baseColorTexture = getInt(base, "index", 0);
                 JSONArray bc = (JSONArray)pbrMR.get("baseColorFactor");
                 if(bc != null){
-                    if(bc.size() != 4)
-                        throw new RuntimeException("GLTF: Expected baseColorFactor with 4 elements");
-                    double r = (Double)bc.get(0);
-                    double g = (Double)bc.get(1);
-                    double b = (Double)bc.get(2);
-                    Number a = (Number)bc.get(3);           // todo breaks if file says "1" because then it gets type Long
-                    pbr.baseColorFactor = new Color((float)r, (float)g, (float)b, a.floatValue());
+                    pbr.baseColorFactor = getColor(bc);
                 }
 
                 JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
@@ -293,6 +287,16 @@ public class GLTFLoader {
         Number y = (Number) obj.get(1);
         Number z = (Number) obj.get(2);
         return  new Vector3(x.floatValue(), y.floatValue(), z.floatValue());
+    }
+
+    private static Color getColor(JSONArray obj) {
+        if (obj.size() != 4)
+            throw new RuntimeException("GLTF: Expected color with 4 elements");
+        Number r = (Number) obj.get(0);
+        Number g = (Number) obj.get(1);
+        Number b = (Number) obj.get(2);
+        Number a = (Number) obj.get(3);
+        return  new Color(r.floatValue(), g.floatValue(), b.floatValue(), a.floatValue());
     }
 
 
