@@ -22,6 +22,7 @@ struct ModelUniforms {
 @group(1) @binding(1) var texture: texture_2d<f32>;
 @group(1) @binding(2) var textureSampler: sampler;
 @group(1) @binding(3) var normalTexture: texture_2d<f32>;       // ignored
+@group(1) @binding(4) var emissiveTexture: texture_2d<f32>;
 
 @group(2) @binding(0) var<uniform> uModel: ModelUniforms;
 
@@ -70,6 +71,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let lightDirection = vec3f(0.2, 0.9, 0.0);
 
     let baseColor = textureSample(texture, textureSampler, in.uv).rgb * in.color;
+    let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
 
     var color = vec3f(0.0);
     // for each light
@@ -87,7 +89,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         color += baseColor * kD * diffuse + kS * specular;
 
     color += baseColor * ambient;
-
+    color += emissiveColor;
     //color = uMaterial.baseColor.rgb;
 
     return vec4f(color, 1.0);

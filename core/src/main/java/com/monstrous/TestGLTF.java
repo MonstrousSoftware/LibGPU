@@ -21,13 +21,13 @@ public class TestGLTF implements ApplicationListener {
         frames = 0;
 
         model = new Model("models/lantern/Lantern.gltf");
-        model2 = new Model("models/fourareen.obj");
+        //model2 = new Model("models/fourareen.obj");
 
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, 0,0,0);
 
-        modelInstance2 = new ModelInstance(model2, 5,0,0);
+        //modelInstance2 = new ModelInstance(model2, 5,0,0);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -63,7 +63,7 @@ public class TestGLTF implements ApplicationListener {
         modelBatch.begin(camera);
 
         modelBatch.render(modelInstance1);
-        modelBatch.render(modelInstance2);
+        //modelBatch.render(modelInstance2);
 
         modelBatch.end();
 

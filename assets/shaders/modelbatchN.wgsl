@@ -19,9 +19,10 @@ struct ModelUniforms {
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
 
 @group(1) @binding(0) var<uniform> uMaterial: MaterialUniforms;
-@group(1) @binding(1) var texture: texture_2d<f32>;
+@group(1) @binding(1) var albedoTexture: texture_2d<f32>;
 @group(1) @binding(2) var textureSampler: sampler;
-@group(1) @binding(3) var normalTexture: texture_2d<f32>;       // <--
+@group(1) @binding(3) var normalTexture: texture_2d<f32>;
+@group(1) @binding(4) var emissiveTexture: texture_2d<f32>;
 
 @group(2) @binding(0) var<uniform> uModel: ModelUniforms;
 
@@ -68,15 +69,16 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 1.0;
     let kS = 0.1;
     let hardness = 1.0;
-    let ambient = 0.2;
+    let ambient = 0.1;
     let normalMapStrength = 0.2;
 
     let V = normalize(in.viewDirection);
     //let N = normalize(in.normal);
     let lightColor = vec3f(1.0, 1.0, 1.0);
-    let lightDirection = vec3f(0.0, -1.0, 0.0);
+    let lightDirection = vec3f(0.0, 1.0, 0.0);
 
-    let baseColor = textureSample(texture, textureSampler, in.uv).rgb * in.color;
+    let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgb * in.color;
+    let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
     let encodedN = textureSample(normalTexture, textureSampler, in.uv).rgb;
     let localN = encodedN * 2.0 - 1.0;
     // The TBN matrix converts directions from the local space to the world space
@@ -104,6 +106,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         color += baseColor * kD * diffuse + kS * specular;
 
     color += baseColor * ambient;
+
+    color += emissiveColor;
 
     //color = N*0.5 + 0.5;
     //color = baseColor;
