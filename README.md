@@ -36,3 +36,12 @@ Dawn issues a deprecation warning on the Queue calllback, where a new info struc
       Warning: Old OnSubmittedWorkDone APIs are deprecated. If using C please pass a CallbackInfo struct that has two userdatas.....
 
 We'll just ignore the warning for now.
+
+
+## GLTF support
+
+We can load and display GLTF models now.
+Not supported: skins, animation, camera.
+Only GLTF Separate is supported, not GTLF embedded or binary format.
+Rendering is not using a PBR shader so the models may look different.
+Normal maps and Emissive maps are supported.

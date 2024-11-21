@@ -4,6 +4,8 @@ import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.ScreenUtils;
 
+import java.util.ArrayList;
+
 public class TestGLTF implements ApplicationListener {
 
     private ModelBatch modelBatch;
@@ -12,6 +14,7 @@ public class TestGLTF implements ApplicationListener {
     private Model model, model2;
     private ModelInstance modelInstance1;
     private ModelInstance modelInstance2;
+    private ArrayList<ModelInstance> instances;
     private float currentTime;
     private long startTime;
     private int frames;
@@ -20,6 +23,8 @@ public class TestGLTF implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
+        instances = new ArrayList<>();
+
         //model = new Model("models/lantern/Lantern.gltf");
         model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
         //model = new Model("models/Sponza/Sponza.gltf");
@@ -27,7 +32,15 @@ public class TestGLTF implements ApplicationListener {
 
 
         modelMatrix = new Matrix4();
-        modelInstance1 = new ModelInstance(model, 0,0,0);
+        modelInstance1 = new ModelInstance(model, modelMatrix);
+        instances.add(modelInstance1);
+
+        for(int x = -30; x < 30; x += 5){
+            for(int z = -30; z < 30; z += 5){
+                if(x != 0 && z != 0)
+                    instances.add( new ModelInstance(model, x, 0, z));
+            }
+        }
 
         //modelInstance2 = new ModelInstance(model2, 5,0,0);
 
@@ -63,16 +76,13 @@ public class TestGLTF implements ApplicationListener {
         updateModelMatrix(modelMatrix, currentTime);
 
         modelBatch.begin(camera);
-
-        modelBatch.render(modelInstance1);
-        //modelBatch.render(modelInstance2);
-
+        modelBatch.render(instances);
         modelBatch.end();
 
         // At the end of the frame
 
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch : fps: " + frames  );
+            System.out.println("fps: " + frames  );
             frames = 0;
             startTime = System.nanoTime();
         }

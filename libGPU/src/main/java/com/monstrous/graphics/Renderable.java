@@ -7,7 +7,16 @@ public class Renderable {
     public Material material;
     public Matrix4 modelTransform;
 
+    public Renderable(){
+    }
+
     public Renderable(MeshPart meshPart, Material material, Matrix4 modelTransform) {
+        this.meshPart = meshPart;
+        this.material = material;
+        this.modelTransform = new Matrix4(modelTransform);  // need a copy because it may be changed
+    }
+
+    public void set(MeshPart meshPart, Material material, Matrix4 modelTransform) {
         this.meshPart = meshPart;
         this.material = material;
         this.modelTransform = new Matrix4(modelTransform);  // need a copy because it may be changed

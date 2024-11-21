@@ -50,7 +50,8 @@ public class ModelBatch implements Disposable {
 
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
-    private List<Renderable> renderables;
+    private final List<Renderable> renderables;
+    private final RenderablePool pool;
     public int numPipelineSwitches;
 
 
@@ -61,6 +62,7 @@ public class ModelBatch implements Disposable {
 
         pipelines = new Pipelines();
         renderables = new ArrayList<>();
+        pool = new RenderablePool(1000);
 
         frameUniformBuffer = createUniformBuffer( FRAME_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
@@ -106,7 +108,7 @@ public class ModelBatch implements Disposable {
     }
 
     public void render(ModelInstance instance){
-        instance.getRenderables((ArrayList<Renderable>) renderables);
+        instance.getRenderables((ArrayList<Renderable>) renderables, pool);
     }
 
 //    public void renderDirect(ModelInstance instance){
@@ -161,8 +163,10 @@ public class ModelBatch implements Disposable {
     private void flush() {
         // sort renderables to minimize material switching, to do: depth sorting etc.
         renderables.sort(comparator);
-        for(Renderable renderable : renderables)
+        for(Renderable renderable : renderables) {
             emit(renderable);
+            pool.free(renderable);
+        }
         renderables.clear();
     }
 

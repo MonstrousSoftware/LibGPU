@@ -23,8 +23,8 @@ public class ModelInstance {
         this.modelTransform = transform;
     }
 
-    public void getRenderables( ArrayList<Renderable> renderables ){
+    public void getRenderables( ArrayList<Renderable> renderables, RenderablePool pool ){
         for(Node rootNode : model.rootNodes)
-            rootNode.getRenderables(renderables, modelTransform);
+            rootNode.getRenderables(renderables, modelTransform, pool);
     }
 }
