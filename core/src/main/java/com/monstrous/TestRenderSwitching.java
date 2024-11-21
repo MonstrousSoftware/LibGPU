@@ -31,11 +31,17 @@ public class TestRenderSwitching implements ApplicationListener {
         modelMatrix = new Matrix4();
         instances = new ArrayList<>();
         instances.add( new ModelInstance(model, 0,0,0) );
-//        instances.add( new ModelInstance(model2, 15,0,0) );
-//        instances.add( new ModelInstance(model, 15,0,15) );
-//        instances.add( new ModelInstance(model2, 30,0,15) );
-//        instances.add( new ModelInstance(model, 10,0,0) );
+        instances.add( new ModelInstance(model2, 15,0,0) );
+        instances.add( new ModelInstance(model, 15,0,15) );
+        instances.add( new ModelInstance(model2, 30,0,15) );
+        instances.add( new ModelInstance(model, 10,0,0) );
         instances.add( new ModelInstance(model2, 2,0,3) );
+        instances.add( new ModelInstance(model, 0,10,0) );
+        instances.add( new ModelInstance(model2, 15,10,0) );
+        instances.add( new ModelInstance(model, 15,10,15) );
+        instances.add( new ModelInstance(model2, 30,10,15) );
+        instances.add( new ModelInstance(model, 10,10,0) );
+        instances.add( new ModelInstance(model2, 2,10,3) );
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 0.5f, -6);

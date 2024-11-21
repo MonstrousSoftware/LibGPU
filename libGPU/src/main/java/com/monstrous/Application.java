@@ -192,6 +192,7 @@ public class Application {
         // use a lambda expression to define a callback function
         WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
             System.out.println("*** Device error: " + type + " : " + message);
+            System.exit(-1);
         };
         wgpu.DeviceSetUncapturedErrorCallback(device, deviceCallback, null);
 

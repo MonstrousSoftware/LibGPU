@@ -17,9 +17,12 @@ struct ModelUniforms {
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
+
 @group(1) @binding(0) var<uniform> uMaterial: MaterialUniforms;
 @group(1) @binding(1) var texture: texture_2d<f32>;
 @group(1) @binding(2) var textureSampler: sampler;
+@group(1) @binding(3) var normalTexture: texture_2d<f32>;       // ignored
+
 @group(2) @binding(0) var<uniform> uModel: ModelUniforms;
 
 

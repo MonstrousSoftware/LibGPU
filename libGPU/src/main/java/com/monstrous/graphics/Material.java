@@ -3,7 +3,7 @@ package com.monstrous.graphics;
 import com.monstrous.graphics.loaders.MaterialData;
 import com.monstrous.utils.Disposable;
 
-public class Material implements Disposable, Comparable {
+public class Material implements Disposable {
     public Color baseColor;
     public Texture diffuseTexture;
     public Texture normalTexture;
@@ -29,6 +29,12 @@ public class Material implements Disposable, Comparable {
         this.diffuseTexture = texture;
     }
 
+    // for sorting materials, put emphasis on having or not a normal map, because this implies a pipeline switch, not just a material switch
+    //
+    public int sortCode(){
+        return (normalTexture != null ? 10000 : 0) + (hashCode() % 10000);
+    }
+
     public Material(Color baseColor) {
         this.baseColor = new Color(baseColor);
     }
@@ -40,10 +46,5 @@ public class Material implements Disposable, Comparable {
             normalTexture.dispose();
     }
 
-    @Override
-    public int compareTo(Object o) {
-        Material other = (Material)o;
 
-        return hashCode() - other.hashCode();
-    }
 }

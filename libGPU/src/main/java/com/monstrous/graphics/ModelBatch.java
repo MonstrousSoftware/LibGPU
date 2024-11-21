@@ -51,6 +51,7 @@ public class ModelBatch implements Disposable {
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
     private List<Renderable> renderables;
+    public int numPipelineSwitches;
 
 
     public ModelBatch () {
@@ -77,21 +78,7 @@ public class ModelBatch implements Disposable {
         shaderNormalMap = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
     }
 
-    // create or reuse pipeline on demand when we know the model
-    private void setPipeline(VertexAttributes vertexAttributes) {
 
-        ShaderProgram shader;
-        if(vertexAttributes.hasNormalMap)
-            shader = shaderNormalMap;
-        else
-            shader = shaderStd;
-
-        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader);
-        if (pipeline != prevPipeline) { // avoid unneeded switches
-            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
-            prevPipeline = pipeline;
-        }
-    }
 
 
     public void begin(Camera camera){
@@ -102,6 +89,7 @@ public class ModelBatch implements Disposable {
         modelUniformIndex = 0;
         prevMaterial = null;
         prevPipeline = null;
+        numPipelineSwitches = 0;
 
         writeFrameUniforms(frameUniformBuffer, camera);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer);
@@ -155,7 +143,7 @@ public class ModelBatch implements Disposable {
         wgpu.BindGroupRelease(modelBindGroup);
         if(materialBindGroup != null)
             wgpu.BindGroupRelease(materialBindGroup);
-        //System.out.println("materials: "+materialUniformIndex+"\t\tmodels: "+modelUniformIndex);
+        //System.out.println("materials: "+materialUniformIndex+"\t\tmodels: "+modelUniformIndex+" pipe switches: "+numPipelineSwitches);
     }
 
 
@@ -164,7 +152,7 @@ public class ModelBatch implements Disposable {
     private static class RenderableComparator implements Comparator<Renderable> {
         @Override
         public int compare(Renderable r1, Renderable r2) {
-            return r1.material.hashCode() - r2.material.hashCode();
+            return r1.material.sortCode() - r2.material.sortCode();
         }
     }
 
@@ -229,6 +217,23 @@ public class ModelBatch implements Disposable {
             wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, 1, meshPart.offset, 0);
     }
 
+    // create or reuse pipeline on demand when we know the model
+    private void setPipeline(VertexAttributes vertexAttributes) {
+
+        ShaderProgram shader;
+        if(vertexAttributes.hasNormalMap)
+            shader = shaderNormalMap;
+        else
+            shader = shaderStd;
+
+        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader);
+        if (pipeline != prevPipeline) { // avoid unneeded switches
+            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+            prevPipeline = pipeline;
+            numPipelineSwitches++;
+        }
+    }
+
 
     @Override
     public void dispose() {
@@ -289,22 +294,19 @@ public class ModelBatch implements Disposable {
         texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
         texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
 
-        WGPUBindGroupLayoutEntry normalTexBindingLayout = null;
-        if(hasNormalMap) {
-            normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-            setDefault(normalTexBindingLayout);
-            normalTexBindingLayout.setBinding(location++);
-            normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-            normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-            normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-        }
-
-
         WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(samplerBindingLayout);
         samplerBindingLayout.setBinding(location++);
         samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
         samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
+
+        // normal texture binding is included even if it is not used
+        WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(normalTexBindingLayout);
+        normalTexBindingLayout.setBinding(location++);
+        normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+        normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
 
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
@@ -312,10 +314,7 @@ public class ModelBatch implements Disposable {
         bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Material)");
         bindGroupLayoutDesc.setEntryCount(location);
 
-        if(hasNormalMap)
-            bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, normalTexBindingLayout, samplerBindingLayout);
-        else
-            bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout);
+        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, normalTexBindingLayout );
         return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
@@ -381,13 +380,13 @@ public class ModelBatch implements Disposable {
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
+        bindGroupDesc.setEntryCount(4);
         if(hasNormalMap) {
-            bindGroupDesc.setEntryCount(4);
             bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.normalTexture.getBinding(3) );
         }
         else {
-            bindGroupDesc.setEntryCount(3);
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2));
+            // use diffuse map as fake (ignored) normal map, so that we maintain the same layout
+            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2), diffuse.getBinding(3));
         }
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
