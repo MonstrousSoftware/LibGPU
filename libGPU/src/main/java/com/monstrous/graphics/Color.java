@@ -23,4 +23,10 @@ public class Color {
         this.b = b;
         this.a = a;
     }
+
+    /** Packs the color components into a 32-bit integer with the format ABGR.
+     * @return the packed color as a 32-bit int. */
+    public int toIntBits () {
+        return ((int)(255 * a) << 24) | ((int)(255 * b) << 16) | ((int)(255 * g) << 8) | ((int)(255 * r));
+    }
 }

@@ -17,6 +17,7 @@ public class Material implements Disposable {
         else
             fileName = materialData.diffuseMapFilePath;
         this.diffuseTexture = new Texture(fileName, false);            // todo until mipmapping is fixed
+        // todo use caching of textures in case we reuse the same texture in different materials
 
         if( materialData.normalMapFilePath != null) {
             fileName = materialData.normalMapFilePath;
@@ -35,7 +36,7 @@ public class Material implements Disposable {
     }
 
     // for sorting materials, put emphasis on having or not a normal map, because this implies a pipeline switch, not just a material switch
-    //
+    // todo: should have same value for materials with same colours and same texture file names
     public int sortCode(){
         return (normalTexture != null ? 10000 : 0) + (hashCode() % 10000);
     }

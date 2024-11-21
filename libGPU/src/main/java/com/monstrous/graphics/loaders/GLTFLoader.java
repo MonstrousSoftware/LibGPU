@@ -2,6 +2,7 @@ package com.monstrous.graphics.loaders;
 
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.loaders.gltf.*;
+import com.monstrous.math.Matrix4;
 import com.monstrous.math.Quaternion;
 import com.monstrous.math.Vector3;
 import org.json.simple.JSONArray;
@@ -243,6 +244,10 @@ public class GLTFLoader {
             if(rot != null){
                 node.rotation = getRotation(rot);
             }
+            JSONArray mat = (JSONArray)nd.get("matrix");
+            if(mat != null){
+                node.matrix = getMatrix4(mat);
+            }
             JSONArray ch = (JSONArray)nd.get("children");
             if(ch != null){
                 for(int j = 0; j < ch.size(); j++){
@@ -308,6 +313,17 @@ public class GLTFLoader {
         Number z = (Number)rot.get(2);
         Number w = (Number)rot.get(3);
         return new Quaternion(x.floatValue(), y.floatValue(), z.floatValue(), w.floatValue());
+    }
+
+    private static Matrix4 getMatrix4(JSONArray mat) {
+        if(mat.size() != 16)
+            throw new RuntimeException("GLTF: Expected matrix with 16 elements");
+        float[] values = new float[16];
+        for(int i = 0; i < 16; i++) {
+            Number nr = (Number) mat.get(i);
+            values[i] = nr.floatValue();
+        }
+        return new Matrix4(values);
     }
 
 

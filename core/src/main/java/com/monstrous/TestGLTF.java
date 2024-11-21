@@ -26,7 +26,8 @@ public class TestGLTF implements ApplicationListener {
         instances = new ArrayList<>();
 
         //model = new Model("models/lantern/Lantern.gltf");
-        model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
+        model = new Model("models/Buggy/Buggy.gltf");
+        //model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
         //model = new Model("models/Sponza/Sponza.gltf");
         //model2 = new Model("models/fourareen.obj");
 
@@ -35,12 +36,12 @@ public class TestGLTF implements ApplicationListener {
         modelInstance1 = new ModelInstance(model, modelMatrix);
         instances.add(modelInstance1);
 
-        for(int x = -30; x < 30; x += 5){
-            for(int z = -30; z < 30; z += 5){
-                if(x != 0 && z != 0)
-                    instances.add( new ModelInstance(model, x, 0, z));
-            }
-        }
+//        for(int x = -30; x < 30; x += 5){
+//            for(int z = -30; z < 30; z += 5){
+//                if(x != 0 && z != 0)
+//                    instances.add( new ModelInstance(model, x, 0, z));
+//            }
+//        }
 
         //modelInstance2 = new ModelInstance(model2, 5,0,0);
 
@@ -48,6 +49,8 @@ public class TestGLTF implements ApplicationListener {
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1f, -3);
         camera.direction.set(0,0f, 1f);
+        camera.far = 1000f;
+        camera.near = 0.001f;
         camera.update();
 
         LibGPU.input.setInputProcessor(new CameraController(camera));

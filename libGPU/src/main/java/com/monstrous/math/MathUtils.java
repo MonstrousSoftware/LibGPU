@@ -32,4 +32,15 @@ public final class MathUtils {
         return Math.abs(a - b) <= FLOAT_ROUNDING_ERROR;
     }
 
+    /** Returns true if the value is zero (using the default tolerance as upper bound) */
+    static public boolean isZero (float value) {
+        return Math.abs(value) <= FLOAT_ROUNDING_ERROR;
+    }
+
+    /** Returns true if the value is zero.
+     * @param tolerance represent an upper bound below which the value is considered zero. */
+    static public boolean isZero (float value, float tolerance) {
+        return Math.abs(value) <= tolerance;
+    }
+
 }

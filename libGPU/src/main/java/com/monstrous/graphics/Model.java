@@ -91,6 +91,11 @@ public class Model implements Disposable {
         node.name = gltfNode.name;
 
         // optional transforms
+        if(gltfNode.matrix != null){
+            gltfNode.matrix.getTranslation(node.translation);
+            gltfNode.matrix.getScale(node.scale);
+            gltfNode.matrix.getRotation(node.rotation);
+        }
         if(gltfNode.translation != null)
             node.translation.set(gltfNode.translation);
         if(gltfNode.scale != null)
@@ -240,34 +245,36 @@ public class Model implements Disposable {
             }
         }
 
-
-        if(uvAccessorId < 0)
-            throw new RuntimeException("GLTF: need TEXCOORD_0 attribute");
-        GLTFAccessor uvAccessor = gltf.accessors.get(uvAccessorId);
-        view = gltf.bufferViews.get(uvAccessor.bufferView);
-        if(view.buffer != 0)
-            throw new RuntimeException("GLTF: Can only support buffer 0");
-        offset = view.byteOffset;
-        offset += uvAccessor.byteOffset;
-
-        System.out.println("UV offset: "+offset);
-
-        if(uvAccessor.componentType != GLTF.FLOAT32 || !uvAccessor.type.contentEquals("VEC2"))
-            throw new RuntimeException("GLTF: Can only support float positions as VEC2");
-
         ArrayList<Vector2> textureCoordinates = new ArrayList<>();
-        rawBuffer.byteBuffer.position(offset);
-        for(int i = 0; i < uvAccessor.count; i++){
-            // assuming float32
-            float f1 = rawBuffer.byteBuffer.getFloat();
-            float f2 = rawBuffer.byteBuffer.getFloat();
-            //System.out.println("float  "+f1 + " "+ f2 );
-            textureCoordinates.add(new Vector2(f1, f2));
+        if(uvAccessorId >= 0) {
+
+            GLTFAccessor uvAccessor = gltf.accessors.get(uvAccessorId);
+            view = gltf.bufferViews.get(uvAccessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += uvAccessor.byteOffset;
+
+            System.out.println("UV offset: " + offset);
+
+            if (uvAccessor.componentType != GLTF.FLOAT32 || !uvAccessor.type.contentEquals("VEC2"))
+                throw new RuntimeException("GLTF: Can only support float positions as VEC2");
+
+
+            rawBuffer.byteBuffer.position(offset);
+            for (int i = 0; i < uvAccessor.count; i++) {
+                // assuming float32
+                float f1 = rawBuffer.byteBuffer.getFloat();
+                float f2 = rawBuffer.byteBuffer.getFloat();
+                //System.out.println("float  "+f1 + " "+ f2 );
+                textureCoordinates.add(new Vector2(f1, f2));
+            }
         }
 
         // x y z (tx ty tz bx by bz) nx ny nz u v
         meshData.objectName = gltf.nodes.getFirst().name;
         Vector3 bitangent = new Vector3();
+        Vector2 uv = new Vector2();
         for(int i = 0; i < positions.size(); i++){
             Vector3 pos = positions.get(i);
             meshData.vertFloats.add(pos.x);
@@ -299,11 +306,10 @@ public class Model implements Disposable {
                 meshData.vertFloats.add(normal.z);
             }
 
-            Vector2 uv = textureCoordinates.get(i);
+            if(!textureCoordinates.isEmpty())
+                 uv =  textureCoordinates.get(i);
             meshData.vertFloats.add(uv.x);
             meshData.vertFloats.add(uv.y);
-            //System.out.println("uv float  "+uv.x + " "+ uv.y );
-
         }
 
         // todo adjust this based on the file contents:

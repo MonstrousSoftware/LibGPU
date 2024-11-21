@@ -116,6 +116,61 @@ public class Matrix4 {
         return this;
     }
 
+    public Vector3 getTranslation (Vector3 position) {
+        position.x = val[M03];
+        position.y = val[M13];
+        position.z = val[M23];
+        return position;
+    }
+
+    /** Gets the rotation of this matrix.
+     * @param rotation The {@link Quaternion} to receive the rotation
+     * @return The provided {@link Quaternion} for chaining. */
+    public Quaternion getRotation (Quaternion rotation) {
+        return rotation.setFromMatrix(this);
+    }
+
+
+    /** @return the squared scale factor on the X axis */
+    public float getScaleXSquared () {
+        return val[M00] * val[M00] + val[M01] * val[M01] + val[M02] * val[M02];
+    }
+
+    /** @return the squared scale factor on the Y axis */
+    public float getScaleYSquared () {
+        return val[M10] * val[M10] + val[M11] * val[M11] + val[M12] * val[M12];
+    }
+
+    /** @return the squared scale factor on the Z axis */
+    public float getScaleZSquared () {
+        return val[M20] * val[M20] + val[M21] * val[M21] + val[M22] * val[M22];
+    }
+
+    /** @return the scale factor on the X axis (non-negative) */
+    public float getScaleX () {
+        return (MathUtils.isZero(val[M01]) && MathUtils.isZero(val[M02])) ? Math.abs(val[M00])
+                : (float)Math.sqrt(getScaleXSquared());
+    }
+
+    /** @return the scale factor on the Y axis (non-negative) */
+    public float getScaleY () {
+        return (MathUtils.isZero(val[M10]) && MathUtils.isZero(val[M12])) ? Math.abs(val[M11])
+                : (float)Math.sqrt(getScaleYSquared());
+    }
+
+    /** @return the scale factor on the X axis (non-negative) */
+    public float getScaleZ () {
+        return (MathUtils.isZero(val[M20]) && MathUtils.isZero(val[M21])) ? Math.abs(val[M22])
+                : (float)Math.sqrt(getScaleZSquared());
+    }
+
+    /** @param scale The vector which will receive the (non-negative) scale components on each axis.
+     * @return The provided vector for chaining. */
+    public Vector3 getScale (Vector3 scale) {
+        return scale.set(getScaleX(), getScaleY(), getScaleZ());
+    }
+
+
     /** Sets the matrix to a rotation matrix representing the translation and quaternion.
      * @param translationX The X component of the translation that is to be used to set this matrix.
      * @param translationY The Y component of the translation that is to be used to set this matrix.
