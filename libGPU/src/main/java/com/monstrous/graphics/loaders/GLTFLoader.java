@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+
+// JSON parser of the GLTF file format into a set of GLTF class objects
+
 public class GLTFLoader {
 
     public static GLTF load(String filePath) {

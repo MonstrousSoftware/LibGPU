@@ -19,8 +19,8 @@ public class ModelBatch implements Disposable {
     private final int MODEL_UB_SIZE = 16 * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
 
-    private final int MAX_MODELS = 64;   // limits nr of renderables!
-    private final int MAX_MATERIALS = 64;   // limits nr of materials!
+    private final int MAX_MODELS = 512;   // limits nr of renderables!
+    private final int MAX_MATERIALS = 256;   // limits nr of materials!
 
     private final WGPU wgpu;
     private final Pointer device;

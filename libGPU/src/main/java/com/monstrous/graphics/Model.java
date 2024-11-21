@@ -104,7 +104,8 @@ public class Model implements Disposable {
                     throw new RuntimeException("GLTF: Expect primitive.indices to refer to SCALAR accessor");
 
                 Mesh m = meshMap.get(primitive);
-                MeshPart meshPart = new MeshPart(m, indexAccessor.byteOffset, indexAccessor.count);
+                MeshPart meshPart = new MeshPart(m, 0, indexAccessor.count);
+                //MeshPart meshPart = new MeshPart(m, indexAccessor.byteOffset, indexAccessor.count);
                 node.nodeParts.add( new NodePart(meshPart, materials.get(primitive.material)) );
             }
         }

@@ -20,8 +20,8 @@ public class TestGLTF implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        //model = new Model("models/lantern/Lantern.gltf");
-        model = new Model("models/ToyCar/ToyCar.gltf");
+        model = new Model("models/lantern/Lantern.gltf");
+        //model = new Model("models/Sponza/Sponza.gltf");
         //model2 = new Model("models/fourareen.obj");
 
 
