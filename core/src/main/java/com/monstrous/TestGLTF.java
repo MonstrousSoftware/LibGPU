@@ -20,7 +20,8 @@ public class TestGLTF implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/lantern/Lantern.gltf");
+        //model = new Model("models/lantern/Lantern.gltf");
+        model = new Model("models/ToyCar/ToyCar.gltf");
         //model2 = new Model("models/fourareen.obj");
 
 
@@ -31,7 +32,7 @@ public class TestGLTF implements ApplicationListener {
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
-        camera.position.set(0, 15f, -30);
+        camera.position.set(0, 1f, -3);
         camera.direction.set(0,0f, 1f);
         camera.update();
 

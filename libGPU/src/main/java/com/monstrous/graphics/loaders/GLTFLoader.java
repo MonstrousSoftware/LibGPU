@@ -104,8 +104,8 @@ public class GLTFLoader {
                     double r = (Double)bc.get(0);
                     double g = (Double)bc.get(1);
                     double b = (Double)bc.get(2);
-                    double a = (Double)bc.get(3);           // todo breaks if file says "1" because then it gets type Long
-                    pbr.baseColorFactor = new Color((float)r, (float)g, (float)b, (float)a);
+                    Number a = (Number)bc.get(3);           // todo breaks if file says "1" because then it gets type Long
+                    pbr.baseColorFactor = new Color((float)r, (float)g, (float)b, a.floatValue());
                 }
 
                 JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
@@ -236,34 +236,15 @@ public class GLTFLoader {
 
             JSONArray tr = (JSONArray)nd.get("translation");
             if(tr != null){
-                if(tr.size() != 3)
-                    throw new RuntimeException("GLTF: Expected node.translation with 3 elements");
-                double x = (double)tr.get(0);
-                double y = (double)tr.get(1);
-                double z = (double)tr.get(2);
-                node.translation = new Vector3((float)x, (float)y,(float)z);
-                System.out.println("node translation "+node.name+ node.translation);
+                node.translation = getVector3(tr);
             }
             JSONArray sc = (JSONArray)nd.get("scale");
             if(sc != null){
-                if(sc.size() != 3)
-                    throw new RuntimeException("GLTF: Expected node.scale with 3 elements");
-                double x = (double)sc.get(0);
-                double y = (double)sc.get(1);
-                double z = (double)sc.get(2);
-                node.scale = new Vector3((float)x, (float)y,(float)z);
-                System.out.println("node scale "+node.name+ node.scale);
+                node.scale = getVector3(sc);
             }
             JSONArray rot = (JSONArray)nd.get("rotation");
             if(rot != null){
-                if(rot.size() != 4)
-                    throw new RuntimeException("GLTF: Expected node.rotation with 4 elements");
-                double x = (double)rot.get(0);
-                double y = (double)rot.get(1);
-                double z = (double)rot.get(2);
-                double w = (double)rot.get(3);
-                node.rotation = new Quaternion((float)x, (float)y,(float)z, (float)w);
-                System.out.println("node rotation "+node.name+node.rotation);
+                node.rotation = getRotation(rot);
             }
             JSONArray ch = (JSONArray)nd.get("children");
             if(ch != null){
@@ -301,5 +282,28 @@ public class GLTFLoader {
         Long value = (Long)obj.get(key);
         return (value == null ? fallback : value.intValue());
     }
+
+    private static Vector3 getVector3(JSONArray obj) {
+        if (obj.size() != 3)
+            throw new RuntimeException("GLTF: Expected vector with 3 elements");
+        Number x = (Number) obj.get(0);
+        Number y = (Number) obj.get(1);
+        Number z = (Number) obj.get(2);
+        return  new Vector3(x.floatValue(), y.floatValue(), z.floatValue());
+    }
+
+
+    private static Quaternion getRotation(JSONArray rot) {
+        if(rot.size() != 4)
+            throw new RuntimeException("GLTF: Expected node.rotation with 4 elements");
+        Number x = (Number)rot.get(0);
+        Number y = (Number)rot.get(1);
+        Number z = (Number)rot.get(2);
+        Number w = (Number)rot.get(3);
+        return new Quaternion(x.floatValue(), y.floatValue(), z.floatValue(), w.floatValue());
+    }
+
+
+
 
 }

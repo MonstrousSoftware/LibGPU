@@ -22,7 +22,7 @@ public class Camera {
         position = new Vector3(0f,0f,0f);
         direction = new Vector3(0,0,1);
         up = new Vector3(0, 1, 0);
-        near = 0.1f;
+        near = 0.001f;
         far = 100;
 
         update();

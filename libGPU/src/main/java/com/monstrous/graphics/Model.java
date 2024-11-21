@@ -129,15 +129,21 @@ public class Model implements Disposable {
         offset += indexAccessor.byteOffset;
 
         MeshData meshData = new MeshData();
-        if(indexAccessor.componentType != GLTF.USHORT16)
-            throw new RuntimeException("GLTF: Can only support short index");
+        if(indexAccessor.componentType != GLTF.USHORT16 && indexAccessor.componentType != GLTF.UINT32 )
+            throw new RuntimeException("GLTF: Can only support short or integer index");
 
         rawBuffer.byteBuffer.position(offset);
-        for(int i = 0; i < indexAccessor.count; i++){
-            // assuming ushort
-            int index = rawBuffer.byteBuffer.getShort();
-            //System.out.println("index "+index);
-            meshData.indexValues.add(index);
+
+        if(indexAccessor.componentType == GLTF.USHORT16){
+            meshData.indexSizeInBytes = 2; // 16 bit index
+            for(int i = 0; i < indexAccessor.count; i++){
+                meshData.indexValues.add((int)rawBuffer.byteBuffer.getShort());
+            }
+        } else {
+            meshData.indexSizeInBytes = 4; // 32 bit index
+            for(int i = 0; i < indexAccessor.count; i++){
+                meshData.indexValues.add(rawBuffer.byteBuffer.getInt());
+            }
         }
 
         int positionAccessorId = -1;
@@ -307,7 +313,7 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, location++);
         meshData.vertexAttributes.end();
 
-        meshData.indexSizeInBytes = 2; // 16 bit index
+
         return new Mesh(meshData);
     }
 

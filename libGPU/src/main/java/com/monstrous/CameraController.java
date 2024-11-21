@@ -1,6 +1,5 @@
 package com.monstrous;
 
-import com.monstrous.InputProcessor;
 import com.monstrous.graphics.Camera;
 
 // Simple turn table camera controller
@@ -41,7 +40,7 @@ public class CameraController implements InputProcessor {
         System.out.println("cam controller: scroll: "+x+", "+y);
         if(y < 0)
             distance *= 1.1f;
-        else if (y > 0 && distance > 1)
+        else if (y > 0 && distance > 0.0)
             distance *= 0.9f;
         update();
     }
