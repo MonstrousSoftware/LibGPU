@@ -56,6 +56,12 @@ public class Model implements Disposable {
                 mat.diffuse = gltfMat.pbrMetallicRoughness.baseColorFactor;
             if(gltfMat.pbrMetallicRoughness.baseColorTexture >= 0)
                 mat.diffuseMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.pbrMetallicRoughness.baseColorTexture).source).uri;
+            if(gltfMat.normalTexture >= 0)
+                mat.normalMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.normalTexture).source).uri;
+            if(gltfMat.emissiveTexture >= 0)
+                mat.emissiveMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.emissiveTexture).source).uri;
+            if(gltfMat.occlusionTexture >= 0)
+                mat.occlusionMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.occlusionTexture).source).uri;
             mtlData.add(mat);
         }
 
@@ -137,16 +143,17 @@ public class Model implements Disposable {
         int positionAccessorId = -1;
         int normalAccessorId = -1;
         int uvAccessorId = -1;
+        int tangentAccessorId = -1;
         ArrayList<GLTFAttribute> attributes = primitive.attributes;
         for(GLTFAttribute attribute : attributes){
             if(attribute.name.contentEquals("POSITION")){
                 positionAccessorId = attribute.value;
-            }
-            if(attribute.name.contentEquals("NORMAL")){
+            } else if(attribute.name.contentEquals("NORMAL")){
                 normalAccessorId = attribute.value;
-            }
-            if(attribute.name.contentEquals("TEXCOORD_0")){
+            } else  if(attribute.name.contentEquals("TEXCOORD_0")){
                 uvAccessorId = attribute.value;
+            } else if(attribute.name.contentEquals("TANGENT")){
+                tangentAccessorId = attribute.value;
             }
         }
         if(positionAccessorId < 0)
@@ -199,6 +206,29 @@ public class Model implements Disposable {
             }
         }
 
+        ArrayList<Vector3> tangents = new ArrayList<>();
+        if(tangentAccessorId >= 0) {
+            GLTFAccessor tangentAccessor = gltf.accessors.get(tangentAccessorId);
+            view = gltf.bufferViews.get(tangentAccessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += tangentAccessor.byteOffset;
+
+            if (tangentAccessor.componentType != GLTF.FLOAT32 || !positionAccessor.type.contentEquals("VEC3"))
+                throw new RuntimeException("GLTF: Can only support float tangents as VEC3");
+
+            rawBuffer.byteBuffer.position(offset);
+            for (int i = 0; i < tangentAccessor.count; i++) {
+                // assuming float32
+                float f1 = rawBuffer.byteBuffer.getFloat();
+                float f2 = rawBuffer.byteBuffer.getFloat();
+                float f3 = rawBuffer.byteBuffer.getFloat();
+                //System.out.println("float  "+f1 + " "+ f2 + " "+f3);
+                tangents.add(new Vector3(f1, f2, f3));
+            }
+        }
+
 
         if(uvAccessorId < 0)
             throw new RuntimeException("GLTF: need TEXCOORD_0 attribute");
@@ -224,17 +254,30 @@ public class Model implements Disposable {
             textureCoordinates.add(new Vector2(f1, f2));
         }
 
-        // x y z nx ny nz u v
-        meshData.vertSize = 11; // in floats
+        // x y z (tx ty tz bx by bz) nx ny nz u v
         meshData.objectName = gltf.nodes.getFirst().name;
-
+        Vector3 bitangent = new Vector3();
         for(int i = 0; i < positions.size(); i++){
             Vector3 pos = positions.get(i);
             meshData.vertFloats.add(pos.x);
             meshData.vertFloats.add(pos.y);
             meshData.vertFloats.add(pos.z);
 
-            if(normals.size() == 0){
+            if(!tangents.isEmpty()) {
+                Vector3 tangent = tangents.get(i);
+                meshData.vertFloats.add(tangent.x);
+                meshData.vertFloats.add(tangent.y);
+                meshData.vertFloats.add(tangent.z);
+
+                // calculate bitangent from normal x tangent
+                Vector3 normal = normals.get(i);
+                bitangent.set(normal).crs(tangent).nor();
+                meshData.vertFloats.add(bitangent.x);
+                meshData.vertFloats.add(bitangent.y);
+                meshData.vertFloats.add(bitangent.z);
+            }
+
+            if(normals.isEmpty()){
                 meshData.vertFloats.add(0f);
                 meshData.vertFloats.add(0f);
                 meshData.vertFloats.add(0f);
@@ -254,12 +297,17 @@ public class Model implements Disposable {
 
         // todo adjust this based on the file contents:
         meshData.vertexAttributes = new VertexAttributes();
-        meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 2);
+        int location = 0;
+        meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, location++);
+        if(!tangents.isEmpty()) {
+            meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, location++);
+            meshData.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, location++);
+        }
+        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, location++);
+        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, location++);
         meshData.vertexAttributes.end();
 
-        meshData.indexSize = 2; // 16 bit index
+        meshData.indexSizeInBytes = 2; // 16 bit index
         return new Mesh(meshData);
     }
 
@@ -269,15 +317,7 @@ public class Model implements Disposable {
         // todo fix if obj has no normal map we dont need tangent and bitangent and we should also not add this in vertex buffer
         ArrayList<MaterialData> mtlData = new ArrayList<>();
         MeshData meshData = ObjLoader.load(filePath, mtlData);
-        meshData.vertexAttributes = new VertexAttributes();
-        meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-        meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
-        meshData.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
-        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 3);
-        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 4);
-        meshData.vertexAttributes.end();
-        //meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
-        meshData.indexSize = 4;
+
         Mesh mesh = new Mesh(meshData);
         meshes.add(mesh);
 

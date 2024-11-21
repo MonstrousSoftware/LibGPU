@@ -88,10 +88,11 @@ public class GLTFLoader {
             for (int i = 0; i < mats.size(); i++) {
 
                 GLTFMaterialPBR pbr = new GLTFMaterialPBR();
+                GLTFMaterial material = new GLTFMaterial();
 
                 JSONObject mat = (JSONObject) mats.get(i);
-                String nm = (String) mat.get("name");
-                System.out.println("material name: " + nm);
+                material.name = (String) mat.get("name");
+
                 JSONObject pbrMR = (JSONObject) mat.get("pbrMetallicRoughness");
                 JSONObject base = (JSONObject) pbrMR.get("baseColorTexture");
                 if(base != null)
@@ -106,15 +107,26 @@ public class GLTFLoader {
                     double a = (Double)bc.get(3);           // todo breaks if file says "1" because then it gets type Long
                     pbr.baseColorFactor = new Color((float)r, (float)g, (float)b, (float)a);
                 }
-                System.out.println("material name: " + nm );
+
                 JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
                 if(metal != null) {
-                    long metalIndex = (Long) metal.get("index");                               // ignored
-                    System.out.println("material name: " + nm + " pbr.metal.index = " + metalIndex);
+                    long metalIndex = (Long) metal.get("index");
                     pbr.metallicRoughnessTexture = (int) metalIndex;
                 }
 
-                GLTFMaterial material = new GLTFMaterial();
+                JSONObject normalMap = (JSONObject) mat.get("normalTexture");
+                if(normalMap != null)
+                    material.normalTexture = getInt(normalMap, "index", -1);
+
+                JSONObject emissive = (JSONObject) mat.get("emissiveTexture");
+                if(emissive != null)
+                    material.emissiveTexture = getInt(emissive, "index", -1);
+
+                JSONObject occlusion = (JSONObject) mat.get("occlusionTexture");
+                if(occlusion != null)
+                    material.occlusionTexture = getInt(occlusion, "index", -1);
+
+
                 material.pbrMetallicRoughness = pbr;
                 gltf.materials.add(material);
             }

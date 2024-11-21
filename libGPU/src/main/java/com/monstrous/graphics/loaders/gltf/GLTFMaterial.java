@@ -3,9 +3,9 @@ package com.monstrous.graphics.loaders.gltf;
 public class GLTFMaterial {
     public String name;
     public GLTFMaterialPBR pbrMetallicRoughness;
-    public String normalTexturePath;
-    public String occlusionTexturePath;
-    public String emissiveTexturePath;
+    public int normalTexture;
+    public int occlusionTexture;
+    public int emissiveTexture;
     public String alphaMode;
     public float alphaCutoff;
     public boolean doubleSide;
@@ -15,5 +15,8 @@ public class GLTFMaterial {
         alphaMode = "OPAQUE";
         alphaCutoff = 0.5f;
         doubleSide = false;
+        normalTexture = -1;
+        occlusionTexture = -1;
+        emissiveTexture = -1;
     }
 }

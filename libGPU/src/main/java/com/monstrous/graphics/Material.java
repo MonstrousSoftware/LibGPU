@@ -11,14 +11,13 @@ public class Material implements Disposable {
     public Material(MaterialData materialData) {
         baseColor = new Color(materialData.diffuse);
         String fileName;
-        if(materialData == null || materialData.diffuseMapFilePath == null) {
+        if(materialData.diffuseMapFilePath == null)
             fileName = "textures\\white.png";
-        }
         else
             fileName = materialData.diffuseMapFilePath;
         this.diffuseTexture = new Texture(fileName, false);            // todo until mipmapping is fixed
 
-        if(materialData != null && materialData.normalMapFilePath != null) {
+        if( materialData.normalMapFilePath != null) {
             fileName = materialData.normalMapFilePath;
             this.normalTexture = new Texture(fileName, false);            // todo until mipmapping is fixed
         }

@@ -66,17 +66,15 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 1.0;
-    let kS = 0.9;
-    let hardness = 6.0;
-    let ambient = 0.0;
-    let normalMapStrength = 0.8;
+    let kS = 0.1;
+    let hardness = 1.0;
+    let ambient = 0.2;
+    let normalMapStrength = 0.2;
 
     let V = normalize(in.viewDirection);
     //let N = normalize(in.normal);
     let lightColor = vec3f(1.0, 1.0, 1.0);
     let lightDirection = vec3f(0.0, -1.0, 0.0);
-
-
 
     let baseColor = textureSample(texture, textureSampler, in.uv).rgb * in.color;
     let encodedN = textureSample(normalTexture, textureSampler, in.uv).rgb;
@@ -108,5 +106,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     color += baseColor * ambient;
 
     //color = N*0.5 + 0.5;
+    //color = baseColor;
     return vec4f(color, 1.0);
 }

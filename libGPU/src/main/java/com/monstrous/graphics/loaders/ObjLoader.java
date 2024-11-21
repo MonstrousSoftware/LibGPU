@@ -1,8 +1,10 @@
 package com.monstrous.graphics.loaders;
 
 import com.monstrous.FileInput;
+import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
+import com.monstrous.wgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
 
@@ -142,10 +144,19 @@ public class ObjLoader {
         }
 
         MeshData data = new MeshData();
-        data.vertSize = vertSize;
         data.vertFloats = vertFloats;
         data.indexValues = indexValues;
         data.objectName = name;
+
+        data.vertexAttributes = new VertexAttributes();
+        data.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
+        data.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
+        data.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
+        data.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 3);
+        data.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 4);
+        data.vertexAttributes.end();
+        //meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
+        data.indexSizeInBytes = 4;
 
         addTBN(data);
         return data;
@@ -164,31 +175,33 @@ public class ObjLoader {
         Vector3 T = new Vector3();
         Vector3 B = new Vector3();
 
+        int vertSize = data.vertexAttributes.getVertexSizeInBytes()/Float.BYTES;
+
         for(int tri = 0; tri < data.indexValues.size(); tri += 3) {
             for (int j = 0; j < 3; j++) {
                 int index = data.indexValues.get(tri+j);
-                corners[j].position.x = data.vertFloats.get(index * data.vertSize + 0);
-                corners[j].position.y = data.vertFloats.get(index * data.vertSize + 1);
-                corners[j].position.z = data.vertFloats.get(index * data.vertSize + 2);
+                corners[j].position.x = data.vertFloats.get(index * vertSize + 0);
+                corners[j].position.y = data.vertFloats.get(index * vertSize + 1);
+                corners[j].position.z = data.vertFloats.get(index * vertSize + 2);
 
-                corners[j].normal.x = data.vertFloats.get(index * data.vertSize + 9);
-                corners[j].normal.y = data.vertFloats.get(index * data.vertSize + 10);
-                corners[j].normal.z = data.vertFloats.get(index * data.vertSize + 11);
+                corners[j].normal.x = data.vertFloats.get(index * vertSize + 9);
+                corners[j].normal.y = data.vertFloats.get(index * vertSize + 10);
+                corners[j].normal.z = data.vertFloats.get(index * vertSize + 11);
 
-                corners[j].uv.x = data.vertFloats.get(index * data.vertSize + 12);
-                corners[j].uv.y = data.vertFloats.get(index * data.vertSize + 13);
+                corners[j].uv.x = data.vertFloats.get(index * vertSize + 12);
+                corners[j].uv.y = data.vertFloats.get(index * vertSize + 13);
             }
             calculateBTN(corners, T, B);
 
             for (int j = 0; j < 3; j++) {
                 int index = data.indexValues.get(tri+j);
-                data.vertFloats.set(index*data.vertSize + 3, T.x);
-                data.vertFloats.set(index*data.vertSize + 4, T.y);
-                data.vertFloats.set(index*data.vertSize + 5, T.z);
+                data.vertFloats.set(index*vertSize + 3, T.x);
+                data.vertFloats.set(index*vertSize + 4, T.y);
+                data.vertFloats.set(index*vertSize + 5, T.z);
 
-                data.vertFloats.set(index*data.vertSize + 6, B.x);
-                data.vertFloats.set(index*data.vertSize + 7, B.y);
-                data.vertFloats.set(index*data.vertSize + 8, B.z);
+                data.vertFloats.set(index*vertSize + 6, B.x);
+                data.vertFloats.set(index*vertSize + 7, B.y);
+                data.vertFloats.set(index*vertSize + 8, B.z);
             }
         }
     }

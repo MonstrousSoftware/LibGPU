@@ -12,12 +12,14 @@ public class VertexAttributes implements Disposable {
 
     public ArrayList<VertexAttribute> attributes;
     private WGPUVertexBufferLayout vertexBufferLayout;
+    private int vertexSize; // in floats
     public boolean hasNormalMap;        // HACK
 
     public VertexAttributes() {
         attributes = new ArrayList<>();
         hasNormalMap = false;
         vertexBufferLayout = null;
+        vertexSize = -1;
     }
 
     public void add(String label, WGPUVertexFormat format, int shaderLocation){
@@ -28,7 +30,17 @@ public class VertexAttributes implements Disposable {
     }
 
     public void end(){
+        vertexSize = 0;
+        for(VertexAttribute va : attributes) {
+            vertexSize += va.getSize();
+        }
+    }
 
+
+    public int getVertexSizeInBytes() {
+        if(vertexSize < 0)
+            throw new RuntimeException("getVertexSize: call VertexAttributes.end() first");
+        return vertexSize;
     }
 
     public WGPUVertexBufferLayout getVertexBufferLayout(){

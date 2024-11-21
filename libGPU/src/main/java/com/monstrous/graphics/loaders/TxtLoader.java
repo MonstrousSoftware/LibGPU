@@ -48,7 +48,6 @@ public class TxtLoader {
             }
         }
         MeshData data = new MeshData();
-        data.vertSize = vertSize;
         data.vertFloats = vertFloats;
         data.indexValues = indexValues;
         return data;

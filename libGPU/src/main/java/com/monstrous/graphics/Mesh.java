@@ -36,9 +36,8 @@ public class Mesh {
     public Mesh(MeshData data){
 
         vertexAttributes = data.vertexAttributes;
-        // todo could calculate vertSize from attributes
 
-        vertexCount = data.vertFloats.size()/data.vertSize;
+        vertexCount = data.vertFloats.size()*Float.BYTES/data.vertexAttributes.getVertexSizeInBytes();
         float[] vertexData = new float[ data.vertFloats.size() ];
         for(int i = 0; i < data.vertFloats.size(); i++){
             vertexData[i] = data.vertFloats.get(i);
@@ -56,7 +55,7 @@ public class Mesh {
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, dataBuf, (int)bufferDesc.getSize());
 
 
-        int indexSize = data.indexSize;  // bytes
+        int indexSize = data.indexSizeInBytes;  // bytes
         indexCount = data.indexValues.size();
         int indexBufferSize = indexCount*indexSize;
         indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4

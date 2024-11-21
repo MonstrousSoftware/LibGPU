@@ -17,4 +17,6 @@ public class MaterialData {
     public int illuminationModel;
     public String diffuseMapFilePath;
     public String normalMapFilePath;
+    public String emissiveMapFilePath;
+    public String occlusionMapFilePath;
 }
