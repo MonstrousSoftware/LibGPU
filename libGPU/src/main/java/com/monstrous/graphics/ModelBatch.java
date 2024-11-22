@@ -97,7 +97,7 @@ public class ModelBatch implements Disposable {
         this.renderPass = LibGPU.renderPass;
 
         if(environment != null)
-            directionalLight = (DirectionalLight) environment.lights.getFirst();        // HACK
+            directionalLight = (DirectionalLight) environment.lights.get(0);        // HACK
         else
             directionalLight = defaultDirectionalLight;
 

@@ -39,7 +39,7 @@ public class Model implements Disposable {
     private void readGLTF(String filePath) {
         meshMap.clear();
         GLTF gltf = GLTFLoader.load(filePath);      // TMP
-        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.getFirst().uri);           // assume 1 buffer
+        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.get(0).uri);           // assume 1 buffer
 
         for(GLTFMesh gltfMesh : gltf.meshes){
             for(GLTFPrimitive primitive : gltfMesh.primitives){
@@ -272,7 +272,7 @@ public class Model implements Disposable {
         }
 
         // x y z (tx ty tz bx by bz) nx ny nz u v
-        meshData.objectName = gltf.nodes.getFirst().name;
+        meshData.objectName = gltf.nodes.get(0).name;
         Vector3 bitangent = new Vector3();
         Vector2 uv = new Vector2();
         for(int i = 0; i < positions.size(); i++){
@@ -357,7 +357,7 @@ public class Model implements Disposable {
         rootNodes = new ArrayList<>();
         Node rootNode = new Node();
         rootNode.nodeParts = new ArrayList<>();
-        rootNode.nodeParts.add( new NodePart(meshPart, materials.getFirst()) );       // todo arbitrary choice for first material
+        rootNode.nodeParts.add( new NodePart(meshPart, materials.get(0) ));       // todo arbitrary choice for first material
         rootNodes.add(rootNode);
 
     }

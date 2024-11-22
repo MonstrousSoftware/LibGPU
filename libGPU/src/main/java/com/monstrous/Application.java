@@ -32,8 +32,6 @@ public class Application {
 
         clearColor = new Color(1, 1, 1, 1);
 
-        TestJson json = new TestJson();
-
         WindowedApp winApp = new WindowedApp();
         winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());

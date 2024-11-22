@@ -25,7 +25,7 @@ public class SpriteBatch implements Disposable {
     private Pointer uniformBuffer;
     private Pointer bindGroupLayout;
     private VertexAttributes vertexAttributes;
-    //private Pointer pipeline;
+    private Pointer pipelineLayout;
     private int uniformBufferSize;
     private Texture texture;
     private Matrix4 projectionMatrix;
@@ -63,6 +63,7 @@ public class SpriteBatch implements Disposable {
         createBuffers();
 
         bindGroupLayout = createBindGroupLayout();
+        pipelineLayout = makePipelineLayout(bindGroupLayout);
 
         vertexAttributes = new VertexAttributes();
         vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
@@ -145,7 +146,7 @@ public class SpriteBatch implements Disposable {
 
         // todo could force switch on blending change
 
-        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, bindGroupLayout, shader);
+        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
             prevPipeline = pipeline;
@@ -340,6 +341,19 @@ public class SpriteBatch implements Disposable {
         return LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
+    private Pointer makePipelineLayout(Pointer bindGroupLayout) {
+        long[] layouts = new long[1];
+        layouts[0] = bindGroupLayout.address();
+        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
+
+        // Create the pipeline layout to define the bind groups needed : 3 bind group
+        WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
+        layoutDesc.setNextInChain();
+        layoutDesc.setLabel("SpriteBatch Pipeline Layout");
+        layoutDesc.setBindGroupLayoutCount(1);
+        layoutDesc.setBindGroupLayouts(layoutPtr);
+        return LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
+    }
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
 
