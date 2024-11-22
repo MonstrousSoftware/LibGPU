@@ -21,6 +21,7 @@ public class BitmapFont implements Disposable {
     private int charsCount;
     private int lineHeight;
     private int base;
+    private Glyph fallbackGlyph;
 
     public static class Glyph {
         int id;
@@ -48,18 +49,25 @@ public class BitmapFont implements Disposable {
         for(int i = 0; i < text.length(); i++){
             char k = text.charAt(i);
             Glyph glyph = glyphMap.get((int)k);
-            batch.draw(glyph.region, gx, y-glyph.yoffset);
+            if(glyph == null)
+                glyph = fallbackGlyph;
+            batch.draw(glyph.region, gx, y - glyph.yoffset);
             gx += glyph.region.width;
         }
     }
 
-    private void parseFontFile(String path){
+    private void parseFontFile(String filePath){
         String fileData;
         try {
-            fileData = Files.readString(Paths.get(path));
+            fileData = Files.readString(Paths.get(filePath));
         } catch (IOException e) {
-            throw new RuntimeException("Font file not found: "+path);
+            throw new RuntimeException("Font file not found: "+filePath);
         }
+
+        int slash = filePath.lastIndexOf('/');
+        String path = filePath.substring(0, slash + 1);
+//        String name = filePath.substring(slash + 1);
+
         String[] lines = fileData.split("\n");
 
         System.out.println("Fnt lines: "+lines.length);
@@ -72,7 +80,7 @@ public class BitmapFont implements Disposable {
                 if(words.length < 2)
                     throw new RuntimeException("Invalid page line in fnt file "+path);
                 textureFilePath = words[1];
-                fontTexture = new Texture(textureFilePath, false);
+                fontTexture = new Texture(path+textureFilePath, false);
             } else if(trimmed.startsWith("chars count")){
                 // chars count=168
                 String words[] = trimmed.split("=");
@@ -127,6 +135,8 @@ public class BitmapFont implements Disposable {
 
 
                 glyphMap.put(glyph.id, glyph);
+                if(glyph.id == 0)
+                    fallbackGlyph = glyph;
 
             }
         }

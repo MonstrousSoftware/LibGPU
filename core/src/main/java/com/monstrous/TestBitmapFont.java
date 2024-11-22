@@ -18,7 +18,7 @@ public class TestBitmapFont implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        font = new BitmapFont();
+        font = new BitmapFont(); //"fonts/mario.fnt");
         batch = new SpriteBatch();
     }
 
@@ -28,7 +28,6 @@ public class TestBitmapFont implements ApplicationListener {
 
         batch.begin();
         font.draw(batch, "Hello, world!", 100, 100);
-
         batch.end();
 
 
