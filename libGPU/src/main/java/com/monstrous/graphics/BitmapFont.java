@@ -1,16 +1,140 @@
 package com.monstrous.graphics;
 
-public class BitmapFont {
+import com.monstrous.LibGPU;
+import com.monstrous.utils.Disposable;
+import com.monstrous.wgpuUtils.WgpuJava;
+import jnr.ffi.Pointer;
 
-    String filePath;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
-    public BitmapFont(String filePath) {
-        this.filePath = filePath;
+public class BitmapFont implements Disposable {
+
+    public String fntFilePath;
+    public String textureFilePath;
+    public Texture fontTexture;
+    public TextureRegion region;
+    public Map<Integer, Glyph> glyphMap;
+    private int charsCount;
+    private int lineHeight;
+    private int base;
+
+    public static class Glyph {
+        int id;
+        int x, y, w, h;
+        int xoffset, yoffset;
+        int xadvance;
+        int page;
+        int chnl;
+        TextureRegion region;
     }
 
+    public BitmapFont(){
+        this("lsans-15.fnt");
+    }
 
+    public BitmapFont(String fntFilePath) {
+
+        this.fntFilePath = fntFilePath;
+        glyphMap = new HashMap<>();
+        parseFontFile(fntFilePath);
+    }
 
     public void draw(SpriteBatch batch, String text, int x, int y){
+        int gx = x;
+        for(int i = 0; i < text.length(); i++){
+            char k = text.charAt(i);
+            Glyph glyph = glyphMap.get((int)k);
+            batch.draw(glyph.region, gx, y-glyph.yoffset);
+            gx += glyph.region.width;
+        }
+    }
 
+    private void parseFontFile(String path){
+        String fileData;
+        try {
+            fileData = Files.readString(Paths.get(path));
+        } catch (IOException e) {
+            throw new RuntimeException("Font file not found: "+path);
+        }
+        String[] lines = fileData.split("\n");
+
+        System.out.println("Fnt lines: "+lines.length);
+        for(String line : lines ){
+            String trimmed = line.trim();
+
+            //page id=0 file="lsans-15.png"
+            if(trimmed.startsWith("page")){
+                String words[] = trimmed.split("\"");
+                if(words.length < 2)
+                    throw new RuntimeException("Invalid page line in fnt file "+path);
+                textureFilePath = words[1];
+                fontTexture = new Texture(textureFilePath, false);
+            } else if(trimmed.startsWith("chars count")){
+                // chars count=168
+                String words[] = trimmed.split("=");
+                if(words.length < 2)
+                    throw new RuntimeException("Invalid chars count line in fnt file "+path);
+                charsCount = Integer.parseInt(words[1]);
+            } else if(trimmed.startsWith("common ")) {
+                // common lineHeight=18 base=14 scaleW=256 scaleH=128 pages=1 packed=0
+                //
+                String words[] = trimmed.split(" ");
+                for (String word : words) {
+                    String vars[] = word.split("=");
+                    if (vars[0].contentEquals("lineHeight"))
+                        lineHeight = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("base"))
+                        base = Integer.parseInt(vars[1]);
+                }
+            } else if(trimmed.startsWith("char ")){
+                // char id=33 x=184 y=17 width=5 height=13 xoffset=0 yoffset=2 xadvance=5 page=0 chnl=0
+                String words[] = trimmed.split(" ");
+
+                Glyph glyph = new Glyph();
+                for(String word : words) {
+                    String vars[] = word.split("=");
+                    if (vars[0].contentEquals("id"))
+                        glyph.id = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("x"))
+                        glyph.x = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("y"))
+                        glyph.y = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("width"))
+                        glyph.w = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("height"))
+                        glyph.h = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("xoffset"))
+                        glyph.xoffset = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("yoffset"))
+                        glyph.yoffset = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("xadvance"))
+                        glyph.xadvance = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("page"))
+                        glyph.page = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("chnl"))
+                        glyph.chnl = Integer.parseInt(vars[1]);
+                }
+                if(glyph.page != 0)
+                    throw new RuntimeException("BitmapFont: multi-page not supported");
+
+                //char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
+                glyph.region = new TextureRegion(fontTexture,
+                            glyph.x,  glyph.y, glyph.w, glyph.h);
+
+
+                glyphMap.put(glyph.id, glyph);
+
+            }
+        }
+
+    }
+
+    @Override
+    public void dispose() {
+        fontTexture.dispose();
     }
 }

@@ -1,14 +1,16 @@
 package com.monstrous;
 
+import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.SpriteBatch;
 import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.TextureRegion;
+import com.monstrous.utils.ScreenUtils;
 
 
 public class TestBitmapFont implements ApplicationListener {
 
     private SpriteBatch batch;
-    private Texture textureFont;
+    private BitmapFont font;
     private long startTime;
     private int frames;
 
@@ -16,20 +18,16 @@ public class TestBitmapFont implements ApplicationListener {
         startTime = System.nanoTime();
         frames = 0;
 
-        textureFont = new Texture("lsans-15.png", false);
-
+        font = new BitmapFont();
         batch = new SpriteBatch();
     }
 
     public void render( float deltaTime ){
 
-        // SpriteBatch testing
+        ScreenUtils.clear(0,0,0,1);
+
         batch.begin();
-
-        //char id=65 x=80 y=33 width=11 height=13 xoffset=-1 yoffset=2 xadvance=9 page=0 chnl=0
-
-        TextureRegion letterA = new TextureRegion(textureFont, 80f/256f, (33f+13f)/128f, (80+11f)/256f, 33f/128f);
-        batch.draw(letterA, 100, 100);
+        font.draw(batch, "Hello, world!", 100, 100);
 
         batch.end();
 
@@ -47,7 +45,7 @@ public class TestBitmapFont implements ApplicationListener {
     public void dispose(){
         // cleanup
         System.out.println("demo exit");
-        textureFont.dispose();
+        font.dispose();
         batch.dispose();
     }
 

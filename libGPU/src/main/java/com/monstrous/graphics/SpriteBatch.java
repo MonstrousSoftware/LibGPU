@@ -162,10 +162,16 @@ public class SpriteBatch implements Disposable {
         this.draw(texture, x, y, w, h, 0f, 1f, 1f, 0f);
     }
 
+//    public void draw(TextureRegion region, float x, float y){
+//        this.draw(region.texture, x, y,
+//                (region.u2-region.u)*region.texture.getWidth(), (region.v-region.v2)*region.texture.getHeight(),
+//                region.u, region.v, region.u2, region.v2  );
+//    }
+
+
     public void draw(TextureRegion region, float x, float y){
-        this.draw(region.texture, x, y,
-                (region.u2-region.u)*region.texture.getWidth(), (region.v-region.v2)*region.texture.getHeight(),
-                region.u, region.v, region.u2, region.v2  );
+        // note: v2 is top of glyph, v the bottom
+        this.draw(region.texture, x, y, region.width, region.height, region.u, region.v2, region.u2, region.v  );
     }
 
     public void draw(TextureRegion region, float x, float y, float w, float h){

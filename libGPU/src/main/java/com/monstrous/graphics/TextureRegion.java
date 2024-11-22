@@ -2,6 +2,7 @@ package com.monstrous.graphics;
 
 public class TextureRegion {
     public Texture texture;
+    public int width, height;   // pixels
     public float u,v;
     public float u2, v2;
 
@@ -21,7 +22,8 @@ public class TextureRegion {
     public void setRegion(int x, int y, int width, int height) {
         float tw = texture.getWidth();
         float th = texture.getHeight();
-        setRegion(x/tw, (th-y)/th, (x+width)/tw, (th-(y+height))/th);
+        setRegion(x/tw, (y+height)/th, (x+width)/tw, y/th);
+//        setRegion(x/tw, (th-y)/th, (x+width)/tw, (th-(y+height))/th);
     }
 
     // u goes right, v goes down. Origin is at top left.
@@ -30,6 +32,8 @@ public class TextureRegion {
         this.v = v;
         this.u2 = u2;
         this.v2 = v2;
+        this.width = Math.round(texture.getWidth() * (u2-u));
+        this.height = Math.round(texture.getHeight() * (v2-v));
     }
 
 }
