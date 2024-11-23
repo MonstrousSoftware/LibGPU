@@ -82,8 +82,10 @@ public class ModelBatch implements Disposable {
         float[] uniforms = new float[MAX_UB_SIZE/Float.BYTES];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
 
-        shaderStd = new ShaderProgram("shaders/modelbatch.wgsl");      // todo get from library storage
-        shaderNormalMap = new ShaderProgram("shaders/modelbatchN.wgsl");      // todo get from library storage
+
+
+        shaderStd = new ShaderProgram("shaders/modelbatchUber.wgsl","");      // todo get from library storage
+        shaderNormalMap = new ShaderProgram("shaders/modelbatchUber.wgsl","");//#define NORMAL_MAP");      // todo get from library storage
     }
 
 
@@ -192,14 +194,13 @@ public class ModelBatch implements Disposable {
 
     public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix){
 
-
         writeModelUniforms(modelUniformBuffer, modelUniformIndex, modelMatrix);  // update renderable uniforms
 
         // set dynamic offset into uniform buffer
         int[] offset = new int[1];
         int uniformStride = ceilToNextMultiple(MODEL_UB_SIZE, uniformAlignment);
         offset[0] = modelUniformIndex*uniformStride;
-        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
+        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset); // todo reuse this
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, modelBindGroup, 1, offsetPtr);
         modelUniformIndex++;
 
@@ -319,6 +320,13 @@ public class ModelBatch implements Disposable {
         samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
         samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
 
+        // emissive texture binding is included even if it is not used
+        WGPUBindGroupLayoutEntry emissiveTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(emissiveTexBindingLayout);
+        emissiveTexBindingLayout.setBinding(location++);
+        emissiveTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        emissiveTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+        emissiveTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
 
         // normal texture binding is included even if it is not used
         WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
@@ -328,21 +336,13 @@ public class ModelBatch implements Disposable {
         normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
         normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
 
-        // emissive texture binding is included even if it is not used
-        WGPUBindGroupLayoutEntry emissiveTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(emissiveTexBindingLayout);
-        emissiveTexBindingLayout.setBinding(location++);
-        emissiveTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        emissiveTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        emissiveTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
         bindGroupLayoutDesc.setNextInChain();
         bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Material)");
         bindGroupLayoutDesc.setEntryCount(location);
 
-        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, normalTexBindingLayout, emissiveTexBindingLayout );
+        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, emissiveTexBindingLayout, normalTexBindingLayout );
         return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
@@ -410,11 +410,11 @@ public class ModelBatch implements Disposable {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(5);
         if(hasNormalMap) {
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.normalTexture.getBinding(3), material.emissiveTexture.getBinding(4) );
+            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), material.normalTexture.getBinding(4) );
         }
         else {
             // use diffuse map as fake (ignored) normal map, so that we maintain the same layout
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2), diffuse.getBinding(3), material.emissiveTexture.getBinding(4) );
+            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), diffuse.getBinding(4) );
         }
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }

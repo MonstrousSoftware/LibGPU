@@ -271,15 +271,27 @@ public class Model implements Disposable {
             }
         }
 
-        // x y z (tx ty tz bx by bz) nx ny nz u v
+        // x y z u v nx ny nz (tx ty tz bx by bz)
         meshData.objectName = gltf.nodes.get(0).name;
         Vector3 bitangent = new Vector3();
+        Vector3 normal = new Vector3(0, 1, 0);
         Vector2 uv = new Vector2();
         for(int i = 0; i < positions.size(); i++){
             Vector3 pos = positions.get(i);
             meshData.vertFloats.add(pos.x);
             meshData.vertFloats.add(pos.y);
             meshData.vertFloats.add(pos.z);
+
+            if(!textureCoordinates.isEmpty())
+                uv =  textureCoordinates.get(i);
+            meshData.vertFloats.add(uv.x);
+            meshData.vertFloats.add(uv.y);
+
+            if(!normals.isEmpty())
+                normal = normals.get(i);
+            meshData.vertFloats.add(normal.x);
+            meshData.vertFloats.add(normal.y);
+            meshData.vertFloats.add(normal.z);
 
             if(!tangents.isEmpty()) {
                 Vector3 tangent = tangents.get(i);
@@ -288,42 +300,24 @@ public class Model implements Disposable {
                 meshData.vertFloats.add(tangent.z);
 
                 // calculate bitangent from normal x tangent
-                Vector3 normal = normals.get(i);
                 bitangent.set(normal).crs(tangent).nor();
                 meshData.vertFloats.add(bitangent.x);
                 meshData.vertFloats.add(bitangent.y);
                 meshData.vertFloats.add(bitangent.z);
             }
-
-            if(normals.isEmpty()){
-                meshData.vertFloats.add(0f);
-                meshData.vertFloats.add(0f);
-                meshData.vertFloats.add(0f);
-            } else {
-                Vector3 normal = normals.get(i);
-                meshData.vertFloats.add(normal.x);
-                meshData.vertFloats.add(normal.y);
-                meshData.vertFloats.add(normal.z);
-            }
-
-            if(!textureCoordinates.isEmpty())
-                 uv =  textureCoordinates.get(i);
-            meshData.vertFloats.add(uv.x);
-            meshData.vertFloats.add(uv.y);
         }
 
         // todo adjust this based on the file contents:
         meshData.vertexAttributes = new VertexAttributes();
         int location = 0;
         meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, location++);
+        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, location++);
+        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, location++);
         if(!tangents.isEmpty()) {
             meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, location++);
             meshData.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, location++);
         }
-        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, location++);
-        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, location++);
         meshData.vertexAttributes.end();
-
 
         return new Mesh(meshData);
     }

@@ -150,10 +150,12 @@ public class ObjLoader {
 
         data.vertexAttributes = new VertexAttributes();
         data.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-        data.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
-        data.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
-        data.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 3);
-        data.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 4);
+        data.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 1);
+        data.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 2);
+        data.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 3);
+        data.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 4);
+
+
         data.vertexAttributes.end();
         //meshData.vertexAttributes.hasNormalMap = meshData.materialData != null && meshData.materialData.normalMapFilePath != null;
         data.indexSizeInBytes = 4;

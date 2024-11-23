@@ -15,7 +15,9 @@ public class ShaderProgram {
 
     private String name;
     private String shaderSource;
+    private String processed;
     private Pointer shaderModule;
+    private Preprocessor preprocessor = new Preprocessor();
 
     public ShaderProgram(String filePath) {
         String source = null;
@@ -27,13 +29,27 @@ public class ShaderProgram {
         compile(filePath, source);
     }
 
-    public ShaderProgram(String name, String shaderSource){
-         compile(name, shaderSource);
+    public ShaderProgram(String filePath, String prefix) {
+        String source = null;
+        try {
+            source = Files.readString(Paths.get(filePath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        compile(filePath, prefix+source);
+    }
+
+    public ShaderProgram(String name, String shaderSource, String prefix){
+
+        compile(name, prefix+shaderSource);
     }
 
     private void compile(String name, String shaderSource){
         this.name = name;
         this.shaderSource = shaderSource;
+
+        Preprocessor preprocessor = new Preprocessor();
+        processed = preprocessor.process(shaderSource);
 
         // Create Shader Module
         WGPUShaderModuleDescriptor shaderDesc = WGPUShaderModuleDescriptor.createDirect();
@@ -42,13 +58,15 @@ public class ShaderProgram {
         WGPUShaderModuleWGSLDescriptor shaderCodeDesc = WGPUShaderModuleWGSLDescriptor.createDirect();
             shaderCodeDesc.getChain().setNext();
             shaderCodeDesc.getChain().setSType(WGPUSType.ShaderModuleWGSLDescriptor);
-            shaderCodeDesc.setCode(shaderSource);
+            shaderCodeDesc.setCode(processed);
 
             shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
         shaderModule = LibGPU.wgpu.DeviceCreateShaderModule(LibGPU.device, shaderDesc);
         if(shaderModule == null)
             throw new RuntimeException("ShaderModule: compile failed "+name);
+
+        System.out.println(name+": "+processed);
     }
 
     public Pointer getShaderModule(){
@@ -59,9 +77,9 @@ public class ShaderProgram {
         return name;
     }
 
-    public String getShaderSource() {
-        return shaderSource;
-    }
+//    //public String getShaderSource() {
+//        return shaderSource;
+//    }
 
     public void dispose(){
         LibGPU.wgpu.ShaderModuleRelease(shaderModule);
