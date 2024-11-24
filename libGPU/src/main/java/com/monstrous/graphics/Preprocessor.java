@@ -7,18 +7,6 @@ public class Preprocessor {
 
     private Map<String,String> defineMap = new HashMap<>();
 
-    public void test(){
-        String out = process(
-      "abcd\n#define A\n#define B 456\n" +
-              "#ifdef A\nyes1\n" +
-                "#ifdef B\nyes2\n#else\nno\n#endif\nyes3\n" +
-              "#else\nno, inside main else\n" +
-                "#ifdef B\nno\n#else\nno\n#endif\nno\n" +
-              "#endif\n" +
-              "yes4\n");
-        System.out.println(out);
-    }
-
     public String process(String input){
         defineMap.clear();
         StringBuffer output = new StringBuffer();
@@ -71,23 +59,7 @@ public class Preprocessor {
         }
         return output.toString();
     }
-    /*
-    if(true)
-        y
-        if(false)
-            n
-        else
-            y
-        endif
-     else
-        n
-        if(true)
-            n
-        else
-            n
-        endif
-     endif
-*/
+
     // b may be null, e.g. #define DEBUG
     private void define(String a, String b){
         defineMap.put(a, b);
