@@ -1,7 +1,9 @@
 
+const MAX_DIR_LIGHTS : i32 = 5;
+
 struct DirectionalLight {
     color: vec4f,
-    direction: vec3f,
+    direction: vec4f,
 }
 
 
@@ -9,8 +11,9 @@ struct FrameUniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,
     combinedMatrix : mat4x4f,
-    cameraPosition : vec3f,
-    directionalLight : DirectionalLight,
+    cameraPosition : vec4f,
+    directionalLights : array<DirectionalLight, MAX_DIR_LIGHTS>,
+    numDirectionalLights: i32,
 };
 
 struct MaterialUniforms {
@@ -71,12 +74,12 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
    let worldPosition =  uModel.modelMatrix * vec4f(in.position, 1.0);
    let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
-   let cameraPosition = uFrame.cameraPosition;
+   let cameraPosition = uFrame.cameraPosition.xyz;
 
    out.position = pos;
    out.uv = in.uv;
    out.color = uMaterial.baseColor.rgb;
-   out.viewDirection = cameraPosition - worldPosition.xyz;
+   out.viewDirection = cameraPosition.xyz - worldPosition.xyz;
    return out;
 }
 
@@ -85,13 +88,10 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 1.0;
     let kS = 0.1;
     let hardness = 1.0;
-    let ambient = 0.4;
+    let ambient = 0.0;
     let normalMapStrength = 1.0;
 
     let V = normalize(in.viewDirection);
-
-    let lightColor = uFrame.directionalLight.color.rgb; //vec3f(1.0, 1.0, 1.0);
-    let lightDirection = -1*uFrame.directionalLight.direction.xyz; //rvec3f(0.0, 1.0, 0.0);
 
     let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgb * in.color;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
@@ -113,6 +113,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     var color = vec3f(0.0);
     // for each light
+    for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
+        let light = uFrame.directionalLights[i];
+
+        let lightColor = light.color.rgb;
+        let lightDirection = -1*light.direction.xyz;
+
+
 
         let L = lightDirection;
         let R = reflect(-L, N);
@@ -124,6 +131,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         let specular = pow(RoV, hardness);
 
         color += baseColor * kD * diffuse + kS * specular;
+    }
 
     color += baseColor * ambient;
 

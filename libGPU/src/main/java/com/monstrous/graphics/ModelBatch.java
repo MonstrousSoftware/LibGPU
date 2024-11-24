@@ -14,7 +14,9 @@ import java.util.List;
 
 public class ModelBatch implements Disposable {
 
-    private final int FRAME_UB_SIZE = (3*16+8+8) * Float.BYTES;
+    private final int MAX_DIR_LIGHTS = 5;
+
+    private final int FRAME_UB_SIZE = 384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
     private final int MATERIAL_UB_SIZE = 4 * Float.BYTES;
     private final int MODEL_UB_SIZE = 16 * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
@@ -55,8 +57,8 @@ public class ModelBatch implements Disposable {
     public int numPipelineSwitches;
     public Environment environment;
 
-    private DirectionalLight directionalLight;
     private DirectionalLight defaultDirectionalLight;
+
 
     public ModelBatch (){
         wgpu = LibGPU.wgpu;
@@ -68,7 +70,7 @@ public class ModelBatch implements Disposable {
         renderables = new ArrayList<>();
         pool = new RenderablePool(1000);
 
-        defaultDirectionalLight = new DirectionalLight(new Color(1,1,1,1), new Vector3(0, -1, 0));
+        defaultDirectionalLight = new DirectionalLight(new Color(1,0,0,1), new Vector3(0, -1, 0));
 
         frameUniformBuffer = createUniformBuffer( FRAME_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
@@ -98,19 +100,13 @@ public class ModelBatch implements Disposable {
         this.environment = environment;
         this.renderPass = LibGPU.renderPass;
 
-        if(environment != null)
-            directionalLight = (DirectionalLight) environment.lights.get(0);        // HACK
-        else
-            directionalLight = defaultDirectionalLight;
-
-
         materialUniformIndex = 0;       // reset offset into uniform buffer
         modelUniformIndex = 0;
         prevMaterial = null;
         prevPipeline = null;
         numPipelineSwitches = 0;
 
-        writeFrameUniforms(frameUniformBuffer, camera);
+        writeFrameUniforms(frameUniformBuffer, camera, environment);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer);
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, frameBindGroup, 0, null);
 
@@ -456,6 +452,11 @@ public class ModelBatch implements Disposable {
         return wgpu.DeviceCreateBuffer(device, bufferDesc);
     }
 
+
+    private int setUniformInteger(Pointer data, int offset, int value ){
+        data.putInt(offset, value);
+        return Integer.BYTES;
+    }
     private int setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
         data.putFloat(offset+0*Float.BYTES, r);
         data.putFloat(offset+1*Float.BYTES, g);
@@ -476,7 +477,7 @@ public class ModelBatch implements Disposable {
         data.putFloat(offset+0*Float.BYTES, vec.x);
         data.putFloat(offset+1*Float.BYTES, vec.y);
         data.putFloat(offset+2*Float.BYTES, vec.z);
-        return 4*Float.BYTES;   // round up
+        return 4*Float.BYTES;           // with padding!
     }
 
     private int setUniformMatrix(Pointer data, int offset, Matrix4 mat ){
@@ -488,14 +489,29 @@ public class ModelBatch implements Disposable {
 
 
 
-    private void writeFrameUniforms( Pointer uniformBuffer, Camera camera ){
+    private void writeFrameUniforms( Pointer uniformBuffer, Camera camera, Environment environment ){
         int offset = 0;
         offset += setUniformMatrix(uniformData, offset, camera.projectionMatrix);
         offset += setUniformMatrix(uniformData, offset, camera.viewMatrix);
         offset += setUniformMatrix(uniformData, offset, camera.combinedMatrix);
         offset += setUniformVec3(uniformData, offset, camera.position);
-        offset += setUniformColor(uniformData, offset, directionalLight.color);
-        offset += setUniformVec3(uniformData, offset, directionalLight.direction);
+        int numDirLights = environment.lights.size();
+        DirectionalLight dirLight;
+        // fixed length array, filled up to numDirectionalLights
+        for(int i = 0; i < MAX_DIR_LIGHTS; i++) {
+            if(i < numDirLights)
+                dirLight = (DirectionalLight) environment.lights.get(i);
+            else
+                dirLight = defaultDirectionalLight; // will be ignored anyway
+            offset += setUniformColor(uniformData, offset, dirLight.color);
+            offset += setUniformVec3(uniformData, offset, dirLight.direction);
+        }
+        offset += setUniformInteger(uniformData, offset, numDirLights);
+
+        // BEWARE of padding rules
+
+//        if(offset != FRAME_UB_SIZE)
+//            throw new RuntimeException("Frame uniform buffer size mismatch "+offset);
 
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, FRAME_UB_SIZE);
     }
@@ -519,25 +535,6 @@ public class ModelBatch implements Disposable {
         int uniformStride = ceilToNextMultiple(MODEL_UB_SIZE, uniformAlignment);
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, uniformIndex*uniformStride, uniformData, MODEL_UB_SIZE);
     }
-
-//    public WGPUVertexBufferLayout getVertexBufferLayout(){
-//        if(vertexBufferLayout == null) {
-//            VertexAttributes vertexAttributes = new VertexAttributes();
-//            vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-////            vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 1);
-////            vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 2);
-//            vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 1);
-////            vertexAttributes.add("color", WGPUVertexFormat.Float32x3, 2);
-//            vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 2);
-//            vertexAttributes.end();
-//
-//            vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
-//        }
-//        return vertexBufferLayout;
-//    }
-
-
-
 
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {

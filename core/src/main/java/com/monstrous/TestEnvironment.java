@@ -12,11 +12,10 @@ public class TestEnvironment extends ApplicationAdapter {
     private ModelBatch modelBatch;
     private Camera camera;
     private Environment environment;
-    private DirectionalLight directionalLight;
+    private DirectionalLight directionalLight, directionalLight2, directionalLight3;
     private Matrix4 modelMatrix;
-    private Model model, model2;
+    private Model model;
     private ModelInstance modelInstance1;
-    private ModelInstance modelInstance2;
     private ArrayList<ModelInstance> instances;
     private float currentTime;
     private long startTime;
@@ -27,9 +26,12 @@ public class TestEnvironment extends ApplicationAdapter {
         frames = 0;
 
         environment = new Environment();
-        directionalLight = new DirectionalLight(new Color(.7f,.7f,1,1), new Vector3(0, -1, 0));
+        directionalLight = new DirectionalLight(new Color(1,0f,0,1), new Vector3(0, -1, 0));
         environment.add(directionalLight);
-
+        directionalLight2 = new DirectionalLight(new Color(0f,0f,1,1), new Vector3(1f, -0, 0));
+        environment.add(directionalLight2);
+        directionalLight3 = new DirectionalLight(new Color(0f,1f,1,1), new Vector3(0f, -0, 1));
+        environment.add(directionalLight3);
         instances = new ArrayList<>();
 
         model = new Model("models/lantern/Lantern.gltf");
@@ -54,7 +56,7 @@ public class TestEnvironment extends ApplicationAdapter {
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
-        camera.position.set(0, 1f, -3);
+        camera.position.set(0, 20f, -20);
         camera.direction.set(0,0f, 1f);
         camera.far = 1000f;
         camera.near = 0.001f;
