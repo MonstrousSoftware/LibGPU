@@ -36,7 +36,7 @@ public class Mesh {
 //    }
 
     public Mesh(MeshData data) {
-        vertexAttributes = data.vertexAttributes;
+        setVertexAttributes(data.vertexAttributes);
 
         vertexCount = data.vertFloats.size() * Float.BYTES / data.vertexAttributes.getVertexSizeInBytes();
         float[] vertexData = new float[data.vertFloats.size()];
@@ -45,6 +45,10 @@ public class Mesh {
         }
         setVertices(vertexData);
         setIndices(data.indexValues, data.indexSizeInBytes);
+    }
+
+    public void setVertexAttributes(VertexAttributes vertexAttributes){
+        this.vertexAttributes = vertexAttributes;
     }
 
     public void setVertices(float[] vertexData) {

@@ -317,3 +317,7 @@ In fact it has 3 materials and 2 have normal maps.
 
 24/11:
 todo texture scaling
+
+can we pass multiple lights in the frame uniform buffer?
+yes: https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/lighting-control.html
+

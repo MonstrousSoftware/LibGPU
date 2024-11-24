@@ -34,9 +34,6 @@ public class GLTFLoader {
 
         JSONObject file = (JSONObject)JSONValue.parse(contents);
 
-
-
-
         JSONArray ims = (JSONArray)file.get("images");
         if(ims != null) {
             System.out.println("images: " + ims.size());
