@@ -308,3 +308,9 @@ note: we ignore format conversions for now. Also, not all stb formats seem to be
 
 
 OBJ parsing: note that faces can have more
+
+
+
+23/11:
+Note that ToyCar has a normal map but no TANGENT attribute.  It does have materials with normalTexture.
+In fact it has 3 materials and 2 have normal maps.

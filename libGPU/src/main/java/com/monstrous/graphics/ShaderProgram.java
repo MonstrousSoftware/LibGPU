@@ -66,7 +66,7 @@ public class ShaderProgram {
         if(shaderModule == null)
             throw new RuntimeException("ShaderModule: compile failed "+name);
 
-        System.out.println(name+": "+processed);
+        //System.out.println(name+": "+processed);
     }
 
     public Pointer getShaderModule(){

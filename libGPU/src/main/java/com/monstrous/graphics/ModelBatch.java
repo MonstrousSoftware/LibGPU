@@ -85,7 +85,7 @@ public class ModelBatch implements Disposable {
 
 
         shaderStd = new ShaderProgram("shaders/modelbatchUber.wgsl","");      // todo get from library storage
-        shaderNormalMap = new ShaderProgram("shaders/modelbatchUber.wgsl","");//#define NORMAL_MAP");      // todo get from library storage
+        shaderNormalMap = new ShaderProgram("shaders/modelbatchUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
     }
 
 
@@ -128,23 +128,6 @@ public class ModelBatch implements Disposable {
         instance.getRenderables((ArrayList<Renderable>) renderables, pool);
     }
 
-//    public void renderDirect(ModelInstance instance){
-//        emit(instance.model.rootNode);
-//    }
-//
-//
-//    public void emit(Node node){
-//        if(node.nodePart != null)
-//            emit(node.nodePart, node.globalTransform);
-//        for(Node child : node.children)
-//            emit(child);
-//    }
-//
-//    public void emit(NodePart nodePart, Matrix4 transform){
-//        emit(nodePart.meshPart, nodePart.material, transform);
-//    }
-
-
     public void render(Renderable renderable) {
         renderables.add( renderable );
     }
@@ -180,6 +163,8 @@ public class ModelBatch implements Disposable {
     private void flush() {
         // sort renderables to minimize material switching, to do: depth sorting etc.
         renderables.sort(comparator);
+
+        int i = 0;
         for(Renderable renderable : renderables) {
             emit(renderable);
             pool.free(renderable);
@@ -232,7 +217,7 @@ public class ModelBatch implements Disposable {
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
             wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
             wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, 1, meshPart.offset, 0, 0);
-        }
+        } //meshPart.size
         else
             wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, 1, meshPart.offset, 0);
     }
@@ -409,7 +394,7 @@ public class ModelBatch implements Disposable {
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(5);
-        if(hasNormalMap) {
+        if(hasNormalMap && material.normalTexture != null) {
             bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), material.normalTexture.getBinding(4) );
         }
         else {

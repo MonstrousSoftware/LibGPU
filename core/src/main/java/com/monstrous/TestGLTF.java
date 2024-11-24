@@ -28,7 +28,7 @@ public class TestGLTF implements ApplicationListener {
         //model = new Model("models/lantern/Lantern.gltf");
         model = new Model("models/ToyCar/ToyCar.gltf");
         //model = new Model("models/Buggy/Buggy.gltf");
-        //model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
+       // model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
         //model = new Model("models/Sponza/Sponza.gltf");
         //model2 = new Model("models/fourareen.obj");
 

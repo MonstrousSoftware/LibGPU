@@ -41,13 +41,6 @@ public class Model implements Disposable {
         GLTF gltf = GLTFLoader.load(filePath);      // TMP
         GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.get(0).uri);           // assume 1 buffer
 
-        for(GLTFMesh gltfMesh : gltf.meshes){
-            for(GLTFPrimitive primitive : gltfMesh.primitives){
-                Mesh m = loadMesh(gltf, rawBuffer, primitive );
-                meshes.add(m);
-                meshMap.put(primitive, m);
-            }
-        }
 
         ArrayList<MaterialData> mtlData = new ArrayList<>();
         for(GLTFMaterial gltfMat :  gltf.materials){
@@ -68,6 +61,15 @@ public class Model implements Disposable {
         for(MaterialData mtl: mtlData) {
             Material material = new Material(mtl);
             materials.add(material);
+        }
+
+
+        for(GLTFMesh gltfMesh : gltf.meshes){
+            for(GLTFPrimitive primitive : gltfMesh.primitives){
+                Mesh m = loadMesh(gltf, rawBuffer, primitive );
+                meshes.add(m);
+                meshMap.put(primitive, m);
+            }
         }
 
 //        for(GLTFScene scene : gltf.scenes ){
@@ -144,6 +146,7 @@ public class Model implements Disposable {
 
         rawBuffer.byteBuffer.position(offset);
 
+        int max = -1;
         if(indexAccessor.componentType == GLTF.USHORT16){
             meshData.indexSizeInBytes = 2; // 16 bit index
             for(int i = 0; i < indexAccessor.count; i++){
@@ -152,9 +155,15 @@ public class Model implements Disposable {
         } else {
             meshData.indexSizeInBytes = 4; // 32 bit index
             for(int i = 0; i < indexAccessor.count; i++){
-                meshData.indexValues.add(rawBuffer.byteBuffer.getInt());
+                int index = rawBuffer.byteBuffer.getInt();
+                if(index > max)
+                    max = index;
+                meshData.indexValues.add(index);
             }
+            System.out.println("max index "+max); // TMP
         }
+
+        boolean hasNormalMap = materials.get(primitive.material).hasNormalMap;
 
         int positionAccessorId = -1;
         int normalAccessorId = -1;
@@ -271,9 +280,14 @@ public class Model implements Disposable {
             }
         }
 
-        // x y z u v nx ny nz (tx ty tz bx by bz)
+
+        ArrayList<Vector3> bitangents = new ArrayList<>();
+        // if the material has a normal map and tangents are not provided we need to calculate them
+        if(hasNormalMap && tangents.size() == 0 )
+            addTBN(meshData, positions, textureCoordinates, normals, tangents, bitangents);
+
+        // x y z   u v   nx ny nz (tx ty tz   bx by bz)
         meshData.objectName = gltf.nodes.get(0).name;
-        Vector3 bitangent = new Vector3();
         Vector3 normal = new Vector3(0, 1, 0);
         Vector2 uv = new Vector2();
         for(int i = 0; i < positions.size(); i++){
@@ -293,14 +307,14 @@ public class Model implements Disposable {
             meshData.vertFloats.add(normal.y);
             meshData.vertFloats.add(normal.z);
 
-            if(!tangents.isEmpty()) {
+            if(hasNormalMap) {
                 Vector3 tangent = tangents.get(i);
                 meshData.vertFloats.add(tangent.x);
                 meshData.vertFloats.add(tangent.y);
                 meshData.vertFloats.add(tangent.z);
 
                 // calculate bitangent from normal x tangent
-                bitangent.set(normal).crs(tangent).nor();
+                Vector3 bitangent = bitangents.get(i);
                 meshData.vertFloats.add(bitangent.x);
                 meshData.vertFloats.add(bitangent.y);
                 meshData.vertFloats.add(bitangent.z);
@@ -313,14 +327,92 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, location++);
         meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, location++);
         meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, location++);
-        if(!tangents.isEmpty()) {
+        if(hasNormalMap) {
             meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, location++);
             meshData.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, location++);
         }
         meshData.vertexAttributes.end();
+        meshData.vertexAttributes.hasNormalMap = hasNormalMap;
 
         return new Mesh(meshData);
     }
+
+    private static class Vertex {
+        Vector3 position;
+        Vector3 normal;
+        Vector2 uv;
+    }
+
+    private void addTBN( final MeshData meshData,
+                                final ArrayList<Vector3>positions, final ArrayList<Vector2>textureCoordinates,
+                                final ArrayList<Vector3>normals,
+                                ArrayList<Vector3>tangents,
+                                ArrayList<Vector3>bitangents){
+
+        // add tangent and bitangent to vertices of each triangle
+        Vector3 T = new Vector3();
+        Vector3 B = new Vector3();
+        Vertex[] corners = new Vertex[3];
+        for(int i= 0; i < 3; i++)
+            corners[i] = new Vertex();
+
+        for (int j = 0; j < meshData.indexValues.size(); j+= 3) {   // for each triangle
+            for(int i= 0; i < 3; i++) {                 // for each corner
+                int index = meshData.indexValues.get(i);        // assuming we use an indexed mesh
+
+                corners[i].position = positions.get(index);
+                corners[i].normal = normals.get(index);
+                corners[i].uv = textureCoordinates.get(index);
+            }
+
+            calculateBTN(corners, T, B);
+
+            for(int i= 0; i < 3; i++) {
+                tangents.add(T);
+                bitangents.add(B);
+            }
+        }
+    }
+
+    private static Vector3 Ntmp = new Vector3();
+    private static Vector3 N = new Vector3();
+
+    private static Vector3 edge1 = new Vector3();
+    private static Vector3 edge2 = new Vector3();
+    private static Vector2 eUV1 = new Vector2();
+    private static Vector2 eUV2 = new Vector2();
+
+
+
+    private static void calculateBTN(Vertex corners[], Vector3 T, Vector3 B) {
+        edge1.set(corners[1].position).sub(corners[0].position);
+        edge2.set(corners[2].position).sub(corners[0].position);
+
+        eUV1.set(corners[1].uv).sub(corners[0].uv);
+        eUV2.set(corners[2].uv).sub(corners[0].uv);
+
+        T.set(edge1.cpy().scl(eUV2.y).sub(edge2.cpy().scl(eUV1.y)));
+        B.set(edge2.cpy().scl(eUV1.x).sub(edge1.cpy().scl(eUV2.x)));
+        T.scl(-1);
+        B.scl(-1);
+        N.set(T).crs(B);
+
+        // average normal
+        Ntmp.set(corners[0].normal).add(corners[1].normal).add(corners[2].normal).scl(1/3f);
+
+//        if(Ntmp.dot(N) < 0){
+//            T.scl(-1);
+//            B.scl(-1);
+//        }
+
+        float dot = T.dot(Ntmp);
+        T.sub(Ntmp.cpy().scl(dot));
+        T.nor();
+        // T = normalize(T - dot(T, N) * N);
+        //B = cross(N,T);
+        B.set(Ntmp).crs(T);
+    }
+
 
 
     private void readObj(String filePath) {

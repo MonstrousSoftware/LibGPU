@@ -47,6 +47,7 @@ public class Mesh {
         bufferDesc.setLabel("Vertex buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex );
         bufferDesc.setSize((long) vertexData.length *Float.BYTES);
+        System.out.println("VB "+(long) vertexData.length *Float.BYTES);
         bufferDesc.setMappedAtCreation(0L);
         vertexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 

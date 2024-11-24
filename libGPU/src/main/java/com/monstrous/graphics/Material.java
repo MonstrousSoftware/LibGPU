@@ -8,6 +8,7 @@ public class Material implements Disposable {
     public Texture diffuseTexture;
     public Texture normalTexture;
     public Texture emissiveTexture;
+    public boolean hasNormalMap;
 
     public Material(MaterialData materialData) {
         baseColor = new Color(materialData.diffuse);
@@ -19,9 +20,11 @@ public class Material implements Disposable {
         this.diffuseTexture = new Texture(fileName, false);            // todo until mipmapping is fixed
         // todo use caching of textures in case we reuse the same texture in different materials
 
+        hasNormalMap = false;
         if( materialData.normalMapFilePath != null) {
             fileName = materialData.normalMapFilePath;
             this.normalTexture = new Texture(fileName, false);            // todo until mipmapping is fixed
+            hasNormalMap = true;
         }
 
         fileName = "textures\\black.png";
