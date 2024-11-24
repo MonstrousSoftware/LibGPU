@@ -5,7 +5,7 @@ import com.monstrous.math.Matrix4;
 import com.monstrous.wgpu.WGPU;
 
 
-public class TestSpriteBatch implements ApplicationListener {
+public class TestSpriteBatch extends ApplicationAdapter {
 
 
     private SpriteBatch batch;

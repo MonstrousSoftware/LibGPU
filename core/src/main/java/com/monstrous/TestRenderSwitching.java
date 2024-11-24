@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 // test that we can render multiple models efficiently, i.e. without too many material or pipeline switches.
 
-public class TestRenderSwitching implements ApplicationListener {
+public class TestRenderSwitching extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;

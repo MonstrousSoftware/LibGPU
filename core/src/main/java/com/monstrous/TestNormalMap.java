@@ -3,7 +3,7 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
 
-public class TestNormalMap implements ApplicationListener {
+public class TestNormalMap extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;

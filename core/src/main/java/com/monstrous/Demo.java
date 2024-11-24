@@ -9,7 +9,7 @@ import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
 
-public class Demo implements ApplicationListener {
+public class Demo extends ApplicationAdapter {
     private WGPU wgpu;
 
     private Mesh mesh;

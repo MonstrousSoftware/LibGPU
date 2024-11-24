@@ -7,7 +7,7 @@ import com.monstrous.utils.ScreenUtils;
 
 import java.util.ArrayList;
 
-public class TestEnvironment implements ApplicationListener {
+public class TestEnvironment extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;

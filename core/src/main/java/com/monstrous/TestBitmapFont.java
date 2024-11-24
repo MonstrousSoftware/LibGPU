@@ -4,7 +4,7 @@ import com.monstrous.graphics.*;
 import com.monstrous.utils.ScreenUtils;
 
 
-public class TestBitmapFont implements ApplicationListener {
+public class TestBitmapFont extends ApplicationAdapter {
 
     private SpriteBatch batch;
     private BitmapFont font;

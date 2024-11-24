@@ -6,7 +6,7 @@ import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.math.Matrix4;
 
 
-public class TestRenderable implements ApplicationListener {
+public class TestRenderable extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;

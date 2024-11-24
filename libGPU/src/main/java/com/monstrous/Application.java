@@ -13,11 +13,10 @@ public class Application {
     private WGPU wgpu;
     public Pointer depthTextureView;
     public Pointer depthTexture;
-    //public Pointer surface;
     public Pointer targetView;
     public Color clearColor;
-    private int width, height;
     private boolean surfaceConfigured = false;
+    private boolean isMinimized = false;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
@@ -31,8 +30,6 @@ public class Application {
         LibGPU.input = new Input();
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
-        width = config.width;
-        height = config.height;
 
         clearColor = new Color(1, 1, 1, 1);
 
@@ -48,7 +45,9 @@ public class Application {
         // the window or has pressed the ESCAPE key.
         while (!winApp.shouldClose()) {
 
-            if(width*height>0) {    // skip if window is minimized to size zero
+            // skip rendering if window is minimized to size zero
+            // note: also means render() is not called
+            if(!isMinimized) {
                 targetView = getNextSurfaceTextureView();
                 if (targetView.address() == 0) {
                     System.out.println("*** Invalid target view");
@@ -58,7 +57,9 @@ public class Application {
                 Pointer encoder = prepareEncoder();
                 LibGPU.renderPass = prepareRenderPass(encoder);
 
-                listener.render(winApp.getDeltaTime());
+                LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
+
+                listener.render();
 
                 finalizeRenderPass(LibGPU.renderPass);
                 finishEncoder(encoder);
@@ -70,13 +71,13 @@ public class Application {
 
             wgpu.DeviceTick(LibGPU.device);
 
-
             // Poll for window events. The key callback above will only be
             // invoked during this call.
             winApp.pollEvents();
         }
 
         System.out.println("Application exit");
+        listener.pause();
         listener.dispose();
         System.out.println("Close Window");
         winApp.closeWindow();
@@ -86,8 +87,7 @@ public class Application {
     public void resize(int width, int height){
         System.out.println("Application resize");
         LibGPU.graphics.setSize(width, height);
-        this.width = width;
-        this.height = height;
+
         terminateDepthBuffer();
         if(surfaceConfigured) {
             terminateSwapChain();
@@ -98,9 +98,16 @@ public class Application {
             initSwapChain(width, height);
             surfaceConfigured = true;
             initDepthBuffer();
-        }
 
-        listener.resize(width, height);
+            if(isMinimized)
+                listener.resume();  // resume after restore from minimize
+            isMinimized = false;
+            listener.resize(width, height); // don't call listener with resize(0,0)
+        } else {
+            if(!isMinimized)
+                listener.pause();   // pause on minimize
+            isMinimized = true;
+        }
     }
 
 
@@ -242,7 +249,6 @@ public class Application {
 
         config.setWidth(width);
         config.setHeight(height);
-
 
         config.setFormat(LibGPU.surfaceFormat);
         // And we do not need any particular view format:

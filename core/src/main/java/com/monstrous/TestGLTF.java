@@ -6,7 +6,7 @@ import com.monstrous.utils.ScreenUtils;
 
 import java.util.ArrayList;
 
-public class TestGLTF implements ApplicationListener {
+public class TestGLTF extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
@@ -73,8 +73,8 @@ public class TestGLTF implements ApplicationListener {
 
 
 
-    public void render( float deltaTime ){
-        currentTime += deltaTime;
+    public void render(){
+        currentTime += LibGPU.graphics.getDeltaTime();
         ScreenUtils.clear(.7f, .7f, .7f, 1);
 
         updateModelMatrix(modelMatrix, currentTime);
