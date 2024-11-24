@@ -2,8 +2,12 @@ package com.monstrous;
 
 public interface InputProcessor {
 
-    void mouseMove(float x, float y);
+    boolean keyDown(int keycode);
 
-    void scrolled(float x, float y);
+    boolean keyUp(int keycode);
+
+    boolean mouseMove(float x, float y);
+
+    boolean scrolled(float x, float y);
 
 }

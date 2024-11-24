@@ -4,7 +4,7 @@ import com.monstrous.graphics.Camera;
 
 // Simple turn table camera controller
 
-public class CameraController implements InputProcessor {
+public class CameraController extends InputAdapter {
 
     private Camera camera;
     private float anglex, angley;
@@ -18,10 +18,11 @@ public class CameraController implements InputProcessor {
     }
 
     @Override
-    public void mouseMove(float x, float y) {
+    public boolean mouseMove(float x, float y) {
         anglex = -2f * (float) Math.PI * x / LibGPU.graphics.getWidth();
         angley = (float) Math.PI * (0.5f + y / LibGPU.graphics.getHeight());
         update();
+        return true;
     }
 
     private void update(){
@@ -36,12 +37,13 @@ public class CameraController implements InputProcessor {
     }
 
     @Override
-    public void scrolled(float x, float y) {
+    public boolean scrolled(float x, float y) {
         //System.out.println("cam controller: scroll: "+x+", "+y);
         if(y < 0)
             distance *= 1.1f;
         else if (y > 0 && distance > 0.0)
             distance *= 0.9f;
         update();
+        return true;
     }
 }

@@ -29,6 +29,25 @@ public class WindowedApp {
         }
     };
 
+
+    private final GLFWKeyCallback keyCallback = new GLFWKeyCallback() {
+        @Override
+        public void invoke(long window, int key, int scancode, int action, int mods) {
+            //System.out.println("keyCallback: key:"+key+ "scancode:"+scancode+" action:"+action+" mods:"+mods);
+            if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
+                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+
+
+            if(LibGPU.input.processor != null) {
+                if(action == GLFW_PRESS)
+                    LibGPU.input.processor.keyDown(scancode);
+                else if(action == GLFW_RELEASE)
+                    LibGPU.input.processor.keyUp(scancode);
+
+            }
+        }
+    };
+
     private final GLFWCursorPosCallback mouseMoveCallback = new GLFWCursorPosCallback() {
         @Override
         public void invoke (long windowHandle, double x, double y) {
@@ -73,6 +92,7 @@ public class WindowedApp {
         glfwSetFramebufferSizeCallback(window, resizeCallback);
         glfwSetCursorPosCallback(window, mouseMoveCallback);
         glfwSetScrollCallback(window, scrollCallback);
+        glfwSetKeyCallback(window, keyCallback);
 
 
 
@@ -86,11 +106,6 @@ public class WindowedApp {
         windowHandle = GLFWNativeWin32.glfwGetWin32Window(window);
         System.out.println("Window HWND: " + Long.toString(windowHandle, 16));
 
-        // Setup a key callback. It will be called every time a key is pressed, repeated or released.
-        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
-            if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
-                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
-        });
 
         // Get the thread stack and push a new frame
         try ( MemoryStack stack = stackPush() ) {
