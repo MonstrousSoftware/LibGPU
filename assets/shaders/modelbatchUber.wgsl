@@ -14,6 +14,7 @@ struct FrameUniforms {
     cameraPosition : vec4f,
     directionalLights : array<DirectionalLight, MAX_DIR_LIGHTS>,
     numDirectionalLights: i32,
+    ambientLightLevel : f32,
 };
 
 struct MaterialUniforms {
@@ -88,7 +89,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 1.0;
     let kS = 0.1;
     let hardness = 1.0;
-    let ambient = 0.0;
     let normalMapStrength = 1.0;
 
     let V = normalize(in.viewDirection);
@@ -133,7 +133,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         color += baseColor * kD * diffuse + kS * specular;
     }
 
-    color += baseColor * ambient;
+    color += baseColor * uFrame.ambientLightLevel;
 
     color += emissiveColor;
 

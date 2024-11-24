@@ -2,17 +2,18 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Vector3;
+
+// shows a pyramid model with a directional light on it
 
 public class TestLighting extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
     private Matrix4 modelMatrix;
-    private Matrix4 modelMatrix2;
-    private Model model, model2;
+    private Model model;
     private ModelInstance modelInstance1;
-    private ModelInstance modelInstance2;
-    private ModelInstance platformInstance;
+    private Environment environment;
     private float currentTime;
     private long startTime;
     private int frames;
@@ -21,19 +22,18 @@ public class TestLighting extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/plane.obj");
-        model2 = new Model("models/pyramid.obj");
+        model = new Model("models/pyramid.obj");
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);
-
-        modelMatrix2 = new Matrix4();
-        modelInstance2 = new ModelInstance(model2, modelMatrix2);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);
         camera.direction.set(0,0f, 1f);
         camera.update();
+
+        environment = new Environment();
+        environment.add( new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0)));
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
@@ -58,19 +58,15 @@ public class TestLighting extends ApplicationAdapter {
         currentTime += LibGPU.graphics.getDeltaTime();
 
         updateModelMatrix(modelMatrix, currentTime);
-        updateModelMatrix(modelMatrix2, currentTime+3.14f);
 
-        modelBatch.begin(camera);
-
+        modelBatch.begin(camera, environment);
         modelBatch.render(modelInstance1);
-       // modelBatch.render(modelInstance2);
-
         modelBatch.end();
 
         // At the end of the frame
 
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch : fps: " + frames  );
+            System.out.println("fps: " + frames  );
             frames = 0;
             startTime = System.nanoTime();
         }
@@ -81,13 +77,14 @@ public class TestLighting extends ApplicationAdapter {
     public void dispose(){
         // cleanup
         model.dispose();
-        model2.dispose();
         modelBatch.dispose();
     }
 
     @Override
     public void resize(int width, int height) {
-        System.out.println("demo got resize");
+        camera.viewportWidth = width;
+        camera.viewportHeight = height;
+        camera.update();
     }
 
 

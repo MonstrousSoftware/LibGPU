@@ -7,6 +7,8 @@ import com.monstrous.utils.ScreenUtils;
 
 import java.util.ArrayList;
 
+// Places 3 coloured directional lights in the environment.
+
 public class TestEnvironment extends ApplicationAdapter {
 
     private ModelBatch modelBatch;

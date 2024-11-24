@@ -1,4 +1,6 @@
 
+DEPRECATED
+
 struct DirectionalLight {
     color: vec4f,
     direction: vec3f,

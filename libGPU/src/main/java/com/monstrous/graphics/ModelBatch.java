@@ -48,7 +48,6 @@ public class ModelBatch implements Disposable {
     private Pointer materialBindGroup;
     private Pointer modelBindGroup;
     private Material prevMaterial;
-    private boolean hasNormalMap;
 
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
@@ -453,10 +452,16 @@ public class ModelBatch implements Disposable {
     }
 
 
+
     private int setUniformInteger(Pointer data, int offset, int value ){
         data.putInt(offset, value);
         return Integer.BYTES;
     }
+    private int setUniformFloat(Pointer data, int offset, float value ){
+        data.putFloat(offset, value);
+        return Float.BYTES;
+    }
+
     private int setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
         data.putFloat(offset+0*Float.BYTES, r);
         data.putFloat(offset+1*Float.BYTES, g);
@@ -495,7 +500,7 @@ public class ModelBatch implements Disposable {
         offset += setUniformMatrix(uniformData, offset, camera.viewMatrix);
         offset += setUniformMatrix(uniformData, offset, camera.combinedMatrix);
         offset += setUniformVec3(uniformData, offset, camera.position);
-        int numDirLights = environment.lights.size();
+        int numDirLights = environment == null ? 0 : environment.lights.size();
         DirectionalLight dirLight;
         // fixed length array, filled up to numDirectionalLights
         for(int i = 0; i < MAX_DIR_LIGHTS; i++) {
@@ -507,6 +512,7 @@ public class ModelBatch implements Disposable {
             offset += setUniformVec3(uniformData, offset, dirLight.direction);
         }
         offset += setUniformInteger(uniformData, offset, numDirLights);
+        offset += setUniformFloat(uniformData, offset, environment == null ? 0 : environment.ambientLightLevel);
 
         // BEWARE of padding rules
 

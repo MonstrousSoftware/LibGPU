@@ -2,6 +2,7 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Vector3;
 
 public class TestNormalMap extends ApplicationAdapter {
 
@@ -10,6 +11,7 @@ public class TestNormalMap extends ApplicationAdapter {
     private Matrix4 modelMatrix;
     private Model model;
     private ModelInstance modelInstance1;
+    private Environment environment;
     private float currentTime;
     private long startTime;
     private int frames;
@@ -27,6 +29,11 @@ public class TestNormalMap extends ApplicationAdapter {
         camera.position.set(0, 0.5f, -3);
         camera.direction.set(0,0f, 1f);
         camera.update();
+
+        environment = new Environment();
+        environment.add( new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0)));
+        environment.ambientLightLevel = 1.0f;
+
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
@@ -52,7 +59,7 @@ public class TestNormalMap extends ApplicationAdapter {
 
         updateModelMatrix(modelMatrix, currentTime);
 
-        modelBatch.begin(camera);
+        modelBatch.begin(camera, environment);
 
         modelBatch.render(modelInstance1);
 
