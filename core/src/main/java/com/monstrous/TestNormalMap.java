@@ -47,7 +47,7 @@ public class TestNormalMap extends ApplicationAdapter {
 
 
 
-    public void render( float deltaTime ){
+    public void render(  ){
         //currentTime += deltaTime;
 
         updateModelMatrix(modelMatrix, currentTime);

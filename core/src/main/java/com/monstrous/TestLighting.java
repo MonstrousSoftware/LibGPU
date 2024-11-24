@@ -54,8 +54,8 @@ public class TestLighting extends ApplicationAdapter {
 
 
 
-    public void render( float deltaTime ){
-        currentTime += deltaTime;
+    public void render(){
+        currentTime += LibGPU.graphics.getDeltaTime();
 
         updateModelMatrix(modelMatrix, currentTime);
         updateModelMatrix(modelMatrix2, currentTime+3.14f);

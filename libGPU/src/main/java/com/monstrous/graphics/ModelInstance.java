@@ -19,6 +19,8 @@ public class ModelInstance {
     }
 
     public ModelInstance(Model model, Matrix4 transform) {
+        if(model == null)
+            throw new RuntimeException("ModelInstance: model is null");
         this.model = model;
         this.modelTransform = transform;
     }

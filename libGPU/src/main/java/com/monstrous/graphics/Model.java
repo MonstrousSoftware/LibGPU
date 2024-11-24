@@ -283,7 +283,7 @@ public class Model implements Disposable {
 
         ArrayList<Vector3> bitangents = new ArrayList<>();
         // if the material has a normal map and tangents are not provided we need to calculate them
-        if(hasNormalMap && tangents.size() == 0 )
+        if(hasNormalMap && (tangents.size() == 0  || bitangents.size() == 0))
             addTBN(meshData, positions, textureCoordinates, normals, tangents, bitangents);
 
         // x y z   u v   nx ny nz (tx ty tz   bx by bz)
@@ -443,7 +443,12 @@ public class Model implements Disposable {
         rootNodes = new ArrayList<>();
         Node rootNode = new Node();
         rootNode.nodeParts = new ArrayList<>();
-        rootNode.nodeParts.add( new NodePart(meshPart, materials.get(0) ));       // todo arbitrary choice for first material
+        Material material;
+        if(materials.size() > 0)
+            material = materials.get(0);    // todo abritrary
+        else
+            material = new Material( new Color(1,1,1,1));   // fallback
+        rootNode.nodeParts.add( new NodePart(meshPart, material ));
         rootNodes.add(rootNode);
 
     }

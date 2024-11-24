@@ -2,6 +2,7 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.utils.ScreenUtils;
 
 public class TestModelInstance extends ApplicationAdapter {
 
@@ -54,8 +55,9 @@ public class TestModelInstance extends ApplicationAdapter {
 
 
 
-    public void render( float deltaTime ){
-        currentTime += deltaTime;
+    public void render( ){
+        //currentTime += LibGPU.graphics.getDeltaTime();
+        ScreenUtils.clear(.7f, .7f, .7f, 1);
 
         updateModelMatrix(modelMatrix, currentTime);
         updateModelMatrix(modelMatrix2, currentTime+3.14f);
@@ -63,7 +65,7 @@ public class TestModelInstance extends ApplicationAdapter {
         modelBatch.begin(camera);
 
         modelBatch.render(modelInstance1);
-        modelBatch.render(modelInstance2);
+        //modelBatch.render(modelInstance2);
 
         modelBatch.end();
 

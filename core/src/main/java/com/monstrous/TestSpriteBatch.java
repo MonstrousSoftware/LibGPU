@@ -24,7 +24,7 @@ public class TestSpriteBatch extends ApplicationAdapter {
         batch = new SpriteBatch();
     }
 
-    public void render( float deltaTime ){
+    public void render(  ){
 
         // SpriteBatch testing
         batch.begin();

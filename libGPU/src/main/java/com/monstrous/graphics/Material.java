@@ -46,6 +46,8 @@ public class Material implements Disposable {
 
     public Material(Color baseColor) {
         this.baseColor = new Color(baseColor);
+        this.diffuseTexture = new Texture("textures\\white.png", false);
+        this.emissiveTexture = new Texture("textures\\black.png", false);
     }
 
     @Override

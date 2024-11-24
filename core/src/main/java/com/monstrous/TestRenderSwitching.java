@@ -69,8 +69,8 @@ public class TestRenderSwitching extends ApplicationAdapter {
 
 
 
-    public void render( float deltaTime ){
-        currentTime += deltaTime;
+    public void render(){
+        currentTime += LibGPU.graphics.getDeltaTime();
         ScreenUtils.clear(.7f, .7f, .7f, 1);
 
         updateModelMatrix(modelMatrix, currentTime);

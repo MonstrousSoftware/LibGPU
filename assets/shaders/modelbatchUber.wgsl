@@ -85,7 +85,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 1.0;
     let kS = 0.1;
     let hardness = 1.0;
-    let ambient = 0.1;
+    let ambient = 0.4;
     let normalMapStrength = 1.0;
 
     let V = normalize(in.viewDirection);
@@ -93,7 +93,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let lightColor = uFrame.directionalLight.color.rgb; //vec3f(1.0, 1.0, 1.0);
     let lightDirection = -1*uFrame.directionalLight.direction.xyz; //rvec3f(0.0, 1.0, 0.0);
 
-    let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgb;// * in.color;
+    let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgb * in.color;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
 
 #ifdef NORMAL_MAP

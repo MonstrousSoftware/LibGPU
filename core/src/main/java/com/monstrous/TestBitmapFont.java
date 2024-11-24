@@ -19,7 +19,7 @@ public class TestBitmapFont extends ApplicationAdapter {
         batch = new SpriteBatch();
     }
 
-    public void render( float deltaTime ){
+    public void render( ){
 
         ScreenUtils.clear(0,0,0,1);
 
