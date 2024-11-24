@@ -37,7 +37,7 @@ public class CameraController implements InputProcessor {
 
     @Override
     public void scrolled(float x, float y) {
-        System.out.println("cam controller: scroll: "+x+", "+y);
+        //System.out.println("cam controller: scroll: "+x+", "+y);
         if(y < 0)
             distance *= 1.1f;
         else if (y > 0 && distance > 0.0)

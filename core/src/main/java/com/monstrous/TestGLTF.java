@@ -102,7 +102,9 @@ public class TestGLTF implements ApplicationListener {
 
     @Override
     public void resize(int width, int height) {
-        System.out.println("demo got resize");
+        camera.viewportWidth = width;
+        camera.viewportHeight = height;
+        camera.update();
     }
 
 

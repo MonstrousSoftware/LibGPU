@@ -16,6 +16,8 @@ public class Application {
     //public Pointer surface;
     public Pointer targetView;
     public Color clearColor;
+    private int width, height;
+    private boolean surfaceConfigured = false;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
@@ -29,6 +31,8 @@ public class Application {
         LibGPU.input = new Input();
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
+        width = config.width;
+        height = config.height;
 
         clearColor = new Color(1, 1, 1, 1);
 
@@ -37,28 +41,32 @@ public class Application {
         initWebGPU(winApp.getWindowHandle());
 
         listener.create();
+        resize(config.width, config.height);
+
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
         while (!winApp.shouldClose()) {
 
-            targetView = getNextSurfaceTextureView();
-            if (targetView.address() == 0) {
-                System.out.println("*** Invalid target view");
-                return;
+            if(width*height>0) {    // skip if window is minimized to size zero
+                targetView = getNextSurfaceTextureView();
+                if (targetView.address() == 0) {
+                    System.out.println("*** Invalid target view");
+                    return;
+                }
+
+                Pointer encoder = prepareEncoder();
+                LibGPU.renderPass = prepareRenderPass(encoder);
+
+                listener.render(winApp.getDeltaTime());
+
+                finalizeRenderPass(LibGPU.renderPass);
+                finishEncoder(encoder);
+
+                // At the end of the frame
+                wgpu.TextureViewRelease(targetView);
+                wgpu.SurfacePresent(LibGPU.surface);
             }
-
-            Pointer encoder = prepareEncoder();
-            LibGPU.renderPass = prepareRenderPass(encoder);
-
-            listener.render( winApp.getDeltaTime() );
-
-            finalizeRenderPass( LibGPU.renderPass );
-            finishEncoder(encoder);
-
-            // At the end of the frame
-            wgpu.TextureViewRelease(targetView);
-            wgpu.SurfacePresent(LibGPU.surface);
 
             wgpu.DeviceTick(LibGPU.device);
 
@@ -78,10 +86,19 @@ public class Application {
     public void resize(int width, int height){
         System.out.println("Application resize");
         LibGPU.graphics.setSize(width, height);
+        this.width = width;
+        this.height = height;
         terminateDepthBuffer();
-        terminateSwapChain();
-        initSwapChain();
-        initDepthBuffer();
+        if(surfaceConfigured) {
+            terminateSwapChain();
+            surfaceConfigured = false;
+        }
+        // don't crash on resize(0,0) in case of window minimize
+        if(width*height > 0) {
+            initSwapChain(width, height);
+            surfaceConfigured = true;
+            initDepthBuffer();
+        }
 
         listener.resize(width, height);
     }
@@ -103,15 +120,12 @@ public class Application {
         System.out.println("surface = "+LibGPU.surface);
 
         initDevice();
-        initDepthBuffer();
-        initSwapChain();
     }
 
     private void exitWebGPU() {
         terminateSwapChain();
         terminateDepthBuffer();
         terminateDevice();
-
 
         wgpu.SurfaceRelease(LibGPU.surface);
         wgpu.InstanceRelease(LibGPU.instance);
@@ -221,13 +235,13 @@ public class Application {
         wgpu.DeviceRelease(LibGPU.device);
     }
 
-    private void initSwapChain(){
+    private void initSwapChain(int width, int height){
         // configure the surface
         WGPUSurfaceConfiguration config = WGPUSurfaceConfiguration.createDirect();
         config.setNextInChain();
 
-        config.setWidth(LibGPU.graphics.getWidth());
-        config.setHeight(LibGPU.graphics.getHeight());
+        config.setWidth(width);
+        config.setHeight(height);
 
 
         config.setFormat(LibGPU.surfaceFormat);
@@ -240,11 +254,11 @@ public class Application {
         config.setAlphaMode(WGPUCompositeAlphaMode.Auto);
 
         wgpu.SurfaceConfigure(LibGPU.surface, config);
+
     }
 
     private void terminateSwapChain(){
         wgpu.SurfaceUnconfigure(LibGPU.surface);
-
     }
 
     private Pointer getNextSurfaceTextureView() {
@@ -314,9 +328,14 @@ public class Application {
 
     private void terminateDepthBuffer(){
         // Destroy the depth texture and its view
-        wgpu.TextureViewRelease(depthTextureView);
-        wgpu.TextureDestroy(depthTexture);
-        wgpu.TextureRelease(depthTexture);
+        if(depthTextureView != null)
+            wgpu.TextureViewRelease(depthTextureView);
+        if(depthTexture != null) {
+            wgpu.TextureDestroy(depthTexture);
+            wgpu.TextureRelease(depthTexture);
+        }
+        depthTextureView = null;
+        depthTexture = null;
     }
 
     private Pointer prepareEncoder() {
