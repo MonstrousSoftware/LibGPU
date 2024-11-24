@@ -8,6 +8,8 @@ import com.monstrous.wgpu.WGPUIndexFormat;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
+import java.util.ArrayList;
+
 public class Mesh {
 
     private Pointer vertexBuffer;
@@ -33,58 +35,72 @@ public class Mesh {
 //        System.out.println("Loaded "+data.objectName);
 //    }
 
-    public Mesh(MeshData data){
-
+    public Mesh(MeshData data) {
         vertexAttributes = data.vertexAttributes;
 
-        vertexCount = data.vertFloats.size()*Float.BYTES/data.vertexAttributes.getVertexSizeInBytes();
-        float[] vertexData = new float[ data.vertFloats.size() ];
-        for(int i = 0; i < data.vertFloats.size(); i++){
+        vertexCount = data.vertFloats.size() * Float.BYTES / data.vertexAttributes.getVertexSizeInBytes();
+        float[] vertexData = new float[data.vertFloats.size()];
+        for (int i = 0; i < data.vertFloats.size(); i++) {
             vertexData[i] = data.vertFloats.get(i);
         }
+        setVertices(vertexData);
+        setIndices(data.indexValues, data.indexSizeInBytes);
+    }
+
+    public void setVertices(float[] vertexData) {
         // Create vertex buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Vertex buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex );
-        bufferDesc.setSize((long) vertexData.length *Float.BYTES);
-        System.out.println("VB "+(long) vertexData.length *Float.BYTES);
-        bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+            bufferDesc.setLabel("Vertex buffer");
+            bufferDesc.setUsage(WGPUBufferUsage.CopyDst |WGPUBufferUsage.Vertex );
+            bufferDesc.setSize((long)vertexData.length *Float.BYTES);
+            System.out.println("VB "+(long)vertexData.length *Float.BYTES);
+            bufferDesc.setMappedAtCreation(0L);
+        vertexBuffer =LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device,bufferDesc);
 
         Pointer dataBuf = WgpuJava.createFloatArrayPointer(vertexData);
         // Upload geometry data to the buffer
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, 0, dataBuf, (int)bufferDesc.getSize());
+        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue,vertexBuffer,0,dataBuf,(int)bufferDesc.getSize());
+    }
 
+    public void setIndices(ArrayList<Integer> indexValues, int indexSizeInBytes) {
 
-        int indexSize = data.indexSizeInBytes;  // bytes
-        indexCount = data.indexValues.size();
-        int indexBufferSize = indexCount*indexSize;
+        if(indexSizeInBytes == 2)
+            indexFormat = WGPUIndexFormat.Uint16;
+        else if(indexSizeInBytes == 4)
+            indexFormat = WGPUIndexFormat.Uint32;
+        else
+            throw new RuntimeException("setIndices: support only 16 bit or 32 bit indices.");
+
+        indexCount = indexValues.size();
+        int indexBufferSize = indexCount * indexSizeInBytes;
         indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
 
         Pointer idata = WgpuJava.createDirectPointer(indexBufferSize);
-        if(indexSize == 2){
-            indexFormat = WGPUIndexFormat.Uint16;
-            for(int i = 0; i < indexCount; i++){
-                idata.putShort((long) i * indexSize, (short)(int)data.indexValues.get(i));
+        if (indexSizeInBytes == 2) {
+            for (int i = 0; i < indexCount; i++) {
+                idata.putShort((long) i * indexSizeInBytes, (short) (int) indexValues.get(i));
             }
-        } else if (indexSize == 4){
-            indexFormat = WGPUIndexFormat.Uint32;
-            for(int i = 0; i < indexCount; i++){
-                idata.putInt((long) i * indexSize, (int)data.indexValues.get(i));
+        } else if (indexSizeInBytes == 4) {
+             for (int i = 0; i < indexCount; i++) {
+                idata.putInt((long) i * indexSizeInBytes, indexValues.get(i));
             }
         }
+        setIndices(idata, indexBufferSize);
+    }
+
+    public void setIndices(Pointer idata, int indexBufferSize) {
+        // Create index buffer
+        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index );
+        bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index);
         bufferDesc.setSize(indexBufferSize);
-        // in case we use a sort index:
-
         bufferDesc.setMappedAtCreation(0L);
         indexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // Upload data to the buffer
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, (int)bufferDesc.getSize());
+        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, indexBufferSize);
     }
 
     public void dispose(){
