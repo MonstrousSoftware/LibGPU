@@ -10,12 +10,15 @@ import com.monstrous.utils.ScreenUtils;
 
 public class TestKeyboard extends InputAdapter implements ApplicationListener {
 
+    private final float SPEED = 250f;
+
     private SpriteBatch batch;
     private Texture texture;
-    private int x, y;
-    private int vx, vy;
+    private float x, y;
+    private float vx, vy;
     private int viewWidth, viewHeight;
     private BitmapFont font;
+    private String eventString;
 
 
     public void create() {
@@ -24,22 +27,27 @@ public class TestKeyboard extends InputAdapter implements ApplicationListener {
         batch = new SpriteBatch();
         font = new BitmapFont();
         LibGPU.input.setInputProcessor(this);
+        eventString = "";
     }
 
     public void render(  ){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
+            LibGPU.app.exit();
 
         moveSprite();
 
         ScreenUtils.clear(0.5f, 0.9f, 0.5f, 1f);
         batch.begin();
         batch.draw(texture, x, y);
-        font.draw(batch, "Press W, A, S or D to move", 10, 40);
+        font.draw(batch, "Press W, A, S or D to move", 10, 80);
+        font.draw(batch, eventString, 10, 40);
         batch.end();
     }
 
     private void moveSprite(){
-        x += vx;
-        y += vy;
+        float deltaTime = LibGPU.graphics.getDeltaTime();
+        x += vx * deltaTime;
+        y += vy * deltaTime;
         if(x < 0){
             x = 0;
             vx = 0;
@@ -60,8 +68,8 @@ public class TestKeyboard extends InputAdapter implements ApplicationListener {
     public void resize(int width, int height) {
         viewWidth = width;
         viewHeight = height;
-        x = (viewWidth-texture.getWidth())/2;
-        y = (viewHeight-texture.getHeight())/2;
+        x = (viewWidth-texture.getWidth())/2f;
+        y = (viewHeight-texture.getHeight())/2f;
     }
 
     public void dispose(){
@@ -73,12 +81,12 @@ public class TestKeyboard extends InputAdapter implements ApplicationListener {
 
     @Override
     public boolean keyDown(int key){
-        System.out.println("key: "+key);
+        eventString = "keyDown "+key+ "      ";
         switch(key){
-            case 30: vx = -5; break;
-            case 32: vx = 5; break;
-            case 17: vy = 5; break;
-            case 31: vy = -5; break;
+            case Input.Keys.A: vx = -SPEED; break;
+            case Input.Keys.D: vx = SPEED; break;
+            case Input.Keys.W: vy = SPEED; break;
+            case Input.Keys.S: vy = -SPEED; break;
             default: return false;
         }
         return true;
@@ -86,10 +94,10 @@ public class TestKeyboard extends InputAdapter implements ApplicationListener {
 
     @Override
     public boolean keyUp(int key){
-        System.out.println("key: "+key);
+        eventString = "keyUp "+key + "    ";
         switch(key){
-            case 30, 32: vx = 0; break;
-            case 17, 31: vy = 0; break;
+            case Input.Keys.A, Input.Keys.D: vx = 0; break;
+            case Input.Keys.W, Input.Keys.S: vy = 0; break;
             default: return false;
         }
         return true;

@@ -14,6 +14,6 @@ public class Launcher {
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.Vulkan;
 
-        new Application(new TestNormalMap(), config);
+        new Application(new TestKeyboard(), config);
     }
 }

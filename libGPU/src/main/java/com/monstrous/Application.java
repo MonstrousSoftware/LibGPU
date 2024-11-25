@@ -17,13 +17,14 @@ public class Application {
     public Color clearColor;
     private boolean surfaceConfigured = false;
     private boolean isMinimized = false;
+    private WindowedApp winApp;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
     }
 
     public Application(ApplicationListener listener, ApplicationConfiguration config) {
-        LibGPU.application = this;
+        LibGPU.app = this;
         this.configuration = config;
         this.listener = listener;
 
@@ -33,7 +34,7 @@ public class Application {
 
         clearColor = new Color(1, 1, 1, 1);
 
-        WindowedApp winApp = new WindowedApp();
+        winApp = new WindowedApp();
         winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());
 
@@ -43,7 +44,7 @@ public class Application {
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
-        while (!winApp.shouldClose()) {
+        while (!winApp.getShouldClose()) {
 
             // skip rendering if window is minimized to size zero
             // note: also means render() is not called
@@ -110,6 +111,10 @@ public class Application {
         }
     }
 
+    public void exit(){
+        winApp.setShouldClose(true);
+    }
+
 
     private void initWebGPU(long windowHandle) {
         wgpu = LibraryLoader.create(WGPU.class).load("wrapper"); // load the library
@@ -144,7 +149,7 @@ public class Application {
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
         options.setNextInChain();
         options.setCompatibleSurface(LibGPU.surface);
-        options.setBackendType(LibGPU.application.configuration.backend);
+        options.setBackendType(LibGPU.app.configuration.backend);
 
         System.out.println("defined adapter options");
 
@@ -256,7 +261,7 @@ public class Application {
         config.setViewFormats(WgpuJava.createNullPointer());
         config.setUsage(WGPUTextureUsage.RenderAttachment);
         config.setDevice(LibGPU.device);
-        config.setPresentMode(LibGPU.application.configuration.vsyncEnabled ? WGPUPresentMode.Fifo : WGPUPresentMode.Immediate);
+        config.setPresentMode(LibGPU.app.configuration.vsyncEnabled ? WGPUPresentMode.Fifo : WGPUPresentMode.Immediate);
         config.setAlphaMode(WGPUCompositeAlphaMode.Auto);
 
         wgpu.SurfaceConfigure(LibGPU.surface, config);
@@ -356,7 +361,7 @@ public class Application {
 
         WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
         renderPassColorAttachment.setNextInChain();
-        renderPassColorAttachment.setView(LibGPU.application.targetView);
+        renderPassColorAttachment.setView(LibGPU.app.targetView);
         renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
         renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
         renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
@@ -370,7 +375,7 @@ public class Application {
 
 
         WGPURenderPassDepthStencilAttachment depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
-        depthStencilAttachment.setView( LibGPU.application.depthTextureView );
+        depthStencilAttachment.setView( LibGPU.app.depthTextureView );
         depthStencilAttachment.setDepthClearValue(1.0f);
         depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
         depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);

@@ -11,6 +11,6 @@ public class ScreenUtils {
     }
 
     public static void clear(float r, float g, float b, float a){
-        LibGPU.application.clearColor.set(r,g,b,a);
+        LibGPU.app.clearColor.set(r,g,b,a);
     }
 }

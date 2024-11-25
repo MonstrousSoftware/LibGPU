@@ -6,7 +6,7 @@ import com.monstrous.wgpu.WGPUTextureFormat;
 import jnr.ffi.Pointer;
 
 public class LibGPU {
-    public static Application application;
+    public static Application app;
     public static Input input;
     public static Graphics graphics;
     public static WGPU wgpu;

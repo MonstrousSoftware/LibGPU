@@ -8,7 +8,6 @@ import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.glfwSetFramebufferSizeCallback;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -33,41 +32,28 @@ public class WindowedApp {
     private final GLFWKeyCallback keyCallback = new GLFWKeyCallback() {
         @Override
         public void invoke(long window, int key, int scancode, int action, int mods) {
-            //System.out.println("keyCallback: key:"+key+ "scancode:"+scancode+" action:"+action+" mods:"+mods);
-            if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
-                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
-
-
-            if(LibGPU.input.processor != null) {
-                if(action == GLFW_PRESS)
-                    LibGPU.input.processor.keyDown(scancode);
-                else if(action == GLFW_RELEASE)
-                    LibGPU.input.processor.keyUp(scancode);
-
-            }
+            LibGPU.input.processKeyEvent(key, action);
         }
     };
 
     private final GLFWCursorPosCallback mouseMoveCallback = new GLFWCursorPosCallback() {
         @Override
         public void invoke (long windowHandle, double x, double y) {
-            if(LibGPU.input.processor != null)
-                LibGPU.input.processor.mouseMove((float) x, (float) y);
+            LibGPU.input.processMouseMove((float)x, (float)y);
         }
     };
 
     private final GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
         @Override
         public void invoke (long windowHandle, double x, double y) {
-            if(LibGPU.input.processor != null)
-                LibGPU.input.processor.scrolled((float) x, (float) y);
+            LibGPU.input.processScroll((float)x, (float)y);
         }
     };
 
     public void openWindow(Application application, ApplicationConfiguration config){
         this.application = application;
-        System.out.println("Application init");
-        System.out.println("Hello LWJGL " + Version.getVersion() + "!");
+
+        System.out.println("LWJGL " + Version.getVersion() );
 
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
@@ -134,8 +120,12 @@ public class WindowedApp {
         return windowHandle;
     }
 
-    public boolean shouldClose(){
+    public boolean getShouldClose(){
         return glfwWindowShouldClose(window);
+    }
+
+    public void setShouldClose(boolean value){
+        glfwSetWindowShouldClose(window, value); // We will detect this in the rendering loop
     }
 
     public void pollEvents() {
