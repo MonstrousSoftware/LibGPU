@@ -31,6 +31,12 @@ public class Node {
         nodeParts = null;
     }
 
+    public Node( NodePart nodePart ) {
+        this();
+        nodeParts = new ArrayList<>();
+        nodeParts.add( nodePart );
+    }
+
     public void addChild(Node child){
         child.parent = this;
         children.add(child);

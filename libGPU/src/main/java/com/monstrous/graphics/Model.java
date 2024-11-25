@@ -17,7 +17,7 @@ public class Model implements Disposable {
     public ArrayList<Mesh> meshes;
     public ArrayList<Node> rootNodes;
     public ArrayList<Material> materials;
-    private Map<GLTFPrimitive, Mesh> meshMap = new HashMap<>();
+    private final Map<GLTFPrimitive, Mesh> meshMap = new HashMap<>();
 
     public Model(String filePath) {
         this.filePath = filePath.toLowerCase();
@@ -33,6 +33,24 @@ public class Model implements Disposable {
         } else
             throw new RuntimeException("Model: file name extension not supported : "+filePath);
 
+    }
+
+    public Model(Mesh mesh, Material material){
+        meshes = new ArrayList<>();
+        meshes.add(mesh);
+
+        materials = new ArrayList<>();
+        materials.add(material);
+
+        // create a meshPart to cover whole mesh
+        MeshPart meshPart;
+        if(mesh.getIndexCount() > 0)
+            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
+        else
+            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
+        Node rootNode = new Node(new NodePart(meshPart, material ));
+        rootNodes = new ArrayList<>();
+        rootNodes.add(rootNode);
     }
 
 

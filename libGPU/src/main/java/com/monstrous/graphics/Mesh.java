@@ -35,6 +35,10 @@ public class Mesh {
 //        System.out.println("Loaded "+data.objectName);
 //    }
 
+    public Mesh(){
+
+    }
+
     public Mesh(MeshData data) {
         setVertexAttributes(data.vertexAttributes);
 
@@ -64,6 +68,18 @@ public class Mesh {
         Pointer dataBuf = WgpuJava.createFloatArrayPointer(vertexData);
         // Upload geometry data to the buffer
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue,vertexBuffer,0,dataBuf,(int)bufferDesc.getSize());
+    }
+
+
+    public void setIndices(ArrayList<Integer> indexValues){
+        if(indexValues == null)
+            indexCount = 0;
+        else {
+            int indexWidth = 2;
+            if (indexValues.size() > Short.MAX_VALUE)
+                indexWidth = 4;
+            setIndices(indexValues, indexWidth);
+        }
     }
 
     public void setIndices(ArrayList<Integer> indexValues, int indexSizeInBytes) {

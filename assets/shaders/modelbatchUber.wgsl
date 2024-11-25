@@ -25,6 +25,10 @@ struct ModelUniforms {
     modelMatrix: mat4x4f,
 };
 
+struct InstanceUniforms {
+    modelMatrix: mat4x4f,
+};
+
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
@@ -39,6 +43,8 @@ struct ModelUniforms {
 
 @group(2) @binding(0) var<uniform> uModel: ModelUniforms;
 
+@group(3) @binding(0) var<storage, read> instances: array<InstanceUniforms>;
+
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -48,7 +54,6 @@ struct VertexInput {
     @location(3) tangent: vec3f,
     @location(4) bitangent: vec3f,
 #endif
-
 };
 
 struct VertexOutput {
@@ -64,7 +69,7 @@ struct VertexOutput {
 };
 
 @vertex
-fn vs_main(in: VertexInput) -> VertexOutput {
+fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOutput {
    var out: VertexOutput;
 
    out.normal = (uModel.modelMatrix * vec4f(in.normal, 0.0)).xyz;
@@ -73,7 +78,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
    out.bitangent = (uModel.modelMatrix * vec4f(in.bitangent, 0.0)).xyz;
 #endif
 
-   let worldPosition =  uModel.modelMatrix * vec4f(in.position, 1.0);
+   let worldPosition =  instances[instance].modelMatrix * vec4f(in.position, 1.0);
+   //let worldPosition =  uModel.modelMatrix * vec4f(in.position, 1.0);
    let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
    let cameraPosition = uFrame.cameraPosition.xyz;
 

@@ -3,6 +3,7 @@
 
 ### Polling
 Key status can be retrieved using ```isKeyPressed(keycode)``` where keycode is one of the values from Input.Keys.
+To check if any key is pressed you can supply the value ```Input.Keys.ANY_KEY```.
 
 Mouse position can be retrieved using `getX()` and `getY()`.
 

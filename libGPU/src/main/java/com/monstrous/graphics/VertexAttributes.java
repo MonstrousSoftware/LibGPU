@@ -25,8 +25,6 @@ public class VertexAttributes implements Disposable {
     public void add(String label, WGPUVertexFormat format, int shaderLocation){
         VertexAttribute va = new VertexAttribute(label, format, shaderLocation);
         attributes.add(va);
-//        if(label.contentEquals("tangent"))
-//            hasNormalMap = true;
     }
 
     public void end(){
