@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 public class TestInstancing extends ApplicationAdapter {
 
-    private final float  FIELD_SIZE = 50f;
+    private final float  FIELD_SIZE = 10f;
 
     private ModelBatch modelBatch;
     private Camera camera;
@@ -28,17 +28,13 @@ public class TestInstancing extends ApplicationAdapter {
         model = new Model("models/ducky.obj");
         modelInstances = new ArrayList<>();
 
+        //modelInstances.add(new ModelInstance(new Model("models/pyramid.obj"), 0, 0,0));
+
         ModelInstance modelInstance = new ModelInstance(model, 0, 0,0);
+        modelInstance.instanceTransforms = makeTransforms();;
         modelInstances.add(modelInstance);
-        ArrayList<Matrix4> transforms = makeTransforms();
 
-
-//        for (float x = -FIELD_SIZE; x < FIELD_SIZE; x += 5) {
-//            for (float z = -FIELD_SIZE; z < FIELD_SIZE; z += 5) {
-//                ModelInstance modelInstance = new ModelInstance(model, x, 0, z);
-//                modelInstances.add(modelInstance);
-//            }
-//        }
+        modelInstances.add(new ModelInstance(new Model("models/pyramid.obj"), 0, 3,0));
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -53,7 +49,6 @@ public class TestInstancing extends ApplicationAdapter {
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
         modelBatch = new ModelBatch();
-        modelBatch.setInstances(transforms);
     }
 
     private ArrayList<Matrix4> makeTransforms(){

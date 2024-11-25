@@ -15,6 +15,7 @@ import java.util.List;
 public class ModelBatch implements Disposable {
 
     private final int MAX_DIR_LIGHTS = 5;
+    private final int MAX_INSTANCES = 4096;
 
     private final int FRAME_UB_SIZE = 384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
     private final int MATERIAL_UB_SIZE = 4 * Float.BYTES;
@@ -42,11 +43,13 @@ public class ModelBatch implements Disposable {
 
     private Pointer frameBindGroupLayout;
     private Pointer materialBindGroupLayout;
-    private Pointer modelBindGroupLayout;
+    private Pointer instancingBindGroupLayout;
+    //private Pointer modelBindGroupLayout;
     private Pointer pipelineLayout;
     private Pointer frameBindGroup;
     private Pointer materialBindGroup;
-    private Pointer modelBindGroup;
+    //private Pointer modelBindGroup;
+    private Pointer instancingBindGroup;
     private Material prevMaterial;
 
     private final Pipelines pipelines;
@@ -58,17 +61,17 @@ public class ModelBatch implements Disposable {
 
     private DirectionalLight defaultDirectionalLight;
 
-    public int instanceCount;
+    //public int instanceCount;
     private Pointer instanceBuffer;
-    private Pointer instancingBindGroupLayout;
-    private Pointer instancingBindGroup;
+
+
 
 
     public ModelBatch (){
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
         uniformAlignment = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
-        instanceCount = 1;
+
 
         pipelines = new Pipelines();
         renderables = new ArrayList<>();
@@ -79,17 +82,21 @@ public class ModelBatch implements Disposable {
         frameUniformBuffer = createUniformBuffer( FRAME_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
         materialBindGroupLayout = createMaterialBindGroupLayout();
-        modelBindGroupLayout = createModelBindGroupLayout();
+        //modelBindGroupLayout = createModelBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
 
-        pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, modelBindGroupLayout);
+        pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, instancingBindGroupLayout);
 
         materialUniformBuffer = createUniformBuffer( MATERIAL_UB_SIZE, MAX_MATERIALS);
         modelUniformBuffer = createUniformBuffer( MODEL_UB_SIZE, MAX_MODELS);
 
+        int instanceSize = 16*Float.BYTES;      // data size per instance
+        instanceBuffer = createInstancingBuffer(instanceSize, MAX_INSTANCES);
+
+
+
         float[] uniforms = new float[MAX_UB_SIZE/Float.BYTES];
         uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
-
 
 
         shaderStd = new ShaderProgram("shaders/modelbatchUber.wgsl","");      // todo get from library storage
@@ -116,11 +123,14 @@ public class ModelBatch implements Disposable {
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer);
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, frameBindGroup, 0, null);
 
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 3, instancingBindGroup, 0, null);
+        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer, 16*Float.BYTES*MAX_INSTANCES);
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, instancingBindGroup, 0, null);
 
         materialBindGroup = null;
 
-        modelBindGroup = makeModelBindGroup(modelBindGroupLayout, modelUniformBuffer);      // bind group remains unchanged, uniform buffer offset changes
+
+
+        //modelBindGroup = makeModelBindGroup(modelBindGroupLayout, modelUniformBuffer);      // bind group remains unchanged, uniform buffer offset changes
     }
 
     public void render(ArrayList<ModelInstance> instances) {
@@ -146,7 +156,7 @@ public class ModelBatch implements Disposable {
         flush();
 
         wgpu.BindGroupRelease(frameBindGroup);
-        wgpu.BindGroupRelease(modelBindGroup);
+        wgpu.BindGroupRelease(instancingBindGroup);
         if(materialBindGroup != null)
             wgpu.BindGroupRelease(materialBindGroup);
         //System.out.println("materials: "+materialUniformIndex+"\t\tmodels: "+modelUniformIndex+" pipe switches: "+numPipelineSwitches);
@@ -178,20 +188,29 @@ public class ModelBatch implements Disposable {
 
     // this will actually generate the draw calls for the renderable
     private void emit(Renderable renderable) {
-        emit(renderable.meshPart, renderable.material, renderable.modelTransform);
+        emit(renderable.meshPart, renderable.material, renderable.modelTransform, renderable.instanceTransforms);
     }
 
-    public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix){
+    public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix, ArrayList<Matrix4> instances){
 
-        writeModelUniforms(modelUniformBuffer, modelUniformIndex, modelMatrix);  // update renderable uniforms
+        int instanceCount = 1;
+        if(instances == null) {
+            setInstance(modelMatrix);
 
-        // set dynamic offset into uniform buffer
-        int[] offset = new int[1];
-        int uniformStride = ceilToNextMultiple(MODEL_UB_SIZE, uniformAlignment);
-        offset[0] = modelUniformIndex*uniformStride;
-        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset); // todo reuse this
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, modelBindGroup, 1, offsetPtr);
-        modelUniformIndex++;
+        }else {
+            setInstances(instances);
+            instanceCount = instances.size();
+        }
+
+//        writeModelUniforms(modelUniformBuffer, modelUniformIndex, modelMatrix);  // update renderable uniforms
+//
+//        // set dynamic offset into uniform buffer
+//        int[] offset = new int[1];
+//        int uniformStride = ceilToNextMultiple(MODEL_UB_SIZE, uniformAlignment);
+//        offset[0] = modelUniformIndex*uniformStride;
+//        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset); // todo reuse this
+//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, modelBindGroup, 1, offsetPtr);
+//        modelUniformIndex++;
 
         // make a new bind group every time we change texture
         if(material != prevMaterial) {
@@ -203,10 +222,10 @@ public class ModelBatch implements Disposable {
             materialBindGroup = makeMaterialBindGroup(material, materialBindGroupLayout, materialUniformBuffer, meshPart.mesh.vertexAttributes.hasNormalMap);   // bind group for textures and uniforms
 
             // set dynamic offset into uniform buffer
-            //int[] offset = new int[1];
-            uniformStride = ceilToNextMultiple(MATERIAL_UB_SIZE, uniformAlignment);
+            int[] offset = new int[1];
+            int uniformStride = ceilToNextMultiple(MATERIAL_UB_SIZE, uniformAlignment);
             offset[0] = materialUniformIndex*uniformStride;
-            offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
+            Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
             wgpu.RenderPassEncoderSetBindGroup(renderPass, 1, materialBindGroup, 1, offsetPtr);
             materialUniformIndex++;
         }
@@ -251,7 +270,7 @@ public class ModelBatch implements Disposable {
         pipelines.dispose();
         wgpu.BindGroupLayoutRelease(frameBindGroupLayout);
         wgpu.BindGroupLayoutRelease(materialBindGroupLayout);
-        wgpu.BindGroupLayoutRelease(modelBindGroupLayout);
+        wgpu.BindGroupLayoutRelease(instancingBindGroupLayout);
         wgpu.BufferRelease(frameUniformBuffer);
         wgpu.BufferRelease(materialUniformBuffer);
         wgpu.BufferRelease(modelUniformBuffer);
@@ -427,19 +446,18 @@ public class ModelBatch implements Disposable {
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
-    private Pointer makePipelineLayout(Pointer frameBindGroupLayout, Pointer materialBindGroupLayout, Pointer modelBindGroupLayout) {
-        long[] layouts = new long[4];
+    private Pointer makePipelineLayout(Pointer frameBindGroupLayout, Pointer materialBindGroupLayout, Pointer instancingBindGroupLayout) {
+        long[] layouts = new long[3];
         layouts[0] = frameBindGroupLayout.address();
         layouts[1] = materialBindGroupLayout.address();
-        layouts[2] = modelBindGroupLayout.address();
-        layouts[3] = instancingBindGroupLayout.address();
+        layouts[2] = instancingBindGroupLayout.address();
         Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
 
-        // Create the pipeline layout to define the bind groups needed : 4 bind group
+        // Create the pipeline layout to define the bind groups needed : 3 bind group
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
         layoutDesc.setNextInChain();
         layoutDesc.setLabel("Pipeline Layout");
-        layoutDesc.setBindGroupLayoutCount(4);
+        layoutDesc.setBindGroupLayoutCount(3);
         layoutDesc.setBindGroupLayouts(layoutPtr);
         return LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }
@@ -567,11 +585,21 @@ public class ModelBatch implements Disposable {
     }
 
 
-
-    public void setInstances(ArrayList<Matrix4> matrices){
+    // default case: only a single instance
+    private void setInstance(Matrix4 modelTransform){
         int instanceSize = 16*Float.BYTES;      // data size per instance
-        instanceCount = matrices.size();
-        instanceBuffer = createInstancingBuffer(instanceSize, instanceCount);
+
+        float[] floatData = new float[16];
+        Pointer instanceData = WgpuJava.createFloatArrayPointer(floatData);       // native memory buffer for one instance to aid write buffer
+        setUniformMatrix(instanceData, 0, modelTransform);
+        wgpu.QueueWriteBuffer(LibGPU.queue, instanceBuffer, 0, instanceData, instanceSize);
+    }
+
+    private void setInstances(ArrayList<Matrix4> matrices){
+        int instanceSize = 16*Float.BYTES;      // data size per instance
+        int instanceCount = matrices.size();
+        if(instanceCount > MAX_INSTANCES)
+            throw new RuntimeException("Too many instances: "+instanceCount);
 
         // todo Use map on create
         float[] floatData = new float[16*instanceCount];
@@ -581,9 +609,6 @@ public class ModelBatch implements Disposable {
             offset += setUniformMatrix(instanceData, offset, matrices.get(i));
         }
         wgpu.QueueWriteBuffer(LibGPU.queue, instanceBuffer, 0, instanceData, instanceSize*instanceCount);
-
-
-        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer, instanceSize*instanceCount);
     }
 
 

@@ -2,6 +2,7 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 
 public class TestModelInstance extends ApplicationAdapter {
@@ -15,6 +16,7 @@ public class TestModelInstance extends ApplicationAdapter {
     private ModelInstance modelInstance2;
     private ModelInstance platformInstance;
     private float currentTime;
+    private Environment environment;
     private long startTime;
     private int frames;
 
@@ -35,6 +37,10 @@ public class TestModelInstance extends ApplicationAdapter {
         camera.position.set(0, 1, -3);
         camera.direction.set(0,0f, 1f);
         camera.update();
+
+        environment = new Environment();
+        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
@@ -62,7 +68,7 @@ public class TestModelInstance extends ApplicationAdapter {
         updateModelMatrix(modelMatrix, currentTime);
         updateModelMatrix(modelMatrix2, currentTime+3.14f);
 
-        modelBatch.begin(camera);
+        modelBatch.begin(camera, environment);
 
         modelBatch.render(modelInstance1);
         //modelBatch.render(modelInstance2);
