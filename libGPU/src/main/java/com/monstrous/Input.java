@@ -134,6 +134,7 @@ public class Input {
 
     private InputProcessor processor;
     private final boolean[] keyPressed = new boolean[Input.Keys.LAST+1];
+    private int pressedKeyCount;
     private float mouseX, mouseY;
 
     public void setInputProcessor (InputProcessor processor){
@@ -144,6 +145,8 @@ public class Input {
         return processor;
     }
     public boolean isKeyPressed(int keyCode){
+        if(keyCode == Keys.ANY_KEY)
+            return pressedKeyCount > 0;
         return keyPressed[keyCode];
     }
 
@@ -170,11 +173,13 @@ public class Input {
     public void processKeyEvent(int glfwKey, int action){
         int key = convertFromGLFW(glfwKey);
         if(action == GLFW_PRESS){
+            pressedKeyCount++;
             keyPressed[key] = true;
             if(processor != null)
                 processor.keyDown(key);
         }
         else if(action == GLFW_RELEASE) {
+            pressedKeyCount--;
             keyPressed[key] = false;
             if(processor != null)
                 processor.keyUp(key);
