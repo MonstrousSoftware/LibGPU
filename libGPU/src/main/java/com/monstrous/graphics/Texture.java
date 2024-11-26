@@ -188,10 +188,19 @@ public class Texture {
                             int offset10 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+0));
                             int offset11 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+1));
 
+                            // todo fix averaging
                             // Average r, g and b components
-                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01]+prevPixels[offset10]+prevPixels[offset11])/4);     // r
-                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1]+prevPixels[offset10+1]+prevPixels[offset11+1])/4); // g
-                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2]+prevPixels[offset10+2]+prevPixels[offset11+2])/4); // b
+                            pixels[offset++] = prevPixels[offset00];     // r
+                            pixels[offset++] = prevPixels[offset00+1]; // g
+                            pixels[offset++] = prevPixels[offset00+2]; // b
+
+//                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01])/2);     // r
+//                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1])/2); // g
+//                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2])/2); // b
+
+//                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01]+prevPixels[offset10]+prevPixels[offset11])/4);     // r
+//                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1]+prevPixels[offset10+1]+prevPixels[offset11+1])/4); // g
+//                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2]+prevPixels[offset10+2]+prevPixels[offset11+2])/4); // b
                             pixels[offset++] = (byte) 255;
                         }
 

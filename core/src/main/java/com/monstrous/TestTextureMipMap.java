@@ -10,7 +10,9 @@ public class TestTextureMipMap extends ApplicationAdapter {
     private Texture texture;
 
     public void create() {
-        texture = new Texture("textures/jackRussel.png", true);
+        //texture = new Texture("textures/jackRussel.png", true);
+        texture = new Texture("textures/input.jpg", true);
+
 
         batch = new SpriteBatch();
     }
