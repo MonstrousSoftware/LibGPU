@@ -174,43 +174,40 @@ public class ModelBatch implements Disposable {
 
     private final RenderableComparator comparator = new RenderableComparator();
 
+    private MeshPart prevMeshPart;
+    private int instanceCount;
+
     private void flush() {
         // sort renderables to minimize material switching, to do: depth sorting etc.
         renderables.sort(comparator);
 
+        prevMeshPart = null;
+        instanceCount = 0;
         int i = 0;
         for(Renderable renderable : renderables) {
             emit(renderable);
             pool.free(renderable);
         }
+        emitMeshPart(prevMeshPart, instanceCount);
         renderables.clear();
     }
 
     // this will actually generate the draw calls for the renderable
     private void emit(Renderable renderable) {
-        emit(renderable.meshPart, renderable.material, renderable.modelTransform, renderable.instanceTransforms);
+        emit(renderable.meshPart, renderable.material, renderable.modelTransform);
     }
 
-    public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix, ArrayList<Matrix4> instances){
 
-        int instanceCount = 1;
-        if(instances == null) {
-            setInstance(modelMatrix);
 
-        }else {
-            setInstances(instances);
-            instanceCount = instances.size();
+    public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix){
+
+        if(meshPart != prevMeshPart) {
+            emitMeshPart(prevMeshPart, instanceCount);
+            instanceCount = 0;
+            prevMeshPart = meshPart;
         }
-
-//        writeModelUniforms(modelUniformBuffer, modelUniformIndex, modelMatrix);  // update renderable uniforms
-//
-//        // set dynamic offset into uniform buffer
-//        int[] offset = new int[1];
-//        int uniformStride = ceilToNextMultiple(MODEL_UB_SIZE, uniformAlignment);
-//        offset[0] = modelUniformIndex*uniformStride;
-//        Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset); // todo reuse this
-//        wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, modelBindGroup, 1, offsetPtr);
-//        modelUniformIndex++;
+        addInstance(instanceCount, modelMatrix);
+        instanceCount++;
 
         // make a new bind group every time we change texture
         if(material != prevMaterial) {
@@ -229,20 +226,25 @@ public class ModelBatch implements Disposable {
             wgpu.RenderPassEncoderSetBindGroup(renderPass, 1, materialBindGroup, 1, offsetPtr);
             materialUniformIndex++;
         }
+    }
 
+    private void emitMeshPart(MeshPart meshPart, int instanceCount) {
+        if(meshPart == null)
+            return;
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
         setPipeline(meshPart.mesh.vertexAttributes);
 
 
-        if(meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
+        if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
             wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
             wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, instanceCount, meshPart.offset, 0, 0);
         } //meshPart.size
         else
             wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, instanceCount, meshPart.offset, 0);
+
     }
 
     // create or reuse pipeline on demand when we know the model
@@ -586,13 +588,16 @@ public class ModelBatch implements Disposable {
 
 
     // default case: only a single instance
-    private void setInstance(Matrix4 modelTransform){
+    private void addInstance(int instanceCount, Matrix4 modelTransform){
+        if(instanceCount >= MAX_INSTANCES)
+            throw new RuntimeException("Too many instances: "+instanceCount);
+
         int instanceSize = 16*Float.BYTES;      // data size per instance
 
         float[] floatData = new float[16];
         Pointer instanceData = WgpuJava.createFloatArrayPointer(floatData);       // native memory buffer for one instance to aid write buffer
         setUniformMatrix(instanceData, 0, modelTransform);
-        wgpu.QueueWriteBuffer(LibGPU.queue, instanceBuffer, 0, instanceData, instanceSize);
+        wgpu.QueueWriteBuffer(LibGPU.queue, instanceBuffer, instanceCount*instanceSize, instanceData, instanceSize);
     }
 
     private void setInstances(ArrayList<Matrix4> matrices){

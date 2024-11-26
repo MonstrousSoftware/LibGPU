@@ -54,6 +54,11 @@ public class Quaternion {
         return setFromAxisRad(x, y, z, degrees * MathUtils.degreesToRadians);
     }
 
+    public Quaternion set (Vector3 axis, float angle) {
+        return setFromAxis(axis.x, axis.y, axis.z, angle);
+    }
+
+
     /** Sets the quaternion components from the given axis and angle around that axis.
      * @param x X direction of the axis
      * @param y Y direction of the axis

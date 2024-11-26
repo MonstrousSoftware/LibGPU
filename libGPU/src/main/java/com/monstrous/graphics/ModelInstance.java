@@ -6,8 +6,8 @@ import java.util.ArrayList;
 
 public class ModelInstance {
     public Model model;
-    public Matrix4 modelTransform;
-    public ArrayList<Matrix4> instanceTransforms;
+    //public Matrix4 modelTransform;
+    public final ArrayList<Matrix4> instanceTransforms;
 
     public ModelInstance(Model model){
         this(model, new Matrix4());
@@ -22,8 +22,9 @@ public class ModelInstance {
         if(model == null)
             throw new RuntimeException("ModelInstance: model is null");
         this.model = model;
-        this.modelTransform = transform;
-        this.instanceTransforms = null;
+       // this.modelTransform = transform;
+        this.instanceTransforms = new ArrayList<>();
+        this.instanceTransforms.add(transform);         // or should we copy transform?
     }
 
     // to create a ModelInstance with instancing
@@ -31,12 +32,12 @@ public class ModelInstance {
         if(model == null)
             throw new RuntimeException("ModelInstance: model is null");
         this.model = model;
-        this.modelTransform = new Matrix4();
-        this.instanceTransforms = instanceTransforms;
+        //this.modelTransform = new Matrix4();
+        this.instanceTransforms = instanceTransforms;       // or should we copy?
     }
 
     public void getRenderables( ArrayList<Renderable> renderables, RenderablePool pool ){
         for(Node rootNode : model.rootNodes)
-            rootNode.getRenderables(renderables, modelTransform, instanceTransforms, pool);
+            rootNode.getRenderables(renderables, instanceTransforms, pool);
     }
 }

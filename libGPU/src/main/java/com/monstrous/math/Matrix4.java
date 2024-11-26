@@ -33,6 +33,7 @@ public class Matrix4 {
     static final Vector3 l_vey = new Vector3();
     static final Vector3 tmpVec = new Vector3();
     static final Matrix4 tmpMat = new Matrix4();
+    static final Quaternion quat = new Quaternion();
 
 
 
@@ -121,6 +122,60 @@ public class Matrix4 {
         position.y = val[M13];
         position.z = val[M23];
         return position;
+    }
+
+    public Matrix4 rotate (Vector3 axis, float degrees) {
+        if (degrees == 0) return this;
+        quat.set(axis, degrees);
+        return rotate(quat);
+    }
+
+    public Matrix4 rotate (Quaternion rotation) {
+        float x = rotation.x, y = rotation.y, z = rotation.z, w = rotation.w;
+        float xx = x * x;
+        float xy = x * y;
+        float xz = x * z;
+        float xw = x * w;
+        float yy = y * y;
+        float yz = y * z;
+        float yw = y * w;
+        float zz = z * z;
+        float zw = z * w;
+        // Set matrix from quaternion
+        float r00 = 1 - 2 * (yy + zz);
+        float r01 = 2 * (xy - zw);
+        float r02 = 2 * (xz + yw);
+        float r10 = 2 * (xy + zw);
+        float r11 = 1 - 2 * (xx + zz);
+        float r12 = 2 * (yz - xw);
+        float r20 = 2 * (xz - yw);
+        float r21 = 2 * (yz + xw);
+        float r22 = 1 - 2 * (xx + yy);
+        float m00 = val[M00] * r00 + val[M01] * r10 + val[M02] * r20;
+        float m01 = val[M00] * r01 + val[M01] * r11 + val[M02] * r21;
+        float m02 = val[M00] * r02 + val[M01] * r12 + val[M02] * r22;
+        float m10 = val[M10] * r00 + val[M11] * r10 + val[M12] * r20;
+        float m11 = val[M10] * r01 + val[M11] * r11 + val[M12] * r21;
+        float m12 = val[M10] * r02 + val[M11] * r12 + val[M12] * r22;
+        float m20 = val[M20] * r00 + val[M21] * r10 + val[M22] * r20;
+        float m21 = val[M20] * r01 + val[M21] * r11 + val[M22] * r21;
+        float m22 = val[M20] * r02 + val[M21] * r12 + val[M22] * r22;
+        float m30 = val[M30] * r00 + val[M31] * r10 + val[M32] * r20;
+        float m31 = val[M30] * r01 + val[M31] * r11 + val[M32] * r21;
+        float m32 = val[M30] * r02 + val[M31] * r12 + val[M32] * r22;
+        val[M00] = m00;
+        val[M10] = m10;
+        val[M20] = m20;
+        val[M30] = m30;
+        val[M01] = m01;
+        val[M11] = m11;
+        val[M21] = m21;
+        val[M31] = m31;
+        val[M02] = m02;
+        val[M12] = m12;
+        val[M22] = m22;
+        val[M32] = m32;
+        return this;
     }
 
     /** Gets the rotation of this matrix.
