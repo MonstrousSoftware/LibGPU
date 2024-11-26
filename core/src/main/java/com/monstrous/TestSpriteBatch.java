@@ -1,8 +1,8 @@
 package com.monstrous;
 
-import com.monstrous.graphics.*;
-import com.monstrous.math.Matrix4;
-import com.monstrous.wgpu.WGPU;
+import com.monstrous.graphics.SpriteBatch;
+import com.monstrous.graphics.Texture;
+import com.monstrous.graphics.TextureRegion;
 
 
 public class TestSpriteBatch extends ApplicationAdapter {

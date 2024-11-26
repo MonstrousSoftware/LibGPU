@@ -2,6 +2,7 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ public class TestGLTF extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
+    private Environment environment;
     private Matrix4 modelMatrix;
     private Model model, model2;
     private ModelInstance modelInstance1;
@@ -28,9 +30,9 @@ public class TestGLTF extends ApplicationAdapter {
         //model = new Model("models/lantern/Lantern.gltf");
         //model = new Model("models/ToyCar/ToyCar.gltf");
         //model = new Model("models/Buggy/Buggy.gltf");
-        //model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
+        model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
         //model = new Model("models/Sponza/Sponza.gltf");
-        model = new Model("models/fourareen.obj");
+        //model = new Model("models/fourareen.obj");
 
 
         modelMatrix = new Matrix4();
@@ -53,6 +55,10 @@ public class TestGLTF extends ApplicationAdapter {
         camera.far = 1000f;
         camera.near = 0.001f;
         camera.update();
+
+        environment = new Environment();
+        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
@@ -79,7 +85,7 @@ public class TestGLTF extends ApplicationAdapter {
 
         updateModelMatrix(modelMatrix, currentTime);
 
-        modelBatch.begin(camera);
+        modelBatch.begin(camera, environment);
         modelBatch.render(instances);
         modelBatch.end();
 

@@ -175,9 +175,9 @@ public class Texture {
                                 pixels[offset++] = (byte) 255;
                             }
                             else {
-                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
-                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
-                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
+                                pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
+                                pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
+                                pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
                                 pixels[offset] = pixelPtr.getByte(offset);  offset++;
                             }
 
@@ -226,11 +226,16 @@ public class Texture {
         samplerDesc.setMinFilter( WGPUFilterMode.Linear);
         samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);
 
-        samplerDesc.setLodMinClamp(1);
+        samplerDesc.setLodMinClamp(0);
         samplerDesc.setLodMaxClamp(mipLevelCount);
         samplerDesc.setCompare( WGPUCompareFunction.Undefined);
         samplerDesc.setMaxAnisotropy( 1);
         sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
+    }
+
+    private byte convert(byte input){
+        return input;
+        //return (byte) (255f*Math.pow(input/255f, 0.44f));
     }
 
     public void dispose(){
