@@ -3,12 +3,15 @@ package com.monstrous.graphics;
 import com.monstrous.utils.Disposable;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
 public class BitmapFont implements Disposable {
+
+    public static final int MAX_CHARS = 256;
 
     public String fntFilePath;
     public String textureFilePath;
@@ -19,6 +22,7 @@ public class BitmapFont implements Disposable {
     private int lineHeight;
     private int base;
     private Glyph fallbackGlyph;
+    public boolean disableKerning = false;
 
     public static class Glyph {
         int id;
@@ -28,6 +32,24 @@ public class BitmapFont implements Disposable {
         int page;
         int chnl;
         TextureRegion region;
+        byte [] kerning;
+
+        void setKerning(int ch, int amount){
+            if(kerning == null)
+                kerning = new byte[MAX_CHARS];
+            if(ch >= MAX_CHARS)
+                throw new RuntimeException("BitmapFont: kerning character set too large");
+            kerning[ch] = (byte)amount;
+        }
+
+        int getKerning(int ch){
+            if(kerning == null)
+                return 0;
+//            if(kerning[ch] != 0){
+//                System.out.println("kerning "+id+" to " +ch+ " kern: "+kerning[ch]);
+//            }
+            return kerning[ch];
+        }
     }
 
     public BitmapFont(){
@@ -42,14 +64,19 @@ public class BitmapFont implements Disposable {
     }
 
     public void draw(SpriteBatch batch, String text, int x, int y){
+        byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);
         int gx = x;
-        for(int i = 0; i < text.length(); i++){
-            char k = text.charAt(i);
+        for(int i = 0; i < ascii.length; i++){
+            byte k = ascii[i];
             Glyph glyph = glyphMap.get((int)k);
             if(glyph == null)
                 glyph = fallbackGlyph;
             batch.draw(glyph.region, gx, y - glyph.yoffset);
-            gx += glyph.xadvance; //region.width;
+            gx += glyph.xadvance;
+            if(i < ascii.length-1 &&!disableKerning) {
+                byte nextCh = ascii[i + 1];
+                gx += glyph.getKerning(nextCh);
+            }
         }
     }
 
@@ -95,6 +122,25 @@ public class BitmapFont implements Disposable {
                     else if (vars[0].contentEquals("base"))
                         base = Integer.parseInt(vars[1]);
                 }
+            } else if(trimmed.startsWith("kerning ")) {
+                // kerning first=86 second=58 amount=-1
+                //
+                int first = -1, second = -1, amount = 0;
+                String words[] = trimmed.split(" ");
+                for (String word : words) {
+                    String vars[] = word.split("=");
+                    if (vars[0].contentEquals("first"))
+                        first = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("second"))
+                        second = Integer.parseInt(vars[1]);
+                    else if (vars[0].contentEquals("amount"))
+                        amount = Integer.parseInt(vars[1]);
+                }
+                if(first < 0 || second < 0)
+                    throw new RuntimeException("Invalid kerning line in fnt file "+path);
+                Glyph glyph = glyphMap.get(first);
+                glyph.setKerning(second, amount);
+
             } else if(trimmed.startsWith("char ")){
                 // char id=33 x=184 y=17 width=5 height=13 xoffset=0 yoffset=2 xadvance=5 page=0 chnl=0
                 String words[] = trimmed.split(" ");
