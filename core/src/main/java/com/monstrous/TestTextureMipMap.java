@@ -10,8 +10,8 @@ public class TestTextureMipMap extends ApplicationAdapter {
     private Texture texture;
 
     public void create() {
-        //texture = new Texture("textures/jackRussel.png", true);
-        texture = new Texture("textures/input.jpg", true);
+        texture = new Texture("textures/jackRussel.png", true);
+        //texture = new Texture("textures/input.jpg", true);
 
 
         batch = new SpriteBatch();
@@ -26,6 +26,11 @@ public class TestTextureMipMap extends ApplicationAdapter {
         batch.draw(texture, 512, 0, 256, 256);
         batch.draw(texture, 512+256, 0, 128, 128);
         batch.draw(texture, 512+256+128, 0, 64, 64);
+        batch.draw(texture, 512+256+128+64, 0, 32, 32);
+        batch.draw(texture, 512+256+128+64+32, 0, 16, 16);
+        batch.draw(texture, 512+256+128+64+32+16, 0, 8, 8);
+        batch.draw(texture, 512+256+128+64+32+16+8, 0, 4, 4);
+        batch.draw(texture, 512+256+128+64+32+16+8+4, 0, 2, 2);
         batch.draw(texture, 0, 0, 1024, 1024);
 
         batch.end();

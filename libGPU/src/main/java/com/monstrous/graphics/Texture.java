@@ -188,20 +188,15 @@ public class Texture {
                             int offset10 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+0));
                             int offset11 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+1));
 
-                            // todo fix averaging
                             // Average r, g and b components
-                            pixels[offset++] = prevPixels[offset00];     // r
-                            pixels[offset++] = prevPixels[offset00+1]; // g
-                            pixels[offset++] = prevPixels[offset00+2]; // b
-
-//                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01])/2);     // r
-//                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1])/2); // g
-//                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2])/2); // b
-
-//                            pixels[offset++] = (byte)((prevPixels[offset00]+prevPixels[offset01]+prevPixels[offset10]+prevPixels[offset11])/4);     // r
-//                            pixels[offset++] = (byte)((prevPixels[offset00+1]+prevPixels[offset01+1]+prevPixels[offset10+1]+prevPixels[offset11+1])/4); // g
-//                            pixels[offset++] = (byte)((prevPixels[offset00+2]+prevPixels[offset01+2]+prevPixels[offset10+2]+prevPixels[offset11+2])/4); // b
-                            pixels[offset++] = (byte) 255;
+                            // beware that java bytes are signed. So we convert to integer first
+                            int r = toUnsignedInt(prevPixels[offset00])   + toUnsignedInt(prevPixels[offset01])   + toUnsignedInt(prevPixels[offset10])   + toUnsignedInt(prevPixels[offset11]);
+                            int g = toUnsignedInt(prevPixels[offset00+1]) + toUnsignedInt(prevPixels[offset01+1]) + toUnsignedInt(prevPixels[offset10+1]) + toUnsignedInt(prevPixels[offset11+1]);
+                            int b = toUnsignedInt(prevPixels[offset00+2]) + toUnsignedInt(prevPixels[offset01+2]) + toUnsignedInt(prevPixels[offset10+2]) + toUnsignedInt(prevPixels[offset11+2]);
+                            pixels[offset++] = (byte)(r>>2);    // divide by 4
+                            pixels[offset++] = (byte)(g>>2);
+                            pixels[offset++] = (byte)(b>>2);
+                            pixels[offset++] = (byte) 255;  // alpha
                         }
 
                     }
@@ -218,7 +213,7 @@ public class Texture {
             ext.setHeight(mipLevelHeight);
             ext.setDepthOrArrayLayers(1);
 
-            // N.B. using textureDesc.getSize() for last param won't work!
+            // N.B. using textureDesc.getSize() for param won't work!
             LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, mipLevelWidth * mipLevelHeight * 4, source, ext);
 
             mipLevelWidth /= 2;
@@ -240,6 +235,10 @@ public class Texture {
         samplerDesc.setCompare( WGPUCompareFunction.Undefined);
         samplerDesc.setMaxAnisotropy( 1);
         sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
+    }
+
+    private static int toUnsignedInt(byte x) {
+        return ((int) x) & 0xff;
     }
 
     private byte convert(byte input){
