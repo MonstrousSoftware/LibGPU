@@ -4,6 +4,9 @@ import com.monstrous.graphics.SpriteBatch;
 import com.monstrous.graphics.Texture;
 import com.monstrous.utils.ScreenUtils;
 
+// This demonstrates that sprite batch can be set enable/disable blending mode.
+// From left to right: default mode (blended), blending disabled, blending enabled
+
 
 public class TestSpriteBatchAlpha extends ApplicationAdapter {
 
@@ -12,7 +15,6 @@ public class TestSpriteBatchAlpha extends ApplicationAdapter {
 
     public void create() {
         textureSmile = new Texture("textures/smile.png", false);
-
 
         batch = new SpriteBatch();
     }
@@ -39,11 +41,7 @@ public class TestSpriteBatchAlpha extends ApplicationAdapter {
     }
 
     public void dispose(){
-        // cleanup
-
         textureSmile.dispose();
         batch.dispose();
     }
-
-
 }
