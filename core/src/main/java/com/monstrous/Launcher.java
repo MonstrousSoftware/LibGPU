@@ -9,7 +9,7 @@ public class Launcher {
         System.out.println("Hello, world!");
         ApplicationConfiguration config = new ApplicationConfiguration();
 
-        config.setSize(1024, 1024);
+        config.setSize(800, 400);
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.Vulkan;

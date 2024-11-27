@@ -115,8 +115,10 @@ public class SpriteBatch implements Disposable {
         ibOffset = 0;
 
         prevPipeline = null;
+        // set default state
+        tint.set(1,1,1,1);
         blendingEnabled = true;
-        pipelineSpec.enableBlending();      // defaults
+        pipelineSpec.enableBlending();
         pipelineSpec.disableDepth();
         setPipeline();
     }
@@ -125,7 +127,8 @@ public class SpriteBatch implements Disposable {
         if(numRects == 0)
             return;
 
-        // Upload geometry data to the buffer
+        // Add number of rectangles from vertFloats[] and indexValues[] the GPU's vertex and index buffer
+        //
         int numFloats = numRects * 4 * vertexSize;
         Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
         data.put(0, vertFloats, 0, numFloats);
@@ -133,7 +136,9 @@ public class SpriteBatch implements Disposable {
 
 
         // Upload index data to the buffer
-        Pointer idata = WgpuJava.createIntegerArrayPointer(indexValues);
+        //Pointer idata = WgpuJava.createIntegerArrayPointer(indexValues);
+        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Integer.BYTES);
+        idata.put(0, indexValues, 0, numRects*6);
         wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Integer.BYTES);
 
 
@@ -141,7 +146,7 @@ public class SpriteBatch implements Disposable {
 
         // Set vertex buffer while encoding the render pass
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, ibOffset, (long)numRects*6*Integer.BYTES);
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, ibOffset, (long)numRects*6*Integer.BYTES);        // todo could be uint16
 
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
         wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
@@ -154,7 +159,7 @@ public class SpriteBatch implements Disposable {
     }
 
     public void end() {
-        if (!begun)
+        if (!begun) // catch incorrect usage
             throw new RuntimeException("Cannot end() without begin()");
         begun = false;
         flush();
@@ -177,13 +182,6 @@ public class SpriteBatch implements Disposable {
     public void draw(Texture texture, float x, float y, float w, float h){
         this.draw(texture, x, y, w, h, 0f, 1f, 1f, 0f);
     }
-
-//    public void draw(TextureRegion region, float x, float y){
-//        this.draw(region.texture, x, y,
-//                (region.u2-region.u)*region.texture.getWidth(), (region.v-region.v2)*region.texture.getHeight(),
-//                region.u, region.v, region.u2, region.v2  );
-//    }
-
 
     public void draw(TextureRegion region, float x, float y){
         // note: v2 is top of glyph, v the bottom
@@ -210,8 +208,6 @@ public class SpriteBatch implements Disposable {
     }
 
     private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
-        // u,v is 0 to 1 for now
-
         int i = numRects * 4 * vertexSize;
         vertFloats[i++] = x;
         vertFloats[i++] = y;

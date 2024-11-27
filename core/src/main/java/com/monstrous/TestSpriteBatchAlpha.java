@@ -6,6 +6,8 @@ import com.monstrous.utils.ScreenUtils;
 
 // This demonstrates that sprite batch can be set enable/disable blending mode.
 // From left to right: default mode (blended), blending disabled, blending enabled
+// Also demonstrates setColor: the top row has a red tint.
+
 
 
 public class TestSpriteBatchAlpha extends ApplicationAdapter {
@@ -36,6 +38,21 @@ public class TestSpriteBatchAlpha extends ApplicationAdapter {
 
         batch.draw(textureSmile, 400, 200);
         batch.draw(textureSmile, 420, 220);
+
+        batch.setColor(1,0,0,1);    // red
+
+        batch.draw(textureSmile, 200, 300);
+        batch.draw(textureSmile, 220, 320);
+
+        batch.disableBlending();
+
+        batch.draw(textureSmile, 300, 300);
+        batch.draw(textureSmile, 320, 320);
+
+        batch.enableBlending();
+
+        batch.draw(textureSmile, 400, 300);
+        batch.draw(textureSmile, 420, 320);
 
         batch.end();
     }
