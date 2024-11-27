@@ -1,9 +1,6 @@
 package com.monstrous.graphics;
 
-import com.monstrous.LibGPU;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpuUtils.WgpuJava;
-import jnr.ffi.Pointer;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,7 +49,7 @@ public class BitmapFont implements Disposable {
             if(glyph == null)
                 glyph = fallbackGlyph;
             batch.draw(glyph.region, gx, y - glyph.yoffset);
-            gx += glyph.region.width;
+            gx += glyph.xadvance; //region.width;
         }
     }
 

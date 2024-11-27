@@ -22,7 +22,7 @@ public class TestKeyboard extends InputAdapter implements ApplicationListener {
 
 
     public void create() {
-        texture = new Texture("textures/monstrous.png", false);
+        texture = new Texture("textures/smile.png", false);
 
         batch = new SpriteBatch();
         font = new BitmapFont();

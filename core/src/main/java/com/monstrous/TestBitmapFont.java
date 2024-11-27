@@ -25,6 +25,14 @@ public class TestBitmapFont extends ApplicationAdapter {
 
         batch.begin();
         font.draw(batch, "Hello, world!", 100, 100);
+        font.draw(batch, "The quick brown fox jumped over the candlestick!", 100, 40);
+
+        int y = 400;
+        font.draw(batch, " From fairest creatures we desire increase,", 100, y-=30);
+        font.draw(batch, " That thereby beauty’s rose might never die,", 100, y-=30);
+        font.draw(batch, " But, as the riper should by time decease,", 100, y-=30);
+        font.draw(batch, " His tender heir might bear his memory.", 100, y-=30);
+
         batch.end();
 
 

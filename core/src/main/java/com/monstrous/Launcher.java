@@ -14,6 +14,6 @@ public class Launcher {
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.Vulkan;
 
-        new Application(new TestSpriteBatchAlpha(), config);
+        new Application(new TestBitmapFont(), config);
     }
 }
