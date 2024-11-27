@@ -37,7 +37,7 @@ public class Texture {
     }
 
     public Texture(String fileName, boolean mipMapping) {
-        this();
+
         byte[] fileData;
 
         try {
@@ -193,10 +193,11 @@ public class Texture {
                             int r = toUnsignedInt(prevPixels[offset00])   + toUnsignedInt(prevPixels[offset01])   + toUnsignedInt(prevPixels[offset10])   + toUnsignedInt(prevPixels[offset11]);
                             int g = toUnsignedInt(prevPixels[offset00+1]) + toUnsignedInt(prevPixels[offset01+1]) + toUnsignedInt(prevPixels[offset10+1]) + toUnsignedInt(prevPixels[offset11+1]);
                             int b = toUnsignedInt(prevPixels[offset00+2]) + toUnsignedInt(prevPixels[offset01+2]) + toUnsignedInt(prevPixels[offset10+2]) + toUnsignedInt(prevPixels[offset11+2]);
+                            int a = toUnsignedInt(prevPixels[offset00+3]) + toUnsignedInt(prevPixels[offset01+3]) + toUnsignedInt(prevPixels[offset10+3]) + toUnsignedInt(prevPixels[offset11+3]);
                             pixels[offset++] = (byte)(r>>2);    // divide by 4
                             pixels[offset++] = (byte)(g>>2);
                             pixels[offset++] = (byte)(b>>2);
-                            pixels[offset++] = (byte) 255;  // alpha
+                            pixels[offset++] = (byte)(a>>2);  // alpha
                         }
 
                     }

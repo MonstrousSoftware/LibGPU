@@ -34,6 +34,11 @@ public class SpriteBatch implements Disposable {
     private int ibOffset;
     private Pipelines pipelines;
     private Pipeline prevPipeline;
+    private boolean blendingEnabled;
+    private int blendSrcColor;
+    private int blendDstColor;
+    private int blendSrcAlpha;
+    private int blendDstAlpha;
 
 
 
