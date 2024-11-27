@@ -240,7 +240,7 @@ public class ModelBatch implements Disposable {
         else
             shader = shaderStd;
 
-        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader);
+        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader, true);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
             prevPipeline = pipeline;

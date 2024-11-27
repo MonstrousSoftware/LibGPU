@@ -22,6 +22,7 @@ public class TestTextureMipMap extends ApplicationAdapter {
         batch.begin();
 
 
+        batch.draw(texture, 0, 0, 1024, 1024);
         batch.draw(texture, 0, 0, 512, 512);
         batch.draw(texture, 512, 0, 256, 256);
         batch.draw(texture, 512+256, 0, 128, 128);
@@ -31,7 +32,7 @@ public class TestTextureMipMap extends ApplicationAdapter {
         batch.draw(texture, 512+256+128+64+32+16, 0, 8, 8);
         batch.draw(texture, 512+256+128+64+32+16+8, 0, 4, 4);
         batch.draw(texture, 512+256+128+64+32+16+8+4, 0, 2, 2);
-        batch.draw(texture, 0, 0, 1024, 1024);
+
 
         batch.end();
     }

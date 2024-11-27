@@ -15,12 +15,12 @@ public class Pipelines implements Disposable {
         pipelines = new ArrayList<>();
     }
 
-    public Pipeline getPipeline(VertexAttributes vertexAttributes, Pointer bindGroupLayout, ShaderProgram shader){
+    public Pipeline getPipeline(VertexAttributes vertexAttributes, Pointer bindGroupLayout, ShaderProgram shader, boolean depth){
         for(Pipeline pipeline : pipelines){
-            if(pipeline.canRender(vertexAttributes))
+            if(pipeline.canRender(vertexAttributes, depth))
                 return pipeline;
         }
-        Pipeline pipeline = new Pipeline(vertexAttributes, bindGroupLayout, shader);
+        Pipeline pipeline = new Pipeline(vertexAttributes, bindGroupLayout, shader, depth);
         pipelines.add(pipeline);
         return pipeline;
     }

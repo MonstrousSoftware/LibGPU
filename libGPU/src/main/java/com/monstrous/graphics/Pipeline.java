@@ -9,14 +9,16 @@ public class Pipeline implements Disposable {
 
     private VertexAttributes vertexAttributes;
     private ShaderProgram shader;
+    private boolean hasDepth;
     private Pointer pipelineLayout;
     private Pointer pipeline;
 
 
-    public Pipeline(VertexAttributes vertexAttributes, Pointer pipelineLayout, ShaderProgram shader) {
+    public Pipeline(VertexAttributes vertexAttributes, Pointer pipelineLayout, ShaderProgram shader, boolean depth) {
         this.vertexAttributes = vertexAttributes;
         this.pipelineLayout = pipelineLayout;
         this.shader = shader;
+        this.hasDepth = depth;
 
         Pointer shaderModule = shader.getShaderModule();
         WGPUVertexBufferLayout vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
@@ -66,8 +68,15 @@ public class Pipeline implements Disposable {
 
         WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
         setDefault(depthStencilState);
-        depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
-        depthStencilState.setDepthWriteEnabled(1L);
+
+        if(depth) {
+            depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
+            depthStencilState.setDepthWriteEnabled(1L);
+        } else {
+            // disable depth testing
+            depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
+            depthStencilState.setDepthWriteEnabled(0L);
+        }
 
         //
         WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;       // todo
@@ -79,6 +88,7 @@ public class Pipeline implements Disposable {
         pipelineDesc.setDepthStencil(depthStencilState);
 
 
+
         pipelineDesc.getMultisample().setCount(1);
         pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
@@ -88,10 +98,11 @@ public class Pipeline implements Disposable {
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
     }
 
-    public boolean canRender(VertexAttributes vertexAttributes){    // perhaps we need more params
+    public boolean canRender(VertexAttributes vertexAttributes, boolean depth){    // perhaps we need more params
         // crude check, to be refined
         return (vertexAttributes.attributes.size() == this.vertexAttributes.attributes.size() &&
-                vertexAttributes.hasNormalMap == this.vertexAttributes.hasNormalMap);
+                vertexAttributes.hasNormalMap == this.vertexAttributes.hasNormalMap &&
+                hasDepth == depth);
     }
 
     public Pointer getPipeline(){
