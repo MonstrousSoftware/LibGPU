@@ -25,6 +25,16 @@ public class TestSpriteBatchAlpha extends ApplicationAdapter {
         batch.draw(textureSmile, 200, 200);
         batch.draw(textureSmile, 220, 220);
 
+        batch.disableBlending();
+
+        batch.draw(textureSmile, 300, 200);
+        batch.draw(textureSmile, 320, 220);
+
+        batch.enableBlending();
+
+        batch.draw(textureSmile, 400, 200);
+        batch.draw(textureSmile, 420, 220);
+
         batch.end();
     }
 

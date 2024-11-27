@@ -47,6 +47,7 @@ public class ModelBatch implements Disposable {
 
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
+    private PipelineSpecification pipelineSpec;
     private final List<Renderable> renderables;
     private final RenderablePool pool;
     public int numPipelineSwitches;
@@ -68,6 +69,7 @@ public class ModelBatch implements Disposable {
         pipelines = new Pipelines();
         renderables = new ArrayList<>();
         pool = new RenderablePool(1000);
+        pipelineSpec = new PipelineSpecification();
 
         defaultDirectionalLight = new DirectionalLight(new Color(1,0,0,1), new Vector3(0, -1, 0));
 
@@ -234,13 +236,14 @@ public class ModelBatch implements Disposable {
     // create or reuse pipeline on demand when we know the model
     private void setPipeline(VertexAttributes vertexAttributes) {
 
-        ShaderProgram shader;
+        pipelineSpec.vertexAttributes = vertexAttributes;
         if(vertexAttributes.hasNormalMap)
-            shader = shaderNormalMap;
+           pipelineSpec.shader = shaderNormalMap;
         else
-            shader = shaderStd;
+           pipelineSpec.shader = shaderStd;
+        pipelineSpec.enableDepth();
 
-        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader, true);
+        Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
             prevPipeline = pipeline;

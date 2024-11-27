@@ -26,6 +26,7 @@ public class SpriteBatch implements Disposable {
     private Pointer bindGroupLayout;
     private VertexAttributes vertexAttributes;
     private Pointer pipelineLayout;
+    private PipelineSpecification pipelineSpec;
     private int uniformBufferSize;
     private Texture texture;
     private Matrix4 projectionMatrix;
@@ -35,13 +36,6 @@ public class SpriteBatch implements Disposable {
     private Pipelines pipelines;
     private Pipeline prevPipeline;
     private boolean blendingEnabled;
-    private int blendSrcColor;
-    private int blendDstColor;
-    private int blendSrcAlpha;
-    private int blendDstAlpha;
-
-
-
 
 
     public SpriteBatch() {
@@ -77,6 +71,8 @@ public class SpriteBatch implements Disposable {
         vertexAttributes.end();
 
         pipelines = new Pipelines();
+        pipelineSpec = new PipelineSpecification(vertexAttributes, shader);
+
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }
@@ -90,6 +86,24 @@ public class SpriteBatch implements Disposable {
         tint.set(r,g,b,a);
     }
 
+    public void enableBlending(){
+        if(blendingEnabled)
+           return;
+        blendingEnabled = true;
+        flush();
+        pipelineSpec.enableBlending();
+        setPipeline();
+    }
+
+    public void disableBlending(){
+        if(!blendingEnabled)
+            return;
+        blendingEnabled = false;
+        flush();
+        pipelineSpec.disableBlending();
+        setPipeline();
+    }
+
     public void begin() {
         this.renderPass = LibGPU.renderPass;
 
@@ -101,13 +115,15 @@ public class SpriteBatch implements Disposable {
         ibOffset = 0;
 
         prevPipeline = null;
+        blendingEnabled = true;
+        pipelineSpec.enableBlending();      // defaults
+        pipelineSpec.disableDepth();
+        setPipeline();
     }
 
     public void flush() {
         if(numRects == 0)
             return;
-
-        setPipeline();
 
         // Upload geometry data to the buffer
         int numFloats = numRects * 4 * vertexSize;
@@ -142,16 +158,11 @@ public class SpriteBatch implements Disposable {
             throw new RuntimeException("Cannot end() without begin()");
         begun = false;
         flush();
-
-
     }
 
-    // create or reuse pipeline on demand when we know the model
+    // create or reuse pipeline on demand to match the pipeline spec
     private void setPipeline() {
-
-        // todo could force switch on blending change
-
-        Pipeline pipeline = pipelines.getPipeline(vertexAttributes, pipelineLayout, shader, false);
+        Pipeline pipeline = pipelines.getPipeline( pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
             prevPipeline = pipeline;

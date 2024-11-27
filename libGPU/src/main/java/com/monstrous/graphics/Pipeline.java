@@ -7,25 +7,22 @@ import jnr.ffi.Pointer;
 
 public class Pipeline implements Disposable {
 
-    private VertexAttributes vertexAttributes;
-    private ShaderProgram shader;
-    private boolean hasDepth;
     private Pointer pipelineLayout;
     private Pointer pipeline;
+    public PipelineSpecification specification;
 
 
-    public Pipeline(VertexAttributes vertexAttributes, Pointer pipelineLayout, ShaderProgram shader, boolean depth) {
-        this.vertexAttributes = vertexAttributes;
+    public Pipeline(Pointer pipelineLayout, PipelineSpecification spec) {
+        this.specification = new PipelineSpecification(spec);
+
         this.pipelineLayout = pipelineLayout;
-        this.shader = shader;
-        this.hasDepth = depth;
 
-        Pointer shaderModule = shader.getShaderModule();
-        WGPUVertexBufferLayout vertexBufferLayout = vertexAttributes.getVertexBufferLayout();
+        Pointer shaderModule = spec.shader.getShaderModule();
+        WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes.getVertexBufferLayout();
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
         pipelineDesc.setNextInChain();
-        pipelineDesc.setLabel("pipeline");
+        pipelineDesc.setLabel( spec.name );
 
         pipelineDesc.getVertex().setBufferCount(1);
         pipelineDesc.getVertex().setBuffers(vertexBufferLayout);
@@ -49,12 +46,12 @@ public class Pipeline implements Disposable {
 
         // blend
         WGPUBlendState blendState = WGPUBlendState.createDirect();
-        blendState.getColor().setSrcFactor(WGPUBlendFactor.SrcAlpha);
-        blendState.getColor().setDstFactor(WGPUBlendFactor.OneMinusSrcAlpha);
-        blendState.getColor().setOperation(WGPUBlendOperation.Add);
-        blendState.getAlpha().setSrcFactor(WGPUBlendFactor.Zero);
-        blendState.getAlpha().setDstFactor(WGPUBlendFactor.One);
-        blendState.getAlpha().setOperation(WGPUBlendOperation.Add);
+        blendState.getColor().setSrcFactor(spec.blendSrcColor);
+        blendState.getColor().setDstFactor(spec.blendDstColor);
+        blendState.getColor().setOperation(spec.blendOpColor);
+        blendState.getAlpha().setSrcFactor(spec.blendSrcAlpha);
+        blendState.getAlpha().setDstFactor(spec.blendDstAlpha);
+        blendState.getAlpha().setOperation(spec.blendOpAlpha);
 
         WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
         colorTarget.setFormat(LibGPU.surfaceFormat);
@@ -69,7 +66,7 @@ public class Pipeline implements Disposable {
         WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
         setDefault(depthStencilState);
 
-        if(depth) {
+        if(spec.hasDepth) {
             depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
             depthStencilState.setDepthWriteEnabled(1L);
         } else {
@@ -98,11 +95,14 @@ public class Pipeline implements Disposable {
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
     }
 
-    public boolean canRender(VertexAttributes vertexAttributes, boolean depth){    // perhaps we need more params
+    public boolean canRender(PipelineSpecification spec){    // perhaps we need more params
         // crude check, to be refined
-        return (vertexAttributes.attributes.size() == this.vertexAttributes.attributes.size() &&
-                vertexAttributes.hasNormalMap == this.vertexAttributes.hasNormalMap &&
-                hasDepth == depth);
+        return spec.hashCode() == this.specification.hashCode();
+        // could be too strict, e.g. name changes or different instances of same shader
+
+//        return (spec.vertexAttributes.attributes.size() == this.specification.vertexAttributes.attributes.size() &&
+//               spec.vertexAttributes.hasNormalMap == this.specification.vertexAttributes.hasNormalMap &&
+//                spec.hasDepth == this.specification.hasDepth);
     }
 
     public Pointer getPipeline(){
