@@ -304,6 +304,7 @@ note: we ignore format conversions for now. Also, not all stb formats seem to be
 
 11/11:
 - It seems the mip-mapping introduces some artifacts, e.g. red and green spots.
+Fixed. Was due to byte overflow and Java having signed bytes
 
 
 
@@ -316,8 +317,9 @@ Note that ToyCar has a normal map but no TANGENT attribute.  It does have materi
 In fact it has 3 materials and 2 have normal maps.
 
 24/11:
-todo texture scaling
+todo texture scaling, noticable in toycar cloth
 
 can we pass multiple lights in the frame uniform buffer?
 yes: https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/lighting-control.html
+
 

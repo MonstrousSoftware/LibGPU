@@ -17,7 +17,7 @@ public class SpriteBatch implements Disposable {
     private boolean begun;
     private int vertexSize;
     private float[] vertFloats;
-    private int[] indexValues;
+    private short[] indexValues;
     private int numRects;
     private Color tint;
     private Pointer vertexBuffer;
@@ -52,7 +52,7 @@ public class SpriteBatch implements Disposable {
         vertexSize = 8; // floats
         shader = new ShaderProgram("shaders/sprite.wgsl");
 
-        indexValues = new int[maxSprites * 6];    // 6 indices per sprite
+        indexValues = new short[maxSprites * 6];    // 6 indices per sprite
         vertFloats = new float[maxSprites * 4 * vertexSize];
 
         projectionMatrix = new Matrix4();
@@ -136,17 +136,16 @@ public class SpriteBatch implements Disposable {
 
 
         // Upload index data to the buffer
-        //Pointer idata = WgpuJava.createIntegerArrayPointer(indexValues);
-        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Integer.BYTES);
+        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Short.BYTES);
         idata.put(0, indexValues, 0, numRects*6);
-        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Integer.BYTES);
+        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Short.BYTES);
 
 
         Pointer texBG = makeBindGroup(texture);
 
         // Set vertex buffer while encoding the render pass
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint32, ibOffset, (long)numRects*6*Integer.BYTES);        // todo could be uint16
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, ibOffset, (long)numRects*6*Short.BYTES);
 
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
         wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
@@ -154,7 +153,7 @@ public class SpriteBatch implements Disposable {
 
 
         vbOffset += numFloats*Float.BYTES;
-        ibOffset += numRects*6*Integer.BYTES;
+        ibOffset += numRects*6*Short.BYTES;
         numRects = 0;   // reset
     }
 
@@ -246,14 +245,14 @@ public class SpriteBatch implements Disposable {
         vertFloats[i++] = tint.a;
 
         int k = numRects * 6;
-        int start = numRects * 4;
+        short start = (short)(numRects * 4);
         indexValues[k++] = start;
-        indexValues[k++] = start + 1;
-        indexValues[k++] = start + 2;
+        indexValues[k++] = (short)(start + 1);
+        indexValues[k++] = (short)(start + 2);
 
         indexValues[k++] = start;
-        indexValues[k++] = start + 2;
-        indexValues[k++] = start + 3;
+        indexValues[k++] = (short)(start + 2);
+        indexValues[k++] = (short)(start + 3);
         numRects++;
     }
 
@@ -277,7 +276,7 @@ public class SpriteBatch implements Disposable {
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index);
-        long sz = (long) maxSprites * 6 * Integer.BYTES;
+        long sz = (long) maxSprites * 6 * Short.BYTES;
         sz = (sz + 3) & ~3; // round up to the next multiple of 4
         bufferDesc.setSize(sz);
         bufferDesc.setMappedAtCreation(0L);
