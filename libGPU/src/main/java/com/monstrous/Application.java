@@ -67,7 +67,7 @@ public class Application {
 
                 listener.render();
 
-                finalizeRenderPass(LibGPU.renderPass);
+                finalizeRenderPass(LibGPU.renderPass, encoder);
                 finishEncoder(encoder);
 
                 // At the end of the frame
@@ -419,12 +419,15 @@ public class Application {
         return wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
     }
 
-    private void finalizeRenderPass(Pointer renderPass) {
+    private void finalizeRenderPass(Pointer renderPass, Pointer encoder) {
         wgpu.RenderPassEncoderEnd(renderPass);
+        resolveTimeStamps(encoder);                 // can this go to finsishEnc?
         wgpu.RenderPassEncoderRelease(renderPass);
     }
 
     private void finishEncoder(Pointer encoder){
+
+
 
         WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
         bufferDescriptor.setNextInChain();
@@ -459,7 +462,7 @@ public class Application {
             // Create buffer
             WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
             bufferDesc.setLabel("timestamp resolve buffer");
-            bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.QueryResolve );
+            bufferDesc.setUsage( WGPUBufferUsage.CopySrc | WGPUBufferUsage.QueryResolve );
             bufferDesc.setSize(32);
             bufferDesc.setMappedAtCreation(0L);
          timeStampResolveBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
@@ -469,6 +472,15 @@ public class Application {
         bufferDesc.setSize(32);
         timeStampMapBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
     }
+
+    private void resolveTimeStamps(Pointer encoder){
+        // Resolve the timestamp queries (write their result to the resolve buffer)
+        wgpu.CommandEncoderResolveQuerySet(encoder, timestampQuerySet, 0, 2, timeStampResolveBuffer, 0);
+
+        // Copy to the map buffer
+        wgpu.CommandEncoderCopyBufferToBuffer(encoder, timeStampResolveBuffer, 0,  timeStampMapBuffer, 0,32);
+    }
+
 
 
 

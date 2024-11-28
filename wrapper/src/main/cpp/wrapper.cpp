@@ -371,7 +371,7 @@ EXPORT void QueueWriteBuffer(WGPUQueue queue, WGPUBuffer buffer, uint64_t buffer
 }
 
 EXPORT void CommandEncoderCopyBufferToBuffer(WGPUCommandEncoder commandEncoder, WGPUBuffer source, uint64_t sourceOffset, WGPUBuffer destination, uint64_t destinationOffset, uint64_t size) {
-    printf("copy buf to buf: encoder %p src %p srcOffset %lld dst %p dstOffset %lld amnt %lld", commandEncoder, source, sourceOffset, destination, destinationOffset, size);
+    //printf("copy buf to buf: encoder %p src %p srcOffset %lld dst %p dstOffset %lld amnt %lld", commandEncoder, source, sourceOffset, destination, destinationOffset, size);
     wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
 //        wgpuCommandEncoderCopyBufferToBuffer(commandEncoder, source, sourceOffset, destination, destinationOffset, size);
 }
@@ -455,6 +455,9 @@ EXPORT WGPUQuerySet CreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor con
     return wgpuDeviceCreateQuerySet(device, desc);
 }
 
+EXPORT void CommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGPUQuerySet querySet, uint32_t firstQuery, uint32_t queryCount, WGPUBuffer destination, uint64_t destinationOffset) {
+    wgpuCommandEncoderResolveQuerySet(commandEncoder, querySet, firstQuery, queryCount, destination, destinationOffset);
+}
 
 /**
  * Utility function to get a WebGPU adapter, so that
