@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 public class ModelInstance {
     public Model model;
-    //public Matrix4 modelTransform;
     public final ArrayList<Matrix4> instanceTransforms;
 
     public ModelInstance(Model model){
@@ -22,9 +21,8 @@ public class ModelInstance {
         if(model == null)
             throw new RuntimeException("ModelInstance: model is null");
         this.model = model;
-       // this.modelTransform = transform;
         this.instanceTransforms = new ArrayList<>();
-        this.instanceTransforms.add(transform);         // or should we copy transform?
+        this.instanceTransforms.add(transform);         // need to copy transform?
     }
 
     // to create a ModelInstance with instancing
@@ -32,7 +30,6 @@ public class ModelInstance {
         if(model == null)
             throw new RuntimeException("ModelInstance: model is null");
         this.model = model;
-        //this.modelTransform = new Matrix4();
         this.instanceTransforms = instanceTransforms;       // or should we copy?
     }
 

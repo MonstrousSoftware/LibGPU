@@ -6,12 +6,16 @@ import com.monstrous.math.Vector3;
 public class PointLight extends Light {
 
     public Vector3 position = new Vector3();
-    public float intensity;
 
+
+    public PointLight(Color color, Vector3 position) {
+        this.color.set(color);
+        this.position.set(position);
+    }
     public PointLight(Color color, Vector3 position, float intensity) {
         this.color.set(color);
         this.position.set(position);
-        this.intensity = intensity;
+        setIntensity(intensity);
     }
 
     public Vector3 getPosition() {
@@ -22,13 +26,7 @@ public class PointLight extends Light {
         this.position = position;
     }
 
-    public float getIntensity() {
-        return intensity;
-    }
 
-    public void setIntensity(float intensity) {
-        this.intensity = intensity;
-    }
 
 
 }

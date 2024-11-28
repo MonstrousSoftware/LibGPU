@@ -6,15 +6,17 @@ import com.monstrous.graphics.lights.PointLight;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
+import java.util.ArrayList;
+
 // shows a pyramid model with a directional light on it
 
 public class TestLighting extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
-    private Matrix4 modelMatrix;
-    private Model model;
-    private ModelInstance modelInstance1;
+    //private Matrix4 modelMatrix;
+    private Model model, model2;
+    private ArrayList<ModelInstance> instances;
     private Environment environment;
     private float currentTime;
     private long startTime;
@@ -24,10 +26,14 @@ public class TestLighting extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
+        instances = new ArrayList<>();
         model = new Model("models/groundplane.gltf");
-
-        modelMatrix = new Matrix4();
-        modelInstance1 = new ModelInstance(model, modelMatrix);
+        ModelInstance instance = new ModelInstance(model);
+        instances.add(instance);
+        model2 = new Model("models/pyramid.obj");
+        ModelInstance instance2 = new ModelInstance(model2, 0, 0.3f, 0);
+        instance2.instanceTransforms.getFirst().scale(0.5f);
+        instances.add(instance2);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);
@@ -40,8 +46,9 @@ public class TestLighting extends ApplicationAdapter {
 //        environment.add( new DirectionalLight(Color.BLUE, new Vector3(.7f,-.2f,0)));
 //        environment.add( new DirectionalLight(Color.RED, new Vector3(0f,1f,0)));
 
-        environment.add( new PointLight(new Color(1,0,0,1), new Vector3(3f,1f,0), 5f));
-        environment.ambientLightLevel = 0.3f;
+        environment.add( new PointLight(new Color(1,0,0,1), new Vector3(3f,1f,3), 15f));
+        environment.add( new PointLight(new Color(1,0,1,1), new Vector3(-3f,1f,3), 5f));
+        environment.ambientLightLevel = 0.1f;
 
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
@@ -66,10 +73,10 @@ public class TestLighting extends ApplicationAdapter {
     public void render(){
         //currentTime += LibGPU.graphics.getDeltaTime();
 
-        updateModelMatrix(modelMatrix, currentTime);
+        //updateModelMatrix(modelMatrix, currentTime);
 
         modelBatch.begin(camera, environment);
-        modelBatch.render(modelInstance1);
+        modelBatch.render(instances);
         modelBatch.end();
 
         // At the end of the frame
@@ -86,6 +93,7 @@ public class TestLighting extends ApplicationAdapter {
     public void dispose(){
         // cleanup
         model.dispose();
+        model2.dispose();
         modelBatch.dispose();
     }
 

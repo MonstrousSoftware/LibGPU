@@ -168,6 +168,7 @@ public class ModelBatch implements Disposable {
 
     private MeshPart prevMeshPart;
     private int instanceCount;
+    private int renderablesCount;
 
     private void flush() {
         // sort renderables to minimize material switching, to do: depth sorting etc.
@@ -175,12 +176,13 @@ public class ModelBatch implements Disposable {
 
         prevMeshPart = null;
         instanceCount = 0;
+        renderablesCount = 0;
 
         for(Renderable renderable : renderables) {
             emit(renderable);
             pool.free(renderable);
         }
-        emitMeshPart(prevMeshPart, instanceCount);
+        emitMeshPart(prevMeshPart, instanceCount, renderablesCount);
         renderables.clear();
     }
 
@@ -193,12 +195,13 @@ public class ModelBatch implements Disposable {
 
         // gather identical meshParts to be drawn in one call using instancing
         if(meshPart != prevMeshPart) {
-            emitMeshPart(prevMeshPart, instanceCount);
+            emitMeshPart(prevMeshPart, instanceCount, renderablesCount);
             instanceCount = 0;
             prevMeshPart = meshPart;
         }
-        addInstance(instanceCount, modelMatrix);
-        instanceCount++;
+        addInstance(renderablesCount, modelMatrix);
+        renderablesCount++; // nr of renderables in buffer
+        instanceCount++;    // nr of instances of the same meshPart
 
         // make a new bind group every time we change texture
         if(material != prevMaterial) {
@@ -219,7 +222,7 @@ public class ModelBatch implements Disposable {
         }
     }
 
-    private void emitMeshPart(MeshPart meshPart, int instanceCount) {
+    private void emitMeshPart(MeshPart meshPart, int instanceCount, int renderablesCount) {
         if(meshPart == null)
             return;
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
@@ -231,10 +234,10 @@ public class ModelBatch implements Disposable {
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
             wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
-            wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, instanceCount, meshPart.offset, 0, 0);
+            wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
         } //meshPart.size
         else
-            wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, instanceCount, meshPart.offset, 0);
+            wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
 
     }
 
@@ -422,17 +425,7 @@ public class ModelBatch implements Disposable {
         return step * d;
     }
 
-    private Pointer createUniformBuffer(int bufferSize, int maxInstances) {
-        int uniformStride = ceilToNextMultiple(bufferSize, uniformAlignment);
 
-        // Create uniform buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Uniform object buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize((long) uniformStride * maxInstances);
-        bufferDesc.setMappedAtCreation(0L);
-        return wgpu.DeviceCreateBuffer(device, bufferDesc);
-    }
 
 
 
@@ -537,24 +530,8 @@ public class ModelBatch implements Disposable {
         offset += 3*4; // padding (important)
 
 
-//        int numDirLights = environment == null ? 0 : environment.lights.size();
-//        DirectionalLight dirLight;
-//        // fixed length array, filled up to numDirectionalLights
-//        for(int i = 0; i < MAX_DIR_LIGHTS; i++) {
-//            if(i < numDirLights)
-//                dirLight = (DirectionalLight) environment.lights.get(i);
-//            else
-//                dirLight = defaultDirectionalLight; // will be ignored anyway
-//            offset += setUniformColor(uniformData, offset, dirLight.color);
-//            offset += setUniformVec3(uniformData, offset, dirLight.direction);
-//        }
-//        offset += setUniformInteger(uniformData, offset, numDirLights);
-
 
         // BEWARE of padding rules
-
-//        if(offset != FRAME_UB_SIZE)
-//            throw new RuntimeException("Frame uniform buffer size mismatch "+offset);
 
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, FRAME_UB_SIZE);
     }
@@ -570,13 +547,25 @@ public class ModelBatch implements Disposable {
     }
 
 
-    private Pointer createInstancingBuffer(int instanceSize, int maxInstances) {
+    private Pointer createUniformBuffer(int bufferSize, int maxRenderables) {
+        int uniformStride = ceilToNextMultiple(bufferSize, uniformAlignment);
+
+        // Create uniform buffer
+        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+        bufferDesc.setLabel("Uniform object buffer");
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
+        bufferDesc.setSize((long) uniformStride * maxRenderables);
+        bufferDesc.setMappedAtCreation(0L);
+        return wgpu.DeviceCreateBuffer(device, bufferDesc);
+    }
+
+    private Pointer createInstancingBuffer(int instanceSize, int maxRenderables) {
 
         // Create uniform buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Instancing storage buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage );
-        bufferDesc.setSize((long) instanceSize * maxInstances);
+        bufferDesc.setSize((long) instanceSize * maxRenderables);
         bufferDesc.setMappedAtCreation(0L);
         return wgpu.DeviceCreateBuffer(device, bufferDesc);
     }

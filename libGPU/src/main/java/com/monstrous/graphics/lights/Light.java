@@ -5,6 +5,7 @@ import com.monstrous.graphics.Color;
 public abstract class Light {
 
     public Color color = new Color(1,1,1,1);
+    public float intensity = 1f;
 
     public void setColor(Color color) {
         this.color.set(color);
@@ -12,6 +13,13 @@ public abstract class Light {
 
     public Color getColor() {
         return color;
+    }
+    public float getIntensity() {
+        return intensity;
+    }
+
+    public void setIntensity(float intensity) {
+        this.intensity = intensity;
     }
 
 }
