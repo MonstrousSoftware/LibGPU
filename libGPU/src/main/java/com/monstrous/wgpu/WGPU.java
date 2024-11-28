@@ -112,4 +112,6 @@ public interface WGPU { // A representation of the C interface in Java
     void QueueWriteTexture(Pointer queue, WGPUImageCopyTexture destination, Pointer pixelPtr, int i, WGPUTextureDataLayout source, WGPUExtent3D size);
 
     Pointer DeviceCreateSampler(Pointer device, WGPUSamplerDescriptor samplerDesc);
+
+    Pointer CreateQuerySet(Pointer device, WGPUQuerySetDescriptor queryDesc);
 }

@@ -451,6 +451,10 @@ EXPORT WGPUSampler DeviceCreateSampler(WGPUDevice device, WGPUSamplerDescriptor 
     return wgpuDeviceCreateSampler(device, samplerDesc);
 }
 
+EXPORT WGPUQuerySet CreateQuerySet(WGPUDevice device, WGPUQuerySetDescriptor const *desc){
+    return wgpuDeviceCreateQuerySet(device, desc);
+}
+
 
 /**
  * Utility function to get a WebGPU adapter, so that

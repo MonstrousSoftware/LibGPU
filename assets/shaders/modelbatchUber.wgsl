@@ -103,7 +103,7 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let kD = 0.6;
     let kS = 0.8;
-    let hardness = 32.0;
+    let hardness = 8.0;
     let normalMapStrength = 1.0;
 
     let V = normalize(in.viewDirection);
@@ -137,13 +137,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         let lightDirection = -1*light.direction.xyz;
 
         let L = lightDirection;
-        let R = reflect(-L, N);
 
         let diffuse = max(0.0, dot(L, N)) * lightColor;
 
-        let RoV = max(0.0, dot(R, V));
-
-        let specular = pow(RoV, hardness);
+        // Blinn-Phong
+        let H = normalize(L+V); // half-way vector
+        let NdotH = max(0.0, dot(N, H));
+        let specular = pow(NdotH, hardness);
 
         color += baseColor * kD * diffuse + kS * specular * light.color.rgb;
     }
@@ -155,16 +155,21 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
             var lightDirection =  light.position.xyz - in.worldPosition.xyz;    // vector towards light source
             let distance:f32 = length(lightDirection);
             lightDirection = normalize(lightDirection);
-            let attenuation = light.intensity.x/(1.0+distance*distance);
+            let attenuation = light.intensity.x/(1.0+distance*distance);        // todo: constant, linear and quadratic params
 
             let L = lightDirection;
-            let R = reflect(-L, N);
 
             let diffuse = max(0.0, dot(L, N)) * lightColor * attenuation;
 
-            let RoV = max(0.0, dot(R, V));      // angle between reflected light vector R and view vector V
+            // Phong
+//            let R = reflect(-L, N);
+//            let RoV = max(0.0, dot(R, V));      // angle between reflected light vector R and view vector V
+//            let specular = pow(RoV, hardness);
 
-            let specular = pow(RoV, hardness);
+            // Blinn-Phong
+            let H = normalize(L+V); // half-way vector
+            let NdotH = max(0.0, dot(N, H));
+            let specular = pow(NdotH, hardness);
 
             color += baseColor * kD * diffuse + kS * specular * light.color.rgb;
     }

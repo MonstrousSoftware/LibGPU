@@ -169,6 +169,9 @@ public class Texture {
                         if(mipLevel == 0) {
                             if(pixelPtr == null) {
                                 // generate test pattern
+//                                pixels[offset++] = (byte) x;
+//                                pixels[offset++] = (byte) x;
+//                                pixels[offset++] = (byte) x;
                                 pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
                                 pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
                                 pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
