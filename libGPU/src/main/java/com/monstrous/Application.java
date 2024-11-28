@@ -7,6 +7,8 @@ import jnr.ffi.LibraryLoader;
 import jnr.ffi.Pointer;
 import jnr.ffi.Runtime;
 
+import static com.monstrous.wgpuUtils.WgpuJava.createIntegerArrayPointer;
+
 public class Application {
     public ApplicationConfiguration configuration;
     private final ApplicationListener listener;
@@ -19,6 +21,8 @@ public class Application {
     private boolean isMinimized = false;
     private WindowedApp winApp;
     private Pointer timestampQuerySet;
+    private Pointer timeStampResolveBuffer;
+    private Pointer timeStampMapBuffer;
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
@@ -134,7 +138,7 @@ public class Application {
 
         initDevice();
 
-        //initBenchmark();
+        initBenchmark();
     }
 
     private void exitWebGPU() {
@@ -204,17 +208,17 @@ public class Application {
         // Uniform structs have a size of maximum 16 float (more than what we need)
         requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4*Float.BYTES);
 
-//        int[] featureValues = new int[1];
-//        featureValues[0] = WGPUFeatureName.TimestampQuery;
-//        Pointer requiredFeatures = createIntegerArrayPointer(featureValues);
+        int[] featureValues = new int[1];
+        featureValues[0] = WGPUFeatureName.TimestampQuery;
+        Pointer requiredFeatures = createIntegerArrayPointer(featureValues);
 
         // Get Device
         WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor.createDirect();
         deviceDescriptor.setNextInChain();
         deviceDescriptor.setLabel("My Device");
         deviceDescriptor.setRequiredLimits(requiredLimits);
-//        deviceDescriptor.setRequiredFeatureCount(1);
-//        deviceDescriptor.setRequiredFeatures( requiredFeatures );
+        deviceDescriptor.setRequiredFeatureCount(1);
+        deviceDescriptor.setRequiredFeatures( requiredFeatures );
 
         Pointer device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
         LibGPU.device = device;
@@ -404,10 +408,10 @@ public class Application {
         renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
         renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
 
-//        WGPURenderPassTimestampWrites start = WGPURenderPassTimestampWrites.createDirect();
-//        start.setBeginningOfPassWriteIndex(0);
-//        start.setEndOfPassWriteIndex(1);
-//        start.setQuerySet(timestampQuerySet);
+        WGPURenderPassTimestampWrites start = WGPURenderPassTimestampWrites.createDirect();
+        start.setBeginningOfPassWriteIndex(0);
+        start.setEndOfPassWriteIndex(1);
+        start.setQuerySet(timestampQuerySet);
 
         renderPassDescriptor.setTimestampWrites();
 
@@ -443,14 +447,6 @@ public class Application {
 
     private void initBenchmark() {
 
-
-
-//        std::vector<WGPUFeatureName> requiredFeatures = {
-//                WGPUFeatureName_TimestampQuery,
-//        };
-//        deviceDesc.requiredFeatures = requiredFeatures.data();
-//        deviceDesc.requiredFeaturesCount = (uint32_t)requiredFeatures.size();
-
         // Create timestamp queries
         WGPUQuerySetDescriptor querySetDescriptor =  WGPUQuerySetDescriptor.createDirect();
         querySetDescriptor.setNextInChain();
@@ -458,20 +454,20 @@ public class Application {
         querySetDescriptor.setType(WGPUQueryType.Timestamp);
         querySetDescriptor.setCount(2); // start and end
 
-        Pointer timestampQuerySet = wgpu.CreateQuerySet(LibGPU.device, querySetDescriptor);
+        timestampQuerySet = wgpu.CreateQuerySet(LibGPU.device, querySetDescriptor);
 
-//        // Create buffer to store timestamps
-//        BufferDescriptor bufferDesc;
-//        bufferDesc.label = "timestamp resolve buffer";
-//        bufferDesc.size = 2 * sizeof(uint64_t);
-//        bufferDesc.usage = BufferUsage::QueryResolve | BufferUsage::CopySrc;
-//        bufferDesc.mappedAtCreation = false;
-//        m_timestampResolveBuffer = m_device.createBuffer(bufferDesc);
-//
-//        bufferDesc.label = "timestamp map buffer";
-//        bufferDesc.size = 2 * sizeof(uint64_t);
-//        bufferDesc.usage = BufferUsage::MapRead | BufferUsage::CopyDst;
-//        m_timestampMapBuffer = m_device.createBuffer(bufferDesc);
+            // Create buffer
+            WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+            bufferDesc.setLabel("timestamp resolve buffer");
+            bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.QueryResolve );
+            bufferDesc.setSize(32);
+            bufferDesc.setMappedAtCreation(0L);
+         timeStampResolveBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+
+        bufferDesc.setLabel("timestamp map buffer");
+        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
+        bufferDesc.setSize(32);
+        timeStampMapBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
     }
 
 
