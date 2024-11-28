@@ -54,7 +54,7 @@ public class BitmapFont implements Disposable {
             Glyph glyph = glyphMap.get((int)k);
             if(glyph == null)
                 glyph = fallbackGlyph;
-            batch.draw(glyph.region, gx, y - glyph.yoffset);
+            batch.draw(glyph.region, gx+glyph.xoffset, y - glyph.yoffset);
             gx += glyph.xadvance;
             if(i < ascii.length-1) {
                 byte nextCh = ascii[i + 1];
@@ -79,7 +79,7 @@ public class BitmapFont implements Disposable {
         return amount;
     }
 
-    public int getLneHeight(){
+    public int getLineHeight(){
         return lineHeight;
     }
 
@@ -144,11 +144,11 @@ public class BitmapFont implements Disposable {
 
             } else if(trimmed.startsWith("char ")){
                 // char id=33 x=184 y=17 width=5 height=13 xoffset=0 yoffset=2 xadvance=5 page=0 chnl=0
-                String words[] = trimmed.split(" ");
+                String[] words = trimmed.split(" ");
 
                 Glyph glyph = new Glyph();
                 for(String word : words) {
-                    String vars[] = word.split("=");
+                    String[] vars = word.split("=");
                     if (vars[0].contentEquals("id"))
                         glyph.id = Integer.parseInt(vars[1]);
                     else if (vars[0].contentEquals("x"))
