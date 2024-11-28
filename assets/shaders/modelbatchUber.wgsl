@@ -1,9 +1,16 @@
 
 const MAX_DIR_LIGHTS : i32 = 5;
+const MAX_POINT_LIGHTS : i32 = 5;
 
 struct DirectionalLight {
     color: vec4f,
     direction: vec4f,
+}
+
+struct PointLight {
+    color: vec4f,
+    position: vec4f,
+    intensity: vec4f,
 }
 
 
@@ -12,9 +19,12 @@ struct FrameUniforms {
     viewMatrix : mat4x4f,
     combinedMatrix : mat4x4f,
     cameraPosition : vec4f,
+    ambientLightLevel : f32,
     directionalLights : array<DirectionalLight, MAX_DIR_LIGHTS>,
     numDirectionalLights: i32,
-    ambientLightLevel : f32,
+    pointLights : array<PointLight, MAX_POINT_LIGHTS>,
+    numPointLights: i32,
+
 };
 
 struct MaterialUniforms {
@@ -62,6 +72,8 @@ struct VertexOutput {
     @location(3) uv : vec2f,
     @location(4) viewDirection : vec3f,
     @location(5) color: vec3f,
+    @location(6) cameraPosition: vec3f,
+    @location(7) worldPosition: vec3f,
 };
 
 @vertex
@@ -83,6 +95,8 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    out.uv = in.uv;
    out.color = uMaterial.baseColor.rgb;
    out.viewDirection = cameraPosition.xyz - worldPosition.xyz;
+   out.cameraPosition = cameraPosition.xyz;
+   out.worldPosition = worldPosition.xyz;
    return out;
 }
 
@@ -114,14 +128,14 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 #endif
 
     var color = vec3f(0.0);
+    // todo some of this could go to vertex shader?
+
     // for each light
     for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
         let light = uFrame.directionalLights[i];
 
         let lightColor = light.color.rgb;
         let lightDirection = -1*light.direction.xyz;
-
-
 
         let L = lightDirection;
         let R = reflect(-L, N);
@@ -134,6 +148,27 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
         color += baseColor * kD * diffuse + kS * specular;
     }
+    // point lights
+    for (var i: i32 = 0; i < uFrame.numPointLights; i++) {
+            let light:PointLight = uFrame.pointLights[i];
+
+            let lightColor = light.color.rgb;
+            var lightDirection =  light.position.xyz - in.worldPosition.xyz;    // vector towards light source
+            let distance:f32 = length(lightDirection);
+            lightDirection = normalize(lightDirection);
+            let attenuation = light.intensity.x/(1.0+distance*distance);
+
+            let L = lightDirection;
+            let R = reflect(-L, N);
+
+            let diffuse = max(0.0, dot(L, N)) * lightColor * attenuation;
+
+            let RoV = max(0.0, dot(R, V));
+
+            let specular = pow(RoV, hardness) ;
+
+            color += baseColor * kD * diffuse + kS * specular;
+        }
 
     color += baseColor * uFrame.ambientLightLevel;
 
@@ -142,5 +177,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = N*0.5 + 0.5;
     //color = encodedN;
     //color = baseColor;
+    //color = uFrame.pointLights[0].color.rgb;
     return vec4f(color, 1.0);
 }

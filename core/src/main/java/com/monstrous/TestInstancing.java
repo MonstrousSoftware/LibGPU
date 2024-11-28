@@ -1,6 +1,8 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.lights.DirectionalLight;
+import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;

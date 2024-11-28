@@ -1,6 +1,10 @@
 package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
+import com.monstrous.graphics.lights.DirectionalLight;
+import com.monstrous.graphics.lights.Environment;
+import com.monstrous.graphics.lights.Light;
+import com.monstrous.graphics.lights.PointLight;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
@@ -15,9 +19,10 @@ import java.util.List;
 public class ModelBatch implements Disposable {
 
     private final int MAX_DIR_LIGHTS = 5;
+    private final int MAX_POINT_LIGHTS = 5;
     private final int MAX_INSTANCES = 4096;
 
-    private final int FRAME_UB_SIZE = 384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
+    private final int FRAME_UB_SIZE = 1024; //384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
     private final int MATERIAL_UB_SIZE = 4 * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
 
@@ -480,19 +485,71 @@ public class ModelBatch implements Disposable {
         offset += setUniformMatrix(uniformData, offset, camera.viewMatrix);
         offset += setUniformMatrix(uniformData, offset, camera.combinedMatrix);
         offset += setUniformVec3(uniformData, offset, camera.position);
-        int numDirLights = environment == null ? 0 : environment.lights.size();
-        DirectionalLight dirLight;
-        // fixed length array, filled up to numDirectionalLights
-        for(int i = 0; i < MAX_DIR_LIGHTS; i++) {
-            if(i < numDirLights)
-                dirLight = (DirectionalLight) environment.lights.get(i);
-            else
+
+        offset += setUniformFloat(uniformData, offset, environment == null ? 0 : environment.ambientLightLevel);
+        offset += 3*4; // padding (important)
+
+        int numDirLights = 0;
+        if(environment != null){
+            DirectionalLight dirLight;
+            for(Light light : environment.lights){
+                if(light instanceof DirectionalLight && numDirLights < MAX_DIR_LIGHTS-1) {
+                    numDirLights++;
+                    dirLight = (DirectionalLight) light;
+                    offset += setUniformColor(uniformData, offset, dirLight.color);
+                    offset += setUniformVec3(uniformData, offset, dirLight.direction);
+                }
+            }
+            // fixed length array, fill with placeholders up to MAX_DIR_LIGHTS
+            for(int i = numDirLights; i < MAX_DIR_LIGHTS; i++) {
                 dirLight = defaultDirectionalLight; // will be ignored anyway
-            offset += setUniformColor(uniformData, offset, dirLight.color);
-            offset += setUniformVec3(uniformData, offset, dirLight.direction);
+                offset += setUniformColor(uniformData, offset, dirLight.color);
+                offset += setUniformVec3(uniformData, offset, dirLight.direction);
+            }
         }
         offset += setUniformInteger(uniformData, offset, numDirLights);
-        offset += setUniformFloat(uniformData, offset, environment == null ? 0 : environment.ambientLightLevel);
+        offset += 3*4; // padding (important)
+
+        int numPointLights = 0;
+        if(environment != null){
+            PointLight pointLight;
+            for(Light light : environment.lights){
+                if(light instanceof PointLight && numPointLights < MAX_POINT_LIGHTS-1) {
+                    numPointLights++;
+                    pointLight = (PointLight) light;
+                    offset += setUniformColor(uniformData, offset, pointLight.color);
+                    offset += setUniformVec3(uniformData, offset, pointLight.position);
+                    offset += setUniformFloat(uniformData, offset, pointLight.intensity);
+                    // need padding?
+                    offset += 3*4;  // padding
+                }
+            }
+            // fixed length array, fill with placeholders up to MAX
+            pointLight = new PointLight(Color.BLACK, new Vector3(), 0);// will be ignored anyway
+            for(int i = numPointLights; i < MAX_POINT_LIGHTS; i++) {
+                offset += setUniformColor(uniformData, offset, pointLight.color);
+                offset += setUniformVec3(uniformData, offset, pointLight.position);
+                offset += setUniformFloat(uniformData, offset, pointLight.intensity);
+                offset += 3*4;  // padding
+            }
+        }
+        offset += setUniformInteger(uniformData, offset, numPointLights);
+        offset += 3*4; // padding (important)
+
+
+//        int numDirLights = environment == null ? 0 : environment.lights.size();
+//        DirectionalLight dirLight;
+//        // fixed length array, filled up to numDirectionalLights
+//        for(int i = 0; i < MAX_DIR_LIGHTS; i++) {
+//            if(i < numDirLights)
+//                dirLight = (DirectionalLight) environment.lights.get(i);
+//            else
+//                dirLight = defaultDirectionalLight; // will be ignored anyway
+//            offset += setUniformColor(uniformData, offset, dirLight.color);
+//            offset += setUniformVec3(uniformData, offset, dirLight.direction);
+//        }
+//        offset += setUniformInteger(uniformData, offset, numDirLights);
+
 
         // BEWARE of padding rules
 

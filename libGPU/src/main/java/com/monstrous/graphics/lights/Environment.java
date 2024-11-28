@@ -1,4 +1,4 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.lights;
 
 import java.util.ArrayList;
 

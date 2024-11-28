@@ -1,6 +1,8 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.lights.Environment;
+import com.monstrous.graphics.lights.PointLight;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
@@ -22,7 +24,7 @@ public class TestLighting extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/pyramid.obj");
+        model = new Model("models/groundplane.gltf");
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);
@@ -33,7 +35,14 @@ public class TestLighting extends ApplicationAdapter {
         camera.update();
 
         environment = new Environment();
-        environment.add( new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0)));
+//        environment.add( new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0)));
+//
+//        environment.add( new DirectionalLight(Color.BLUE, new Vector3(.7f,-.2f,0)));
+//        environment.add( new DirectionalLight(Color.RED, new Vector3(0f,1f,0)));
+
+        environment.add( new PointLight(new Color(1,0,0,1), new Vector3(3f,1f,0), 5f));
+        environment.ambientLightLevel = 0.3f;
+
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
@@ -55,7 +64,7 @@ public class TestLighting extends ApplicationAdapter {
 
 
     public void render(){
-        currentTime += LibGPU.graphics.getDeltaTime();
+        //currentTime += LibGPU.graphics.getDeltaTime();
 
         updateModelMatrix(modelMatrix, currentTime);
 
