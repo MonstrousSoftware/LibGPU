@@ -47,7 +47,6 @@ struct ModelUniforms {
 @group(1) @binding(4) var normalTexture: texture_2d<f32>;
 #endif
 
-//@group(2) @binding(0) var<uniform> uModel: ModelUniforms;
 
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
@@ -102,9 +101,9 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-    let kD = 1.0;
-    let kS = 0.1;
-    let hardness = 1.0;
+    let kD = 0.6;
+    let kS = 0.8;
+    let hardness = 32.0;
     let normalMapStrength = 1.0;
 
     let V = normalize(in.viewDirection);
@@ -130,7 +129,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     var color = vec3f(0.0);
     // todo some of this could go to vertex shader?
 
-    // for each light
+    // for each directional light
     for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
         let light = uFrame.directionalLights[i];
 
@@ -146,7 +145,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
         let specular = pow(RoV, hardness);
 
-        color += baseColor * kD * diffuse + kS * specular;
+        color += baseColor * kD * diffuse + kS * specular * light.color.rgb;
     }
     // point lights
     for (var i: i32 = 0; i < uFrame.numPointLights; i++) {
@@ -163,12 +162,12 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
             let diffuse = max(0.0, dot(L, N)) * lightColor * attenuation;
 
-            let RoV = max(0.0, dot(R, V));
+            let RoV = max(0.0, dot(R, V));      // angle between reflected light vector R and view vector V
 
-            let specular = pow(RoV, hardness) ;
+            let specular = pow(RoV, hardness);
 
-            color += baseColor * kD * diffuse + kS * specular;
-        }
+            color += baseColor * kD * diffuse + kS * specular * light.color.rgb;
+    }
 
     color += baseColor * uFrame.ambientLightLevel;
 

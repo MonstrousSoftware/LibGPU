@@ -547,14 +547,14 @@ public class ModelBatch implements Disposable {
     }
 
 
-    private Pointer createUniformBuffer(int bufferSize, int maxRenderables) {
+    private Pointer createUniformBuffer(int bufferSize, int maxSlices) {
         int uniformStride = ceilToNextMultiple(bufferSize, uniformAlignment);
 
         // Create uniform buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Uniform object buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize((long) uniformStride * maxRenderables);
+        bufferDesc.setSize((long) uniformStride * maxSlices);
         bufferDesc.setMappedAtCreation(0L);
         return wgpu.DeviceCreateBuffer(device, bufferDesc);
     }
