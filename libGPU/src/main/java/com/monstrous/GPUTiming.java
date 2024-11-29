@@ -98,15 +98,15 @@ public class GPUTiming implements Disposable {
     public void dispose() {
        if(!timingEnabled)
             return;
-        //timestampQuerySet release
+        //  timestampQuerySet release
         wgpu.BufferDestroy(timeStampMapBuffer);
         wgpu.BufferRelease(timeStampMapBuffer);
         wgpu.BufferDestroy(timeStampResolveBuffer);
         wgpu.BufferRelease(timeStampResolveBuffer);
     }
 
-    long cumulative = 0;
-    int numSamples = 0;
+    private long cumulative = 0;
+    private int numSamples = 0;
 
     private void addTimeSample(int us){
         numSamples++;
@@ -114,12 +114,12 @@ public class GPUTiming implements Disposable {
     }
 
     // returns average time per frame spent by GPU (in microseconds).
-    public int getAverageGPUtime(){
+    public float getAverageGPUtime(){
         if(!timingEnabled)
             throw new RuntimeException("To use getAverageGPUtime() enable GPU timing in the ApplicationConfiguration.");
         if(numSamples == 0)
             return 0;
-        int avg = (int) (cumulative / numSamples);
+        float avg = (float) cumulative / (float)numSamples;
         resetGPUsamples();
         return avg;
     }
@@ -127,7 +127,7 @@ public class GPUTiming implements Disposable {
     public void logAverageGPUtime(){
         if(!timingEnabled)
             throw new RuntimeException("logAverageGPUtime(): ApplicationConfiguration.enableGPUtiming is false.");
-        System.out.println("average: "+(float)cumulative / (float)numSamples + " numSample: "+numSamples);
+        System.out.println("average: "+(float)cumulative / (float)numSamples + " numSamples: "+numSamples);
         resetGPUsamples();
     }
 

@@ -445,7 +445,7 @@ public class Application {
     }
 
 
-    public int getAverageGPUtime() {
+    public float getAverageGPUtime() {
         return gpuTiming.getAverageGPUtime();
     }
 
