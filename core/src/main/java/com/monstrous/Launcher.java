@@ -13,6 +13,7 @@ public class Launcher {
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.D3D12;
+        config.enableGPUtiming = true;
 
         new Application(new TestModelInstance(), config);
     }

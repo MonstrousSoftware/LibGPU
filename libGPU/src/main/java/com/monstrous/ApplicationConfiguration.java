@@ -8,6 +8,7 @@ public class ApplicationConfiguration {
     public String title;
     public boolean vsyncEnabled;
     public WGPUBackendType backend;
+    public boolean enableGPUtiming;     // enable for GPU performance measurements
 
     public ApplicationConfiguration() {
         // set to defaults
@@ -16,6 +17,7 @@ public class ApplicationConfiguration {
         title = "Application";
         vsyncEnabled = true;
         backend = WGPUBackendType.D3D12;
+        enableGPUtiming = false;
     }
 
     public void setSize(int w, int h){

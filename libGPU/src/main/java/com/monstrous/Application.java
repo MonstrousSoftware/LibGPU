@@ -20,9 +20,8 @@ public class Application {
     private boolean surfaceConfigured = false;
     private boolean isMinimized = false;
     private WindowedApp winApp;
-    private Pointer timestampQuerySet;
-    private Pointer timeStampResolveBuffer;
-    private Pointer timeStampMapBuffer;
+    private GPUTiming gpuTiming;
+
 
     public Application(ApplicationListener listener) {
         this(listener, new ApplicationConfiguration());
@@ -67,7 +66,7 @@ public class Application {
 
                 listener.render();
 
-                finalizeRenderPass(LibGPU.renderPass, encoder);
+                finalizeRenderPass(LibGPU.renderPass);
                 finishEncoder(encoder);
 
                 // At the end of the frame
@@ -136,13 +135,13 @@ public class Application {
         LibGPU.surface =wgpu.glfwGetWGPUSurface(LibGPU.instance, windowHandle);
         System.out.println("surface = "+LibGPU.surface);
 
-        initDevice();
+        LibGPU.device = initDevice();
 
-        initBenchmark();
+        gpuTiming = new GPUTiming(LibGPU.device, configuration.enableGPUtiming);
     }
 
     private void exitWebGPU() {
-        terminateBenchmark();
+        gpuTiming.dispose();
 
         terminateSwapChain();
         terminateDepthBuffer();
@@ -152,7 +151,7 @@ public class Application {
         wgpu.InstanceRelease(LibGPU.instance);
     }
 
-    private void initDevice() {
+    private Pointer initDevice() {
 
         System.out.println("define adapter options");
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
@@ -210,21 +209,25 @@ public class Application {
         // Uniform structs have a size of maximum 16 float (more than what we need)
         requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4*Float.BYTES);
 
-        int[] featureValues = new int[1];
-        featureValues[0] = WGPUFeatureName.TimestampQuery;
-        Pointer requiredFeatures = createIntegerArrayPointer(featureValues);
 
         // Get Device
         WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor.createDirect();
         deviceDescriptor.setNextInChain();
         deviceDescriptor.setLabel("My Device");
         deviceDescriptor.setRequiredLimits(requiredLimits);
-        deviceDescriptor.setRequiredFeatureCount(1);
-        deviceDescriptor.setRequiredFeatures( requiredFeatures );
+        deviceDescriptor.setRequiredFeatureCount(0);
+        deviceDescriptor.setRequiredFeatures(null);
+
+        if(configuration.enableGPUtiming){
+            int[] featureValues = new int[1];
+            featureValues[0] = WGPUFeatureName.TimestampQuery;
+            Pointer requiredFeatures = createIntegerArrayPointer(featureValues);
+
+            deviceDescriptor.setRequiredFeatureCount(1);
+            deviceDescriptor.setRequiredFeatures( requiredFeatures );
+        }
 
         Pointer device = wgpu.RequestDeviceSync(adapter, deviceDescriptor);
-        LibGPU.device = device;
-
 
         // use a lambda expression to define a callback function
         WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
@@ -253,6 +256,7 @@ public class Application {
         System.out.println("Using format: " + LibGPU.surfaceFormat);
 
         wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
+        return device;
     }
 
     private void terminateDevice(){
@@ -410,27 +414,18 @@ public class Application {
         renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
         renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
 
-        WGPURenderPassTimestampWrites start = WGPURenderPassTimestampWrites.createDirect();
-        start.setBeginningOfPassWriteIndex(0);
-        start.setEndOfPassWriteIndex(1);
-        start.setQuerySet(timestampQuerySet);
-
-        renderPassDescriptor.setTimestampWrites(start);
-
+        gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
         return wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
     }
 
-    private void finalizeRenderPass(Pointer renderPass, Pointer encoder) {
+    private void finalizeRenderPass(Pointer renderPass) {
         wgpu.RenderPassEncoderEnd(renderPass);
-        resolveTimeStamps(encoder);                 // can this go to finsishEnc?
         wgpu.RenderPassEncoderRelease(renderPass);
     }
 
     private void finishEncoder(Pointer encoder){
-
-
-
+        gpuTiming.resolveTimeStamps(encoder);
         WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
         bufferDescriptor.setNextInChain();
         bufferDescriptor.setLabel("Command Buffer");
@@ -441,116 +436,18 @@ public class Application {
         long[] buffers = new long[1];
         buffers[0] = commandBuffer.address();
         Pointer bufferPtr = WgpuJava.createLongArrayPointer(buffers);
-        //System.out.println("Pointer: "+bufferPtr.toString());
-        //System.out.println("Submitting command...");
+
         wgpu.QueueSubmit(LibGPU.queue, 1, bufferPtr);
 
-        fetchTimestamps();
+        gpuTiming.fetchTimestamps();
 
         wgpu.CommandBufferRelease(commandBuffer);
-        //System.out.println("Command submitted...");
-
-    }
-
-    private void initBenchmark() {
-
-        // Create timestamp queries
-        WGPUQuerySetDescriptor querySetDescriptor =  WGPUQuerySetDescriptor.createDirect();
-        querySetDescriptor.setNextInChain();
-        querySetDescriptor.setLabel("Timestamp Query Set");
-        querySetDescriptor.setType(WGPUQueryType.Timestamp);
-        querySetDescriptor.setCount(2); // start and end
-
-        timestampQuerySet = wgpu.CreateQuerySet(LibGPU.device, querySetDescriptor);
-
-            // Create buffer
-            WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-            bufferDesc.setLabel("timestamp resolve buffer");
-            bufferDesc.setUsage( WGPUBufferUsage.CopySrc | WGPUBufferUsage.QueryResolve );
-            bufferDesc.setSize(32);
-            bufferDesc.setMappedAtCreation(0L);
-         timeStampResolveBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
-
-        bufferDesc.setLabel("timestamp map buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
-        bufferDesc.setSize(32);
-        timeStampMapBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
-    }
-
-    private void resolveTimeStamps(Pointer encoder){
-        if(timeStampMapOngoing)
-            return;
-
-        // Resolve the timestamp queries (write their result to the resolve buffer)
-        wgpu.CommandEncoderResolveQuerySet(encoder, timestampQuerySet, 0, 2, timeStampResolveBuffer, 0);
-
-        // Copy to the map buffer
-        wgpu.CommandEncoderCopyBufferToBuffer(encoder, timeStampResolveBuffer, 0,  timeStampMapBuffer, 0,32);
-    }
-
-    private boolean timeStampMapOngoing = false;
-
-    private void fetchTimestamps(){
-        if(timeStampMapOngoing)
-            return;
-
-        // use a lambda expression to define a callback function
-        WGPUBufferMapCallback onTimestampBufferMapped = (WGPUBufferMapAsyncStatus status, Pointer userData) -> {
-            if(status != WGPUBufferMapAsyncStatus.Success)
-                System.out.println("*** ERROR: Timestamp buffer mapped with status: " + status);
-            else {
-                Pointer ram =  wgpu.BufferGetConstMappedRange(timeStampMapBuffer, 0, 32);
-                long start = ram.getLong(0);
-                long end = ram.getLong(Long.BYTES);
-                wgpu.BufferUnmap(timeStampMapBuffer);
-                long ns = end - start;
-                int microseconds = (int)(0.001 * ns);
-                addTimeSample(microseconds);
-//                System.out.println("us :"+microseconds);
-            }
-            timeStampMapOngoing = false;
-        };
-
-        timeStampMapOngoing = true;
-        wgpu.BufferMapAsync(timeStampMapBuffer, WGPUMapMode.Read, 0, 32, onTimestampBufferMapped, null);
-    }
-
-    private void terminateBenchmark(){
-        //timestampQuerySet release
-        wgpu.BufferDestroy(timeStampMapBuffer);
-        wgpu.BufferRelease(timeStampMapBuffer);
-        wgpu.BufferDestroy(timeStampResolveBuffer);
-        wgpu.BufferRelease(timeStampResolveBuffer);
-    }
-
-    long cumulative = 0;
-    int numSamples = 0;
-
-    private void addTimeSample(int us){
-        numSamples++;
-        cumulative += us;
-    }
-
-    public int getAverage(){
-        if(numSamples == 0)
-            return 0;
-        int avg = (int) (cumulative / numSamples);
-        reset();
-        return avg;
-    }
-
-    public void logAverage(){
-        System.out.println("average: "+(float)cumulative / (float)numSamples + " numSample: "+numSamples);
-        reset();
-    }
-
-    public void reset(){
-        numSamples = 0;
-        cumulative = 0;
     }
 
 
-
+    public int getAverageGPUtime() {
+        return gpuTiming.getAverageGPUtime();
+    }
 
     final static long WGPU_LIMIT_U32_UNDEFINED = 4294967295L;
     final static long WGPU_LIMIT_U64_UNDEFINED = Long.MAX_VALUE;//.   18446744073709551615L;
