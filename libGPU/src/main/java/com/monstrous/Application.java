@@ -142,6 +142,8 @@ public class Application {
     }
 
     private void exitWebGPU() {
+        terminateBenchmark();
+
         terminateSwapChain();
         terminateDepthBuffer();
         terminateDevice();
@@ -413,7 +415,7 @@ public class Application {
         start.setEndOfPassWriteIndex(1);
         start.setQuerySet(timestampQuerySet);
 
-        renderPassDescriptor.setTimestampWrites();
+        renderPassDescriptor.setTimestampWrites(start);
 
 
         return wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
@@ -442,6 +444,8 @@ public class Application {
         //System.out.println("Pointer: "+bufferPtr.toString());
         //System.out.println("Submitting command...");
         wgpu.QueueSubmit(LibGPU.queue, 1, bufferPtr);
+
+        fetchTimestamps();
 
         wgpu.CommandBufferRelease(commandBuffer);
         //System.out.println("Command submitted...");
@@ -474,6 +478,9 @@ public class Application {
     }
 
     private void resolveTimeStamps(Pointer encoder){
+        if(timeStampMapOngoing)
+            return;
+
         // Resolve the timestamp queries (write their result to the resolve buffer)
         wgpu.CommandEncoderResolveQuerySet(encoder, timestampQuerySet, 0, 2, timeStampResolveBuffer, 0);
 
@@ -481,7 +488,66 @@ public class Application {
         wgpu.CommandEncoderCopyBufferToBuffer(encoder, timeStampResolveBuffer, 0,  timeStampMapBuffer, 0,32);
     }
 
+    private boolean timeStampMapOngoing = false;
 
+    private void fetchTimestamps(){
+        if(timeStampMapOngoing)
+            return;
+
+        // use a lambda expression to define a callback function
+        WGPUBufferMapCallback onTimestampBufferMapped = (WGPUBufferMapAsyncStatus status, Pointer userData) -> {
+            if(status != WGPUBufferMapAsyncStatus.Success)
+                System.out.println("*** ERROR: Timestamp buffer mapped with status: " + status);
+            else {
+                Pointer ram =  wgpu.BufferGetConstMappedRange(timeStampMapBuffer, 0, 32);
+                long start = ram.getLong(0);
+                long end = ram.getLong(Long.BYTES);
+                wgpu.BufferUnmap(timeStampMapBuffer);
+                long ns = end - start;
+                int microseconds = (int)(0.001 * ns);
+                addTimeSample(microseconds);
+//                System.out.println("us :"+microseconds);
+            }
+            timeStampMapOngoing = false;
+        };
+
+        timeStampMapOngoing = true;
+        wgpu.BufferMapAsync(timeStampMapBuffer, WGPUMapMode.Read, 0, 32, onTimestampBufferMapped, null);
+    }
+
+    private void terminateBenchmark(){
+        //timestampQuerySet release
+        wgpu.BufferDestroy(timeStampMapBuffer);
+        wgpu.BufferRelease(timeStampMapBuffer);
+        wgpu.BufferDestroy(timeStampResolveBuffer);
+        wgpu.BufferRelease(timeStampResolveBuffer);
+    }
+
+    long cumulative = 0;
+    int numSamples = 0;
+
+    private void addTimeSample(int us){
+        numSamples++;
+        cumulative += us;
+    }
+
+    public int getAverage(){
+        if(numSamples == 0)
+            return 0;
+        int avg = (int) (cumulative / numSamples);
+        reset();
+        return avg;
+    }
+
+    public void logAverage(){
+        System.out.println("average: "+(float)cumulative / (float)numSamples + " numSample: "+numSamples);
+        reset();
+    }
+
+    public void reset(){
+        numSamples = 0;
+        cumulative = 0;
+    }
 
 
 

@@ -80,7 +80,8 @@ public class TestModelInstance extends ApplicationAdapter {
         // At the end of the frame
 
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch : fps: " + frames  );
+            System.out.println("SpriteBatch : fps: " + frames +
+                    " GPU: "+LibGPU.app.getAverage()+" microseconds"  );
             frames = 0;
             startTime = System.nanoTime();
         }

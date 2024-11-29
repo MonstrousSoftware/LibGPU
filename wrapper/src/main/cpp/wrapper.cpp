@@ -382,7 +382,7 @@ EXPORT void BufferMapAsync(WGPUBuffer buffer, WGPUMapMode wgpuMapMode, size_t of
 
 EXPORT void const * BufferGetConstMappedRange(WGPUBuffer buffer, size_t offset, size_t size){
     void const * ptr = wgpuBufferGetConstMappedRange(buffer, offset, size);
-    printf("buffer const map range: %p\n", ptr);
+    //printf("buffer const map range: %p\n", ptr);
     return ptr;
 }
 
@@ -390,6 +390,9 @@ EXPORT void BufferUnmap(WGPUBuffer buffer){
     wgpuBufferUnmap(buffer);
 }
 
+EXPORT void BufferDestroy(WGPUBuffer buffer){
+    wgpuBufferDestroy(buffer);
+}
 
 EXPORT  uint64_t BufferGetSize(WGPUBuffer buffer) {
     return wgpuBufferGetSize(buffer);

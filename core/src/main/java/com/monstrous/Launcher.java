@@ -12,8 +12,8 @@ public class Launcher {
         config.setSize(800, 400);
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
-        config.backend = WGPUBackendType.Vulkan;
+        config.backend = WGPUBackendType.D3D12;
 
-        new Application(new TestTextureMipMap(), config);
+        new Application(new TestModelInstance(), config);
     }
 }

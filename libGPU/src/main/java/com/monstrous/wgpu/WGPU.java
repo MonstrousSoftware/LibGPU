@@ -72,6 +72,7 @@ public interface WGPU { // A representation of the C interface in Java
 
     Pointer DeviceCreateBuffer(Pointer device, WGPUBufferDescriptor bufferDesc);
     void BufferRelease(Pointer buffer);
+    void BufferDestroy(Pointer buffer);
 
     void QueueWriteBuffer(Pointer queue, Pointer buffer, int dynamicOffset, Pointer data, int length);
 

@@ -32,7 +32,7 @@ public class TestLighting extends ApplicationAdapter {
         instances.add(instance);
         model2 = new Model("models/pyramid.obj");
         ModelInstance instance2 = new ModelInstance(model2, 0, 0.3f, 0);
-        instance2.instanceTransforms.getFirst().scale(0.5f);
+        instance2.instanceTransforms.get(0).scale(0.5f);
         instances.add(instance2);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
