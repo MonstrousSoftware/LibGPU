@@ -1,6 +1,9 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g3d.Model;
+import com.monstrous.graphics.g3d.ModelBatch;
+import com.monstrous.graphics.g3d.ModelInstance;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
@@ -94,7 +97,8 @@ public class TestGLTF extends ApplicationAdapter {
         // At the end of the frame
 
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("fps: " + frames  );
+            System.out.println("fps: " + frames +
+                    " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds"  );
             frames = 0;
             startTime = System.nanoTime();
         }

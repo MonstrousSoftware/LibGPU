@@ -115,8 +115,8 @@ public class GPUTiming implements Disposable {
 
     // returns average time per frame spent by GPU (in microseconds).
     public float getAverageGPUtime(){
-        if(!timingEnabled)
-            throw new RuntimeException("To use getAverageGPUtime() enable GPU timing in the ApplicationConfiguration.");
+//        if(!timingEnabled)
+//            throw new RuntimeException("To use getAverageGPUtime() enable GPU timing in the ApplicationConfiguration.");
         if(numSamples == 0)
             return 0;
         float avg = (float) cumulative / (float)numSamples;

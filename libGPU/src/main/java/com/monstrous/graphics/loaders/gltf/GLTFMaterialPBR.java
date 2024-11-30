@@ -11,8 +11,8 @@ public class GLTFMaterialPBR {
 
     public GLTFMaterialPBR() {
         baseColorFactor = new Color(1,1,1,1);
-        metallicFactor = 1f;
-        roughnessFactor = 1f;
+        metallicFactor = -1;
+        roughnessFactor = -1;
         baseColorTexture = -1;
         metallicRoughnessTexture = -1;
     }

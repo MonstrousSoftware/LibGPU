@@ -103,6 +103,15 @@ public class GLTFLoader {
                     pbr.baseColorFactor = getColor(bc);
                 }
 
+                Number roughnessFactor = (Number) pbrMR.get("roughnessFactor");
+                if(roughnessFactor != null){
+                    pbr.roughnessFactor = roughnessFactor.floatValue();
+                }
+                Number metallicFactor = (Number) pbrMR.get("metallicFactor");
+                if(metallicFactor != null){
+                    pbr.metallicFactor = metallicFactor.floatValue();
+                }
+
                 JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
                 if(metal != null) {
                     long metalIndex = (Long) metal.get("index");

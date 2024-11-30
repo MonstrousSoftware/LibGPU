@@ -1,6 +1,10 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g3d.Model;
+import com.monstrous.graphics.g3d.ModelBatch;
+import com.monstrous.graphics.g3d.ModelInstance;
+import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.graphics.lights.PointLight;
 import com.monstrous.math.Matrix4;
@@ -28,9 +32,9 @@ public class TestLighting extends ApplicationAdapter {
 
         instances = new ArrayList<>();
         model = new Model("models/groundplane.gltf");
-        ModelInstance instance = new ModelInstance(model);
+        ModelInstance instance = new ModelInstance(model, 0,-0.5f, 0);
         instances.add(instance);
-        model2 = new Model("models/pyramid.obj");
+        model2 = new Model("models/sphere.gltf");
         ModelInstance instance2 = new ModelInstance(model2, 0, 0.3f, 0);
         instance2.instanceTransforms.get(0).scale(0.5f);
         instances.add(instance2);
@@ -41,14 +45,14 @@ public class TestLighting extends ApplicationAdapter {
         camera.update();
 
         environment = new Environment();
-//        environment.add( new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0)));
+        environment.add( new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0)));
 //
 //        environment.add( new DirectionalLight(Color.BLUE, new Vector3(.7f,-.2f,0)));
 //        environment.add( new DirectionalLight(Color.RED, new Vector3(0f,1f,0)));
 
-        environment.add( new PointLight(new Color(1,0,0,1), new Vector3(3f,1f,3), 15f));
-        environment.add( new PointLight(new Color(1,0,1,1), new Vector3(-3f,1f,3), 5f));
-        environment.ambientLightLevel = 0.1f;
+//        environment.add( new PointLight(new Color(1,0,0,1), new Vector3(3f,1f,3), 15f));
+//        environment.add( new PointLight(new Color(1,0,1,1), new Vector3(-3f,1f,3), 5f));
+        environment.ambientLightLevel = 0.2f;
 
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
@@ -71,6 +75,12 @@ public class TestLighting extends ApplicationAdapter {
 
 
     public void render(){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
+            LibGPU.app.exit();
+
+        if(LibGPU.input.isKeyPressed(Input.Keys.L)){
+            modelBatch.loadShaders();
+        }
         //currentTime += LibGPU.graphics.getDeltaTime();
 
         //updateModelMatrix(modelMatrix, currentTime);

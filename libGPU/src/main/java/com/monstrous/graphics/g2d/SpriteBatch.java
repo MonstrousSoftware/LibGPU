@@ -1,6 +1,7 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g2d;
 
 import com.monstrous.LibGPU;
+import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;

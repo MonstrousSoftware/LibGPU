@@ -74,6 +74,7 @@ public class ObjLoader {
                 float y = Float.parseFloat(words[2]);
                 uv.add( new Vector2(x,y));
             } else if (line.startsWith("f ")) {
+                // f v1[/vt1][/vn1] v2[/vt2][/vn2] v3[/vt3][/vn3] ...
                 String[] faces = line.split("[ \t]+");
                 if (faces.length != 4 && faces.length != 5)
                     System.out.println("Expected 3 or 4 indices per face: " + line);
@@ -87,7 +88,7 @@ public class ObjLoader {
                     vertFloats.add(v.y);
                     vertFloats.add(v.z);
 
-                    if(indices.length > 2) {
+                    if(indices.length > 2 && indices[1].length()>0) {
                         int uvindex = Integer.parseInt(indices[1]) - 1;
                         Vector2 tc = uv.get(uvindex);
                         vertFloats.add(tc.x);
@@ -97,7 +98,7 @@ public class ObjLoader {
                         vertFloats.add(0f);
                     }
 
-                    if(indices.length > 1) {
+                    if(indices.length > 3 && indices[2].length()>0) {
                         int nindex = Integer.parseInt(indices[2]) - 1;
                         Vector3 vn = normals.get(nindex);
                         vertFloats.add(vn.x);

@@ -1,5 +1,6 @@
 package com.monstrous.graphics;
 
+import com.monstrous.graphics.g3d.MeshPart;
 import com.monstrous.math.Matrix4;
 
 public class Renderable {

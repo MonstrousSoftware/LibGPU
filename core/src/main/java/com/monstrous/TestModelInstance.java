@@ -1,6 +1,9 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g3d.Model;
+import com.monstrous.graphics.g3d.ModelBatch;
+import com.monstrous.graphics.g3d.ModelInstance;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
@@ -26,7 +29,7 @@ public class TestModelInstance extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/ducky.obj");
+        model = new Model("models/teapot.obj");
         model2 = new Model("models/pyramid.obj");
 
         modelMatrix = new Matrix4();

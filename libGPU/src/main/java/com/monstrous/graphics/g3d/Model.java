@@ -1,5 +1,8 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g3d;
 
+import com.monstrous.graphics.Color;
+import com.monstrous.graphics.Material;
+import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.loaders.*;
 import com.monstrous.graphics.loaders.gltf.*;
 import com.monstrous.math.Vector2;
@@ -65,6 +68,10 @@ public class Model implements Disposable {
             MaterialData mat = new MaterialData();
             if(gltfMat.pbrMetallicRoughness.baseColorFactor != null)
                 mat.diffuse = gltfMat.pbrMetallicRoughness.baseColorFactor;
+            if(gltfMat.pbrMetallicRoughness.roughnessFactor >= 0)
+                mat.roughnessFactor = gltfMat.pbrMetallicRoughness.roughnessFactor;
+            if(gltfMat.pbrMetallicRoughness.metallicFactor >= 0)
+                mat.metallicFactor = gltfMat.pbrMetallicRoughness.metallicFactor;
             if(gltfMat.pbrMetallicRoughness.baseColorTexture >= 0)
                 mat.diffuseMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.pbrMetallicRoughness.baseColorTexture).source).uri;
             if(gltfMat.normalTexture >= 0)

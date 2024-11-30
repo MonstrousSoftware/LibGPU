@@ -1,6 +1,9 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g3d.Model;
+import com.monstrous.graphics.g3d.ModelBatch;
+import com.monstrous.graphics.g3d.ModelInstance;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;

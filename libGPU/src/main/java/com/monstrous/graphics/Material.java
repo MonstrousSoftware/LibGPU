@@ -9,6 +9,8 @@ public class Material implements Disposable {
     public Texture normalTexture;
     public Texture emissiveTexture;
     public boolean hasNormalMap;
+    public float metallicFactor = 0.0f;
+    public float roughnessFactor = 0.5f;
 
     public Material(MaterialData materialData) {
         baseColor = new Color(materialData.diffuse);
@@ -31,6 +33,13 @@ public class Material implements Disposable {
         if( materialData.emissiveMapFilePath != null)
             fileName = materialData.emissiveMapFilePath;
         this.emissiveTexture = new Texture(fileName, false);
+
+        roughnessFactor = materialData.roughnessFactor;
+        if(roughnessFactor < 0)
+            roughnessFactor = 0.5f; // default
+        metallicFactor = materialData.metallicFactor;
+        if(metallicFactor < 0)
+            metallicFactor = 0; // default
     }
 
     public Material(Texture texture) {

@@ -1,6 +1,7 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g3d;
 
 import com.monstrous.LibGPU;
+import com.monstrous.graphics.*;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.graphics.lights.Light;
@@ -23,7 +24,7 @@ public class ModelBatch implements Disposable {
     private final int MAX_INSTANCES = 4096;
 
     private final int FRAME_UB_SIZE = 1024; //384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
-    private final int MATERIAL_UB_SIZE = 4 * Float.BYTES;
+    private final int MATERIAL_UB_SIZE = 8 * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
 
     private final int MAX_MATERIALS = 256;   // limits nr of materials!
@@ -96,8 +97,14 @@ public class ModelBatch implements Disposable {
         float[] floatData = new float[16];
         instanceData = WgpuJava.createFloatArrayPointer(floatData);       // native memory buffer for one instance to aid write buffer
 
-        shaderStd = new ShaderProgram("shaders/modelbatchUber.wgsl","");      // todo get from library storage
-        shaderNormalMap = new ShaderProgram("shaders/modelbatchUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
+        loadShaders();
+    }
+
+    // to allow hot-loading of shaders
+    public void loadShaders(){
+        shaderStd = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","");      // todo get from library storage
+        shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
+
     }
 
 
@@ -206,7 +213,7 @@ public class ModelBatch implements Disposable {
         // make a new bind group every time we change texture
         if(material != prevMaterial) {
             prevMaterial = material;
-            writeMaterialUniforms(materialUniformBuffer, materialUniformIndex, material.baseColor);
+            writeMaterialUniforms(materialUniformBuffer, materialUniformIndex, material);
             materialBindGroupLayout = createMaterialBindGroupLayout();
             if(materialBindGroup != null)
                 wgpu.BindGroupRelease(materialBindGroup);
@@ -536,14 +543,19 @@ public class ModelBatch implements Disposable {
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, FRAME_UB_SIZE);
     }
 
-    private void writeMaterialUniforms( Pointer uniformBuffer, int uniformIndex, Color color){
+    private void writeMaterialUniforms( Pointer uniformBuffer, int uniformIndex, Material material){
         if(uniformIndex >= MAX_MATERIALS)
             throw new RuntimeException("ModelBatch: Too many models");
 
-        setUniformColor(uniformData, 0, color);
+        int offset = 0;
+        offset += setUniformFloat(uniformData, offset, material.metallicFactor);
+        offset += setUniformFloat(uniformData, offset, material.roughnessFactor);
+        offset += 2*4; // padding (important)
+        offset += setUniformColor(uniformData, offset, material.baseColor);
+
 
         int uniformStride = ceilToNextMultiple(MATERIAL_UB_SIZE, uniformAlignment);
-        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, uniformIndex*uniformStride, uniformData, MATERIAL_UB_SIZE);
+        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, uniformIndex*uniformStride, uniformData, offset);
     }
 
 

@@ -11,6 +11,8 @@ public class MaterialData {
     public Color diffuse;
     public Color specular;
     public Color emissive;
+    public float metallicFactor;
+    public float roughnessFactor;
     public float specularExponent;
     public float transparency;
     public Color opticalDensity;

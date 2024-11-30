@@ -1,5 +1,7 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g3d;
 
+import com.monstrous.graphics.Renderable;
+import com.monstrous.graphics.RenderablePool;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Quaternion;
 import com.monstrous.math.Vector3;
@@ -56,7 +58,7 @@ public class Node {
         }
     }
 
-    public void getRenderables( ArrayList<Renderable> renderables, ArrayList<Matrix4> instanceTransforms, RenderablePool pool ){
+    public void getRenderables(ArrayList<Renderable> renderables, ArrayList<Matrix4> instanceTransforms, RenderablePool pool ){
         if(nodeParts != null) {
             for(Matrix4 modelTransform : instanceTransforms) {
                 for (NodePart nodePart : nodeParts) {

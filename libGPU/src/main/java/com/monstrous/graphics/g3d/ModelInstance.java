@@ -1,5 +1,7 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g3d;
 
+import com.monstrous.graphics.Renderable;
+import com.monstrous.graphics.RenderablePool;
 import com.monstrous.math.Matrix4;
 
 import java.util.ArrayList;
@@ -33,7 +35,7 @@ public class ModelInstance {
         this.instanceTransforms = instanceTransforms;       // or should we copy?
     }
 
-    public void getRenderables( ArrayList<Renderable> renderables, RenderablePool pool ){
+    public void getRenderables(ArrayList<Renderable> renderables, RenderablePool pool ){
         for(Node rootNode : model.rootNodes)
             rootNode.getRenderables(renderables, instanceTransforms, pool);
     }

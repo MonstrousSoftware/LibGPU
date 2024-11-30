@@ -1,4 +1,6 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g3d;
+
+import com.monstrous.graphics.Material;
 
 public class NodePart {
 

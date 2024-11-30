@@ -1,6 +1,9 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g3d.Mesh;
+import com.monstrous.graphics.g3d.MeshPart;
+import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.math.Matrix4;

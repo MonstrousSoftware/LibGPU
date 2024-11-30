@@ -1,6 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.ScreenUtils;
 
 

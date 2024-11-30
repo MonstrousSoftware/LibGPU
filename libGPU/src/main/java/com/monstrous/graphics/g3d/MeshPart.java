@@ -1,4 +1,4 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g3d;
 
 public class MeshPart {
     public Mesh mesh;

@@ -1,6 +1,7 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.g3d;
 
 import com.monstrous.LibGPU;
+import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.wgpu.WGPUBufferDescriptor;
 import com.monstrous.wgpu.WGPUBufferUsage;

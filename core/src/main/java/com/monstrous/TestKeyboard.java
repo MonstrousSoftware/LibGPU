@@ -1,7 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.BitmapFont;
-import com.monstrous.graphics.SpriteBatch;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.Texture;
 import com.monstrous.utils.ScreenUtils;
 
