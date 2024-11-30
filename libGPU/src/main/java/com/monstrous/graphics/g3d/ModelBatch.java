@@ -102,8 +102,10 @@ public class ModelBatch implements Disposable {
 
     // to allow hot-loading of shaders
     public void loadShaders(){
-        shaderStd = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","");      // todo get from library storage
-        shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
+//        shaderStd = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","");      // todo get from library storage
+//        shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
+        shaderStd = new ShaderProgram("shaders/modelbatchUber.wgsl","");      // todo get from library storage
+        shaderNormalMap = new ShaderProgram("shaders/modelbatchUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
 
     }
 

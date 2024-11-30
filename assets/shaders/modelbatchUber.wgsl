@@ -28,6 +28,8 @@ struct FrameUniforms {
 };
 
 struct MaterialUniforms {
+    metallicFactor: f32,
+    roughnessFactor: f32,
     baseColor: vec4f,
 };
 

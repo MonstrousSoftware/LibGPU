@@ -127,30 +127,24 @@ fn F_Schlick(cosTheta : f32, metallic : f32, albedo : vec3f ) -> vec3f {
     return F;
 }
 
-fn BRDF( L : vec3f, V:vec3f, N: vec3f, metallic:f32, roughness:f32, albedo: vec3f) -> vec3f {
+fn BRDF( L : vec3f, V:vec3f, N: vec3f, metallic:f32, roughness:f32, albedo: vec3f, radiance: vec3f) -> vec3f {
     let H = normalize(V+L);
     let NdotV : f32 = clamp(dot(N, V), 0.0, 1.0);
-    let NdotL : f32 = clamp(dot(N, L), 0.0, 1.0);
+    let NdotL : f32 = clamp(dot(N, L), 0.001, 1.0);
     let LdotH : f32 = clamp(dot(L, H), 0.0, 1.0);
     let NdotH : f32 = clamp(dot(N, H), 0.0, 1.0);
 
-    let lightColor = vec3f(1.0);    // temp
-    let radiance : vec3f = lightColor *5;//temp
-
     var Lo = vec3f(0.0);
-    if(NdotL > 0.0){
+    let D = D_GGX(NdotH, roughness);
+    let G = G_SchlickSmith_GGX(NdotL, NdotV, roughness);
+    let F = F_Schlick(NdotV, metallic, albedo);
 
-        let D = D_GGX(NdotH, roughness);
-        let G = G_SchlickSmith_GGX(NdotL, NdotV, roughness);
-        let F = F_Schlick(NdotV, metallic, albedo);
+    let kS = F;
+    let kD = (vec3f(1.0) - kS) * (1.0 - metallic);
 
-        let kS = F;
-        let kD = (vec3f(1.0) - kS) * (1.0 - metallic);
+    let specular = D * F * G / (4.0 * NdotL * NdotV + 0.0001);
 
-        let specular = D * F * G / (4.0 * NdotL * max(NdotV, 0.0) + 0.0001);
-
-        Lo += (kD * albedo/PI + specular) * radiance * NdotL;
-    }
+    Lo += (kD * albedo/PI + specular) * radiance * NdotL;
     return Lo;
 }
 
@@ -178,8 +172,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let N = normalize(in.normal);
 #endif
 
-    let roughness : f32 = material.roughnessFactor;
-    let metallic : f32 = material.metallicFactor;
+    let roughness : f32 = 0.0254; //material.roughnessFactor;
+    let metallic : f32 = 1; //material.metallicFactor;
 
      //var color = vec3f(0.0);
     // todo some of this could go to vertex shader?
@@ -188,17 +182,27 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     // for each directional light
     for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
         let light = uFrame.directionalLights[i];
-
-        let lightColor = light.color.rgb;
+        let radiance = 3*light.color.rgb;
         let L = -light.direction.xyz;
 
-        Lo += BRDF(L, V, N, roughness, metallic, albedo);
+        Lo += BRDF(L, V, N, roughness, metallic, albedo, radiance);
 
     }
 
+    // for each point light
+    for (var i: i32 = 0; i < uFrame.numPointLights; i++) {
+        let light:PointLight = uFrame.pointLights[i];
+        var lightVector =  light.position.xyz - in.worldPosition.xyz;    // vector towards light source
+        let distance:f32 = length(lightVector);
+        let L = normalize(lightVector);
+        let attenuation = light.intensity.x/(1.0+distance*distance);        // todo: constant, linear and quadratic params
+        let radiance = attenuation * light.color.rgb;
+
+        Lo += BRDF(L, V, N, roughness, metallic, albedo, radiance);
+    }
+
     let ambient : vec3f = albedo * uFrame.ambientLightLevel;
-    //var color : vec3f = vec3f(0.0); // = baseColor.rgb * 0.1f;
-    var color  = ambient + Lo; //baseColor * kD * diffuse + kS * specular * light.color.rgb;
+    var color  = ambient + Lo;
 
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
     color += emissiveColor;

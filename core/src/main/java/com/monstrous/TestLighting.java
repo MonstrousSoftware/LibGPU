@@ -50,8 +50,8 @@ public class TestLighting extends ApplicationAdapter {
 //        environment.add( new DirectionalLight(Color.BLUE, new Vector3(.7f,-.2f,0)));
 //        environment.add( new DirectionalLight(Color.RED, new Vector3(0f,1f,0)));
 
-//        environment.add( new PointLight(new Color(1,0,0,1), new Vector3(3f,1f,3), 15f));
-//        environment.add( new PointLight(new Color(1,0,1,1), new Vector3(-3f,1f,3), 5f));
+        environment.add( new PointLight(new Color(1,0,0,1), new Vector3(3f,1f,3), 15f));
+        environment.add( new PointLight(new Color(1,0,1,1), new Vector3(-3f,1f,3), 5f));
         environment.ambientLightLevel = 0.2f;
 
 
