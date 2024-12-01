@@ -143,6 +143,7 @@ fn BRDF( L : vec3f, V:vec3f, N: vec3f, metallic:f32, roughness:f32, albedo: vec3
     let kD = (vec3f(1.0) - kS) * (1.0 - metallic);
 
     let specular = D * F * G / (4.0 * NdotL * NdotV + 0.0001);
+    //let specular = D*G ;
 
     Lo += (kD * albedo/PI + specular) * radiance * NdotL;
     return Lo;
@@ -172,7 +173,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let N = normalize(in.normal);
 #endif
 
-    let roughness : f32 = 0.0254; //material.roughnessFactor;
+    let roughness : f32 = 0.00054; //material.roughnessFactor;
     let metallic : f32 = 1; //material.metallicFactor;
 
      //var color = vec3f(0.0);
