@@ -50,7 +50,9 @@ public class TestLighting extends ApplicationAdapter {
         DirectionalLight dir1 = new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0));
        dir1.setIntensity(5f);
         environment.add( dir1 );
-       // environment.add( new DirectionalLight(new Color(1,1,1,1), new Vector3(-.3f,-.5f,.3f)));
+        DirectionalLight dir2 = new DirectionalLight(new Color(1,1,1,1), new Vector3(-.3f,-.5f,.3f));
+        dir2.setIntensity(2f);
+      environment.add( dir2 );
 //
 //        environment.add( new DirectionalLight(Color.BLUE, new Vector3(.7f,-.2f,0)));
 //        environment.add( new DirectionalLight(Color.RED, new Vector3(0f,1f,0)));
@@ -80,6 +82,8 @@ public class TestLighting extends ApplicationAdapter {
 
 
     public void render(){
+        long frameStart = System.nanoTime();
+
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
             LibGPU.app.exit();
 
@@ -96,12 +100,17 @@ public class TestLighting extends ApplicationAdapter {
 
         // At the end of the frame
 
+        long elapsedNanos = System.nanoTime() - frameStart;
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("fps: " + frames  );
+            System.out.print("fps: " + frames  );
             frames = 0;
             startTime = System.nanoTime();
+
+            System.out.println(" render time (microseconds): " + elapsedNanos/1000  );
         }
         frames++;
+
+
 
     }
 

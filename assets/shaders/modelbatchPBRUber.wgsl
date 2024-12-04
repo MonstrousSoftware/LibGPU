@@ -167,7 +167,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
 
 #ifdef NORMAL_MAP
-    let normalMapStrength = 1.0;
+    let normalMapStrength = 0.8;
 
     let encodedN = textureSample(normalTexture, textureSampler, in.uv).rgb;
     let localN = encodedN * 2.0 - 1.0;
