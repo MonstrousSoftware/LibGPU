@@ -112,8 +112,11 @@ fn D_GGX(NdotH: f32, roughness: f32) -> f32{
 }
 
 fn G_SchlickSmith_GGX(NdotL : f32, NdotV : f32, roughness : f32) -> f32 {
-    let r : f32 = (roughness + 1.0);
-    let k : f32 = (r*r)/8.0;
+//    let r : f32 = (roughness + 1.0);
+//    let k : f32 = (r*r)/8.0;
+
+    let alpha: f32 = roughness * roughness;
+    let k: f32 = alpha / 2.0;
 
     let GL : f32 = NdotL / (NdotL * (1.0 - k) + k);
     let GV : f32 = NdotV / (NdotV * (1.0 - k) + k);
@@ -121,31 +124,37 @@ fn G_SchlickSmith_GGX(NdotL : f32, NdotV : f32, roughness : f32) -> f32 {
 }
 
 
-fn F_Schlick(cosTheta : f32, metallic : f32, albedo : vec3f ) -> vec3f {
-    let F0 : vec3f = mix(vec3(0.04), albedo, metallic);
-    let F : vec3f = F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta,0.0, 1.0), 5.0);
+fn F_Schlick(cosTheta : f32, metallic : f32, baseColor : vec3f ) -> vec3f {
+    let F0 : vec3f = mix(vec3(0.04), baseColor, metallic);
+    let F : vec3f = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
     return F;
 }
 
-fn BRDF( L : vec3f, V:vec3f, N: vec3f, metallic:f32, roughness:f32, albedo: vec3f, radiance: vec3f) -> vec3f {
+fn BRDF( L : vec3f, V:vec3f, N: vec3f, roughness:f32, metallic:f32, baseColor: vec3f) -> vec3f {
     let H = normalize(V+L);
     let NdotV : f32 = clamp(dot(N, V), 0.0, 1.0);
     let NdotL : f32 = clamp(dot(N, L), 0.001, 1.0);
     let LdotH : f32 = clamp(dot(L, H), 0.0, 1.0);
     let NdotH : f32 = clamp(dot(N, H), 0.0, 1.0);
 
-    var Lo = vec3f(0.0);
+    //var Lo = vec3f(0.0);
     let D = D_GGX(NdotH, roughness);
     let G = G_SchlickSmith_GGX(NdotL, NdotV, roughness);
-    let F = F_Schlick(NdotV, metallic, albedo);
+    let F = F_Schlick(NdotV, metallic, baseColor);
 
     let kS = F;
     let kD = (vec3f(1.0) - kS) * (1.0 - metallic);
 
-    let specular = D * F * G / (4.0 * NdotL * NdotV + 0.0001);
+    let specular = D * F * G / (4.0 * max(NdotL, 0.0001) * max(NdotV, 0.0001));
     //let specular = D*G ;
 
-    Lo += (kD * albedo/PI + specular) * radiance * NdotL;
+    var rhoD = baseColor;
+    rhoD *= vec3(1.0) - F;      //  kD  = 1 - kS
+    rhoD *= (1.0 - metallic);
+    let diffuse : vec3f = rhoD / PI;
+
+    let Lo : vec3f = diffuse + specular;
+    //Lo += (kD * albedo/PI + specular) * radiance * NdotL;
     return Lo;
 }
 
@@ -155,7 +164,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let V = normalize(in.viewDirection);
 
-    let albedo = textureSample(albedoTexture, textureSampler, in.uv).rgb * material.baseColorFactor.rgb;
+    let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgb * material.baseColorFactor.rgb;
 
 
 #ifdef NORMAL_MAP
@@ -173,21 +182,22 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let N = normalize(in.normal);
 #endif
 
-    let roughness : f32 = 0.00054; //material.roughnessFactor;
-    let metallic : f32 = 1; //material.metallicFactor;
+    let roughness : f32 = material.roughnessFactor;
+    let metallic : f32 = material.metallicFactor;
 
      //var color = vec3f(0.0);
     // todo some of this could go to vertex shader?
 
-    var Lo = vec3f(0.0);
+    var radiance = vec3f(0.0);
     // for each directional light
     for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
         let light = uFrame.directionalLights[i];
-        let radiance = 3*light.color.rgb;
-        let L = -light.direction.xyz;
 
-        Lo += BRDF(L, V, N, roughness, metallic, albedo, radiance);
-
+        let L = -light.direction.xyz;       // L is vector towards light
+        let irradiance = max(dot(L, N), 0.0);
+        if(irradiance > 0.0) {
+            radiance += BRDF(L, V, N, roughness, metallic, baseColor) * irradiance *  light.color.rgb;
+        }
     }
 
     // for each point light
@@ -197,16 +207,17 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         let distance:f32 = length(lightVector);
         let L = normalize(lightVector);
         let attenuation = light.intensity.x/(1.0+distance*distance);        // todo: constant, linear and quadratic params
-        let radiance = attenuation * light.color.rgb;
 
-        Lo += BRDF(L, V, N, roughness, metallic, albedo, radiance);
+        let irradiance = attenuation * max(dot(L, N), 0.0);
+        if(irradiance > 0.0) {
+            radiance += BRDF(L, V, N, roughness, metallic, baseColor) * irradiance *  light.color.rgb;
+        }
     }
 
-    let ambient : vec3f = albedo * uFrame.ambientLightLevel;
-    var color  = ambient + Lo;
-
+    let ambient : vec3f = baseColor * uFrame.ambientLightLevel;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
-    color += emissiveColor;
+
+    var color  = radiance + ambient + emissiveColor;
 
     //color = Lo;
     //color = N*0.5 + 0.5;
