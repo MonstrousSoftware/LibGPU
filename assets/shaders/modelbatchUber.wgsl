@@ -5,12 +5,13 @@ const MAX_POINT_LIGHTS : i32 = 5;
 struct DirectionalLight {
     color: vec4f,
     direction: vec4f,
+    intensity: f32,
 }
 
 struct PointLight {
     color: vec4f,
     position: vec4f,
-    intensity: vec4f,
+    intensity: f32,
 }
 
 
@@ -48,6 +49,7 @@ struct ModelUniforms {
 #ifdef NORMAL_MAP
 @group(1) @binding(4) var normalTexture: texture_2d<f32>;
 #endif
+@group(1) @binding(5) var metallicRoughnessTexture: texture_2d<f32>;
 
 
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;

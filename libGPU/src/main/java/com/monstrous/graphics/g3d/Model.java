@@ -74,6 +74,8 @@ public class Model implements Disposable {
                 mat.metallicFactor = gltfMat.pbrMetallicRoughness.metallicFactor;
             if(gltfMat.pbrMetallicRoughness.baseColorTexture >= 0)
                 mat.diffuseMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.pbrMetallicRoughness.baseColorTexture).source).uri;
+            if(gltfMat.pbrMetallicRoughness.metallicRoughnessTexture >= 0)
+                mat.metallicRoughnessMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.pbrMetallicRoughness.metallicRoughnessTexture).source).uri;
             if(gltfMat.normalTexture >= 0)
                 mat.normalMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.normalTexture).source).uri;
             if(gltfMat.emissiveTexture >= 0)

@@ -355,13 +355,21 @@ public class ModelBatch implements Disposable {
         normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
         normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
 
+        // metallic roughness texture binding is included even if it is not used
+        WGPUBindGroupLayoutEntry mrTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(mrTexBindingLayout);
+        mrTexBindingLayout.setBinding(location++);
+        mrTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        mrTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+        mrTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
         bindGroupLayoutDesc.setNextInChain();
         bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Material)");
         bindGroupLayoutDesc.setEntryCount(location);
 
-        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, emissiveTexBindingLayout, normalTexBindingLayout );
+        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, emissiveTexBindingLayout, normalTexBindingLayout, mrTexBindingLayout );
         return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
@@ -400,18 +408,21 @@ public class ModelBatch implements Disposable {
 
         Texture diffuse = material.diffuseTexture;
 
+
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(5);
+        bindGroupDesc.setEntryCount(6);
         if(hasNormalMap && material.normalTexture != null) {
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), material.normalTexture.getBinding(4) );
+            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), material.normalTexture.getBinding(4),
+                    material.metallicRoughnessTexture.getBinding(5));
         }
         else {
             // use diffuse map as fake (ignored) normal map, so that we maintain the same layout
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), diffuse.getBinding(4) );
+            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), diffuse.getBinding(4),
+                    material.metallicRoughnessTexture.getBinding(5));
         }
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
@@ -494,7 +505,7 @@ public class ModelBatch implements Disposable {
         offset += setUniformVec3(uniformData, offset, camera.position);
 
         offset += setUniformFloat(uniformData, offset, environment == null ? 0 : environment.ambientLightLevel);
-        offset += 3*4; // padding (important)
+        offset += 3*4; // padding (important) align to 16 bytes
 
         int numDirLights = 0;
         if(environment != null){
@@ -505,6 +516,8 @@ public class ModelBatch implements Disposable {
                     dirLight = (DirectionalLight) light;
                     offset += setUniformColor(uniformData, offset, dirLight.color);
                     offset += setUniformVec3(uniformData, offset, dirLight.direction);
+                    offset += setUniformFloat(uniformData, offset, dirLight.intensity);
+                    offset += 3*4; // padding
                 }
             }
             // fixed length array, fill with placeholders up to MAX_DIR_LIGHTS
@@ -512,6 +525,8 @@ public class ModelBatch implements Disposable {
                 dirLight = defaultDirectionalLight; // will be ignored anyway
                 offset += setUniformColor(uniformData, offset, dirLight.color);
                 offset += setUniformVec3(uniformData, offset, dirLight.direction);
+                offset += setUniformFloat(uniformData, offset, dirLight.intensity);
+                offset += 3*4; // padding
             }
         }
         offset += setUniformInteger(uniformData, offset, numDirLights);

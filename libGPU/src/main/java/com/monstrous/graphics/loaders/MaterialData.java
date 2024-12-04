@@ -19,6 +19,13 @@ public class MaterialData {
     public int illuminationModel;
     public String diffuseMapFilePath;
     public String normalMapFilePath;
+    public String metallicRoughnessMapFilePath;
     public String emissiveMapFilePath;
     public String occlusionMapFilePath;
+
+    public MaterialData() {
+        // default -1 means undefined
+        metallicFactor = -1;
+        roughnessFactor = -1;
+    }
 }

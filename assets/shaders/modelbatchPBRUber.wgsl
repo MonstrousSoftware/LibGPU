@@ -5,6 +5,7 @@ const MAX_POINT_LIGHTS : i32 = 5;
 struct DirectionalLight {
     color: vec4f,
     direction: vec4f,
+    intensity: vec4f,   // temp
 }
 
 struct PointLight {
@@ -20,8 +21,10 @@ struct FrameUniforms {
     combinedMatrix : mat4x4f,
     cameraPosition : vec4f,
     ambientLightLevel : f32,
+
     directionalLights : array<DirectionalLight, MAX_DIR_LIGHTS>,
     numDirectionalLights: i32,
+
     pointLights : array<PointLight, MAX_POINT_LIGHTS>,
     numPointLights: i32,
 
@@ -49,6 +52,7 @@ struct ModelUniforms {
 #ifdef NORMAL_MAP
 @group(1) @binding(4) var normalTexture: texture_2d<f32>;
 #endif
+@group(1) @binding(5) var metallicRoughnessTexture: texture_2d<f32>;
 
 
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
@@ -126,7 +130,7 @@ fn G_SchlickSmith_GGX(NdotL : f32, NdotV : f32, roughness : f32) -> f32 {
 
 fn F_Schlick(cosTheta : f32, metallic : f32, baseColor : vec3f ) -> vec3f {
     let F0 : vec3f = mix(vec3(0.04), baseColor, metallic);
-    let F : vec3f = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    let F : vec3f = F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
     return F;
 }
 
@@ -137,30 +141,25 @@ fn BRDF( L : vec3f, V:vec3f, N: vec3f, roughness:f32, metallic:f32, baseColor: v
     let LdotH : f32 = clamp(dot(L, H), 0.0, 1.0);
     let NdotH : f32 = clamp(dot(N, H), 0.0, 1.0);
 
-    //var Lo = vec3f(0.0);
-    let D = D_GGX(NdotH, roughness);
-    let G = G_SchlickSmith_GGX(NdotL, NdotV, roughness);
-    let F = F_Schlick(NdotV, metallic, baseColor);
+    // calculate terms for microfacet shading model
+    let D :f32      = D_GGX(NdotH, roughness);
+    let G :f32      = G_SchlickSmith_GGX(NdotL, NdotV, roughness);
+    let F :vec3f    = F_Schlick(NdotV, metallic, baseColor);
 
     let kS = F;
     let kD = (vec3f(1.0) - kS) * (1.0 - metallic);
 
-    let specular = D * F * G / (4.0 * max(NdotL, 0.0001) * max(NdotV, 0.0001));
-    //let specular = D*G ;
+    let specular : vec3f = D * F * G / (4.0 * max(NdotL, 0.0001) * max(NdotV, 0.0001));
 
-    var rhoD = baseColor;
-    rhoD *= vec3(1.0) - F;      //  kD  = 1 - kS
-    rhoD *= (1.0 - metallic);
-    let diffuse : vec3f = rhoD / PI;
+    let diffuse : vec3f = kD * baseColor / PI;
 
     let Lo : vec3f = diffuse + specular;
-    //Lo += (kD * albedo/PI + specular) * radiance * NdotL;
     return Lo;
 }
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-    let normalMapStrength = 1.0;
+
 
     let V = normalize(in.viewDirection);
 
@@ -168,6 +167,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
 
 #ifdef NORMAL_MAP
+    let normalMapStrength = 1.0;
+
     let encodedN = textureSample(normalTexture, textureSampler, in.uv).rgb;
     let localN = encodedN * 2.0 - 1.0;
     // The TBN matrix converts directions from the local space to the world space
@@ -182,8 +183,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let N = normalize(in.normal);
 #endif
 
-    let roughness : f32 = material.roughnessFactor;
-    let metallic : f32 = material.metallicFactor;
+    // metallic is coded in the blue channel and roughness in the green channel
+    let mrSample = textureSample(metallicRoughnessTexture, textureSampler, in.uv).rgb;
+
+    let roughness : f32 = mrSample.g * material.roughnessFactor;
+    let metallic : f32 = mrSample.b * material.metallicFactor;
 
      //var color = vec3f(0.0);
     // todo some of this could go to vertex shader?
@@ -194,7 +198,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         let light = uFrame.directionalLights[i];
 
         let L = -light.direction.xyz;       // L is vector towards light
-        let irradiance = max(dot(L, N), 0.0);
+        let irradiance = max(dot(L, N), 0.0)* light.intensity.x;
         if(irradiance > 0.0) {
             radiance += BRDF(L, V, N, roughness, metallic, baseColor) * irradiance *  light.color.rgb;
         }
@@ -219,10 +223,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     var color  = radiance + ambient + emissiveColor;
 
+    //color = vec3f(roughness);
     //color = Lo;
     //color = N*0.5 + 0.5;
     //color = encodedN;
-    //color = baseColor;
+    //color = N;
     //color = uFrame.pointLights[0].color.rgb;
     return vec4f(color, 1.0);
 }

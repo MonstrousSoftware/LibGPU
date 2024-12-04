@@ -6,6 +6,7 @@ import com.monstrous.utils.Disposable;
 public class Material implements Disposable {
     public Color baseColor;
     public Texture diffuseTexture;
+    public Texture metallicRoughnessTexture;
     public Texture normalTexture;
     public Texture emissiveTexture;
     public boolean hasNormalMap;
@@ -19,27 +20,32 @@ public class Material implements Disposable {
             fileName = "textures\\white.png";
         else
             fileName = materialData.diffuseMapFilePath;
-        this.diffuseTexture = new Texture(fileName, false);            // todo until mipmapping is fixed
+        this.diffuseTexture = new Texture(fileName, true);
         // todo use caching of textures in case we reuse the same texture in different materials
 
         hasNormalMap = false;
         if( materialData.normalMapFilePath != null) {
             fileName = materialData.normalMapFilePath;
-            this.normalTexture = new Texture(fileName, false);            // todo until mipmapping is fixed
+            this.normalTexture = new Texture(fileName, true);
             hasNormalMap = true;
         }
 
         fileName = "textures\\black.png";
         if( materialData.emissiveMapFilePath != null)
             fileName = materialData.emissiveMapFilePath;
-        this.emissiveTexture = new Texture(fileName, false);
+        this.emissiveTexture = new Texture(fileName, true);
 
         roughnessFactor = materialData.roughnessFactor;
         if(roughnessFactor < 0)
-            roughnessFactor = 0.5f; // default
+            roughnessFactor = 1f; // default
         metallicFactor = materialData.metallicFactor;
         if(metallicFactor < 0)
-            metallicFactor = 0; // default
+            metallicFactor = 1f; // default
+
+        fileName = "textures\\white.png";
+        if( materialData.metallicRoughnessMapFilePath != null)
+            fileName = materialData.metallicRoughnessMapFilePath;
+        this.metallicRoughnessTexture = new Texture(fileName, true);
     }
 
     public Material(Texture texture) {
