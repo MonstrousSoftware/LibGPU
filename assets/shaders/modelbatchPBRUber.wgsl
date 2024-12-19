@@ -197,7 +197,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
         let light = uFrame.directionalLights[i];
 
-        let L = -light.direction.xyz;       // L is vector towards light
+        let L = -normalize(light.direction.xyz);       // L is vector towards light
         let irradiance = max(dot(L, N), 0.0)* light.intensity.x;
         if(irradiance > 0.0) {
             radiance += BRDF(L, V, N, roughness, metallic, baseColor) * irradiance *  light.color.rgb;
