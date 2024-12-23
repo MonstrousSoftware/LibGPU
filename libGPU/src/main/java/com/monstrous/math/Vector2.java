@@ -31,6 +31,25 @@ public class Vector2 {
         return this;
     }
 
+    public Vector2 scl (float scalar) {
+        return this.set(this.x * scalar, this.y * scalar);
+    }
+
+
+    public float len2(){
+        return x*x + y*y;
+    }
+
+    public float len(){
+        return (float)Math.sqrt( x*x + y*y);
+    }
+
+    public Vector2 nor () {
+        final float len2 = this.len2();
+        if (len2 == 0f || len2 == 1f) return this;
+        return this.scl(1f / (float)Math.sqrt(len2));
+    }
+
     @Override
     public String toString () {
         return "(" + x + "," + y + ")";

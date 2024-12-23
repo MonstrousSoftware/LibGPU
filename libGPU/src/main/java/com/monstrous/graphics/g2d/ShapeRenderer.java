@@ -3,18 +3,21 @@ package com.monstrous.graphics.g2d;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Vector2;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
-// todo optim: index data could be precalculated and static
-// todo support packed color to reduce vertex size
 
-public class SpriteBatch implements Disposable {
+// based on SpriteBatch but without textures.
+// for now does very limited set of shapes
+// only does line mode, not fill mode.
+
+public class ShapeRenderer implements Disposable {
     private WGPU wgpu;
     private ShaderProgram shader;
-    private int maxSprites;
+    private int maxShapes;
     private boolean begun;
     private int vertexSize;
     private float[] vertFloats;
@@ -37,28 +40,31 @@ public class SpriteBatch implements Disposable {
     private Pipelines pipelines;
     private Pipeline prevPipeline;
     private boolean blendingEnabled;
+    private float lineWidth;
 
 
-    public SpriteBatch() {
+    public ShapeRenderer() {
         this(8192); // default nr
+
 
     }
 
-    public SpriteBatch(int maxSprites) {
-        this.maxSprites = maxSprites;
+    public ShapeRenderer(int maxShapes) {
+        this.maxShapes = maxShapes;
         begun = false;
         wgpu = LibGPU.wgpu;
 
-        // vertex: x, y, u, v, r, g, b, a
-        vertexSize = 8; // floats
-        shader = new ShaderProgram("shaders/sprite.wgsl");
+        // vertex: x, y, r, g, b, a
+        vertexSize = 6; // floats
+        shader = new ShaderProgram("shaders/shape.wgsl");
 
-        indexValues = new short[maxSprites * 6];    // 6 indices per sprite
-        vertFloats = new float[maxSprites * 4 * vertexSize];
+        indexValues = new short[maxShapes * 6];    // 6 indices per rectangle
+        vertFloats = new float[maxShapes * 4 * vertexSize]; // 4 points per rectangle
 
         projectionMatrix = new Matrix4();
 
-        tint = new Color(1,1,1,1);
+        tint = new Color(Color.WHITE);
+        lineWidth = 1f;
 
         createBuffers();
 
@@ -67,8 +73,7 @@ public class SpriteBatch implements Disposable {
 
         vertexAttributes = new VertexAttributes();
         vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add("uv",          WGPUVertexFormat.Float32x2, 1 );
-        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 2 );
+        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 1 );
         vertexAttributes.end();
 
         pipelines = new Pipelines();
@@ -146,15 +151,15 @@ public class SpriteBatch implements Disposable {
         wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Short.BYTES);
 
 
-        Pointer texBG = makeBindGroup(texture);
+        Pointer bg = makeBindGroup(texture);
 
         // Set vertex buffer while encoding the render pass
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
         wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, ibOffset, (long)numRects*6*Short.BYTES);
 
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
+        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, WgpuJava.createNullPointer());
         wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
-        wgpu.BindGroupRelease(texBG);
+        wgpu.BindGroupRelease(bg);
 
 
         vbOffset += numFloats*Float.BYTES;
@@ -178,45 +183,81 @@ public class SpriteBatch implements Disposable {
         }
     }
 
-
-    public void draw(Texture texture, float x, float y) {
-        draw(texture, x, y, texture.getWidth(), texture.getHeight());
+    public void setLineWidth(float w){
+        this.lineWidth = w;
     }
 
-    public void draw(Texture texture, float x, float y, float w, float h){
-        this.draw(texture, x, y, w, h, 0f, 1f, 1f, 0f);
+    public void rect(float x, float y, float w, float h){
+        addRect(x,y,w,h);
     }
 
-    public void draw(TextureRegion region, float x, float y){
-        // note: v2 is top of glyph, v the bottom
-        this.draw(region.texture, x, y, region.width, region.height, region.u, region.v2, region.u2, region.v  );
+    public void box(float x1, float y1, float x2, float y2){
+        addRect(x1, y1, lineWidth+x2-x1, lineWidth);
+        addRect(x1, y2, lineWidth+x2-x1, lineWidth);
+        addRect(x1, y1, lineWidth, lineWidth+y2-y1);
+        addRect(x2, y1,  lineWidth, lineWidth+y2-y1);
     }
 
-    public void draw(TextureRegion region, float x, float y, float w, float h){
-        this.draw(region.texture, x, y, w, h, region.u, region.v, region.u2, region.v2  );
+    public void triangle (float x1, float y1, float x2, float y2, float x3, float y3){
+        line(x1, y1, x2, y2);
+        line(x2, y2, x3, y3);
+        line(x3, y3, x1, y1);
+    }
+
+    private Vector2 N = new Vector2();
+
+    public void line(float x1, float y1, float x2, float y2){
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        N.set(dy,dx).nor().scl(lineWidth);
+
+        int i = numRects * 4 * vertexSize;
+        vertFloats[i++] = x1-N.x;
+        vertFloats[i++] = y1+N.y;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
+
+        vertFloats[i++] = x2-N.x;
+        vertFloats[i++] = y2+N.y;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
+
+        vertFloats[i++] = x2+N.x;
+        vertFloats[i++] = y2-N.y;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
+
+        vertFloats[i++] = x1+N.x;
+        vertFloats[i++] = y1-N.y;
+        vertFloats[i++] = tint.r;
+        vertFloats[i++] = tint.g;
+        vertFloats[i++] = tint.b;
+        vertFloats[i++] = tint.a;
+
+        int k = numRects * 6;
+        short start = (short)(numRects * 4);
+        indexValues[k++] = start;
+        indexValues[k++] = (short)(start + 1);
+        indexValues[k++] = (short)(start + 2);
+
+        indexValues[k++] = start;
+        indexValues[k++] = (short)(start + 2);
+        indexValues[k++] = (short)(start + 3);
+        numRects++;
+
     }
 
 
-    public void draw (Texture texture, float x, float y, float width, float height, float u, float v, float u2, float v2) {
-        if (!begun)
-            throw new RuntimeException("SpriteBatch: Must call begin() before draw().");
-
-        if(numRects == maxSprites)
-            throw new RuntimeException("SpriteBatch: Too many sprites.");
-
-        if(texture != this.texture)  // changing texture, need to flush what we have so far
-            flush();
-
-        this.texture = texture;
-        addRect(x, y, width, height, u, v, u2, v2);
-    }
-
-    private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
+    private void addRect(float x, float y, float w, float h) {
         int i = numRects * 4 * vertexSize;
         vertFloats[i++] = x;
         vertFloats[i++] = y;
-        vertFloats[i++] = u;
-        vertFloats[i++] = v;
         vertFloats[i++] = tint.r;
         vertFloats[i++] = tint.g;
         vertFloats[i++] = tint.b;
@@ -224,8 +265,6 @@ public class SpriteBatch implements Disposable {
 
         vertFloats[i++] = x;
         vertFloats[i++] = y + h;
-        vertFloats[i++] = u;
-        vertFloats[i++] = v2;
         vertFloats[i++] = tint.r;
         vertFloats[i++] = tint.g;
         vertFloats[i++] = tint.b;
@@ -233,8 +272,6 @@ public class SpriteBatch implements Disposable {
 
         vertFloats[i++] = x + w;
         vertFloats[i++] = y + h;
-        vertFloats[i++] = u2;
-        vertFloats[i++] = v2;
         vertFloats[i++] = tint.r;
         vertFloats[i++] = tint.g;
         vertFloats[i++] = tint.b;
@@ -242,8 +279,6 @@ public class SpriteBatch implements Disposable {
 
         vertFloats[i++] = x + w;
         vertFloats[i++] = y;
-        vertFloats[i++] = u2;
-        vertFloats[i++] = v;
         vertFloats[i++] = tint.r;
         vertFloats[i++] = tint.g;
         vertFloats[i++] = tint.b;
@@ -274,14 +309,14 @@ public class SpriteBatch implements Disposable {
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Vertex buffer");
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex);
-        bufferDesc.setSize((long) maxSprites * 4 * vertexSize * Float.BYTES);
+        bufferDesc.setSize((long) maxShapes * 4 * vertexSize * Float.BYTES);
         bufferDesc.setMappedAtCreation(0L);
         vertexBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index);
-        long sz = (long) maxSprites * 6 * Short.BYTES;
+        long sz = (long) maxShapes * 6 * Short.BYTES;
         sz = (sz + 3) & ~3; // round up to the next multiple of 4
         bufferDesc.setSize(sz);
         bufferDesc.setMappedAtCreation(0L);
@@ -321,25 +356,12 @@ public class SpriteBatch implements Disposable {
         bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
         bindingLayout.getBuffer().setHasDynamicOffset(0L);
 
-        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(texBindingLayout);
-        texBindingLayout.setBinding(1);
-        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(samplerBindingLayout);
-        samplerBindingLayout.setBinding(2);
-        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
-
         // Create a bind group layout
         WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
         bindGroupLayoutDesc.setNextInChain();
-        bindGroupLayoutDesc.setLabel("SpriteBatch texture binding group layout");
-        bindGroupLayoutDesc.setEntryCount(3);
-        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
+        bindGroupLayoutDesc.setLabel("ShapeRenderer binding group layout");
+        bindGroupLayoutDesc.setEntryCount(1);
+        bindGroupLayoutDesc.setEntries(bindingLayout); //, texBindingLayout, samplerBindingLayout);
         return LibGPU.wgpu.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
@@ -358,8 +380,8 @@ public class SpriteBatch implements Disposable {
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(3);
-        bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
+        bindGroupDesc.setEntryCount(1);
+        bindGroupDesc.setEntries(binding); //, texture.getBinding(1), texture.getSamplerBinding(2));
         return LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
@@ -368,10 +390,10 @@ public class SpriteBatch implements Disposable {
         layouts[0] = bindGroupLayout.address();
         Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
 
-        // Create the pipeline layout to define the bind groups needed : 3 bind group
+        // Create the pipeline layout to define the bind groups needed : 1 bind group
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
         layoutDesc.setNextInChain();
-        layoutDesc.setLabel("SpriteBatch Pipeline Layout");
+        layoutDesc.setLabel("ShapeRenderer Pipeline Layout");
         layoutDesc.setBindGroupLayoutCount(1);
         layoutDesc.setBindGroupLayouts(layoutPtr);
         return LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
