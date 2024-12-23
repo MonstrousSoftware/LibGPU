@@ -64,6 +64,23 @@ public class BitmapFont implements Disposable {
         }
     }
 
+    public int width(String text){
+        byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);
+        int gx = 0;
+        for(int i = 0; i < ascii.length; i++){
+            byte k = ascii[i];
+            Glyph glyph = glyphMap.get((int)k);
+            if(glyph == null)
+                glyph = fallbackGlyph;
+            gx += glyph.xadvance;
+            if(i < ascii.length-1) {
+                byte nextCh = ascii[i + 1];
+                gx += getKerning(glyph.id, nextCh);
+            }
+        }
+        return gx;
+    }
+
     void setKerning(int first, int second, int amount){
         int key = (first << 16)| second;
         kerningMap.put(key, amount);

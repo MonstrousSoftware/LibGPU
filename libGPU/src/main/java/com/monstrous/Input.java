@@ -158,11 +158,18 @@ public class Input {
         return mouseY;
     }
 
-    public void processMouseMove(float x, float y){
+    public void processMouseMove(int x, int y){
         mouseX = x;
         mouseY = y;
         if(LibGPU.input.processor != null)
-            LibGPU.input.processor.mouseMove( x, y);
+            LibGPU.input.processor.mouseMoved( x, y);
+    }
+
+    public void processMouseClick(int x, int y, int button){
+        mouseX = x;
+        mouseY = y;
+        if(LibGPU.input.processor != null)
+            LibGPU.input.processor.touchDown( x, y, 0, button);     // todo pointer?
     }
 
     public void processScroll(float x, float y){

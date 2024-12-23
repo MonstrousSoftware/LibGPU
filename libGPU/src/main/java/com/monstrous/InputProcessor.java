@@ -6,7 +6,9 @@ public interface InputProcessor {
 
     boolean keyUp(int keycode);
 
-    boolean mouseMove(float x, float y);
+    boolean mouseMoved(int x, int y);
+
+    boolean touchDown (int x, int y, int pointer, int button);
 
     boolean scrolled(float x, float y);
 

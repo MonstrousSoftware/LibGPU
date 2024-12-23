@@ -20,9 +20,23 @@ public class Block extends Widget implements Disposable {
         this.color.set(color);
     }
 
-    public void draw(SpriteBatch batch){
+    public void draw(SpriteBatch batch, float xoffset, float yoffset){
         batch.setColor(color);
-        batch.draw(texture, x, y, w, h);
+        batch.draw(texture, x+xoffset, y+yoffset, w, h);
+    }
+
+    @Override
+    public void onMouseEnters(){
+        setColor(Color.BLUE);
+    }
+
+    @Override
+    public void onMouseExits(){
+        setColor(Color.WHITE);
+    }
+
+    public void onClick(){
+        setColor(Color.RED);
     }
 
 

@@ -1,13 +1,11 @@
 package com.monstrous;
 
+import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.TextureRegion;
 import com.monstrous.graphics.g2d.SpriteBatch;
-import com.monstrous.scene2d.Align;
-import com.monstrous.scene2d.Block;
-import com.monstrous.scene2d.Stage;
-import com.monstrous.scene2d.Table;
+import com.monstrous.scene2d.*;
 import com.monstrous.utils.ScreenUtils;
 
 
@@ -56,8 +54,24 @@ public class TestGUI extends ApplicationAdapter {
         b4.setSize(20,20);
         table.add(b4);
 
+
+
         stage.add(table);
+
+        Label.LabelStyle style = new Label.LabelStyle();
+        style.font = new BitmapFont();
+        style.bgColor = Color.GRAY;
+        style.fontColor = Color.WHITE;
+
+        Label label = new Label("libGPU", style);
+        label.setSize( 1, 1);
+        label.setAlign(Align.center);
+        label.pad(10);
+        stage.add(label);
+
         stage.debug();
+
+        LibGPU.input.setInputProcessor(stage);
 
     }
 

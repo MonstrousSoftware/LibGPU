@@ -1,5 +1,6 @@
 package com.monstrous.scene2d;
 
+import com.monstrous.InputProcessor;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.g2d.ShapeRenderer;
 import com.monstrous.graphics.g2d.SpriteBatch;
@@ -8,7 +9,7 @@ import com.monstrous.utils.Disposable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Stage implements Disposable {
+public class Stage implements Disposable, InputProcessor {
 
     private SpriteBatch batch;
     private List<Widget> widgets;
@@ -53,12 +54,12 @@ public class Stage implements Disposable {
         table.pack();
 
         batch.begin();
-        table.draw(batch);
+        table.draw(batch, 0, 0);
         batch.end();
 
         if(debug){
             shapeRenderer.begin();
-            table.debugDraw(shapeRenderer);
+            table.debugDraw(shapeRenderer, 0, 0);
             shapeRenderer.end();
         }
     }
@@ -68,5 +69,52 @@ public class Stage implements Disposable {
         batch.dispose();
         if(shapeRenderer != null)
             shapeRenderer.dispose();
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int x, int y, int pointer, int button) {
+        System.out.println("mouse click "+x+", "+y);
+        y = cell.h - y;
+
+        Widget found = table.hit(x, y, 0, 0);
+        if(found != null)
+            found.onClick();
+
+        return false;
+    }
+
+    private Widget widgetUnderMouse;
+
+    @Override
+    public boolean mouseMoved(int x, int y) {
+        y = cell.h - y;
+
+        Widget found = table.hit(x, y, 0, 0);
+        if(found != null) {
+            found.onMouseEnters();
+            widgetUnderMouse = found;
+        }
+        else if (widgetUnderMouse != null){
+            widgetUnderMouse.onMouseExits();
+            widgetUnderMouse = null;
+        }
+        return false;
+    }
+
+
+
+    @Override
+    public boolean scrolled(float x, float y) {
+        return false;
     }
 }

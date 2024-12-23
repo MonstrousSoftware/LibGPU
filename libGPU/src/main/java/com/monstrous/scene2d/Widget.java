@@ -8,12 +8,10 @@ public class Widget {
 
     static public Color debugActorColor = new Color(0, 1, 0, 1);
 
-    protected int x, y, w, h;
+    protected int x, y, w, h;   // x, y relative to parentCell
     protected int padLeft, padRight, padTop, padBottom;
     protected Cell parentCell;
     protected int alignment;
-
-
 
     public void setSize(int w, int h){
         this.w = w;
@@ -48,8 +46,6 @@ public class Widget {
         } else {
             x = (parentCell.w - w) / 2;
         }
-        x += parentCell.x;
-
         // y goes up
         if((alignment & Align.bottom) != 0){
             y = padBottom;
@@ -58,7 +54,6 @@ public class Widget {
         } else {
             y = (parentCell.h - h) / 2;
         }
-        y += parentCell.y;
     }
 
     public void setAlign(int align){
@@ -69,13 +64,34 @@ public class Widget {
 
     }
 
-    public void draw(SpriteBatch batch){
+    public void draw(SpriteBatch batch, float xoffset, float yoffset){
 
     }
 
-    public void debugDraw(ShapeRenderer sr){
+    public void onMouseEnters(){
+
+    }
+
+    public void onMouseExits(){
+
+    }
+
+    public void onClick(){
+
+    }
+
+    public Widget hit(float mx, float my, float xoff, float yoff){
+        if(mx < x+parentCell.x+xoff || my < y+parentCell.y+yoff || mx > x+parentCell.x+w+xoff || my >  y+parentCell.y+h+yoff)
+            return null;
+        return this;
+    }
+
+    public void debugDraw(ShapeRenderer sr, float xoffset, float yoffset){
         sr.setColor(debugActorColor);
         sr.setLineWidth(1f);
-        sr.box(x, y, x+w, y+h);
+        float xb = x+xoffset+parentCell.x;
+        float yb = y+yoffset+parentCell.y;
+
+        sr.box(xb, yb, xb+w, yb+h);
     }
 }

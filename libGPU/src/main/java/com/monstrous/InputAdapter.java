@@ -13,7 +13,12 @@ public class InputAdapter implements InputProcessor {
     }
 
     @Override
-    public boolean mouseMove(float x, float y) {
+    public boolean touchDown(int x, int y, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int x, int y) {
         return false;
     }
 

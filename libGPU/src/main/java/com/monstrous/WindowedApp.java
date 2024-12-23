@@ -20,6 +20,7 @@ public class WindowedApp {
     private long windowHandle;
     private double currentTime;
     private Application application;
+    private int mouseX, mouseY;
 
     private final GLFWFramebufferSizeCallback resizeCallback = new GLFWFramebufferSizeCallback() {
         @Override
@@ -39,7 +40,16 @@ public class WindowedApp {
     private final GLFWCursorPosCallback mouseMoveCallback = new GLFWCursorPosCallback() {
         @Override
         public void invoke (long windowHandle, double x, double y) {
-            LibGPU.input.processMouseMove((float)x, (float)y);
+            mouseX = (int)x;
+            mouseY = (int)y;
+            LibGPU.input.processMouseMove(mouseX, mouseY);
+        }
+    };
+
+    private final GLFWMouseButtonCallback mouseCallback = new GLFWMouseButtonCallback() {
+        @Override
+        public void invoke(long window, int button, int action, int mods) {
+            LibGPU.input.processMouseClick(mouseX, mouseY, button);
         }
     };
 
@@ -79,6 +89,7 @@ public class WindowedApp {
         glfwSetCursorPosCallback(window, mouseMoveCallback);
         glfwSetScrollCallback(window, scrollCallback);
         glfwSetKeyCallback(window, keyCallback);
+        glfwSetMouseButtonCallback(window, mouseCallback);
 
 
 

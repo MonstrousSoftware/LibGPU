@@ -58,6 +58,8 @@ public class Table extends Widget {
         // assume same size for all cells...
         int colWidth = parentCell.w / numCols;
         int rowHeight = parentCell.h / numRows;
+        w = parentCell.w;   // fill parent by default (for now)
+        h = parentCell.h;
         for(Cell cell : cells){
             cell.setSize(colWidth, rowHeight);
             cell.setPosition(cell.col * colWidth, ((numRows-1)-cell.row) * rowHeight);
@@ -68,21 +70,33 @@ public class Table extends Widget {
         }
     }
 
-    public void draw(SpriteBatch batch){
+    public void draw(SpriteBatch batch, float xoffset, float yoffset){
         for(Widget widget : widgets)
-            widget.draw(batch);
+            widget.draw(batch, xoffset+widget.parentCell.x, yoffset+widget.parentCell.y);
     }
 
     @Override
-    public void debugDraw(ShapeRenderer sr){
+    public Widget hit(float mx, float my, float xoff, float yoff){
+        if(mx < x+parentCell.x+xoff || my < y+parentCell.y+yoff || mx > x+parentCell.x+w+xoff || my >  y+parentCell.y+h+yoff)
+            return null;
+        for(Widget widget : widgets){
+            Widget found = widget.hit(mx, my, parentCell.x+xoff, parentCell.y+yoff);
+            if(found != null)
+                return found;
+        }
+        return null;
+    }
+
+    @Override
+    public void debugDraw(ShapeRenderer sr, float xoffset, float yoffset){
         sr.setColor(debugCellColor);
         sr.setLineWidth(1f);
         for(Cell cell : cells)
-            sr.box(cell.x, cell.y, cell.x+cell.w, cell.y+cell.h);
-        sr.setColor(debugActorColor);
+            sr.box(xoffset+cell.x, xoffset+cell.y, cell.x+cell.w, cell.y+cell.h);
+//        sr.setColor(debugActorColor);
+//        for(Widget widget : widgets)
+//            sr.box(xoffset+widget.x, xoffset+widget.y, widget.x+widget.w, widget.y+widget.h);
         for(Widget widget : widgets)
-            sr.box(widget.x, widget.y, widget.x+widget.w, widget.y+widget.h);
-        for(Widget widget : widgets)
-            widget.debugDraw(sr);
+            widget.debugDraw(sr, xoffset, yoffset);
     }
 }
