@@ -57,18 +57,32 @@ public class TestGUI extends ApplicationAdapter {
 
 
         stage.add(table);
+        //table.pack();
+
+        Table t2 = new Table();
 
         Label.LabelStyle style = new Label.LabelStyle();
         style.font = new BitmapFont();
-        style.bgColor = Color.GRAY;
         style.fontColor = Color.WHITE;
 
         Label label = new Label("libGPU", style);
         label.setSize( 1, 1);
         label.setAlign(Align.center);
         label.pad(10);
-        stage.add(label);
+        t2.add(label);
 
+        t2.row();
+
+        Button button = new Button();
+        button.setSize(100, 30);
+        button.setAlign(Align.center);
+        t2.add(button);
+        //t2.pack();
+
+        stage.add(t2);
+        //t2.pack();
+
+        //stage.pack();
         stage.debug();
 
         LibGPU.input.setInputProcessor(stage);

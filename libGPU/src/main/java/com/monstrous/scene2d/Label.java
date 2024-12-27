@@ -8,75 +8,48 @@ import com.monstrous.utils.Disposable;
 
 public class Label extends Widget implements Disposable {
 
-    private Texture texture;
     private String text;
     private LabelStyle style;
-    private Color color;    // TMP
     private int tx, ty;
-    private int textAlignment;
-    private int textPad;
+
 
     public static class LabelStyle {
         public Color fontColor;
-        public Color bgColor;
         public BitmapFont font;
     }
 
     public Label( String text, LabelStyle style ) {
-        texture = new Texture("textures/white.png", false);
         this.text = text;
         this.style = style;
-        this.color = new Color(style.bgColor);
-        textAlignment = Align.center;
-        textPad = 10;
-
     }
 
     public void setText(String text){
         this.text = text;
     }
 
-    public void setColor( Color color ){
-        this.color.set(color);
-    }
 
     @Override
     public void setPosition(){
         super.setPosition();
+        tx = x;
+        ty = y+ style.font.getLineHeight();
         int textWidth = style.font.width(text);
-        if(w < textWidth + 2*textPad)
-            w = textWidth + 2*textPad;
-        if(h < style.font.getLineHeight()+2*textPad)
-            h = style.font.getLineHeight() + 2*textPad;
-
-        ty = y + style.font.getLineHeight() + (h- style.font.getLineHeight())/2;
-        tx = x + (w  - textWidth)/2;
+        if(w < textWidth)
+            w = textWidth;
+        if(h < style.font.getLineHeight())
+            h = style.font.getLineHeight();
     }
 
-    public void draw(SpriteBatch batch, float xoffset, float yoffset){
-        batch.setColor(color);
-        batch.draw(texture, x+xoffset, y+yoffset, w, h);
+    @Override
+    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+
         batch.setColor(style.fontColor);
-        style.font.draw(batch, text, tx+(int)xoffset, ty+(int)yoffset);
+        style.font.draw(batch, text, tx+xoffset+ parentCell.x, ty+yoffset+ parentCell.y);
     }
-
-    @Override
-    public void onMouseEnters(){
-        setColor(Color.BLUE);
-    }
-
-    @Override
-    public void onMouseExits(){
-        setColor(style.bgColor);
-    }
-
-    public void onClick(){
-        setColor(Color.RED);
-    }
-
 
     @Override
     public void dispose() {
-        texture.dispose();
+
     }
+
 }

@@ -64,7 +64,7 @@ public class Widget {
 
     }
 
-    public void draw(SpriteBatch batch, float xoffset, float yoffset){
+    public void draw(SpriteBatch batch, int xoffset, int yoffset){
 
     }
 
@@ -86,12 +86,12 @@ public class Widget {
         return this;
     }
 
-    public void debugDraw(ShapeRenderer sr, float xoffset, float yoffset){
+    public void debugDraw(ShapeRenderer sr, int xoffset, int yoffset){
         sr.setColor(debugActorColor);
         sr.setLineWidth(1f);
         float xb = x+xoffset+parentCell.x;
         float yb = y+yoffset+parentCell.y;
 
-        sr.box(xb, yb, xb+w, yb+h);
+        sr.box(xb-1, yb-1, xb+w, yb+h);
     }
 }

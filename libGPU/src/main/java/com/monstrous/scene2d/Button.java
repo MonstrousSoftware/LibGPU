@@ -5,13 +5,12 @@ import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.Disposable;
 
-public class Block extends Widget implements Disposable {
-
+public class Button extends Widget implements Disposable {
 
     private Texture texture;
     private Color color;
 
-    public Block() {
+    public Button() {
         texture = new Texture("textures/white.png", false);
         this.color = new Color(Color.WHITE);
     }
@@ -23,7 +22,7 @@ public class Block extends Widget implements Disposable {
     @Override
     public void draw(SpriteBatch batch, int xoffset, int yoffset){
         batch.setColor(color);
-        batch.draw(texture, x+xoffset+parentCell.x, y+yoffset+parentCell.y, w, h);
+        batch.draw(texture, x+xoffset, y+yoffset, w, h);
     }
 
     @Override

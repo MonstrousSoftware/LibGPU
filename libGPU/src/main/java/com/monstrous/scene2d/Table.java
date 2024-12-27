@@ -62,6 +62,8 @@ public class Table extends Widget {
         h = parentCell.h;
         for(Cell cell : cells){
             cell.setSize(colWidth, rowHeight);
+            // note y goes up, but row numbers go down
+            // the position of a cell is for the bottom left corner
             cell.setPosition(cell.col * colWidth, ((numRows-1)-cell.row) * rowHeight);
         }
         for(Widget widget : widgets) {
@@ -70,10 +72,7 @@ public class Table extends Widget {
         }
     }
 
-    public void draw(SpriteBatch batch, float xoffset, float yoffset){
-        for(Widget widget : widgets)
-            widget.draw(batch, xoffset+widget.parentCell.x, yoffset+widget.parentCell.y);
-    }
+
 
     @Override
     public Widget hit(float mx, float my, float xoff, float yoff){
@@ -87,16 +86,18 @@ public class Table extends Widget {
         return null;
     }
 
+    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+        for(Widget widget : widgets)
+            widget.draw(batch, xoffset+parentCell.x, yoffset+parentCell.y);
+    }
+
     @Override
-    public void debugDraw(ShapeRenderer sr, float xoffset, float yoffset){
+    public void debugDraw(ShapeRenderer sr, int xoffset, int yoffset){
         sr.setColor(debugCellColor);
         sr.setLineWidth(1f);
         for(Cell cell : cells)
-            sr.box(xoffset+cell.x, xoffset+cell.y, cell.x+cell.w, cell.y+cell.h);
-//        sr.setColor(debugActorColor);
-//        for(Widget widget : widgets)
-//            sr.box(xoffset+widget.x, xoffset+widget.y, widget.x+widget.w, widget.y+widget.h);
+            sr.box(xoffset+cell.x+parentCell.x, xoffset+cell.y+parentCell.y, cell.x+cell.w, cell.y+cell.h);
         for(Widget widget : widgets)
-            widget.debugDraw(sr, xoffset, yoffset);
+            widget.debugDraw(sr, xoffset+parentCell.x, yoffset+parentCell.y);
     }
 }

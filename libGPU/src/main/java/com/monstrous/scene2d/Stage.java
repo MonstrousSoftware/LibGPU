@@ -54,12 +54,12 @@ public class Stage implements Disposable, InputProcessor {
         table.pack();
 
         batch.begin();
-        table.draw(batch, 0, 0);
+        table.draw(batch, cell.x, cell.y);
         batch.end();
 
         if(debug){
             shapeRenderer.begin();
-            table.debugDraw(shapeRenderer, 0, 0);
+            table.debugDraw(shapeRenderer, cell.x, cell.y);
             shapeRenderer.end();
         }
     }
