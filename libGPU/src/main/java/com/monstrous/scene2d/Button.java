@@ -5,7 +5,7 @@ import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.Disposable;
 
-public class Button extends Widget implements Disposable {
+public class Button extends Table implements Disposable {
 
     private Texture texture;
     private Color color;

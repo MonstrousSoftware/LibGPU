@@ -76,7 +76,9 @@ public class TestGUI extends ApplicationAdapter {
         Button button = new Button();
         button.setSize(100, 30);
         button.setAlign(Align.center);
+        //button.add(new Label("OKAY", style));
         t2.add(button);
+        button.pack();
         //t2.pack();
 
         stage.add(t2);

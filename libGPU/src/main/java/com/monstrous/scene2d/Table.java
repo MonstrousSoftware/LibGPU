@@ -56,6 +56,8 @@ public class Table extends Widget {
     @Override
     public void pack(){
         // assume same size for all cells...
+        if(numCols == 0 || numRows == 0)
+            return;
         int colWidth = parentCell.w / numCols;
         int rowHeight = parentCell.h / numRows;
         w = parentCell.w;   // fill parent by default (for now)
