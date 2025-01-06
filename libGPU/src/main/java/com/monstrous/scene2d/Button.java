@@ -1,0 +1,47 @@
+package com.monstrous.scene2d;
+
+import com.monstrous.graphics.Color;
+import com.monstrous.graphics.Texture;
+import com.monstrous.graphics.g2d.SpriteBatch;
+import com.monstrous.utils.Disposable;
+
+public class Button extends Table implements Disposable {
+
+    private Texture texture;
+    private Color color;
+
+    public Button() {
+        texture = new Texture("textures/white.png", false);
+        this.color = new Color(Color.WHITE);
+    }
+
+    public void setColor( Color color ){
+        this.color.set(color);
+    }
+
+    @Override
+    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+        batch.setColor(color);
+        batch.draw(texture, x+xoffset, y+yoffset, w, h);
+    }
+
+    @Override
+    public void onMouseEnters(){
+        setColor(Color.BLUE);
+    }
+
+    @Override
+    public void onMouseExits(){
+        setColor(Color.WHITE);
+    }
+
+    public void onClick(){
+        setColor(Color.RED);
+    }
+
+
+    @Override
+    public void dispose() {
+        texture.dispose();
+    }
+}

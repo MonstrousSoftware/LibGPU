@@ -18,9 +18,9 @@ public class CameraController extends InputAdapter {
     }
 
     @Override
-    public boolean mouseMove(float x, float y) {
-        anglex = -2f * (float) Math.PI * x / LibGPU.graphics.getWidth();
-        angley = (float) Math.PI * (0.5f + y / LibGPU.graphics.getHeight());
+    public boolean mouseMoved(int x, int y) {
+        anglex = -2f * (float) Math.PI * (float)x / LibGPU.graphics.getWidth();
+        angley = (float) Math.PI * (0.5f + (float)y / LibGPU.graphics.getHeight());
         update();
         return true;
     }
