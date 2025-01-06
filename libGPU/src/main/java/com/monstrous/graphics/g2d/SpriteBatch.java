@@ -13,7 +13,9 @@ import jnr.ffi.Pointer;
 
 public class SpriteBatch implements Disposable {
     private WGPU wgpu;
-    private ShaderProgram shader;
+    private ShaderProgram defaultShader;
+    private boolean ownsDefaultShader;
+    private ShaderProgram customShader;
     private int maxSprites;
     private boolean begun;
     private int vertexSize;
@@ -45,13 +47,24 @@ public class SpriteBatch implements Disposable {
     }
 
     public SpriteBatch(int maxSprites) {
+        this(maxSprites, null);
+    }
+
+    public SpriteBatch(int maxSprites, ShaderProgram defaultShader) {
         this.maxSprites = maxSprites;
         begun = false;
         wgpu = LibGPU.wgpu;
 
         // vertex: x, y, u, v, r, g, b, a
         vertexSize = 8; // floats
-        shader = new ShaderProgram("shaders/sprite.wgsl");
+        if (defaultShader == null) {
+            this.defaultShader = new ShaderProgram("shaders/sprite.wgsl");
+            ownsDefaultShader = true;
+        } else {
+            this.defaultShader = defaultShader;
+            ownsDefaultShader = false;
+        }
+        customShader = null;
 
         indexValues = new short[maxSprites * 6];    // 6 indices per sprite
         vertFloats = new float[maxSprites * 4 * vertexSize];
@@ -72,8 +85,7 @@ public class SpriteBatch implements Disposable {
         vertexAttributes.end();
 
         pipelines = new Pipelines();
-        pipelineSpec = new PipelineSpecification(vertexAttributes, shader);
-
+        pipelineSpec = new PipelineSpecification(vertexAttributes, this.defaultShader);
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }
@@ -125,6 +137,7 @@ public class SpriteBatch implements Disposable {
         blendingEnabled = true;
         pipelineSpec.enableBlending();
         pipelineSpec.disableDepth();
+        pipelineSpec.shader = defaultShader;
         setPipeline();
     }
 
@@ -176,6 +189,17 @@ public class SpriteBatch implements Disposable {
             wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
             prevPipeline = pipeline;
         }
+    }
+
+    public void setShader(ShaderProgram shaderProgram){
+        if(shaderProgram == null)
+            pipelineSpec.shader = defaultShader;
+        else {
+            pipelineSpec.shader = shaderProgram;
+            customShader = shaderProgram;
+        }
+        flush();
+        setPipeline();
     }
 
 
@@ -405,6 +429,7 @@ public class SpriteBatch implements Disposable {
         wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
-        shader.dispose();
+        if(ownsDefaultShader)
+            defaultShader.dispose();
     }
 }

@@ -24,6 +24,7 @@ public class BitmapFont implements Disposable {
     private Glyph fallbackGlyph;
     public boolean disableKerning = false;
     private Map<Integer, Integer> kerningMap = new HashMap<>();
+    private float scaleX, scaleY;
 
 
     public class Glyph {
@@ -45,48 +46,49 @@ public class BitmapFont implements Disposable {
         this.fntFilePath = fntFilePath;
         glyphMap = new HashMap<>();
         parseFontFile(fntFilePath);
+        setScale(1f);
     }
 
-    public void draw(SpriteBatch batch, String text, int x, int y){
+    public void draw(SpriteBatch batch, String text, float x, float y){
         byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);
-        int gx = x;
+        float gx = x;
         for(int i = 0; i < ascii.length; i++){
             byte k = ascii[i];
             Glyph glyph = glyphMap.get((int)k);
             if(glyph == null)
                 glyph = fallbackGlyph;
-            batch.draw(glyph.region, gx+glyph.xoffset, y - glyph.yoffset);
-            gx += glyph.xadvance;
+            batch.draw(glyph.region, gx+glyph.xoffset*scaleX, y - (glyph.h+glyph.yoffset)*scaleY, glyph.w*scaleX, glyph.h*scaleY);
+            gx += glyph.xadvance*scaleX;
             if(i < ascii.length-1) {
                 byte nextCh = ascii[i + 1];
-                gx += getKerning(glyph.id, nextCh);
+                gx += getKerning(glyph.id, nextCh)*scaleX;
             }
         }
     }
 
-    public int width(String text){
+    public float width(String text){
         byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);
-        int gx = 0;
+        float gx = 0;
         for(int i = 0; i < ascii.length; i++){
             byte k = ascii[i];
             Glyph glyph = glyphMap.get((int)k);
             if(glyph == null)
                 glyph = fallbackGlyph;
-            gx += glyph.xadvance;
+            gx += glyph.xadvance*scaleX;
             if(i < ascii.length-1) {
                 byte nextCh = ascii[i + 1];
-                gx += getKerning(glyph.id, nextCh);
+                gx += getKerning(glyph.id, nextCh)*scaleX;
             }
         }
         return gx;
     }
 
-    void setKerning(int first, int second, int amount){
+    private void setKerning(int first, int second, int amount){
         int key = (first << 16)| second;
         kerningMap.put(key, amount);
     }
 
-    int getKerning(int first, int second){
+    private int getKerning(int first, int second){
         if(disableKerning)
             return 0;
         int key = (first << 16)| second;
@@ -97,8 +99,18 @@ public class BitmapFont implements Disposable {
         return amount;
     }
 
+    public void setScale(float sx, float sy){
+        scaleX = sx;
+        scaleY = sy;
+    }
+
+    // same scale for X and Y
+    public void setScale(float scale){
+        setScale(scale, scale);
+    }
+
     public int getLineHeight(){
-        return lineHeight;
+        return (int) (lineHeight*scaleY);
     }
 
     private void parseFontFile(String filePath){
@@ -120,23 +132,23 @@ public class BitmapFont implements Disposable {
 
             //page id=0 file="lsans-15.png"
             if(trimmed.startsWith("page")){
-                String words[] = trimmed.split("\"");
+                String[] words = trimmed.split("\"");
                 if(words.length < 2)
                     throw new RuntimeException("Invalid page line in fnt file "+path);
                 textureFilePath = words[1];
                 fontTexture = new Texture(path+textureFilePath, false);
             } else if(trimmed.startsWith("chars count")){
                 // chars count=168
-                String words[] = trimmed.split("=");
+                String[] words = trimmed.split("=");
                 if(words.length < 2)
                     throw new RuntimeException("Invalid chars count line in fnt file "+path);
                 charsCount = Integer.parseInt(words[1]);
             } else if(trimmed.startsWith("common ")) {
                 // common lineHeight=18 base=14 scaleW=256 scaleH=128 pages=1 packed=0
                 //
-                String words[] = trimmed.split(" ");
+                String[] words = trimmed.split(" ");
                 for (String word : words) {
-                    String vars[] = word.split("=");
+                    String[] vars = word.split("=");
                     if (vars[0].contentEquals("lineHeight"))
                         lineHeight = Integer.parseInt(vars[1]);
                     else if (vars[0].contentEquals("base"))
@@ -146,9 +158,9 @@ public class BitmapFont implements Disposable {
                 // kerning first=86 second=58 amount=-1
                 //
                 int first = -1, second = -1, amount = 0;
-                String words[] = trimmed.split(" ");
+                String[] words = trimmed.split(" ");
                 for (String word : words) {
-                    String vars[] = word.split("=");
+                    String[] vars = word.split("=");
                     if (vars[0].contentEquals("first"))
                         first = Integer.parseInt(vars[1]);
                     else if (vars[0].contentEquals("second"))

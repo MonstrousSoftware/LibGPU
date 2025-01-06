@@ -34,7 +34,6 @@ struct MaterialUniforms {
     metallicFactor: f32,
     roughnessFactor: f32,
     baseColorFactor: vec4f,
-
 };
 
 struct ModelUniforms {

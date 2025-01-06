@@ -43,14 +43,14 @@ public class TextButton extends Widget implements Disposable {
     @Override
     public void setPosition(){
         super.setPosition();
-        int textWidth = style.font.width(text);
+        float textWidth = style.font.width(text);
         if(w < textWidth + 2*textPad)
-            w = textWidth + 2*textPad;
+            w = (int)textWidth + 2*textPad;
         if(h < style.font.getLineHeight()+2*textPad)
             h = style.font.getLineHeight() + 2*textPad;
 
         ty = y + style.font.getLineHeight() + (h- style.font.getLineHeight())/2;
-        tx = x + (w  - textWidth)/2;
+        tx = x + (int)(w  - textWidth)/2;
     }
 
     public void draw(SpriteBatch batch, float xoffset, float yoffset){

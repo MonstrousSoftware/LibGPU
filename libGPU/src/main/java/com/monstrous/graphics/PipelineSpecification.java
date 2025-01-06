@@ -32,6 +32,7 @@ public class PipelineSpecification {
     }
 
     public PipelineSpecification(PipelineSpecification spec) {
+        this.name  = spec.name;
         this.vertexAttributes = spec.vertexAttributes;       // should be deep copy
         this.shader = spec.shader;
         this.hasDepth = spec.hasDepth;

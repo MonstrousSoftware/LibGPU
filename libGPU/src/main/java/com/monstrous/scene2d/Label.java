@@ -2,7 +2,6 @@ package com.monstrous.scene2d;
 
 import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
-import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.Disposable;
 
@@ -33,9 +32,9 @@ public class Label extends Widget implements Disposable {
         super.setPosition();
         tx = x;
         ty = y+ style.font.getLineHeight();
-        int textWidth = style.font.width(text);
+        float textWidth = style.font.width(text);
         if(w < textWidth)
-            w = textWidth;
+            w = (int)textWidth;
         if(h < style.font.getLineHeight())
             h = style.font.getLineHeight();
     }
