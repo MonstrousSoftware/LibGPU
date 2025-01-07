@@ -9,13 +9,13 @@ public class Launcher {
         System.out.println("Hello, world!");
         ApplicationConfiguration config = new ApplicationConfiguration();
 
-        config.setSize(800, 600);
+        config.setSize(1200, 800);
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.Vulkan;
         //config.enableGPUtiming = true;
 
-        new Application(new TestFontSDF(), config);
+        new Application(new TestSpriteBatch(), config);
 
     }
 }

@@ -39,11 +39,11 @@ public class SpriteBatch implements Disposable {
     private Pipelines pipelines;
     private Pipeline prevPipeline;
     private boolean blendingEnabled;
+    private Pointer vertexData, indexData;
 
 
     public SpriteBatch() {
         this(8192); // default nr
-
     }
 
     public SpriteBatch(int maxSprites) {
@@ -62,18 +62,38 @@ public class SpriteBatch implements Disposable {
             ownsDefaultShader = true;
         } else {
             this.defaultShader = defaultShader;
-            ownsDefaultShader = false;
+            ownsDefaultShader = false;  // don't dispose it
         }
         customShader = null;
 
         indexValues = new short[maxSprites * 6];    // 6 indices per sprite
         vertFloats = new float[maxSprites * 4 * vertexSize];
 
+        createBuffers();
+
+        vertexData = WgpuJava.createDirectPointer(maxSprites * 4 * vertexSize * Float.BYTES);
+        indexData = WgpuJava.createDirectPointer( maxSprites*6*Short.BYTES);
+        for(int i = 0; i < maxSprites; i++){
+            int k = i * 6;
+            short start = (short)(i * 4);
+            indexValues[k++] = start;
+            indexValues[k++] = (short)(start + 1);
+            indexValues[k++] = (short)(start + 2);
+
+            indexValues[k++] = start;
+            indexValues[k++] = (short)(start + 2);
+            indexValues[k++] = (short)(start + 3);
+        }
+        // Upload index data to the buffer
+//        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Short.BYTES);
+        indexData.put(0, indexValues, 0, maxSprites*6);
+        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, indexData, maxSprites*6*Short.BYTES);
+
         projectionMatrix = new Matrix4();
 
         tint = new Color(1,1,1,1);
 
-        createBuffers();
+
 
         bindGroupLayout = createBindGroupLayout();
         pipelineLayout = makePipelineLayout(bindGroupLayout);
@@ -148,22 +168,22 @@ public class SpriteBatch implements Disposable {
         // Add number of rectangles from vertFloats[] and indexValues[] the GPU's vertex and index buffer
         //
         int numFloats = numRects * 4 * vertexSize;
-        Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
-        data.put(0, vertFloats, 0, numFloats);
-        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, data, (int) numFloats*Float.BYTES);
+        //Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
+        vertexData.put(0, vertFloats, 0, numFloats);
+        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexData, (int) numFloats*Float.BYTES);
 
 
         // Upload index data to the buffer
-        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Short.BYTES);
-        idata.put(0, indexValues, 0, numRects*6);
-        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Short.BYTES);
+//        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Short.BYTES);
+//        indexData.put(0, indexValues, 0, numRects*6);
+//        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, indexData, (int) numRects*6*Short.BYTES);
 
 
         Pointer texBG = makeBindGroup(texture);
 
         // Set vertex buffer while encoding the render pass
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, ibOffset, (long)numRects*6*Short.BYTES);
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
 
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
         wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
@@ -228,11 +248,12 @@ public class SpriteBatch implements Disposable {
         if(numRects == maxSprites)
             throw new RuntimeException("SpriteBatch: Too many sprites.");
 
-        if(texture != this.texture)  // changing texture, need to flush what we have so far
+        if(texture != this.texture) { // changing texture, need to flush what we have so far
             flush();
-
-        this.texture = texture;
+            this.texture = texture;
+        }
         addRect(x, y, width, height, u, v, u2, v2);
+        numRects++;
     }
 
     private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
@@ -272,17 +293,6 @@ public class SpriteBatch implements Disposable {
         vertFloats[i++] = tint.g;
         vertFloats[i++] = tint.b;
         vertFloats[i++] = tint.a;
-
-        int k = numRects * 6;
-        short start = (short)(numRects * 4);
-        indexValues[k++] = start;
-        indexValues[k++] = (short)(start + 1);
-        indexValues[k++] = (short)(start + 2);
-
-        indexValues[k++] = start;
-        indexValues[k++] = (short)(start + 2);
-        indexValues[k++] = (short)(start + 3);
-        numRects++;
     }
 
 
