@@ -8,6 +8,11 @@ import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.ShortBuffer;
+
 // todo optim: index data could be precalculated and static
 // todo support packed color to reduce vertex size
 
@@ -19,8 +24,9 @@ public class SpriteBatch implements Disposable {
     private int maxSprites;
     private boolean begun;
     private int vertexSize;
-    private float[] vertFloats;
-    private short[] indexValues;
+    private ByteBuffer vertexBB;        // byte buffer
+    private FloatBuffer vertexData;     // float buffer view on the byte buffer
+    private Pointer vertexDataPtr;      // Pointer wrapped around the byte buffer
     private int numRects;
     private Color tint;
     private Pointer vertexBuffer;
@@ -35,11 +41,9 @@ public class SpriteBatch implements Disposable {
     private Matrix4 projectionMatrix;
     private Pointer renderPass;
     private int vbOffset;
-    private int ibOffset;
     private Pipelines pipelines;
     private Pipeline prevPipeline;
     private boolean blendingEnabled;
-    private Pointer vertexData, indexData;
 
 
     public SpriteBatch() {
@@ -66,34 +70,18 @@ public class SpriteBatch implements Disposable {
         }
         customShader = null;
 
-        indexValues = new short[maxSprites * 6];    // 6 indices per sprite
-        vertFloats = new float[maxSprites * 4 * vertexSize];
-
         createBuffers();
 
-        vertexData = WgpuJava.createDirectPointer(maxSprites * 4 * vertexSize * Float.BYTES);
-        indexData = WgpuJava.createDirectPointer( maxSprites*6*Short.BYTES);
-        for(int i = 0; i < maxSprites; i++){
-            int k = i * 6;
-            short start = (short)(i * 4);
-            indexValues[k++] = start;
-            indexValues[k++] = (short)(start + 1);
-            indexValues[k++] = (short)(start + 2);
+        fillIndexBuffer();
 
-            indexValues[k++] = start;
-            indexValues[k++] = (short)(start + 2);
-            indexValues[k++] = (short)(start + 3);
-        }
-        // Upload index data to the buffer
-//        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Short.BYTES);
-        indexData.put(0, indexValues, 0, maxSprites*6);
-        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, indexData, maxSprites*6*Short.BYTES);
+        vertexBB = ByteBuffer.allocateDirect(maxSprites * 4 * vertexSize * Float.BYTES);
+        vertexBB.order(ByteOrder.nativeOrder());  // important
+        vertexData = vertexBB.asFloatBuffer();
+        vertexDataPtr = Pointer.wrap(WgpuJava.getRuntime(), vertexBB);
 
         projectionMatrix = new Matrix4();
 
         tint = new Color(1,1,1,1);
-
-
 
         bindGroupLayout = createBindGroupLayout();
         pipelineLayout = makePipelineLayout(bindGroupLayout);
@@ -108,6 +96,27 @@ public class SpriteBatch implements Disposable {
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.defaultShader);
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
+    }
+
+    // the index buffer is fixed and only has to be filled on start-up
+    private void fillIndexBuffer(){
+        ByteBuffer bb = ByteBuffer.allocateDirect(maxSprites*6*Short.BYTES);
+        bb.order(ByteOrder.nativeOrder());  // important
+        ShortBuffer indexData = bb.asShortBuffer();
+        for(int i = 0; i < maxSprites; i++){
+            short vertexOffset = (short)(i * 4);
+            // two triangles per sprite
+            indexData.put(vertexOffset);
+            indexData.put((short)(vertexOffset + 1));
+            indexData.put((short)(vertexOffset + 2));
+
+            indexData.put(vertexOffset);
+            indexData.put((short)(vertexOffset + 2));
+            indexData.put((short)(vertexOffset + 3));
+        }
+        indexData.flip();
+        Pointer indexDataPtr = Pointer.wrap(WgpuJava.getRuntime(), bb);
+        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, indexDataPtr, maxSprites*6*Short.BYTES);
     }
 
     public void resize(int w, int h) {
@@ -149,7 +158,7 @@ public class SpriteBatch implements Disposable {
         begun = true;
         numRects = 0;
         vbOffset = 0;
-        ibOffset = 0;
+        vertexData.rewind();
 
         prevPipeline = null;
         // set default state
@@ -165,24 +174,17 @@ public class SpriteBatch implements Disposable {
         if(numRects == 0)
             return;
 
-        // Add number of rectangles from vertFloats[] and indexValues[] the GPU's vertex and index buffer
+        // Add number of vertices to the GPU's vertex buffer
         //
         int numFloats = numRects * 4 * vertexSize;
-        //Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
-        vertexData.put(0, vertFloats, 0, numFloats);
-        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexData, (int) numFloats*Float.BYTES);
+        int numBytes = numFloats * Float.BYTES;
 
-
-        // Upload index data to the buffer
-//        Pointer idata = WgpuJava.createDirectPointer( numRects*6*Short.BYTES);
-//        indexData.put(0, indexValues, 0, numRects*6);
-//        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, indexData, (int) numRects*6*Short.BYTES);
-
+        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexDataPtr, numBytes);
 
         Pointer texBG = makeBindGroup(texture);
 
         // Set vertex buffer while encoding the render pass
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
+        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numBytes);
         wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
 
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
@@ -190,8 +192,7 @@ public class SpriteBatch implements Disposable {
         wgpu.BindGroupRelease(texBG);
 
 
-        vbOffset += numFloats*Float.BYTES;
-        ibOffset += numRects*6*Short.BYTES;
+        vbOffset += numBytes;
         numRects = 0;   // reset
     }
 
@@ -212,13 +213,13 @@ public class SpriteBatch implements Disposable {
     }
 
     public void setShader(ShaderProgram shaderProgram){
+        flush();
         if(shaderProgram == null)
             pipelineSpec.shader = defaultShader;
         else {
             pipelineSpec.shader = shaderProgram;
             customShader = shaderProgram;
         }
-        flush();
         setPipeline();
     }
 
@@ -257,42 +258,41 @@ public class SpriteBatch implements Disposable {
     }
 
     private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
-        int i = numRects * 4 * vertexSize;
-        vertFloats[i++] = x;
-        vertFloats[i++] = y;
-        vertFloats[i++] = u;
-        vertFloats[i++] = v;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertexData.put(x);
+        vertexData.put(y);
+        vertexData.put(u);
+        vertexData.put(v);
+        vertexData.put(tint.r);
+        vertexData.put(tint.g);
+        vertexData.put(tint.b);
+        vertexData.put(tint.a);
 
-        vertFloats[i++] = x;
-        vertFloats[i++] = y + h;
-        vertFloats[i++] = u;
-        vertFloats[i++] = v2;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertexData.put(x);
+        vertexData.put(y+h);
+        vertexData.put(u);
+        vertexData.put(v2);
+        vertexData.put(tint.r);
+        vertexData.put(tint.g);
+        vertexData.put(tint.b);
+        vertexData.put(tint.a);
 
-        vertFloats[i++] = x + w;
-        vertFloats[i++] = y + h;
-        vertFloats[i++] = u2;
-        vertFloats[i++] = v2;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertexData.put(x+w);
+        vertexData.put(y+h);
+        vertexData.put(u2);
+        vertexData.put(v2);
+        vertexData.put(tint.r);
+        vertexData.put(tint.g);
+        vertexData.put(tint.b);
+        vertexData.put(tint.a);
 
-        vertFloats[i++] = x + w;
-        vertFloats[i++] = y;
-        vertFloats[i++] = u2;
-        vertFloats[i++] = v;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertexData.put(x+w);
+        vertexData.put(y);
+        vertexData.put(u2);
+        vertexData.put(v);
+        vertexData.put(tint.r);
+        vertexData.put(tint.g);
+        vertexData.put(tint.b);
+        vertexData.put(tint.a);
     }
 
 
@@ -337,10 +337,7 @@ public class SpriteBatch implements Disposable {
         float[] uniforms = new float[16];
         Pointer uniformData = WgpuJava.createFloatArrayPointer(uniforms);   // copy to native memory
 
-
-        int offset = 0;
-        setUniformMatrix(uniformData, offset, projectionMatrix);
-        offset += 16*Float.BYTES;
+        setUniformMatrix(uniformData, 0, projectionMatrix);
 
         LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
     }
