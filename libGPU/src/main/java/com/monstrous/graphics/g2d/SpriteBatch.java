@@ -159,7 +159,7 @@ public class SpriteBatch implements Disposable {
         begun = true;
         numRects = 0;
         vbOffset = 0;
-        vertexData.rewind();
+        vertexData.clear();
         ibOffset = 0;
 
         prevPipeline = null;
@@ -180,6 +180,9 @@ public class SpriteBatch implements Disposable {
         //
         int numFloats = numRects * 4 * vertexSize;
         int numBytes = numFloats * Float.BYTES;
+        vertexData.position(vbOffset/Float.BYTES);
+        vertexBB.position(vbOffset);
+
 
         wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexDataPtr, numBytes);
 
@@ -195,6 +198,8 @@ public class SpriteBatch implements Disposable {
 
 
         vbOffset += numBytes;
+        vertexData.position(vbOffset/Float.BYTES);
+        vertexBB.position(vbOffset);
         ibOffset += numRects*6*Short.BYTES;
 
         numRects = 0;   // reset

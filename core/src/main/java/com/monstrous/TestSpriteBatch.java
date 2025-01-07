@@ -40,8 +40,8 @@ public class TestSpriteBatch extends ApplicationAdapter {
 
 
         batch.draw(texture, 400, 100, 100, 100);
-
-        batch.draw(texture2, 600, 200, 100, 100);
+        batch.flush();
+        batch.draw(texture, 600, 200, 100, 100);
 
         batch.draw(texture, 800, 300, 100, 100);
 
