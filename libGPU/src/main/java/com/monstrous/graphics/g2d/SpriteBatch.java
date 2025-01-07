@@ -41,6 +41,7 @@ public class SpriteBatch implements Disposable {
     private Matrix4 projectionMatrix;
     private Pointer renderPass;
     private int vbOffset;
+    private int ibOffset;
     private Pipelines pipelines;
     private Pipeline prevPipeline;
     private boolean blendingEnabled;
@@ -159,6 +160,7 @@ public class SpriteBatch implements Disposable {
         numRects = 0;
         vbOffset = 0;
         vertexData.rewind();
+        ibOffset = 0;
 
         prevPipeline = null;
         // set default state
@@ -184,8 +186,8 @@ public class SpriteBatch implements Disposable {
         Pointer texBG = makeBindGroup(texture);
 
         // Set vertex buffer while encoding the render pass
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numBytes);
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
+        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, numBytes);
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, ibOffset, (long)numRects*6*Short.BYTES);
 
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
         wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
@@ -193,6 +195,8 @@ public class SpriteBatch implements Disposable {
 
 
         vbOffset += numBytes;
+        ibOffset += numRects*6*Short.BYTES;
+
         numRects = 0;   // reset
     }
 

@@ -32,12 +32,19 @@ public class TestSpriteBatch extends ApplicationAdapter {
     public void render(  ){
 
         // SpriteBatch testing
-        ScreenUtils.clear(Color.BLACK);
+        ScreenUtils.clear(Color.WHITE);
         batch.begin();
 
-//        batch.setColor(1, 0, 0, 0.1f);
-//        batch.draw(texture, 0, 0, 100, 100);
-//
+        batch.setColor(Color.WHITE);
+        batch.draw(texture, 0, 0, 100, 100);
+
+
+        batch.draw(texture, 400, 100, 100, 100);
+
+        batch.draw(texture2, 600, 200, 100, 100);
+
+        batch.draw(texture, 800, 300, 100, 100);
+
 //        batch.draw(texture, 0, 0, 300, 300, 0.5f, 0.5f, 0.9f, 0.1f);
 //        batch.draw(texture, 300, 300, 50, 50);
 //        batch.setColor(1, 1, 1, 1);
@@ -52,22 +59,22 @@ public class TestSpriteBatch extends ApplicationAdapter {
 
         //rng.setSeed(1234);
 
-        int W = LibGPU.graphics.getWidth();
-        int H = LibGPU.graphics.getHeight();
-        batch.setColor(0, 1, 0, 1);
-//        for(int x = 0; x < 100; x++){
-//            for(int y = 0; y < 80; y++){
-//                batch.draw(texture2,  x*16, y*16, 32, 32);
-//            }
+//        int W = LibGPU.graphics.getWidth();
+//        int H = LibGPU.graphics.getHeight();
+//        batch.setColor(0, 1, 0, 1);
+////        for(int x = 0; x < 100; x++){
+////            for(int y = 0; y < 80; y++){
+////                batch.draw(texture2,  x*16, y*16, 32, 32);
+////            }
+////        }
+//        float x = 0;
+//        float y = 0;
+//        for (int i = 0; i < 8000; i++) {
+//            x = (x+23)%W;
+//            y = (y+13)%H;
+//            //float y = rng.nextFloat()*H;
+//            batch.draw(texture2,  x, y, 32, 32);
 //        }
-        float x = 0;
-        float y = 0;
-        for (int i = 0; i < 8000; i++) {
-            x = (x+23)%W;
-            y = (y+13)%H;
-            //float y = rng.nextFloat()*H;
-            batch.draw(texture2,  x, y, 32, 32);
-        }
         batch.end();
 
 
