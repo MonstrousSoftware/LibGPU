@@ -2,9 +2,14 @@ package com.monstrous.graphics;
 
 public class TextureRegion {
     public Texture texture;
-    public int width, height;   // pixels
+    public int regionWidth, regionHeight;   // pixels
     public float u,v;
     public float u2, v2;
+
+
+    public TextureRegion(){
+
+    }
 
     // pixel positions from bottom left, width and height in pixels
     public TextureRegion(Texture texture, int x, int y, int width, int height) {
@@ -32,8 +37,8 @@ public class TextureRegion {
         this.v = v;
         this.u2 = u2;
         this.v2 = v2;
-        this.width = Math.round(texture.getWidth() * (u2-u));
-        this.height = Math.round(texture.getHeight() * (v2-v));
+        this.regionWidth = Math.round(texture.getWidth() * (u2-u));
+        this.regionHeight = Math.round(texture.getHeight() * (v2-v));
     }
 
 }

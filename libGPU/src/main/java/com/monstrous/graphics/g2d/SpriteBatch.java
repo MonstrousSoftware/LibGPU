@@ -257,7 +257,7 @@ public class SpriteBatch implements Disposable {
 
     public void draw(TextureRegion region, float x, float y){
         // note: v2 is top of glyph, v the bottom
-        this.draw(region.texture, x, y, region.width, region.height, region.u, region.v2, region.u2, region.v  );
+        this.draw(region.texture, x, y, region.regionWidth, region.regionHeight, region.u, region.v2, region.u2, region.v  );
     }
 
     public void draw(TextureRegion region, float x, float y, float w, float h){
@@ -277,6 +277,25 @@ public class SpriteBatch implements Disposable {
             this.texture = texture;
         }
         addRect(x, y, width, height, u, v, u2, v2);
+        numRects++;
+    }
+
+    public void draw(Texture texture, float[] vertices){
+        if(vertices.length != 32)
+            throw new IllegalArgumentException("SpriteBatch.draw: vertices must have length 32");
+        if (!begun)
+            throw new RuntimeException("SpriteBatch: Must call begin() before draw().");
+
+        if(numRects == maxSprites)
+            throw new RuntimeException("SpriteBatch: Too many sprites.");
+
+        if(texture != this.texture) { // changing texture, need to flush what we have so far
+            flush();
+            this.texture = texture;
+        }
+        for(int i = 0; i < vertices.length; i++){
+            vertexData.put(vertices[i]);
+        }
         numRects++;
     }
 
