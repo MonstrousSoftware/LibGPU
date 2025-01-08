@@ -402,6 +402,10 @@ EXPORT void RenderPassEncoderSetVertexBuffer(WGPURenderPassEncoder renderPassEnc
     wgpuRenderPassEncoderSetVertexBuffer(renderPassEncoder, slot, buffer, offset, size);
 }
 
+EXPORT void RenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEncoder, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+    wgpuRenderPassEncoderSetScissorRect(renderPassEncoder, x, y, width, height);
+}
+
 EXPORT void BindGroupRelease(WGPUBindGroup bindGroup){
     wgpuBindGroupRelease(bindGroup);
 }

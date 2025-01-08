@@ -13,7 +13,6 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
-// todo optim: index data could be precalculated and static
 // todo support packed color to reduce vertex size
 
 public class SpriteBatch implements Disposable {
@@ -24,31 +23,31 @@ public class SpriteBatch implements Disposable {
     private int maxSprites;
     private boolean begun;
     private int vertexSize;
-    private ByteBuffer vertexBB;        // byte buffer
-    private FloatBuffer vertexData;     // float buffer view on the byte buffer
-    private Pointer vertexDataPtr;      // Pointer wrapped around the byte buffer
+    private final FloatBuffer vertexData;     // float buffer view on byte buffer
+    private final Pointer vertexDataPtr;      // Pointer wrapped around the byte buffer
     private int numRects;
-    private Color tint;
+    private final Color tint;
     private Pointer vertexBuffer;
     private Pointer indexBuffer;
     private Pointer uniformBuffer;
-    private Pointer bindGroupLayout;
+    private final Pointer bindGroupLayout;
     private VertexAttributes vertexAttributes;
-    private Pointer pipelineLayout;
+    private final Pointer pipelineLayout;
     private PipelineSpecification pipelineSpec;
     private int uniformBufferSize;
     private Texture texture;
-    private Matrix4 projectionMatrix;
+    private final Matrix4 projectionMatrix;
     private Pointer renderPass;
     private int vbOffset;
-    private int ibOffset;
-    private Pipelines pipelines;
+    private final Pipelines pipelines;
     private Pipeline prevPipeline;
     private boolean blendingEnabled;
+    public int maxSpritesInBatch;
+    public int renderCalls;
 
 
     public SpriteBatch() {
-        this(8192); // default nr
+        this(1000); // default nr
     }
 
     public SpriteBatch(int maxSprites) {
@@ -75,12 +74,14 @@ public class SpriteBatch implements Disposable {
 
         fillIndexBuffer();
 
-        vertexBB = ByteBuffer.allocateDirect(maxSprites * 4 * vertexSize * Float.BYTES);
+        ByteBuffer vertexBB = ByteBuffer.allocateDirect(maxSprites * 4 * vertexSize * Float.BYTES);
         vertexBB.order(ByteOrder.nativeOrder());  // important
         vertexData = vertexBB.asFloatBuffer();
         vertexDataPtr = Pointer.wrap(WgpuJava.getRuntime(), vertexBB);
 
         projectionMatrix = new Matrix4();
+        projectionMatrix.setToOrtho(0f, LibGPU.graphics.getWidth(), 0f, LibGPU.graphics.getHeight(), -1f, 1f);
+        setUniforms();
 
         tint = new Color(1,1,1,1);
 
@@ -95,8 +96,6 @@ public class SpriteBatch implements Disposable {
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.defaultShader);
-
-        resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }
 
     // the index buffer is fixed and only has to be filled on start-up
@@ -120,10 +119,6 @@ public class SpriteBatch implements Disposable {
         wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, indexDataPtr, maxSprites*6*Short.BYTES);
     }
 
-    public void resize(int w, int h) {
-        projectionMatrix.setToOrtho(0f, w, 0f, h, -1f, 1f);
-        setUniforms();
-    }
 
     public void setColor(float r, float g, float b, float a){
         tint.set(r,g,b,a);
@@ -136,8 +131,8 @@ public class SpriteBatch implements Disposable {
     public void enableBlending(){
         if(blendingEnabled)
            return;
-        blendingEnabled = true;
         flush();
+        blendingEnabled = true;
         pipelineSpec.enableBlending();
         setPipeline();
     }
@@ -145,8 +140,8 @@ public class SpriteBatch implements Disposable {
     public void disableBlending(){
         if(!blendingEnabled)
             return;
-        blendingEnabled = false;
         flush();
+        blendingEnabled = false;
         pipelineSpec.disableBlending();
         setPipeline();
     }
@@ -160,48 +155,55 @@ public class SpriteBatch implements Disposable {
         numRects = 0;
         vbOffset = 0;
         vertexData.clear();
-        ibOffset = 0;
+        maxSpritesInBatch = 0;
+        renderCalls = 0;
 
         prevPipeline = null;
+
         // set default state
-        tint.set(1,1,1,1);
+        tint.set(Color.WHITE);
         blendingEnabled = true;
         pipelineSpec.enableBlending();
         pipelineSpec.disableDepth();
         pipelineSpec.shader = defaultShader;
         setPipeline();
+        setUniforms();
     }
 
     public void flush() {
         if(numRects == 0)
             return;
+        if(numRects > maxSpritesInBatch)
+            maxSpritesInBatch = numRects;
+        renderCalls++;
 
         // Add number of vertices to the GPU's vertex buffer
         //
         int numFloats = numRects * 4 * vertexSize;
         int numBytes = numFloats * Float.BYTES;
-        vertexData.position(vbOffset/Float.BYTES);
-        vertexBB.position(vbOffset);
 
-
+        // append new vertex data to GPU vertex buffer
         wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexDataPtr, numBytes);
 
+        // bind texture
         Pointer texBG = makeBindGroup(texture);
 
         // Set vertex buffer while encoding the render pass
+        // use an offset to set the vertex buffer for this batch
         wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, numBytes);
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, ibOffset, (long)numRects*6*Short.BYTES);
+        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
 
         wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
+
+        //wgpu.RenderPassEncoderSetScissorRect(renderPass, 20, 20, 500, 500);
+
+        wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects*6, 1, 0, 0, 0);
+
         wgpu.BindGroupRelease(texBG);
 
-
         vbOffset += numBytes;
-        vertexData.position(vbOffset/Float.BYTES);
-        vertexBB.position(vbOffset);
-        ibOffset += numRects*6*Short.BYTES;
 
+        vertexData.clear(); // reset fill position for next batch
         numRects = 0;   // reset
     }
 
@@ -232,6 +234,16 @@ public class SpriteBatch implements Disposable {
         setPipeline();
     }
 
+    public Matrix4 getProjectionMatrix() {
+        return projectionMatrix;
+    }
+
+    public void setProjectionMatrix(Matrix4 projection) {
+        if(begun)
+            flush();
+        projectionMatrix.set(projection);
+        setUniforms();
+    }
 
     public void draw(Texture texture, float x, float y) {
         draw(texture, x, y, texture.getWidth(), texture.getHeight());

@@ -394,7 +394,13 @@ public class Matrix4 {
     }
 
 
-    // not for WebGPU we cannot use the same as for OpenGL because Z goes from 0 to 1
+    public Matrix4 setToOrtho2D(float x, float y, float width, float height){
+        setToOrtho(x, x+width, y, y+height, -1f, 1f);
+        return this;
+    }
+
+
+    // note for WebGPU we cannot use the same as for OpenGL because Z goes from 0 to 1
     // https://math.hws.edu/graphicsbook/source/webgpu/wgpu-matrix.js
 
 

@@ -78,7 +78,8 @@ public class TestFontSDF extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
-        batch.resize(width, height);
+        //batch.resize(width, height);
+        batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
     }
 
 
