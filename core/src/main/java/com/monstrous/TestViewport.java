@@ -42,7 +42,7 @@ public class TestViewport extends ApplicationAdapter {
 
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
-        ScreenUtils.clear(Color.WHITE);
+        ScreenUtils.clear(Color.BLACK);
         batch.begin();
 
         batch.draw(background, 0,0, viewport.getWorldWidth(), viewport.getWorldHeight());

@@ -68,6 +68,7 @@ public class Application {
 
                 finalizeRenderPass(LibGPU.renderPass);
                 finishEncoder(encoder);
+                LibGPU.renderPass = null;
 
                 // At the end of the frame
                 wgpu.TextureViewRelease(targetView);

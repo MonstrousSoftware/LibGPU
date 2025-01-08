@@ -1,6 +1,8 @@
 package com.monstrous.utils.viewports;
 
+import com.monstrous.LibGPU;
 import com.monstrous.graphics.Camera;
+import jnr.ffi.Pointer;
 
 public abstract class Viewport {
 
@@ -16,8 +18,9 @@ public abstract class Viewport {
     }
 
     public void apply(boolean centerCamera){
-//        if(LibGPU.renderPass != null)
-//            LibGPU.wgpu.RenderPassEncoderSetViewport(LibGPU.renderPass, screenX, screenY, screenWidth, screenHeight, 0, 1);
+        Pointer renderPass = LibGPU.renderPass;
+        if(renderPass != null)
+            LibGPU.wgpu.RenderPassEncoderSetViewport(renderPass, screenX, screenY, screenWidth, screenHeight, 0, 1);
         camera.viewportWidth = worldWidth;
         camera.viewportHeight = worldHeight;
         if (centerCamera) camera.position.set(worldWidth / 2, worldHeight / 2, 0);

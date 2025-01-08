@@ -168,6 +168,8 @@ public class SpriteBatch implements Disposable {
         pipelineSpec.shader = defaultShader;
         setPipeline();
         setUniforms();
+
+        //wgpu.RenderPassEncoderSetViewport(renderPass, 100, 500, 500, 200, 0, 1);
     }
 
     public void flush() {
