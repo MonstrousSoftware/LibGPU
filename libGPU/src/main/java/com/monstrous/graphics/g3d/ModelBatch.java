@@ -499,9 +499,9 @@ public class ModelBatch implements Disposable {
 
     private void writeFrameUniforms( Pointer uniformBuffer, Camera camera, Environment environment ){
         int offset = 0;
-        offset += setUniformMatrix(uniformData, offset, camera.projectionMatrix);
-        offset += setUniformMatrix(uniformData, offset, camera.viewMatrix);
-        offset += setUniformMatrix(uniformData, offset, camera.combinedMatrix);
+        offset += setUniformMatrix(uniformData, offset, camera.projection);
+        offset += setUniformMatrix(uniformData, offset, camera.view);
+        offset += setUniformMatrix(uniformData, offset, camera.combined);
         offset += setUniformVec3(uniformData, offset, camera.position);
 
         offset += setUniformFloat(uniformData, offset, environment == null ? 0 : environment.ambientLightLevel);

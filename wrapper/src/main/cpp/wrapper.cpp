@@ -406,6 +406,10 @@ EXPORT void RenderPassEncoderSetScissorRect(WGPURenderPassEncoder renderPassEnco
     wgpuRenderPassEncoderSetScissorRect(renderPassEncoder, x, y, width, height);
 }
 
+EXPORT void RenderPassEncoderSetViewport(WGPURenderPassEncoder renderPassEncoder, float x, float y, float width, float height, float minDepth, float maxDepth) {
+    wgpuRenderPassEncoderSetViewport(renderPassEncoder, x, y, width, height, minDepth, maxDepth);
+}
+
 EXPORT void BindGroupRelease(WGPUBindGroup bindGroup){
     wgpuBindGroupRelease(bindGroup);
 }

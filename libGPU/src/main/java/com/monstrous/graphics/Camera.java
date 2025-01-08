@@ -3,36 +3,38 @@ package com.monstrous.graphics;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
-public class Camera {
+public abstract class Camera {
     public Vector3 position;
     public Vector3 direction;
     public Vector3 up;
-    public int viewportWidth = 1;
-    public int viewportHeight = 1;
+    public float viewportWidth = 1;
+    public float viewportHeight = 1;
     public float near;
     public float far;
-    public Matrix4 projectionMatrix;
-    public Matrix4 viewMatrix;
-    public Matrix4 combinedMatrix;      // P x V
+    public Matrix4 projection;
+    public Matrix4 view;
+    public Matrix4 combined;      // P x V
 
     public Camera() {
-        projectionMatrix = new Matrix4();
-        viewMatrix = new Matrix4();
-        combinedMatrix = new Matrix4();
+        projection = new Matrix4();
+        view = new Matrix4();
+        combined = new Matrix4();
         position = new Vector3(0f,0f,0f);
         direction = new Vector3(0,0,1);
         up = new Vector3(0, 1, 0);
         near = 0.001f;
         far = 100;
 
-        update();
+        //update();
     }
 
     // make sure the position & direction are reflected into the view matrix
-    public void update(){
-        viewMatrix.setToLookAt(direction, up);
-        viewMatrix.translate(-position.x, -position.y, -position.z);
-        combinedMatrix.set(projectionMatrix);
-        Matrix4.mul(combinedMatrix.val, viewMatrix.val);
-    }
+    abstract public void update();
+
+//    public void update(){
+//        view.setToLookAt(direction, up);
+//        view.translate(-position.x, -position.y, -position.z);
+//        combined.set(projection);
+//        Matrix4.mul(combined.val, view.val);
+//    }
 }

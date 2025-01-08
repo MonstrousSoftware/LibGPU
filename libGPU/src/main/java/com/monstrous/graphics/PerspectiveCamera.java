@@ -1,6 +1,6 @@
 package com.monstrous.graphics;
 
-import com.monstrous.LibGPU;
+import com.monstrous.math.Matrix4;
 
 public class PerspectiveCamera extends Camera {
     /** the field of view of the height, in degrees **/
@@ -20,7 +20,10 @@ public class PerspectiveCamera extends Camera {
     @Override
     public void update(){
         float aspectRatio = (float) viewportWidth/(float) viewportHeight;
-        projectionMatrix.setToPerspective(focalLength, near, far, aspectRatio);
-        super.update();
+        projection.setToPerspective(focalLength, near, far, aspectRatio);
+        view.setToLookAt(direction, up);
+        view.translate(-position.x, -position.y, -position.z);
+        combined.set(projection);
+        Matrix4.mul(combined.val, view.val);
     }
 }
