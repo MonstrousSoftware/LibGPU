@@ -61,6 +61,7 @@ public class SpriteBatch implements Disposable {
 
         // vertex: x, y, u, v, r, g, b, a
         vertexSize = 8; // floats
+
         if (defaultShader == null) {
             this.defaultShader = new ShaderProgram("shaders/sprite.wgsl");
             ownsDefaultShader = true;
@@ -83,7 +84,7 @@ public class SpriteBatch implements Disposable {
         projectionMatrix.setToOrtho(0f, LibGPU.graphics.getWidth(), 0f, LibGPU.graphics.getHeight(), -1f, 1f);
         setUniforms();
 
-        tint = new Color(1,1,1,1);
+        tint = new Color(Color.WHITE);
 
         bindGroupLayout = createBindGroupLayout();
         pipelineLayout = makePipelineLayout(bindGroupLayout);
@@ -92,6 +93,7 @@ public class SpriteBatch implements Disposable {
         vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
         vertexAttributes.add("uv",          WGPUVertexFormat.Float32x2, 1 );
         vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 2 );
+        //vertexAttributes.add("packedColor", WGPUVertexFormat.Float32, 2 );
         vertexAttributes.end();
 
         pipelines = new Pipelines();
@@ -298,6 +300,7 @@ public class SpriteBatch implements Disposable {
         }
         numRects++;
     }
+
 
     private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
         vertexData.put(x);

@@ -31,6 +31,7 @@ public class TestSpriteBatch extends ApplicationAdapter {
         // SpriteBatch testing
         ScreenUtils.clear(Color.WHITE);
         batch.begin();
+        batch.disableBlending();
 
         batch.setColor(Color.WHITE);
         batch.draw(texture, 100, 100, 100, 100);        // normal texture

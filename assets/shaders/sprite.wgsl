@@ -12,6 +12,7 @@ struct MyUniforms {
 struct VertexInput {
     @location(0) position: vec2f,
     @location(1) uv: vec2f,
+    //@location(2) packedColor: f32,
     @location(2) color: vec4f,
 };
 
@@ -21,6 +22,7 @@ struct VertexOutput {
     @location(1) color: vec4f,
 };
 
+
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
@@ -28,7 +30,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
    var pos =  uMyUniforms.projectionMatrix * vec4f(in.position, 0.0, 1.0);
    out.position = pos;
    out.uv = in.uv;
-   out.color = in.color;
+   out.color = in.color; //EncodeFloatRGBA( in.packedColor );
 
    return out;
 }

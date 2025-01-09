@@ -25,7 +25,7 @@ public class TestSpriteBatchPerformance extends ApplicationAdapter {
     public void render(  ){
 
         // SpriteBatch testing
-        ScreenUtils.clear(Color.WHITE);
+        ScreenUtils.clear(Color.BLACK);
         batch.begin();
 
         int W = LibGPU.graphics.getWidth();

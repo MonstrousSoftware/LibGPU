@@ -15,7 +15,7 @@ public class Launcher {
         config.backend = WGPUBackendType.Vulkan;
         //config.enableGPUtiming = true;
 
-        new Application(new TestSimpleGame(), config);
+        new Application(new TestSpriteBatch(), config);
 
     }
 }

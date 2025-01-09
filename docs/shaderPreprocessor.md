@@ -11,3 +11,8 @@ Supported:
     #ifndef NAME
     #else
     #endif
+
+todo:
+- #define NAME expression
+- #if expression
+- #include
