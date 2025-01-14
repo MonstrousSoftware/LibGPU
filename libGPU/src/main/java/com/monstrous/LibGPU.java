@@ -18,5 +18,4 @@ public class LibGPU {
     public static WGPUSupportedLimits supportedLimits;
     public static Pointer device;
     public static Pointer queue;
-    public static Pointer renderPass;
 }

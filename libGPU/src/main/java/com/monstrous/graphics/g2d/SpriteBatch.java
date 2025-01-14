@@ -2,6 +2,7 @@ package com.monstrous.graphics.g2d;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.webgpu.RenderPass;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
@@ -37,7 +38,7 @@ public class SpriteBatch implements Disposable {
     private int uniformBufferSize;
     private Texture texture;
     private final Matrix4 projectionMatrix;
-    private Pointer renderPass;
+    private RenderPass renderPass;
     private int vbOffset;
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
@@ -149,7 +150,7 @@ public class SpriteBatch implements Disposable {
     }
 
     public void begin() {
-        this.renderPass = LibGPU.renderPass;
+        renderPass = RenderPass.create();
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");
@@ -194,14 +195,14 @@ public class SpriteBatch implements Disposable {
 
         // Set vertex buffer while encoding the render pass
         // use an offset to set the vertex buffer for this batch
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, numBytes);
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
+        renderPass.setVertexBuffer( 0, vertexBuffer, vbOffset, numBytes);
+        renderPass.setIndexBuffer( indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
 
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, texBG, 0, WgpuJava.createNullPointer());
+        renderPass.setBindGroup( 0, texBG, 0, WgpuJava.createNullPointer());
 
-        //wgpu.RenderPassEncoderSetScissorRect(renderPass, 20, 20, 500, 500);
+        //renderPass.setScissorRect( 20, 20, 500, 500);
 
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects*6, 1, 0, 0, 0);
+        renderPass.drawIndexed( numRects*6, 1, 0, 0, 0);
 
         wgpu.BindGroupRelease(texBG);
 
@@ -216,13 +217,15 @@ public class SpriteBatch implements Disposable {
             throw new RuntimeException("Cannot end() without begin()");
         begun = false;
         flush();
+        renderPass.end();
+        renderPass = null;
     }
 
     // create or reuse pipeline on demand to match the pipeline spec
     private void setPipeline() {
         Pipeline pipeline = pipelines.getPipeline( pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
-            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+            renderPass.setPipeline(pipeline.getPipeline());
             prevPipeline = pipeline;
         }
     }

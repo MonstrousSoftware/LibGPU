@@ -56,7 +56,7 @@ public class TestShadow extends ApplicationAdapter {
         environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
 
 
-       // LibGPU.input.setInputProcessor(new CameraController(camera));
+        LibGPU.input.setInputProcessor(new CameraController(camera));
 
         modelBatch = new ModelBatch();
     }

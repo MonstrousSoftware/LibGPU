@@ -2,6 +2,7 @@ package com.monstrous.graphics.g2d;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.webgpu.RenderPass;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector2;
 import com.monstrous.utils.Disposable;
@@ -32,9 +33,8 @@ public class ShapeRenderer implements Disposable {
     private Pointer pipelineLayout;
     private PipelineSpecification pipelineSpec;
     private int uniformBufferSize;
-    private Texture texture;
     private Matrix4 projectionMatrix;
-    private Pointer renderPass;
+    private RenderPass renderPass;
     private int vbOffset;
     private int ibOffset;
     private Pipelines pipelines;
@@ -45,8 +45,6 @@ public class ShapeRenderer implements Disposable {
 
     public ShapeRenderer() {
         this(8192); // default nr
-
-
     }
 
     public ShapeRenderer(int maxShapes) {
@@ -115,7 +113,7 @@ public class ShapeRenderer implements Disposable {
     }
 
     public void begin() {
-        this.renderPass = LibGPU.renderPass;
+        renderPass = RenderPass.create();
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");
@@ -151,14 +149,14 @@ public class ShapeRenderer implements Disposable {
         wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Short.BYTES);
 
 
-        Pointer bg = makeBindGroup(texture);
+        Pointer bg = makeBindGroup();
 
         // Set vertex buffer while encoding the render pass
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, WGPUIndexFormat.Uint16, ibOffset, (long)numRects*6*Short.BYTES);
+        renderPass.setVertexBuffer( 0, vertexBuffer, vbOffset, (long) numFloats *Float.BYTES);
+        renderPass.setIndexBuffer( indexBuffer, WGPUIndexFormat.Uint16, ibOffset, (long)numRects*6*Short.BYTES);
 
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, bg, 0, WgpuJava.createNullPointer());
-        wgpu.RenderPassEncoderDrawIndexed(renderPass, numRects * 6, 1, 0, 0, 0);
+        renderPass.setBindGroup( 0, bg, 0, WgpuJava.createNullPointer());
+        renderPass.drawIndexed( numRects * 6, 1, 0, 0, 0);
         wgpu.BindGroupRelease(bg);
 
 
@@ -172,13 +170,15 @@ public class ShapeRenderer implements Disposable {
             throw new RuntimeException("Cannot end() without begin()");
         begun = false;
         flush();
+        renderPass.end();
+        renderPass = null;
     }
 
     // create or reuse pipeline on demand to match the pipeline spec
     private void setPipeline() {
         Pipeline pipeline = pipelines.getPipeline( pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
-            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+            renderPass.setPipeline( pipeline.getPipeline());
             prevPipeline = pipeline;
         }
     }
@@ -366,7 +366,7 @@ public class ShapeRenderer implements Disposable {
     }
 
 
-    private Pointer makeBindGroup(Texture texture) {
+    private Pointer makeBindGroup() {
         // Create a binding
         WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
         binding.setNextInChain();
@@ -381,7 +381,7 @@ public class ShapeRenderer implements Disposable {
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(1);
-        bindGroupDesc.setEntries(binding); //, texture.getBinding(1), texture.getSamplerBinding(2));
+        bindGroupDesc.setEntries(binding);
         return LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 

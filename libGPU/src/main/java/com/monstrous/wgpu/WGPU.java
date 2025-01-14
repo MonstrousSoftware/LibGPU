@@ -4,7 +4,7 @@ import jnr.ffi.Pointer;
 
 public interface WGPU { // A representation of the C interface in Java
 
-    final static int WGPU_DEPTH_SLICE_UNDEFINED = 0xffffffff;
+    final static long WGPU_DEPTH_SLICE_UNDEFINED = -1L;
 
     Pointer gdx2d_load (Pointer buffer, int len);
     void gdx2d_free(Pointer pixmapInfo);
@@ -43,6 +43,14 @@ public interface WGPU { // A representation of the C interface in Java
 
     void RenderPassEncoderEnd(Pointer renderPass);
     void RenderPassEncoderRelease(Pointer renderPass);
+    void RenderPassEncoderSetPipeline(Pointer renderPass, Pointer pipeline);
+    void RenderPassEncoderDraw(Pointer renderPass, int numVertices, int numInstances, int firstVertex, int firstInstance);
+    void RenderPassEncoderSetVertexBuffer(Pointer renderPass, int slot, Pointer vertexBuffer, long offset, long size);
+    void RenderPassEncoderSetIndexBuffer(Pointer renderPass, Pointer indexBuffer, WGPUIndexFormat wgpuIndexFormat, int offset, long size);
+    void RenderPassEncoderDrawIndexed(Pointer renderPass, int indexCount, int numInstances, int firstIndex, int baseVertex, int firstInstance);
+    void RenderPassEncoderSetScissorRect(Pointer renderPass, int x, int y, int width, int height);
+    void RenderPassEncoderSetViewport(Pointer renderPass, float x, float y, float width, float height, float minDepth, float maxDepth);
+    void RenderPassEncoderSetBindGroup(Pointer renderPass, int groupIndex, Pointer bindGroup, int dynamicOffsetCount, Pointer dynamicOffsets);
 
     Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
     void CommandBufferRelease(Pointer commandBuffer);
@@ -63,8 +71,7 @@ public interface WGPU { // A representation of the C interface in Java
 
     void SurfacePresent(Pointer surface);
 
-    void RenderPassEncoderSetPipeline(Pointer renderPass, Pointer pipeline);
-    void RenderPassEncoderDraw(Pointer renderPass, int numVertices, int numInstances, int firstVertex, int firstInstance);
+
     Pointer DeviceCreateRenderPipeline(Pointer device, WGPURenderPipelineDescriptor pipelineDesc);
     Pointer DeviceCreateShaderModule(Pointer device, WGPUShaderModuleDescriptor shaderDesc);
     void RenderPipelineRelease(Pointer pipeline);
@@ -84,14 +91,7 @@ public interface WGPU { // A representation of the C interface in Java
     void BufferUnmap(Pointer buffer1);
 
     long BufferGetSize(Pointer vertexBuffer);
-    void RenderPassEncoderSetVertexBuffer(Pointer renderPass, int slot, Pointer vertexBuffer, long offset, long size);
 
-    void RenderPassEncoderSetIndexBuffer(Pointer renderPass, Pointer indexBuffer, WGPUIndexFormat wgpuIndexFormat, int offset, long size);
-
-    void RenderPassEncoderDrawIndexed(Pointer renderPass, int indexCount, int numInstances, int firstIndex, int baseVertex, int firstInstance);
-
-    void RenderPassEncoderSetScissorRect(Pointer renderPass, int x, int y, int width, int height);
-    void RenderPassEncoderSetViewport(Pointer renderPass, float x, float y, float width, float height, float minDepth, float maxDepth);
 
     Pointer DeviceCreateBindGroup(Pointer device, WGPUBindGroupDescriptor bindGroupDesc);
 
@@ -103,7 +103,6 @@ public interface WGPU { // A representation of the C interface in Java
 
     Pointer DeviceCreateBindGroupLayout(Pointer device, WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc);
 
-    void RenderPassEncoderSetBindGroup(Pointer renderPass, int groupIndex, Pointer bindGroup, int dynamicOffsetCount, Pointer dynamicOffsets);
 
     Pointer DeviceCreatePipelineLayout(Pointer device, WGPUPipelineLayoutDescriptor layoutDesc);
 

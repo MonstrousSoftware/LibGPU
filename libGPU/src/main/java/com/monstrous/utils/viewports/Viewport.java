@@ -1,8 +1,7 @@
 package com.monstrous.utils.viewports;
 
-import com.monstrous.LibGPU;
 import com.monstrous.graphics.Camera;
-import jnr.ffi.Pointer;
+import com.monstrous.graphics.webgpu.RenderPass;
 
 public abstract class Viewport {
 
@@ -18,13 +17,17 @@ public abstract class Viewport {
     }
 
     public void apply(boolean centerCamera){
-        Pointer renderPass = LibGPU.renderPass;
-        if(renderPass != null)
-            LibGPU.wgpu.RenderPassEncoderSetViewport(renderPass, screenX, screenY, screenWidth, screenHeight, 0, 1);
+        // This is done in two steps because the render pass may not exist yet.
+        RenderPass.setViewport(this);
+
         camera.viewportWidth = worldWidth;
         camera.viewportHeight = worldHeight;
         if (centerCamera) camera.position.set(worldWidth / 2, worldHeight / 2, 0);
         camera.update();
+    }
+
+    public void apply(RenderPass pass){
+        pass.setViewport(screenX, screenY, screenWidth, screenHeight, 0, 1);
     }
 
     public void update(float screenWidth, float screenHeight, boolean centerCamera){

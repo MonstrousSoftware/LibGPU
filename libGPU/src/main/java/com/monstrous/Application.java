@@ -61,17 +61,13 @@ public class Application {
                 }
 
                 Pointer encoder = prepareEncoder();
-                RenderPass pass = RenderPass.create(encoder);
-                LibGPU.renderPass = pass.getPointer(); //RenderPass.create(encoder); //prepareRenderPass(encoder);
+                RenderPass.setEncoder(encoder);
 
                 LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
 
                 listener.render();
 
-                //finalizeRenderPass(LibGPU.renderPass);
-                pass.end();
                 finishEncoder(encoder);
-                LibGPU.renderPass = null;
 
                 // At the end of the frame
                 wgpu.TextureViewRelease(targetView);

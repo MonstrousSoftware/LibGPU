@@ -6,6 +6,7 @@ import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.graphics.lights.Light;
 import com.monstrous.graphics.lights.PointLight;
+import com.monstrous.graphics.webgpu.RenderPass;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
@@ -35,7 +36,8 @@ public class ModelBatch implements Disposable {
 
     private ShaderProgram shaderStd;
     private ShaderProgram shaderNormalMap;
-    private Pointer renderPass;
+    //private Pointer renderPass;
+    private RenderPass pass;
 
     private Pointer uniformData;            // scratch buffer in native memory
     private Pointer frameUniformBuffer;
@@ -125,7 +127,9 @@ public class ModelBatch implements Disposable {
 
     public void begin(Camera camera, Environment environment){
         this.environment = environment;
-        this.renderPass = LibGPU.renderPass;
+        pass = RenderPass.create();
+        //LibGPU.renderPass = pass.getPointer(); //RenderPass.create(encoder); //prepareRenderPass(encoder);
+        //this.renderPass = LibGPU.renderPass;
 
         materialUniformIndex = 0;       // reset offset into uniform buffer
         prevMaterial = null;
@@ -134,10 +138,12 @@ public class ModelBatch implements Disposable {
 
         writeFrameUniforms(frameUniformBuffer, camera, environment);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer);
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, frameBindGroup, 0, null);
+        pass.setBindGroup(0, frameBindGroup);
+        //wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, frameBindGroup, 0, null);
 
         instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer, 16*Float.BYTES*MAX_INSTANCES);
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, instancingBindGroup, 0, null);
+        //wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, instancingBindGroup, 0, null);
+        pass.setBindGroup(2, instancingBindGroup);
 
         materialBindGroup = null;
     }
@@ -169,6 +175,8 @@ public class ModelBatch implements Disposable {
         if(materialBindGroup != null)
             wgpu.BindGroupRelease(materialBindGroup);
         //System.out.println("materials: "+materialUniformIndex+"\t\tpipe switches: "+numPipelineSwitches);
+        pass.end();
+        pass = null;
     }
 
 
@@ -234,7 +242,8 @@ public class ModelBatch implements Disposable {
             int uniformStride = ceilToNextMultiple(MATERIAL_UB_SIZE, uniformAlignment);
             offset[0] = materialUniformIndex*uniformStride;
             Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
-            wgpu.RenderPassEncoderSetBindGroup(renderPass, 1, materialBindGroup, 1, offsetPtr);
+            pass.setBindGroup(1, materialBindGroup, 1, offsetPtr);
+            //wgpu.RenderPassEncoderSetBindGroup(renderPass, 1, materialBindGroup, 1, offsetPtr);
             materialUniformIndex++;
         }
     }
@@ -243,18 +252,22 @@ public class ModelBatch implements Disposable {
         if(meshPart == null)
             return;
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+        pass.setVertexBuffer(0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
+        //wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
         setPipeline(meshPart.mesh.vertexAttributes);
 
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
-            wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
-            wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
+            pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
+            pass.drawIndexed( meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
+            //wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
+            //wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
         } //meshPart.size
         else
-            wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
+            pass.draw(meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
+            //wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
 
     }
 
@@ -271,7 +284,8 @@ public class ModelBatch implements Disposable {
 
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
-            wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
+            pass.setPipeline(pipeline.getPipeline());
+            //wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
             prevPipeline = pipeline;
             numPipelineSwitches++;
         }
