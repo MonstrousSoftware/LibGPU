@@ -1,6 +1,7 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.webgpu;
 
 import com.monstrous.LibGPU;
+import com.monstrous.graphics.Texture;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
@@ -54,7 +55,11 @@ public class Pipeline implements Disposable {
         blendState.getAlpha().setOperation(spec.blendOpAlpha);
 
         WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
-        colorTarget.setFormat(LibGPU.surfaceFormat);
+        Texture output = RenderPass.getOutputTexture();     // in case the render pass is outputting to a texture
+        if(output != null)
+            colorTarget.setFormat(output.getFormat());          // match the texture format
+        else
+            colorTarget.setFormat(LibGPU.surfaceFormat);
         colorTarget.setBlend(blendState);
         colorTarget.setWriteMask(WGPUColorWriteMask.All);
 
@@ -85,7 +90,7 @@ public class Pipeline implements Disposable {
         pipelineDesc.setDepthStencil(depthStencilState);
 
         pipelineDesc.getMultisample().setCount(1);
-        pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
+        pipelineDesc.getMultisample().setMask( -1L );
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 
         pipelineDesc.setLayout(pipelineLayout);

@@ -1,5 +1,7 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.webgpu;
 
+import com.monstrous.graphics.ShaderProgram;
+import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.wgpu.WGPUBlendFactor;
 import com.monstrous.wgpu.WGPUBlendOperation;
 import com.monstrous.wgpu.WGPUCullMode;

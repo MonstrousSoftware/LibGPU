@@ -6,6 +6,9 @@ import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.graphics.lights.Light;
 import com.monstrous.graphics.lights.PointLight;
+import com.monstrous.graphics.webgpu.Pipeline;
+import com.monstrous.graphics.webgpu.PipelineSpecification;
+import com.monstrous.graphics.webgpu.Pipelines;
 import com.monstrous.graphics.webgpu.RenderPass;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
@@ -36,8 +39,9 @@ public class ModelBatch implements Disposable {
 
     private ShaderProgram shaderStd;
     private ShaderProgram shaderNormalMap;
-    //private Pointer renderPass;
     private RenderPass pass;
+    private Texture outputTexture;
+    private Texture outputDepthTexture;
 
     private Pointer uniformData;            // scratch buffer in native memory
     private Pointer frameUniformBuffer;
@@ -119,6 +123,11 @@ public class ModelBatch implements Disposable {
 
     }
 
+    // to render to a texture instead of to the screen, call this before begin.
+    public void setOutputTexture(Texture texture, Texture depth){
+        outputTexture = texture;
+        outputDepthTexture = depth;
+    }
 
 
     public void begin(Camera camera){
@@ -127,7 +136,7 @@ public class ModelBatch implements Disposable {
 
     public void begin(Camera camera, Environment environment){
         this.environment = environment;
-        pass = RenderPass.create();
+        pass = RenderPass.create(outputTexture, outputDepthTexture);
         //LibGPU.renderPass = pass.getPointer(); //RenderPass.create(encoder); //prepareRenderPass(encoder);
         //this.renderPass = LibGPU.renderPass;
 

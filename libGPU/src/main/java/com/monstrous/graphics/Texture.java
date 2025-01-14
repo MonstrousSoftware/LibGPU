@@ -12,31 +12,37 @@ import java.nio.file.Paths;
 public class Texture {
     private int width;
     private int height;
-    private int format;
+    private int nativeFormat;
     private Pointer image;
     private Pointer texture;
     private Pointer textureView;
     private Pointer sampler;
+    private WGPUTextureFormat format;
 
     public Texture() {
         this(256, 256);
     }
 
     public Texture(int width, int height){
-        this(width, height, true);
+        this(width, height, true, false, WGPUTextureFormat.RGBA8Unorm);
     }
 
-    public Texture(int width, int height, boolean mipMapping) {
+    public Texture(int width, int height, boolean mipMapping, boolean renderAttachment,WGPUTextureFormat format ) {
         this.width = width;
         this.height = height;
-        load(null, mipMapping);
+        load(null, mipMapping, renderAttachment, format);
     }
+
 
     public Texture(String fileName) {
         this(fileName, true);
     }
 
-    public Texture(String fileName, boolean mipMapping) {
+    public Texture(String fileName,boolean mipMapping) {
+        this(fileName, mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
+    }
+
+    public Texture(String fileName, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
 
         byte[] fileData;
 
@@ -51,9 +57,9 @@ public class Texture {
             PixmapInfo info = PixmapInfo.createAt(image);
             this.width = info.width.intValue();
             this.height = info.height.intValue();
-            this.format = info.format.intValue();
+            this.nativeFormat = info.format.intValue();
             Pointer pixelPtr = info.pixels.get();
-            load(pixelPtr, mipMapping);
+            load(pixelPtr, mipMapping, renderAttachment, format);
 
 
         } catch (IOException e) {
@@ -70,7 +76,15 @@ public class Texture {
     }
 
     // native format from smb_image
-    public int getFormat() {
+    public int getNativeFormat() {
+        return nativeFormat;
+    }
+
+    public Pointer getTextureView(){
+        return textureView;
+    }
+
+    public WGPUTextureFormat getFormat(){
         return format;
     }
 
@@ -101,7 +115,7 @@ public class Texture {
         }
     }
 
-    private void load(Pointer pixelPtr, boolean mipMapping) {
+    private void load(Pointer pixelPtr, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
         if(LibGPU.device == null || LibGPU.queue == null )
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
@@ -113,13 +127,17 @@ public class Texture {
         WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
         textureDesc.setNextInChain();
         textureDesc.setDimension(WGPUTextureDimension._2D);
-        textureDesc.setFormat(WGPUTextureFormat.RGBA8Unorm);
+        this.format = format; //
+        textureDesc.setFormat(format);
         textureDesc.setMipLevelCount(mipLevelCount);
         textureDesc.setSampleCount(1);
         textureDesc.getSize().setWidth(width);
         textureDesc.getSize().setHeight(height);
         textureDesc.getSize().setDepthOrArrayLayers(1);
-        textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
+        if(renderAttachment)
+            textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst | WGPUTextureUsage.RenderAttachment);
+        else
+            textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
         textureDesc.setViewFormatCount(0);
         textureDesc.setViewFormats(WgpuJava.createNullPointer());
         texture = LibGPU.wgpu.DeviceCreateTexture(LibGPU.device, textureDesc);
@@ -152,6 +170,10 @@ public class Texture {
         source.setRowsPerImage(height);
 
         // Generate mipmap levels
+        // candidate for compute shader
+//        if(pixelPtr == null)
+//            return;
+
 
         int mipLevelWidth = width;
         int mipLevelHeight = height;

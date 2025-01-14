@@ -1,4 +1,4 @@
-package com.monstrous.graphics;
+package com.monstrous.graphics.webgpu;
 
 import com.monstrous.utils.Disposable;
 import jnr.ffi.Pointer;

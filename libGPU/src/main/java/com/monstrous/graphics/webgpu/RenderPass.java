@@ -2,6 +2,7 @@ package com.monstrous.graphics.webgpu;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Color;
+import com.monstrous.graphics.Texture;
 import com.monstrous.utils.viewports.Viewport;
 import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
@@ -13,6 +14,8 @@ public class RenderPass {
 
     private static Pointer encoder;
     private static final Color clearColor = new Color(Color.BLACK);
+    private static Texture outputTexture;
+    private static Texture outputDepthTexture;
     private static Viewport viewport = null;
     private static WGPURenderPassColorAttachment renderPassColorAttachment;
     private static WGPURenderPassDepthStencilAttachment depthStencilAttachment;
@@ -30,13 +33,19 @@ public class RenderPass {
     }
 
     public static RenderPass create() {
+        return create(null, null);
+    }
+
+    public static RenderPass create(Texture outTexture, Texture outDepthTexture) {
         if(encoder == null)
             throw new RuntimeException("Encoder must be set before calling RenderPass.create()");
+
+        outputTexture = outTexture;
+        outputDepthTexture = outDepthTexture;
 
         if(renderPassColorAttachment == null) {
             renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
             renderPassColorAttachment.setNextInChain();
-            renderPassColorAttachment.setView(LibGPU.app.targetView);
             renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
             renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
             renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
@@ -48,7 +57,11 @@ public class RenderPass {
 
             renderPassColorAttachment.setDepthSlice(WGPU.WGPU_DEPTH_SLICE_UNDEFINED);
         }
-        renderPassColorAttachment.setView(LibGPU.app.targetView);
+        if(outputTexture == null)
+            renderPassColorAttachment.setView(LibGPU.app.targetView);
+        else
+            renderPassColorAttachment.setView(outputTexture.getTextureView());
+
 
         if(depthStencilAttachment == null) {
             depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
@@ -62,7 +75,11 @@ public class RenderPass {
             depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
             depthStencilAttachment.setStencilReadOnly(1L);
         }
-        depthStencilAttachment.setView(LibGPU.app.depthTextureView);
+        if(outputDepthTexture == null)
+            depthStencilAttachment.setView(LibGPU.app.depthTextureView);
+        else
+            depthStencilAttachment.setView(outputDepthTexture.getTextureView());
+
 
 
         if(renderPassDescriptor == null) {
@@ -90,6 +107,11 @@ public class RenderPass {
     public void end() {
         wgpu.RenderPassEncoderEnd(renderPass);
         wgpu.RenderPassEncoderRelease(renderPass);
+    }
+
+
+    public static Texture getOutputTexture(){
+        return outputTexture;
     }
 
     public Pointer getPointer() {
