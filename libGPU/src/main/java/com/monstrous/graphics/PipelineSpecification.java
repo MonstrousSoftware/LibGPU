@@ -2,6 +2,7 @@ package com.monstrous.graphics;
 
 import com.monstrous.wgpu.WGPUBlendFactor;
 import com.monstrous.wgpu.WGPUBlendOperation;
+import com.monstrous.wgpu.WGPUCullMode;
 
 import java.util.Objects;
 
@@ -17,12 +18,14 @@ public class PipelineSpecification {
     public WGPUBlendFactor blendSrcAlpha;
     public WGPUBlendFactor blendDstAlpha;
     public WGPUBlendOperation blendOpAlpha;
+    public WGPUCullMode cullMode;
 
 
     public PipelineSpecification() {
         this.name = "pipeline";
         enableDepth();
         enableBlending();
+        setCullMode(WGPUCullMode.None);
     }
 
     public PipelineSpecification(VertexAttributes vertexAttributes, ShaderProgram shader) {
@@ -50,6 +53,10 @@ public class PipelineSpecification {
 
     public void disableDepth(){
         hasDepth = false;
+    }
+
+    public void setCullMode(WGPUCullMode cullMode){
+        this.cullMode = cullMode;
     }
 
     public void enableBlending(){

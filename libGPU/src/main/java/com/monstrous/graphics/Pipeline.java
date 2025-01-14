@@ -35,7 +35,7 @@ public class Pipeline implements Disposable {
         pipelineDesc.getPrimitive().setTopology(WGPUPrimitiveTopology.TriangleList);
         pipelineDesc.getPrimitive().setStripIndexFormat(WGPUIndexFormat.Undefined);
         pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
-        pipelineDesc.getPrimitive().setCullMode(WGPUCullMode.None);
+        pipelineDesc.getPrimitive().setCullMode(spec.cullMode);
 
         WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
         fragmentState.setNextInChain();
@@ -84,12 +84,9 @@ public class Pipeline implements Disposable {
 
         pipelineDesc.setDepthStencil(depthStencilState);
 
-
-
         pipelineDesc.getMultisample().setCount(1);
         pipelineDesc.getMultisample().setMask( 0xFFFFFFFF);
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
-
 
         pipelineDesc.setLayout(pipelineLayout);
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);

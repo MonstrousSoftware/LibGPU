@@ -106,6 +106,9 @@ public class ModelBatch implements Disposable {
         if(pbr) {
             shaderStd = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","");      // todo get from library storage
             shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
+            // we use the 2nd shader for models that have a normal map defined in their material
+            // todo use push constants? use dynamic shader selection?
+
         }
         else {
             shaderStd = new ShaderProgram("shaders/modelbatchUber.wgsl", "");      // todo get from library storage
@@ -264,6 +267,7 @@ public class ModelBatch implements Disposable {
         else
            pipelineSpec.shader = shaderStd;
         pipelineSpec.enableDepth();
+        pipelineSpec.setCullMode(WGPUCullMode.Back);
 
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
