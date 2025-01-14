@@ -102,7 +102,7 @@ public class Application {
         if(width*height > 0) {
             initSwapChain(width, height);
             surfaceConfigured = true;
-            initDepthBuffer();
+            initDepthBuffer(width, height);
 
             if(isMinimized)
                 listener.resume();  // resume after restore from minimize
@@ -317,7 +317,7 @@ public class Application {
         return wgpu.TextureCreateView(surfaceTexture.getTexture(), viewDescriptor);
     }
 
-    private void initDepthBuffer(){
+    private void initDepthBuffer(int width, int height){
 
         WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;
 
@@ -332,8 +332,8 @@ public class Application {
         depthTextureDesc.setFormat( depthTextureFormat );
         depthTextureDesc.setMipLevelCount(1);
         depthTextureDesc.setSampleCount(1);
-        depthTextureDesc.getSize().setWidth(LibGPU.graphics.getWidth());
-        depthTextureDesc.getSize().setHeight(LibGPU.graphics.getHeight());
+        depthTextureDesc.getSize().setWidth(width);
+        depthTextureDesc.getSize().setHeight(height);
         depthTextureDesc.getSize().setDepthOrArrayLayers(1);
         depthTextureDesc.setUsage( WGPUTextureUsage.RenderAttachment );
         depthTextureDesc.setViewFormatCount(1);
