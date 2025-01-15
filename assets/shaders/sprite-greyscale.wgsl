@@ -1,9 +1,12 @@
-
+// demonstration of post-processing
+// follows structure of sprite.wgsl
+//
+// Greyscale and vignette effect
+//
 struct Uniforms {
     projectionMatrix: mat4x4f,
 };
 
-// The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var texture: texture_2d<f32>;
 @group(0) @binding(2) var textureSampler: sampler;
@@ -37,6 +40,17 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
-    let color = in.color * textureSample(texture, textureSampler, in.uv);
-    return vec4f(color);
+    var color = in.color * textureSample(texture, textureSampler, in.uv);
+    let grey:f32 = (color.r + color.g + color.b )/3.0;
+    var col = vec3f(grey, grey, grey,);
+
+        // vignette effect
+    let dist = in.uv * (1.0 - in.uv.yx);
+    let vigExtent = 45.0;
+    var vig = dist.x*dist.y * vigExtent; // multiply with sth for intensity
+    let vigPower = 0.45;
+    vig = pow(vig, vigPower); // change pow for modifying the extent of the  vignette
+    col = mix(col, col*vig, 0.9);
+
+    return vec4f(col, color.a);
 }

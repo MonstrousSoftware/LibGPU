@@ -14,20 +14,18 @@ import com.monstrous.wgpu.WGPUTextureFormat;
 
 import java.util.ArrayList;
 
-public class TestShadow extends ApplicationAdapter {
+public class TestPostProcessing extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
     private Environment environment;
     private Matrix4 modelMatrix;
     private Model model, model2;
-    private ModelInstance modelInstance1;
-    private ModelInstance modelInstance2;
     private ArrayList<ModelInstance> instances;
     private float currentTime;
     private long startTime;
     private int frames;
-    private Texture colorMap, depthMap;
+    private Texture colorMap;
     private SpriteBatch batch;
     private ShaderProgram filter;
 
@@ -40,11 +38,11 @@ public class TestShadow extends ApplicationAdapter {
         model = new Model("models/stanfordDragon.gltf");
 
         modelMatrix = new Matrix4();
-        modelInstance1 = new ModelInstance(model, modelMatrix);
+        ModelInstance modelInstance1 = new ModelInstance(model, modelMatrix);
         instances.add(modelInstance1);
 
         model2 = new Model("models/groundplane.gltf");
-        modelInstance2 = new ModelInstance(model2, 0,0,0);
+        ModelInstance modelInstance2 = new ModelInstance(model2, 0, 0, 0);
         instances.add(modelInstance2);
 
 
@@ -62,17 +60,14 @@ public class TestShadow extends ApplicationAdapter {
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
         colorMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.RGBA8Unorm);
-        //depthMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.Depth32Float);
 
         modelBatch = new ModelBatch();
 
         batch = new SpriteBatch();
 
+        // post-processing shader
         filter = new ShaderProgram("shaders/sprite-greyscale.wgsl");
     }
-
-
-
 
     private void updateModelMatrix(Matrix4 modelMatrix, float currentTime){
         Matrix4 RT = new Matrix4().idt(); //setToXRotation((float) ( -0.5f*Math.PI ));
@@ -81,27 +76,28 @@ public class TestShadow extends ApplicationAdapter {
         modelMatrix.idt().mul(R1).mul(T).mul(RT);
     }
 
-
-
-
-
     public void render(){
         currentTime += LibGPU.graphics.getDeltaTime();
-        ScreenUtils.clear(Color.GRAY);
 
         updateModelMatrix(modelMatrix, currentTime);
 
-        //System.out.println("cam:"+camera.position.toString()+" dir:"+camera.direction.toString());
+        ScreenUtils.clear(Color.WHITE);
 
+        // render 3d scene to texture
         modelBatch.begin(camera, environment, colorMap);
         modelBatch.render(instances);
         modelBatch.end();
 
-        ScreenUtils.clear(Color.WHITE);
+        // put texture on screen twice side to side: left without and right with the post-processing shader
+        float W = LibGPU.graphics.getWidth();
+        float H = LibGPU.graphics.getHeight();
+
+        ScreenUtils.clear(Color.BLUE);
         batch.begin();
-        batch.draw(colorMap,0,0, 400, 400);
-        batch.setShader(filter);
-        batch.draw(colorMap,LibGPU.graphics.getWidth()/2f, 0, 400, 400);
+        batch.draw(colorMap,10,10, W/2-20, H-20);
+
+        batch.setShader(filter);    // use the post-processing shader
+        batch.draw(colorMap,W/2+10, 10, W/2-20, H-20);
         batch.end();
 
 
@@ -120,6 +116,7 @@ public class TestShadow extends ApplicationAdapter {
     public void dispose(){
         // cleanup
         model.dispose();
+        model2.dispose();
         modelBatch.dispose();
     }
 

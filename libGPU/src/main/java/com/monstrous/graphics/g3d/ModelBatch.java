@@ -37,8 +37,8 @@ public class ModelBatch implements Disposable {
     private ShaderProgram shaderStd;
     private ShaderProgram shaderNormalMap;
     private RenderPass pass;
-    private Texture outputTexture;
-    private Texture outputDepthTexture;
+    //private Texture outputTexture;
+    //private Texture outputDepthTexture;
 
     private Pointer uniformData;            // scratch buffer in native memory
     private Pointer frameUniformBuffer;
@@ -120,22 +120,24 @@ public class ModelBatch implements Disposable {
 
     }
 
-    // to render to a texture instead of to the screen, call this before begin.
-    public void setOutputTexture(Texture texture, Texture depth){
-        outputTexture = texture;
-        outputDepthTexture = depth;
-    }
+//    // to render to a texture instead of to the screen, call this before begin.
+//    public void setOutputTexture(Texture texture, Texture depth){
+//        outputTexture = texture;
+//        outputDepthTexture = depth;
+//    }
 
 
     public void begin(Camera camera){
-        begin(camera, null);
+        begin(camera, null, null);
     }
 
-    public void begin(Camera camera, Environment environment){
+    public void begin(Camera camera, Environment environment) {
+        begin(camera, environment, null);
+    }
+
+    public void begin(Camera camera, Environment environment, Texture outputTexture){
         this.environment = environment;
-        pass = RenderPassBuilder.create(outputTexture, outputDepthTexture);
-        //LibGPU.renderPass = pass.getPointer(); //RenderPass.create(encoder); //prepareRenderPass(encoder);
-        //this.renderPass = LibGPU.renderPass;
+        pass = RenderPassBuilder.create(outputTexture,  null);
 
         materialUniformIndex = 0;       // reset offset into uniform buffer
         prevMaterial = null;
@@ -145,10 +147,8 @@ public class ModelBatch implements Disposable {
         writeFrameUniforms(frameUniformBuffer, camera, environment);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer);
         pass.setBindGroup(0, frameBindGroup);
-        //wgpu.RenderPassEncoderSetBindGroup(renderPass, 0, frameBindGroup, 0, null);
 
         instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer, 16*Float.BYTES*MAX_INSTANCES);
-        //wgpu.RenderPassEncoderSetBindGroup(renderPass, 2, instancingBindGroup, 0, null);
         pass.setBindGroup(2, instancingBindGroup);
 
         materialBindGroup = null;
@@ -268,12 +268,10 @@ public class ModelBatch implements Disposable {
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
             pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
             pass.drawIndexed( meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
-            //wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, meshPart.mesh.indexFormat, 0, wgpu.BufferGetSize(indexBuffer));
-            //wgpu.RenderPassEncoderDrawIndexed(renderPass, meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
-        } //meshPart.size
+        }
         else
             pass.draw(meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
-            //wgpu.RenderPassEncoderDraw(renderPass, meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
+
 
     }
 
@@ -291,7 +289,6 @@ public class ModelBatch implements Disposable {
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             pass.setPipeline(pipeline.getPipeline());
-            //wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline.getPipeline());
             prevPipeline = pipeline;
             numPipelineSwitches++;
         }
@@ -511,10 +508,6 @@ public class ModelBatch implements Disposable {
     }
 
     private int setUniformMatrix(Pointer data, int offset, Matrix4 mat ){
-//        for(int i = 0; i < 16; i++){
-//            data.putFloat(offset+i*Float.BYTES, mat.val[i]);
-//
-//        }
         data.put(offset, mat.val, 0, 16);
         return 16*Float.BYTES;
     }

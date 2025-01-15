@@ -12,6 +12,10 @@ import static com.monstrous.LibGPU.wgpu;
 
 // Factory class to create RenderPass objects.
 //
+// use setCommandEncoder() before creating passes.
+// use create() to create a pass (at least once per frame)
+// use setClearColor() to set the background color of future passes. (see ScreenUtils.clear() )
+// use setViewport() to apply a viewport on future passes created.
 
 
 public class RenderPassBuilder {
@@ -47,13 +51,13 @@ public class RenderPassBuilder {
             renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
             renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
-            renderPassColorAttachment.getClearValue().setR(clearColor.r);
-            renderPassColorAttachment.getClearValue().setG(clearColor.g);
-            renderPassColorAttachment.getClearValue().setB(clearColor.b);
-            renderPassColorAttachment.getClearValue().setA(clearColor.a);
-
             renderPassColorAttachment.setDepthSlice(WGPU.WGPU_DEPTH_SLICE_UNDEFINED);
         }
+        renderPassColorAttachment.getClearValue().setR(clearColor.r);
+        renderPassColorAttachment.getClearValue().setG(clearColor.g);
+        renderPassColorAttachment.getClearValue().setB(clearColor.b);
+        renderPassColorAttachment.getClearValue().setA(clearColor.a);
+
         if(outputTexture == null)
             renderPassColorAttachment.setView(LibGPU.app.targetView);
         else
@@ -62,7 +66,6 @@ public class RenderPassBuilder {
 
         if(depthStencilAttachment == null) {
             depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
-            depthStencilAttachment.setView(LibGPU.app.depthTextureView);
             depthStencilAttachment.setDepthClearValue(1.0f);
             depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
             depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
@@ -84,9 +87,7 @@ public class RenderPassBuilder {
             renderPassDescriptor.setNextInChain();
 
             renderPassDescriptor.setLabel("Render Pass");
-
             renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-
         }
         renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
         renderPassDescriptor.setColorAttachmentCount(1);
@@ -115,6 +116,7 @@ public class RenderPassBuilder {
         clearColor.set(r, g, b, a);
     }
 
+    // set viewport on future render passes created, set to null to not apply a viewport.
     public static void setViewport(Viewport vp){
         viewport = vp;
     }
