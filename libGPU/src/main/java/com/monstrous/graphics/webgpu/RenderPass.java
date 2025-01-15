@@ -1,17 +1,20 @@
 package com.monstrous.graphics.webgpu;
 
 import com.monstrous.wgpu.WGPUIndexFormat;
+import com.monstrous.wgpu.WGPUTextureFormat;
 import jnr.ffi.Pointer;
 
 import static com.monstrous.LibGPU.wgpu;
 
 public class RenderPass {
 
-    private final Pointer renderPass;       // handle used by WebGPU
+    private final Pointer renderPass;                   // handle used by WebGPU
+    private final WGPUTextureFormat textureFormat;
 
     // don't call this directly, use RenderPassBuilder.create()
-    RenderPass(Pointer renderPass) {
+    RenderPass(Pointer renderPass, WGPUTextureFormat textureFormat) {
         this.renderPass = renderPass;
+        this.textureFormat = textureFormat;
     }
 
     public void end() {
@@ -21,6 +24,10 @@ public class RenderPass {
 
     public Pointer getPointer() {
         return renderPass;
+    }
+
+    public WGPUTextureFormat getFormat(){
+        return textureFormat;
     }
 
     public void setPipeline(Pointer pipeline) {

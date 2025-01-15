@@ -43,6 +43,7 @@ public class RenderPassBuilder {
 
         outputTexture = outTexture;
         outputDepthTexture = outDepthTexture;
+        WGPUTextureFormat format;
 
         if(renderPassColorAttachment == null) {
             renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
@@ -58,10 +59,14 @@ public class RenderPassBuilder {
         renderPassColorAttachment.getClearValue().setB(clearColor.b);
         renderPassColorAttachment.getClearValue().setA(clearColor.a);
 
-        if(outputTexture == null)
+        if(outputTexture == null) {
             renderPassColorAttachment.setView(LibGPU.app.targetView);
-        else
+            format = LibGPU.surfaceFormat;
+        }
+        else {
             renderPassColorAttachment.setView(outputTexture.getTextureView());
+            format = outputTexture.getFormat();
+        }
 
 
         if(depthStencilAttachment == null) {
@@ -97,7 +102,7 @@ public class RenderPassBuilder {
         //gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
         Pointer renderPassPtr = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-        RenderPass pass = new RenderPass(renderPassPtr);
+        RenderPass pass = new RenderPass(renderPassPtr, format);
         if(viewport != null)
             viewport.apply(pass);
         return pass;

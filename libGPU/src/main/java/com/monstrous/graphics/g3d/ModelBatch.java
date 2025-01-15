@@ -285,6 +285,7 @@ public class ModelBatch implements Disposable {
            pipelineSpec.shader = shaderStd;
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
+        pipelineSpec.colorFormat = pass.getFormat();    // pixel format of render pass output
 
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches

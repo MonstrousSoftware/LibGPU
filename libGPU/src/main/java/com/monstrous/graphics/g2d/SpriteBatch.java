@@ -99,6 +99,7 @@ public class SpriteBatch implements Disposable {
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.defaultShader);
+
     }
 
     // the index buffer is fixed and only has to be filled on start-up

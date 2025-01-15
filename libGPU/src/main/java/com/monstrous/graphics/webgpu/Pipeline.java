@@ -1,7 +1,6 @@
 package com.monstrous.graphics.webgpu;
 
 import com.monstrous.LibGPU;
-import com.monstrous.graphics.Texture;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
@@ -55,11 +54,8 @@ public class Pipeline implements Disposable {
         blendState.getAlpha().setOperation(spec.blendOpAlpha);
 
         WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
-        Texture output = RenderPassBuilder.getOutputTexture();     // in case the render pass is outputting to a texture            // todo fix
-        if(output != null)
-            colorTarget.setFormat(output.getFormat());          // match the texture format
-        else
-            colorTarget.setFormat(LibGPU.surfaceFormat);
+
+        colorTarget.setFormat(spec.colorFormat);
         colorTarget.setBlend(blendState);
         colorTarget.setWriteMask(WGPUColorWriteMask.All);
 

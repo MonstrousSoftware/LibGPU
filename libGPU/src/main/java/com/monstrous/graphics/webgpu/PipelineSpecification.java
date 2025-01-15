@@ -1,10 +1,12 @@
 package com.monstrous.graphics.webgpu;
 
+import com.monstrous.LibGPU;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.wgpu.WGPUBlendFactor;
 import com.monstrous.wgpu.WGPUBlendOperation;
 import com.monstrous.wgpu.WGPUCullMode;
+import com.monstrous.wgpu.WGPUTextureFormat;
 
 import java.util.Objects;
 
@@ -22,12 +24,15 @@ public class PipelineSpecification {
     public WGPUBlendOperation blendOpAlpha;
     public WGPUCullMode cullMode;
 
+    public WGPUTextureFormat colorFormat;
+
 
     public PipelineSpecification() {
         this.name = "pipeline";
         enableDepth();
         enableBlending();
         setCullMode(WGPUCullMode.None);
+        colorFormat = LibGPU.surfaceFormat;
     }
 
     public PipelineSpecification(VertexAttributes vertexAttributes, ShaderProgram shader) {
@@ -47,6 +52,8 @@ public class PipelineSpecification {
         this.blendSrcAlpha = spec.blendSrcAlpha;
         this.blendDstAlpha = spec.blendDstAlpha;
         this.blendOpAlpha = spec.blendOpAlpha;
+
+        this.colorFormat = spec.colorFormat;
     }
 
     public void enableDepth(){
