@@ -77,8 +77,7 @@ public class Pipeline implements Disposable {
         }
 
         //
-        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;       // todo
-        depthStencilState.setFormat(depthTextureFormat);
+        depthStencilState.setFormat(spec.depthFormat);
         // deactivate stencil
         depthStencilState.setStencilReadMask(0L);
         depthStencilState.setStencilWriteMask(0L);

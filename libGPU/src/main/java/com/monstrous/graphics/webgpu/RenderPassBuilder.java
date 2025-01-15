@@ -43,7 +43,8 @@ public class RenderPassBuilder {
 
         outputTexture = outTexture;
         outputDepthTexture = outDepthTexture;
-        WGPUTextureFormat format;
+        WGPUTextureFormat colorFormat;
+        WGPUTextureFormat depthFormat;
 
         if(renderPassColorAttachment == null) {
             renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
@@ -61,12 +62,14 @@ public class RenderPassBuilder {
 
         if(outputTexture == null) {
             renderPassColorAttachment.setView(LibGPU.app.targetView);
-            format = LibGPU.surfaceFormat;
+            colorFormat = LibGPU.surfaceFormat;
+            depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
         }
         else {
             renderPassColorAttachment.setView(outputTexture.getTextureView());
-            format = outputTexture.getFormat();
+            colorFormat = outputTexture.getFormat();
         }
+
 
 
         if(depthStencilAttachment == null) {
@@ -80,12 +83,14 @@ public class RenderPassBuilder {
             depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
             depthStencilAttachment.setStencilReadOnly(1L);
         }
-        if(outputDepthTexture == null)
+        if(outDepthTexture == null) {
+            depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
             depthStencilAttachment.setView(LibGPU.app.depthTextureView);
-        else
+        }
+        else {
+            depthFormat = outDepthTexture.getFormat();
             depthStencilAttachment.setView(outputDepthTexture.getTextureView());
-
-
+        }
 
         if(renderPassDescriptor == null) {
             renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
@@ -102,7 +107,7 @@ public class RenderPassBuilder {
         //gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
         Pointer renderPassPtr = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-        RenderPass pass = new RenderPass(renderPassPtr, format);
+        RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat);
         if(viewport != null)
             viewport.apply(pass);
         return pass;

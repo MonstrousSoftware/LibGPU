@@ -26,6 +26,7 @@ public class ModelBatch implements Disposable {
 
     private final int FRAME_UB_SIZE = 1024; //384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
     private final int MATERIAL_UB_SIZE = 8 * Float.BYTES;
+    private final int SHADOW_UB_SIZE = (16 + 4) * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
 
     private final int MAX_MATERIALS = 256;   // limits nr of materials!
@@ -37,21 +38,22 @@ public class ModelBatch implements Disposable {
     private ShaderProgram shaderStd;
     private ShaderProgram shaderNormalMap;
     private RenderPass pass;
-    //private Texture outputTexture;
-    //private Texture outputDepthTexture;
 
     private Pointer uniformData;            // scratch buffer in native memory
     private Pointer frameUniformBuffer;
     private Pointer materialUniformBuffer;
+    private Pointer shadowUniformBuffer;
     private int materialUniformIndex;
 
     private Pointer frameBindGroupLayout;
     private Pointer materialBindGroupLayout;
     private Pointer instancingBindGroupLayout;
+    private Pointer shadowBindGroupLayout;
     private Pointer pipelineLayout;
     private Pointer frameBindGroup;
     private Pointer materialBindGroup;
     private Pointer instancingBindGroup;
+    private Pointer shadowBindGroup;
     private Material prevMaterial;
 
     private final Pipelines pipelines;
@@ -86,8 +88,9 @@ public class ModelBatch implements Disposable {
         frameBindGroupLayout = createFrameBindGroupLayout();
         materialBindGroupLayout = createMaterialBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
+        shadowBindGroupLayout = createShadowBindGroupLayout();
 
-        pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, instancingBindGroupLayout);
+        pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, instancingBindGroupLayout, shadowBindGroupLayout);
 
         materialUniformBuffer = createUniformBuffer( MATERIAL_UB_SIZE, MAX_MATERIALS);
 
@@ -100,11 +103,22 @@ public class ModelBatch implements Disposable {
         float[] floatData = new float[16];
         instanceData = WgpuJava.createFloatArrayPointer(floatData);       // native memory buffer for one instance to aid write buffer
 
-        loadShaders();
+        //loadShaders();
     }
 
     // to allow hot-loading of shaders
     public void loadShaders(){
+        // hacky
+        if(environment != null && environment.depthPass){
+            shaderStd = new ShaderProgram("shaders/modelbatchDepth.wgsl","");
+            shaderNormalMap = new ShaderProgram("shaders/modelbatchDepth.wgsl","");
+            return;
+        }
+        if(environment != null && !environment.depthPass && environment.renderShadows){
+            shaderStd = new ShaderProgram("shaders/modelbatchPBRUberShadows.wgsl","");
+            shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUberShadows.wgsl","#define NORMAL_MAP");
+            return;
+        }
         boolean pbr = true;
         if(pbr) {
             shaderStd = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","");      // todo get from library storage
@@ -120,24 +134,19 @@ public class ModelBatch implements Disposable {
 
     }
 
-//    // to render to a texture instead of to the screen, call this before begin.
-//    public void setOutputTexture(Texture texture, Texture depth){
-//        outputTexture = texture;
-//        outputDepthTexture = depth;
-//    }
-
 
     public void begin(Camera camera){
-        begin(camera, null, null);
+        begin(camera, null, null, null);
     }
 
     public void begin(Camera camera, Environment environment) {
-        begin(camera, environment, null);
+        begin(camera, environment, null, null);
     }
 
-    public void begin(Camera camera, Environment environment, Texture outputTexture){
+    public void begin(Camera camera, Environment environment, Texture outputTexture, Texture depthTexture){
         this.environment = environment;
-        pass = RenderPassBuilder.create(outputTexture,  null);
+        loadShaders();
+        pass = RenderPassBuilder.create(outputTexture,  depthTexture);
 
         materialUniformIndex = 0;       // reset offset into uniform buffer
         prevMaterial = null;
@@ -152,6 +161,12 @@ public class ModelBatch implements Disposable {
         pass.setBindGroup(2, instancingBindGroup);
 
         materialBindGroup = null;
+
+        if(environment != null && environment.renderShadows) {
+            writeShadowUniforms(shadowUniformBuffer, environment);
+            shadowBindGroup = makeShadowBindGroup(shadowBindGroupLayout, shadowUniformBuffer);
+            pass.setBindGroup(3, shadowBindGroup);
+        }
     }
 
     public void render(ArrayList<ModelInstance> instances) {
@@ -249,17 +264,16 @@ public class ModelBatch implements Disposable {
             offset[0] = materialUniformIndex*uniformStride;
             Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
             pass.setBindGroup(1, materialBindGroup, 1, offsetPtr);
-            //wgpu.RenderPassEncoderSetBindGroup(renderPass, 1, materialBindGroup, 1, offsetPtr);
             materialUniformIndex++;
         }
     }
 
+    // make a draw call
     private void emitMeshPart(MeshPart meshPart, int instanceCount, int renderablesCount) {
         if(meshPart == null)
             return;
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         pass.setVertexBuffer(0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
-        //wgpu.RenderPassEncoderSetVertexBuffer(renderPass, 0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
         setPipeline(meshPart.mesh.vertexAttributes);
 
@@ -271,8 +285,6 @@ public class ModelBatch implements Disposable {
         }
         else
             pass.draw(meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
-
-
     }
 
     // create or reuse pipeline on demand when we know the model
@@ -285,7 +297,8 @@ public class ModelBatch implements Disposable {
            pipelineSpec.shader = shaderStd;
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
-        pipelineSpec.colorFormat = pass.getFormat();    // pixel format of render pass output
+        pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
+        pipelineSpec.depthFormat = pass.getDepthFormat();
 
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
@@ -307,6 +320,7 @@ public class ModelBatch implements Disposable {
         wgpu.BufferRelease(frameUniformBuffer);
         wgpu.BufferRelease(materialUniformBuffer);
         wgpu.BufferRelease(instanceBuffer);
+        // todo
     }
 
 
@@ -334,6 +348,41 @@ public class ModelBatch implements Disposable {
         bindGroupLayoutDesc.setEntries(uniformBindingLayout);
         return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
 
+    }
+
+    private Pointer createShadowBindGroupLayout(){
+        int location = 0;
+
+        // Define binding layout
+        WGPUBindGroupLayoutEntry uniformBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(uniformBindingLayout);
+        uniformBindingLayout.setBinding(location++);
+        uniformBindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
+        uniformBindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
+        uniformBindingLayout.getBuffer().setMinBindingSize(SHADOW_UB_SIZE);
+        uniformBindingLayout.getBuffer().setHasDynamicOffset(0L);
+
+        WGPUBindGroupLayoutEntry shadowMapBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(shadowMapBindingLayout);
+        shadowMapBindingLayout.setBinding(location++);
+        shadowMapBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        shadowMapBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Depth);
+        shadowMapBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+
+        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(samplerBindingLayout);
+        samplerBindingLayout.setBinding(location++);
+        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Comparison);
+
+        // Create a bind group layout
+        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
+        bindGroupLayoutDesc.setNextInChain();
+        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Shadow)");
+        bindGroupLayoutDesc.setEntryCount(location);
+
+        bindGroupLayoutDesc.setEntries(uniformBindingLayout, shadowMapBindingLayout, samplerBindingLayout);
+        return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
     private Pointer createMaterialBindGroupLayout(){
@@ -449,20 +498,65 @@ public class ModelBatch implements Disposable {
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
+    // shadow bind group
+    private Pointer makeShadowBindGroup(Pointer shadowBindGroupLayout, Pointer uniformBuffer) {
+        if(environment.shadowMap == null)
+            throw new RuntimeException("Shadow Bind Group needs shadow map in environment.");
+
+        // Create a binding
+        WGPUBindGroupEntry uniformBinding = WGPUBindGroupEntry.createDirect();
+        uniformBinding.setNextInChain();
+        uniformBinding.setBinding(0);  // binding index
+        uniformBinding.setBuffer(uniformBuffer);
+        uniformBinding.setOffset(0);
+        uniformBinding.setSize(SHADOW_UB_SIZE);
+
+        // Create a sampler
+        WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
+        samplerDesc.setAddressModeU( WGPUAddressMode.Repeat);       // ?
+        samplerDesc.setAddressModeV( WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeW( WGPUAddressMode.Repeat);
+        samplerDesc.setMagFilter( WGPUFilterMode.Linear);
+        samplerDesc.setMinFilter( WGPUFilterMode.Linear);
+        samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);
+
+        samplerDesc.setLodMinClamp(0);
+        samplerDesc.setLodMaxClamp(1);
+        samplerDesc.setCompare( WGPUCompareFunction.Less );
+        samplerDesc.setMaxAnisotropy( 1);
+        Pointer sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
+
+        WGPUBindGroupEntry samplerBinding = WGPUBindGroupEntry.createDirect();      // leaky?
+        samplerBinding.setNextInChain();
+        samplerBinding.setBinding(2);  // binding index
+        samplerBinding.setSampler(sampler);
+
+        // A bind group contains one or multiple bindings
+        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
+        bindGroupDesc.setNextInChain();
+        bindGroupDesc.setLayout(shadowBindGroupLayout);
+        // There must be as many bindings as declared in the layout!
+        bindGroupDesc.setEntryCount(3);
+        bindGroupDesc.setEntries(uniformBinding, environment.shadowMap.getBinding(1),  samplerBinding);
+        return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
+    }
 
 
-    private Pointer makePipelineLayout(Pointer frameBindGroupLayout, Pointer materialBindGroupLayout, Pointer instancingBindGroupLayout) {
-        long[] layouts = new long[3];
+    private Pointer makePipelineLayout(Pointer frameBindGroupLayout, Pointer materialBindGroupLayout, Pointer instancingBindGroupLayout, Pointer shadowBindGroupLayout) {
+        boolean addShadows = (environment != null && environment.renderShadows);
+        long[] layouts = new long[4];
         layouts[0] = frameBindGroupLayout.address();
         layouts[1] = materialBindGroupLayout.address();
         layouts[2] = instancingBindGroupLayout.address();
+        if(addShadows)
+            layouts[3] = shadowBindGroupLayout.address();
         Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
 
-        // Create the pipeline layout to define the bind groups needed : 3 bind group
+        // Create the pipeline layout to define the bind groups needed : 3 or 4 bind groups
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
         layoutDesc.setNextInChain();
         layoutDesc.setLabel("Pipeline Layout");
-        layoutDesc.setBindGroupLayoutCount(3);
+        layoutDesc.setBindGroupLayoutCount(addShadows ? 4 : 3);
         layoutDesc.setBindGroupLayouts(layoutPtr);
         return LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }
@@ -596,6 +690,20 @@ public class ModelBatch implements Disposable {
 
         int uniformStride = ceilToNextMultiple(MATERIAL_UB_SIZE, uniformAlignment);
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, uniformIndex*uniformStride, uniformData, offset);
+    }
+
+
+    private void writeShadowUniforms( Pointer uniformBuffer, Environment environment ){
+        if(environment == null || environment.shadowMap == null || environment.shadowCamera == null)
+            throw new RuntimeException("Shadow Uniforms: missing shadow data in Environment.");
+
+        int offset = 0;
+        offset += setUniformMatrix(uniformData, offset, environment.shadowCamera.combined);
+        offset += setUniformVec3(uniformData, offset, environment.shadowCamera.position);
+
+        // BEWARE of padding rules
+
+        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, SHADOW_UB_SIZE);
     }
 
 

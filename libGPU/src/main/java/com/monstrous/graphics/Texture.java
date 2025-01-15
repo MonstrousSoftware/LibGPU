@@ -153,6 +153,24 @@ public class Texture {
         textureViewDesc.setFormat( textureDesc.getFormat() );
         textureView = LibGPU.wgpu.TextureCreateView(texture, textureViewDesc);
 
+        // Create a sampler
+        WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
+        samplerDesc.setAddressModeU( WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeV( WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeW( WGPUAddressMode.Repeat);
+        samplerDesc.setMagFilter( WGPUFilterMode.Linear);
+        samplerDesc.setMinFilter( WGPUFilterMode.Linear);
+        samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);
+
+        samplerDesc.setLodMinClamp(0);
+        samplerDesc.setLodMaxClamp(mipLevelCount);
+        samplerDesc.setCompare( WGPUCompareFunction.Undefined);
+        samplerDesc.setMaxAnisotropy( 1);
+        sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
+
+        if(pixelPtr == null)
+            return;
+
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
         WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
@@ -247,20 +265,7 @@ public class Texture {
             prevPixels = pixels;
         }
 
-        // Create a sampler
-        WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
-        samplerDesc.setAddressModeU( WGPUAddressMode.Repeat);
-        samplerDesc.setAddressModeV( WGPUAddressMode.Repeat);
-        samplerDesc.setAddressModeW( WGPUAddressMode.Repeat);
-        samplerDesc.setMagFilter( WGPUFilterMode.Linear);
-        samplerDesc.setMinFilter( WGPUFilterMode.Linear);
-        samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);
 
-        samplerDesc.setLodMinClamp(0);
-        samplerDesc.setLodMaxClamp(mipLevelCount);
-        samplerDesc.setCompare( WGPUCompareFunction.Undefined);
-        samplerDesc.setMaxAnisotropy( 1);
-        sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
     }
 
     private static int toUnsignedInt(byte x) {

@@ -1,5 +1,7 @@
 // sprite-distanceField.wgsl
 //
+// Used for SDF font rendering
+//
 struct MyUniforms {
     projectionMatrix: mat4x4f,
 };

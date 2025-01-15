@@ -25,6 +25,7 @@ public class PipelineSpecification {
     public WGPUCullMode cullMode;
 
     public WGPUTextureFormat colorFormat;
+    public WGPUTextureFormat depthFormat;
 
 
     public PipelineSpecification() {
@@ -33,6 +34,7 @@ public class PipelineSpecification {
         enableBlending();
         setCullMode(WGPUCullMode.None);
         colorFormat = LibGPU.surfaceFormat;
+        depthFormat = WGPUTextureFormat.Depth24Plus;       // todo get from adapter?
     }
 
     public PipelineSpecification(VertexAttributes vertexAttributes, ShaderProgram shader) {
@@ -54,6 +56,7 @@ public class PipelineSpecification {
         this.blendOpAlpha = spec.blendOpAlpha;
 
         this.colorFormat = spec.colorFormat;
+        this.depthFormat = spec.depthFormat;
     }
 
     public void enableDepth(){

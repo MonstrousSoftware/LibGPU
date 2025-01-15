@@ -84,7 +84,7 @@ public class TestPostProcessing extends ApplicationAdapter {
         ScreenUtils.clear(Color.WHITE);
 
         // render 3d scene to texture
-        modelBatch.begin(camera, environment, colorMap);
+        modelBatch.begin(camera, environment, colorMap, null);
         modelBatch.render(instances);
         modelBatch.end();
 
