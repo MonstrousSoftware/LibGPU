@@ -55,7 +55,7 @@ public class Pipeline implements Disposable {
         blendState.getAlpha().setOperation(spec.blendOpAlpha);
 
         WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
-        Texture output = RenderPass.getOutputTexture();     // in case the render pass is outputting to a texture
+        Texture output = RenderPassBuilder.getOutputTexture();     // in case the render pass is outputting to a texture            // todo fix
         if(output != null)
             colorTarget.setFormat(output.getFormat());          // match the texture format
         else

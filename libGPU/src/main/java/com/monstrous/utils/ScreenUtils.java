@@ -1,7 +1,7 @@
 package com.monstrous.utils;
 
 import com.monstrous.graphics.Color;
-import com.monstrous.graphics.webgpu.RenderPass;
+import com.monstrous.graphics.webgpu.RenderPassBuilder;
 
 public class ScreenUtils {
 
@@ -11,6 +11,6 @@ public class ScreenUtils {
     }
 
     public static void clear(float r, float g, float b, float a){
-        RenderPass.setClearColor(r,g,b,a);
+        RenderPassBuilder.setClearColor(r,g,b,a);
     }
 }

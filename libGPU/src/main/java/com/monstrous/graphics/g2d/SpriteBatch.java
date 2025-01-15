@@ -2,10 +2,7 @@ package com.monstrous.graphics.g2d;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
-import com.monstrous.graphics.webgpu.Pipeline;
-import com.monstrous.graphics.webgpu.PipelineSpecification;
-import com.monstrous.graphics.webgpu.Pipelines;
-import com.monstrous.graphics.webgpu.RenderPass;
+import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
@@ -153,7 +150,7 @@ public class SpriteBatch implements Disposable {
     }
 
     public void begin() {
-        renderPass = RenderPass.create();
+        renderPass = RenderPassBuilder.create();
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");

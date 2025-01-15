@@ -6,10 +6,7 @@ import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.graphics.lights.Light;
 import com.monstrous.graphics.lights.PointLight;
-import com.monstrous.graphics.webgpu.Pipeline;
-import com.monstrous.graphics.webgpu.PipelineSpecification;
-import com.monstrous.graphics.webgpu.Pipelines;
-import com.monstrous.graphics.webgpu.RenderPass;
+import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
@@ -136,7 +133,7 @@ public class ModelBatch implements Disposable {
 
     public void begin(Camera camera, Environment environment){
         this.environment = environment;
-        pass = RenderPass.create(outputTexture, outputDepthTexture);
+        pass = RenderPassBuilder.create(outputTexture, outputDepthTexture);
         //LibGPU.renderPass = pass.getPointer(); //RenderPass.create(encoder); //prepareRenderPass(encoder);
         //this.renderPass = LibGPU.renderPass;
 

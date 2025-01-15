@@ -2,6 +2,7 @@ package com.monstrous.utils.viewports;
 
 import com.monstrous.graphics.Camera;
 import com.monstrous.graphics.webgpu.RenderPass;
+import com.monstrous.graphics.webgpu.RenderPassBuilder;
 
 public abstract class Viewport {
 
@@ -18,7 +19,7 @@ public abstract class Viewport {
 
     public void apply(boolean centerCamera){
         // This is done in two steps because the render pass may not exist yet.
-        RenderPass.setViewport(this);
+        RenderPassBuilder.setViewport(this);
 
         camera.viewportWidth = worldWidth;
         camera.viewportHeight = worldHeight;

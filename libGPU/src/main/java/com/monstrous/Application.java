@@ -1,7 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.Color;
-import com.monstrous.graphics.webgpu.RenderPass;
+import com.monstrous.graphics.webgpu.RenderPassBuilder;
 import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.LibraryLoader;
@@ -61,7 +61,7 @@ public class Application {
                 }
 
                 Pointer encoder = prepareEncoder();
-                RenderPass.setEncoder(encoder);
+                RenderPassBuilder.setCommandEncoder(encoder);
 
                 LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
 
