@@ -242,9 +242,23 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     var color  = radiance + ambient + emissiveColor;
 
-    var visibility = textureSampleCompare(shadowMap, shadowSampler, in.shadowPos.xy, in.shadowPos.z - 0.007);
+    let shadowDepthTextureSize = 500.0; // not correct
+    let oneOverDepthTextureSize = 1.0 / shadowDepthTextureSize;
+    var visibility = 0.0;
+    for( var y = -1; y <= 1; y++){
+        for( var x = -1; x <= 1; x++){
+        let offset = vec2f(vec2(x,y))*oneOverDepthTextureSize;
 
-    color = vec3f(visibility, 0, 0);
+            // returns 0 or 1
+            visibility += textureSampleCompare(shadowMap, shadowSampler, in.shadowPos.xy+offset, in.shadowPos.z - 0.007);
+        }
+    }
+    visibility /= 9.0;  // divide by nr of samples
+
+
+   //color = vec3f(shadow);
+
+    color *= visibility;
 
 
     //color = vec3f(roughness);

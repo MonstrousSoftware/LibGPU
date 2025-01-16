@@ -17,7 +17,7 @@ public class ShaderProgram {
     private String shaderSource;
     private String processed;
     private Pointer shaderModule;
-    private Preprocessor preprocessor = new Preprocessor();
+    private static Preprocessor preprocessor = new Preprocessor();
 
     public ShaderProgram(String filePath) {
         String source = null;
@@ -48,7 +48,7 @@ public class ShaderProgram {
         this.name = name;
         this.shaderSource = shaderSource;
 
-        Preprocessor preprocessor = new Preprocessor();
+        //Preprocessor preprocessor = new Preprocessor();
         processed = preprocessor.process(shaderSource);
 
         // Create Shader Module

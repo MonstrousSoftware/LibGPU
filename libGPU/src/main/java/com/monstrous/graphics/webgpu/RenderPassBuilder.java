@@ -34,10 +34,16 @@ public class RenderPassBuilder {
     }
 
     public static RenderPass create() {
-        return create(null, null);
+        return create(true, null, null);
     }
 
-    public static RenderPass create(Texture outTexture, Texture outDepthTexture) {
+    public static RenderPass create(boolean clear) {
+        return create(clear, null, null);
+    }
+
+    // clear: need to clear the screen? or we overlay on the existing content?
+    // todo perhaps should pass the clear color here
+    public static RenderPass create(boolean clear, Texture outTexture, Texture outDepthTexture) {
         if(encoder == null)
             throw new RuntimeException("Encoder must be set before calling RenderPass.create()");
 
@@ -46,15 +52,16 @@ public class RenderPassBuilder {
         WGPUTextureFormat colorFormat;
         WGPUTextureFormat depthFormat;
 
-        if(renderPassColorAttachment == null) {
+       // if(renderPassColorAttachment == null) {
             renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
             renderPassColorAttachment.setNextInChain();
             renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
-            renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
             renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
             renderPassColorAttachment.setDepthSlice(WGPU.WGPU_DEPTH_SLICE_UNDEFINED);
-        }
+        //}
+        renderPassColorAttachment.setLoadOp(clear ? WGPULoadOp.Clear : WGPULoadOp.Load);
+
         renderPassColorAttachment.getClearValue().setR(clearColor.r);
         renderPassColorAttachment.getClearValue().setG(clearColor.g);
         renderPassColorAttachment.getClearValue().setB(clearColor.b);
@@ -63,7 +70,7 @@ public class RenderPassBuilder {
         if(outputTexture == null) {
             renderPassColorAttachment.setView(LibGPU.app.targetView);
             colorFormat = LibGPU.surfaceFormat;
-            depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
+            //depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
         }
         else {
             renderPassColorAttachment.setView(outputTexture.getTextureView());
@@ -72,7 +79,7 @@ public class RenderPassBuilder {
 
 
 
-        if(depthStencilAttachment == null) {
+        //if(depthStencilAttachment == null) {
             depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
             depthStencilAttachment.setDepthClearValue(1.0f);
             depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
@@ -82,7 +89,7 @@ public class RenderPassBuilder {
             depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
             depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
             depthStencilAttachment.setStencilReadOnly(1L);
-        }
+        //}
         if(outDepthTexture == null) {
             depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
             depthStencilAttachment.setView(LibGPU.app.depthTextureView);
@@ -92,13 +99,13 @@ public class RenderPassBuilder {
             depthStencilAttachment.setView(outputDepthTexture.getTextureView());
         }
 
-        if(renderPassDescriptor == null) {
+        //if(renderPassDescriptor == null) {
             renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
             renderPassDescriptor.setNextInChain();
 
             renderPassDescriptor.setLabel("Render Pass");
             renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        }
+        //}
         renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
         renderPassDescriptor.setColorAttachmentCount(1);
         renderPassDescriptor.setColorAttachments(renderPassColorAttachment);

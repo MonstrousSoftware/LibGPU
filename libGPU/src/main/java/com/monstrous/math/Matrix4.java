@@ -416,7 +416,7 @@ public class Matrix4 {
     public Matrix4 setToOrtho (float left, float right, float bottom, float top, float near, float far) {
         float x_orth = 2 / (right - left);
         float y_orth = 2 / (top - bottom);
-        float z_orth = 1 / (near - far);
+        float z_orth = -1 / (near - far);           // note the - sign
 
         float tx = -(right + left) / (right - left);
         float ty = -(top + bottom) / (top - bottom);

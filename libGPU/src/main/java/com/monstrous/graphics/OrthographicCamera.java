@@ -3,7 +3,7 @@ package com.monstrous.graphics;
 import com.monstrous.math.Matrix4;
 
 public class OrthographicCamera extends Camera {
-    float zoom;
+    public float zoom;
 
     public OrthographicCamera() {
         this.near = -1f;

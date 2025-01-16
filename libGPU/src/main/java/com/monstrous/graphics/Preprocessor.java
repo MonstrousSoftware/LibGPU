@@ -63,7 +63,7 @@ public class Preprocessor {
     // b may be null, e.g. #define DEBUG
     private void define(String a, String b){
         defineMap.put(a, b);
-        System.out.print("#define "+a);
+        //System.out.print("#define "+a);
         if(b != null)
             System.out.print(" := "+b);
         System.out.println();

@@ -151,7 +151,7 @@ public class SpriteBatch implements Disposable {
     }
 
     public void begin() {
-        renderPass = RenderPassBuilder.create();
+        renderPass = RenderPassBuilder.create(false);       // todo assuming no clear
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");

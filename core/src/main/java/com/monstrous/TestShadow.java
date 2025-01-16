@@ -18,6 +18,7 @@ public class TestShadow extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
+    private CameraController camController;
     private OrthographicCamera shadowCam;
     private Environment environment;
     private Matrix4 modelMatrix;
@@ -31,6 +32,7 @@ public class TestShadow extends ApplicationAdapter {
     private Texture colorMap, depthMap;
     private SpriteBatch batch;
     private ShaderProgram filter;
+    private BitmapFont font;
 
     public void create() {
         startTime = System.nanoTime();
@@ -50,18 +52,23 @@ public class TestShadow extends ApplicationAdapter {
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
-        camera.position.set(-5, 3.5f, -0.5f);
-        camera.direction.set(0.8f,-0.6f, 0f);
-        camera.far = 100f;
+        camera.position.set(-0, 3.5f, -5f);
+        camera.direction.set(0f,-0.3f, 0.8f);
+
+        camera.position.set(0, 6, 0);
+        camera.direction.set(0, -1, 0);
+
+        camera.far = 50f;
         camera.near = 0.1f;
         camera.update();
 
-        shadowCam = new OrthographicCamera(100, 100);
-        shadowCam.position.set(0,10,0);
-        shadowCam.direction.set(0,-1,0);
+        shadowCam = new OrthographicCamera(10, 10); // in world units
+        shadowCam.position.set(0,6f,0);
+        shadowCam.direction.set(0.5f,-1,0);
         shadowCam.up.set(0,0,1);
-        shadowCam.near = 0.1f;
-        shadowCam.far = 100f;
+        shadowCam.near = 0f;
+        shadowCam.far = 10f;
+        shadowCam.zoom = 1f;
         shadowCam.update();
 
         colorMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.RGBA8Unorm);
@@ -69,15 +76,19 @@ public class TestShadow extends ApplicationAdapter {
 
 
         environment = new Environment();
-        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+        DirectionalLight sun = new DirectionalLight( Color.WHITE, new Vector3(0,-5,0));
+        sun.setIntensity(4f);
+        environment.add( sun );
         environment.setShadowMap(shadowCam, depthMap);
 
-        LibGPU.input.setInputProcessor(new CameraController(camera));
+        camController = new CameraController(camera);
+        LibGPU.input.setInputProcessor(camController);
 
 
         modelBatch = new ModelBatch();
 
         batch = new SpriteBatch();
+        font = new BitmapFont();
 
         filter = new ShaderProgram("shaders/sprite-greyscale.wgsl");
     }
@@ -97,17 +108,18 @@ public class TestShadow extends ApplicationAdapter {
 
 
     public void render(){
+
         currentTime += LibGPU.graphics.getDeltaTime();
         ScreenUtils.clear(Color.GRAY);
 
         updateModelMatrix(modelMatrix, currentTime);
+        camController.update();
 
-        //System.out.println("cam:"+camera.position.toString()+" dir:"+camera.direction.toString());
 
         environment.depthPass = true;
         environment.renderShadows = false;
-        environment.setShadowMap(null, null);
-        modelBatch.begin(camera, environment, colorMap, depthMap);
+        environment.setShadowMap(shadowCam, null);
+        modelBatch.begin(shadowCam, environment, colorMap, depthMap);
         modelBatch.render(instances);
         modelBatch.end();
 
@@ -126,6 +138,13 @@ public class TestShadow extends ApplicationAdapter {
 //        batch.draw(colorMap,LibGPU.graphics.getWidth()/2f, 0, 500, 500);
 //        batch.end();
 
+//        batch.begin();
+//        font.draw(batch, "camera "+shadowCam.position.toString()+" angleX:"+camController.anglex, 10, 500);
+//        batch.draw(colorMap,0, 0, 200, 200);
+//        batch.end();
+
+
+
 
         // At the end of the frame
 
@@ -143,6 +162,7 @@ public class TestShadow extends ApplicationAdapter {
         // cleanup
         model.dispose();
         modelBatch.dispose();
+        font.dispose();
     }
 
     @Override
