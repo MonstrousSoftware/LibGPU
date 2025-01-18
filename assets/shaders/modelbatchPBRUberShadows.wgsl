@@ -176,6 +176,23 @@ fn BRDF( L : vec3f, V:vec3f, N: vec3f, roughness:f32, metallic:f32, baseColor: v
     return Lo;
 }
 
+fn getShadowNess( shadowPos:vec3f ) -> f32 {
+
+    // PCF filtering: take 9 samples and use the average value
+    let shadowDepthTextureSize = 4096.0; // should be push constant
+    let oneOverDepthTextureSize = 1.0 / shadowDepthTextureSize;
+    var visibility = 0.0;
+    for( var y = -1; y <= 1; y++){
+        for( var x = -1; x <= 1; x++){
+        let offset = vec2f(vec2(x,y))*oneOverDepthTextureSize;
+            // returns 0 or 1
+            visibility += textureSampleCompare(shadowMap, shadowSampler, shadowPos.xy+offset, shadowPos.z - 0.007);
+        }
+    }
+    visibility /= 9.0;  // divide by nr of samples
+    return visibility;
+}
+
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
@@ -240,25 +257,26 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let ambient : vec3f = baseColor * uFrame.ambientLightLevel;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
 
-    var color  = radiance + ambient + emissiveColor;
+    let visibility = getShadowNess( in.shadowPos );
+    var color  = radiance*visibility + ambient + emissiveColor;
 
-    let shadowDepthTextureSize = 500.0; // not correct
-    let oneOverDepthTextureSize = 1.0 / shadowDepthTextureSize;
-    var visibility = 0.0;
-    for( var y = -1; y <= 1; y++){
-        for( var x = -1; x <= 1; x++){
-        let offset = vec2f(vec2(x,y))*oneOverDepthTextureSize;
-
-            // returns 0 or 1
-            visibility += textureSampleCompare(shadowMap, shadowSampler, in.shadowPos.xy+offset, in.shadowPos.z - 0.007);
-        }
-    }
-    visibility /= 9.0;  // divide by nr of samples
+//    let shadowDepthTextureSize = 500.0; // not correct
+//    let oneOverDepthTextureSize = 1.0 / shadowDepthTextureSize;
+//    var visibility = 0.0;
+//    for( var y = -1; y <= 1; y++){
+//        for( var x = -1; x <= 1; x++){
+//        let offset = vec2f(vec2(x,y))*oneOverDepthTextureSize;
+//
+//            // returns 0 or 1
+//            visibility += textureSampleCompare(shadowMap, shadowSampler, in.shadowPos.xy+offset, in.shadowPos.z - 0.007);
+//        }
+//    }
+//    visibility /= 9.0;  // divide by nr of samples
 
 
    //color = vec3f(shadow);
 
-    color *= visibility;
+    //color *= visibility;
 
 
     //color = vec3f(roughness);

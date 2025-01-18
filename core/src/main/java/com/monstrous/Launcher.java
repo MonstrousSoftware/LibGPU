@@ -12,7 +12,7 @@ public class Launcher {
         config.setSize(1200, 800);
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
-        config.backend = WGPUBackendType.Vulkan;
+        config.backend = WGPUBackendType.D3D12;
         //config.enableGPUtiming = true;
 
         new Application(new TestShadow(), config);
