@@ -43,7 +43,6 @@ struct ModelUniforms {
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
 
-
 struct VertexInput {
     @location(0) position: vec3f,
     @location(1) uv: vec2f,
