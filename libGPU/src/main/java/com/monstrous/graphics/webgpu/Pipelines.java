@@ -25,6 +25,12 @@ public class Pipelines implements Disposable {
         return pipeline;
     }
 
+    // may be useful for hot-loading shaders
+    public void clear(){
+        dispose();
+        pipelines.clear();
+    }
+
     @Override
     public void dispose() {
         for(Pipeline pipeline : pipelines)

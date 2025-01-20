@@ -36,8 +36,6 @@ public class ModelBatch implements Disposable {
     private final Pointer device;
     private final int uniformAlignment;
 
-    private ShaderProgram shaderStd;
-    private ShaderProgram shaderNormalMap;
     private RenderPass pass;
 
     private Pointer uniformData;            // scratch buffer in native memory
@@ -106,37 +104,11 @@ public class ModelBatch implements Disposable {
 
         float[] floatData = new float[16];
         instanceData = WgpuJava.createFloatArrayPointer(floatData);       // native memory buffer for one instance to aid write buffer
-
-        //loadShaders();
     }
 
-    // to allow hot-loading of shaders
-    public void loadShaders(){
-        // hacky
-        if(environment != null && environment.depthPass){
-            shaderStd = new ShaderProgram("shaders/modelbatchDepth.wgsl","");
-            shaderNormalMap = new ShaderProgram("shaders/modelbatchDepth.wgsl","");
-            return;
-        }
-        if(environment != null && !environment.depthPass && environment.renderShadows){
-            shaderStd = new ShaderProgram("shaders/modelbatchPBRUberShadows.wgsl","");
-            shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUberShadows.wgsl","#define NORMAL_MAP");
-            return;
-        }
-        boolean pbr = true;
-        //String prefix = ShaderPrefix.buildPrefix(vertexAttributes);
-        if(pbr) {
-            shaderStd = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","");      // todo get from library storage
-            shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
-            // we use the 2nd shader for models that have a normal map defined in their material
-            // todo use push constants? use dynamic shader selection?
-
-        }
-        else {
-            shaderStd = new ShaderProgram("shaders/modelbatchUber.wgsl", "");      // todo get from library storage
-            shaderNormalMap = new ShaderProgram("shaders/modelbatchUber.wgsl", "#define NORMAL_MAP");      // todo get from library storage
-        }
-
+    // todo allow hot-loading of shaders
+    public void invalidatePipelines(){
+        pipelines.clear();
     }
 
 
@@ -299,7 +271,7 @@ public class ModelBatch implements Disposable {
 
         //ShaderProgram shader = setShader(meshPart.mesh.vertexAttributes);
 
-        setPipeline(meshPart.mesh.vertexAttributes);
+        setPipeline(meshPart.mesh.vertexAttributes, environment);
 
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
@@ -315,46 +287,18 @@ public class ModelBatch implements Disposable {
 
         if (environment != null && environment.depthPass) {
             return "shaders/modelbatchDepth.wgsl";
-        } else if (environment != null && !environment.depthPass && environment.renderShadows) {
-            return "shaders/modelbatchPBRUberShadows.wgsl";
         }
         return "shaders/modelbatchPBRUber.wgsl";
-
-//            // todo use push constants? use dynamic shader selection?
-//        }
-//        else {
-//            shader = new ShaderProgram("shaders/modelbatchUber.wgsl", prefix);      // todo get from library storage
-//        }
-//        return shader;
     }
 
-    private ShaderProgram setShader(VertexAttributes vertexAttributes){
-        ShaderProgram shader;
 
-        // todo avoid recompiling for each frame
-
-        boolean pbr = true;
-
-        String prefix = ShaderPrefix.buildPrefix(vertexAttributes);
-        // hacky
-        if(environment != null && environment.depthPass){
-            shader = new ShaderProgram("shaders/modelbatchDepth.wgsl",prefix);
-        } else if(environment != null && !environment.depthPass && environment.renderShadows){
-            shader = new ShaderProgram("shaders/modelbatchPBRUberShadows.wgsl",prefix);
-        } else if(pbr) {
-            shader = new ShaderProgram("shaders/modelbatchPBRUber.wgsl",prefix);      // todo get from library storage
-            // todo use push constants? use dynamic shader selection?
-        }
-        else {
-            shader = new ShaderProgram("shaders/modelbatchUber.wgsl", prefix);      // todo get from library storage
-        }
-        return shader;
-    }
 
     // create or reuse pipeline on demand when we know the model
-    private void setPipeline(VertexAttributes vertexAttributes ) {
+    private void setPipeline(VertexAttributes vertexAttributes, Environment environment ) {
 
         pipelineSpec.vertexAttributes = vertexAttributes;
+        pipelineSpec.environment = environment;
+        pipelineSpec.shader = null;
         pipelineSpec.shaderSourceFile = selectShaderSourceFile();
 //        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT))        // hmm....
 //           pipelineSpec.shader = shaderNormalMap;
@@ -377,8 +321,6 @@ public class ModelBatch implements Disposable {
 
     @Override
     public void dispose() {
-        shaderStd.dispose();
-        shaderNormalMap.dispose();
         pipelines.dispose();
         wgpu.BindGroupLayoutRelease(frameBindGroupLayout);
         wgpu.BindGroupLayoutRelease(materialBindGroupLayout);

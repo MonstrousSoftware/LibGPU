@@ -117,6 +117,9 @@ public class TestShadow extends ApplicationAdapter {
 
 
     public void render(){
+        if(LibGPU.input.isKeyPressed(Input.Keys.L)){    // to force shaders to be recompiled
+            modelBatch.invalidatePipelines();
+        }
 
         currentTime += LibGPU.graphics.getDeltaTime();
         ScreenUtils.clear(Color.GRAY);
@@ -124,17 +127,19 @@ public class TestShadow extends ApplicationAdapter {
         updateModelMatrix(modelMatrix, currentTime);
         camController.update();
 
-
+        // pass #1 : depth map
         environment.depthPass = true;
         environment.renderShadows = false;
         environment.setShadowMap(shadowCam, null);
+
         modelBatch.begin(shadowCam, environment, colorMap, depthMap);
         modelBatch.render(instances);
         modelBatch.end();
 
-
+        // pass #2 : render colours
         environment.depthPass = false;
         environment.renderShadows = true;
+
         environment.setShadowMap(shadowCam, depthMap);
         modelBatch.begin(camera, environment);
         modelBatch.render(instances);

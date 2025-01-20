@@ -15,7 +15,7 @@ public class Launcher {
         config.backend = WGPUBackendType.D3D12;
         //config.enableGPUtiming = true;
 
-        new Application(new TestSpriteBatch(), config);
+        new Application(new TestShadow(), config);
 
     }
 }

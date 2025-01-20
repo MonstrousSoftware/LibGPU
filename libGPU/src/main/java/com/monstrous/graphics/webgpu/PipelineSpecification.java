@@ -3,6 +3,7 @@ package com.monstrous.graphics.webgpu;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttributes;
+import com.monstrous.graphics.lights.Environment;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.WGPUBlendFactor;
 import com.monstrous.wgpu.WGPUBlendOperation;
@@ -14,6 +15,7 @@ import java.util.Objects;
 public class PipelineSpecification implements Disposable {
     public String name;
     public VertexAttributes vertexAttributes;
+    public Environment environment;
     public String shaderSourceFile;
     public ShaderProgram shader;
     public boolean ownsShader;
