@@ -28,6 +28,9 @@ struct FrameUniforms {
     pointLights : array<PointLight, MAX_POINT_LIGHTS>,
     numPointLights: i32,
 
+    lightCombinedMatrix: mat4x4f,
+    lightPosition: vec3f,
+
 };
 
 struct MaterialUniforms {
@@ -39,13 +42,6 @@ struct MaterialUniforms {
 struct ModelUniforms {
     modelMatrix: mat4x4f,
 };
-
-#ifdef SHADOWS
-struct ShadowUniforms {
-    lightCombinedMatrix: mat4x4f,
-    lightPosition: vec3f,
-};
-#endif
 
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 
@@ -64,7 +60,6 @@ struct ShadowUniforms {
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
 #ifdef SHADOWS
-@group(3) @binding(0) var<uniform> uShadow : ShadowUniforms;
 @group(3) @binding(1) var shadowMap: texture_depth_2d;
 @group(3) @binding(2) var shadowSampler: sampler_comparison;
 #endif
@@ -117,7 +112,7 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    out.worldPosition = worldPosition.xyz;
 
 #ifdef SHADOWS
-    let posFromLight= uShadow.lightCombinedMatrix * worldPosition;
+    let posFromLight= uFrame.lightCombinedMatrix * worldPosition;
     // XY is in (-1, 1) space, Z is in (0, 1) space
 
     // Convert XY to (0, 1)

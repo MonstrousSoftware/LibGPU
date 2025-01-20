@@ -29,38 +29,19 @@ struct FrameUniforms {
     pointLights : array<PointLight, MAX_POINT_LIGHTS>,
     numPointLights: i32,
 
-};
-
-struct MaterialUniforms {
-    metallicFactor: f32,
-    roughnessFactor: f32,
-    baseColorFactor: vec4f,
+    lightCombinedMatrix: mat4x4f,
+    lightPosition: vec3f,
 };
 
 struct ModelUniforms {
     modelMatrix: mat4x4f,
 };
 
-struct ShadowUniforms {
-    lightCombinedMatrix: mat4x4f,
-    lightPosition: vec3f,
-};
-
-// The memory location of the uniform is given by a pair of a *bind group* and a *binding*
 
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
 
-@group(1) @binding(0) var<uniform> material: MaterialUniforms;
-@group(1) @binding(1) var albedoTexture: texture_2d<f32>;
-@group(1) @binding(2) var textureSampler: sampler;
-@group(1) @binding(3) var emissiveTexture: texture_2d<f32>;
-
-@group(1) @binding(5) var metallicRoughnessTexture: texture_2d<f32>;
-
-
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
-@group(3) @binding(0) var<uniform> uShadow : ShadowUniforms;
 
 
 struct VertexInput {
@@ -78,7 +59,7 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    var out: VertexOutput;
 
    let worldPosition =  instances[instance].modelMatrix * vec4f(in.position, 1.0);
-   out.position = uShadow.lightCombinedMatrix * worldPosition;
+   out.position = uFrame.lightCombinedMatrix * worldPosition;
 
    return out;
 }
@@ -86,6 +67,6 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-    var grey: f32 = in.position.z;
-    return vec4f(grey,0, 0, 1);
+    var depth: f32 = in.position.z;
+    return vec4f(depth ,depth,depth, 1);
 }

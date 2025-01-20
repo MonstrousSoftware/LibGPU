@@ -142,12 +142,12 @@ public class ModelBatch implements Disposable {
         materialBindGroup = null;
 
         if(environment != null && environment.depthPass) {
-            writeShadowUniforms(shadowUniformBuffer, environment);
+            //writeShadowUniforms(shadowUniformBuffer, environment);
             depthBindGroup = makeDepthBindGroup(depthBindGroupLayout, shadowUniformBuffer);
             pass.setBindGroup(3, depthBindGroup);
         }
         if(environment != null && environment.renderShadows) {
-            writeShadowUniforms(shadowUniformBuffer, environment);
+            //writeShadowUniforms(shadowUniformBuffer, environment);
             shadowBindGroup = makeShadowBindGroup(shadowBindGroupLayout, shadowUniformBuffer);
             pass.setBindGroup(3, shadowBindGroup);
         }
@@ -610,8 +610,8 @@ public class ModelBatch implements Disposable {
         layouts[groups++] = instancingBindGroupLayout.address();
         if(environment != null && environment.renderShadows)
             layouts[groups++] = shadowBindGroupLayout.address();
-        if(environment != null && environment.depthPass)
-            layouts[groups++] = depthBindGroupLayout.address();
+//        if(environment != null && environment.depthPass)
+//            layouts[groups++] = depthBindGroupLayout.address();
         Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
 
         // Create the pipeline layout to define the bind groups needed : 3 or 4 bind groups
@@ -732,7 +732,10 @@ public class ModelBatch implements Disposable {
         offset += setUniformInteger(uniformData, offset, numPointLights);
         offset += 3*4; // padding (important)
 
-
+        if(environment != null || environment.shadowCamera != null) {
+            offset += setUniformMatrix(uniformData, offset, environment.shadowCamera.combined);
+            offset += setUniformVec3(uniformData, offset, environment.shadowCamera.position);
+        }
 
         // BEWARE of padding rules
 
@@ -755,18 +758,18 @@ public class ModelBatch implements Disposable {
     }
 
 
-    private void writeShadowUniforms( Pointer uniformBuffer, Environment environment ){
-        if(environment == null || environment.shadowCamera == null)
-            throw new RuntimeException("Shadow Uniforms: missing shadow data in Environment.");
-
-        int offset = 0;
-        offset += setUniformMatrix(uniformData, offset, environment.shadowCamera.combined);
-        offset += setUniformVec3(uniformData, offset, environment.shadowCamera.position);
-
-        // BEWARE of padding rules
-
-        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, SHADOW_UB_SIZE);
-    }
+//    private void writeShadowUniforms( Pointer uniformBuffer, Environment environment ){
+//        if(environment == null || environment.shadowCamera == null)
+//            throw new RuntimeException("Shadow Uniforms: missing shadow data in Environment.");
+//
+//        int offset = 0;
+//        offset += setUniformMatrix(uniformData, offset, environment.shadowCamera.combined);
+//        offset += setUniformVec3(uniformData, offset, environment.shadowCamera.position);
+//
+//        // BEWARE of padding rules
+//
+//        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, SHADOW_UB_SIZE);
+//    }
 
 
     private Pointer createUniformBuffer(int bufferSize, int maxSlices) {

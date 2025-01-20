@@ -1,3 +1,5 @@
+// DEPRECATED
+
 
 const MAX_DIR_LIGHTS : i32 = 5;
 const MAX_POINT_LIGHTS : i32 = 5;
