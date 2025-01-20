@@ -60,8 +60,8 @@ struct ModelUniforms {
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
 #ifdef SHADOWS
-@group(3) @binding(1) var shadowMap: texture_depth_2d;
-@group(3) @binding(2) var shadowSampler: sampler_comparison;
+@group(3) @binding(0) var shadowMap: texture_depth_2d;
+@group(3) @binding(1) var shadowSampler: sampler_comparison;
 #endif
 
 

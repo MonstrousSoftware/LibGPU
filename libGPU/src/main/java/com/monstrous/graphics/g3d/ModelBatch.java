@@ -362,13 +362,13 @@ public class ModelBatch implements Disposable {
         int location = 0;
 
         // Define binding layout
-        WGPUBindGroupLayoutEntry uniformBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(uniformBindingLayout);
-        uniformBindingLayout.setBinding(location++);
-        uniformBindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
-        uniformBindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
-        uniformBindingLayout.getBuffer().setMinBindingSize(SHADOW_UB_SIZE);
-        uniformBindingLayout.getBuffer().setHasDynamicOffset(0L);
+//        WGPUBindGroupLayoutEntry uniformBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(uniformBindingLayout);
+//        uniformBindingLayout.setBinding(location++);
+//        uniformBindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
+//        uniformBindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
+//        uniformBindingLayout.getBuffer().setMinBindingSize(SHADOW_UB_SIZE);
+//        uniformBindingLayout.getBuffer().setHasDynamicOffset(0L);
 
         WGPUBindGroupLayoutEntry shadowMapBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
         setDefault(shadowMapBindingLayout);
@@ -389,7 +389,7 @@ public class ModelBatch implements Disposable {
         bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Shadow)");
         bindGroupLayoutDesc.setEntryCount(location);
 
-        bindGroupLayoutDesc.setEntries(uniformBindingLayout, shadowMapBindingLayout, samplerBindingLayout);
+        bindGroupLayoutDesc.setEntries( shadowMapBindingLayout, samplerBindingLayout);
         return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
@@ -556,45 +556,37 @@ public class ModelBatch implements Disposable {
         if(environment.shadowMap == null)
             throw new RuntimeException("Shadow Bind Group needs shadow map in environment.");
 
-        // Create a binding
-        WGPUBindGroupEntry uniformBinding = WGPUBindGroupEntry.createDirect();
-        uniformBinding.setNextInChain();
-        uniformBinding.setBinding(0);  // binding index
-        uniformBinding.setBuffer(uniformBuffer);
-        uniformBinding.setOffset(0);
-        uniformBinding.setSize(SHADOW_UB_SIZE);
-
         WGPUBindGroupEntry samplerBinding = null;
 
-            // Create a sampler
-            WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
-            samplerDesc.setAddressModeU(WGPUAddressMode.ClampToEdge);
-            samplerDesc.setAddressModeV(WGPUAddressMode.ClampToEdge);
-            samplerDesc.setAddressModeW(WGPUAddressMode.ClampToEdge);
-            samplerDesc.setMagFilter(WGPUFilterMode.Linear);
-            samplerDesc.setMinFilter(WGPUFilterMode.Linear);
-            samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Linear);
+        // Create a sampler
+        WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
+        samplerDesc.setAddressModeU(WGPUAddressMode.ClampToEdge);
+        samplerDesc.setAddressModeV(WGPUAddressMode.ClampToEdge);
+        samplerDesc.setAddressModeW(WGPUAddressMode.ClampToEdge);
+        samplerDesc.setMagFilter(WGPUFilterMode.Linear);
+        samplerDesc.setMinFilter(WGPUFilterMode.Linear);
+        samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Linear);
 
-            samplerDesc.setLodMinClamp(0);
-            samplerDesc.setLodMaxClamp(1);
-            samplerDesc.setCompare(WGPUCompareFunction.Less);
-            samplerDesc.setMaxAnisotropy(1);
-            Pointer sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
+        samplerDesc.setLodMinClamp(0);
+        samplerDesc.setLodMaxClamp(1);
+        samplerDesc.setCompare(WGPUCompareFunction.Less);
+        samplerDesc.setMaxAnisotropy(1);
+        Pointer sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
 
-            samplerBinding = WGPUBindGroupEntry.createDirect();      // causes GC
-            samplerBinding.setNextInChain();
-            samplerBinding.setBinding(2);  // binding index
-            samplerBinding.setSampler(sampler);
+        samplerBinding = WGPUBindGroupEntry.createDirect();      // causes GC
+        samplerBinding.setNextInChain();
+        samplerBinding.setBinding(1);  // binding index
+        samplerBinding.setSampler(sampler);
 
 
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
         bindGroupDesc.setNextInChain();
         bindGroupDesc.setLayout(shadowBindGroupLayout);
-        // There must be as many bindings as declared in the layout!
 
-            bindGroupDesc.setEntryCount(3);
-            bindGroupDesc.setEntries(uniformBinding, environment.shadowMap.getBinding(1), samplerBinding);
+        // There must be as many bindings as declared in the layout!
+        bindGroupDesc.setEntryCount(2);
+        bindGroupDesc.setEntries( environment.shadowMap.getBinding(0), samplerBinding);
 
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
@@ -610,8 +602,6 @@ public class ModelBatch implements Disposable {
         layouts[groups++] = instancingBindGroupLayout.address();
         if(environment != null && environment.renderShadows)
             layouts[groups++] = shadowBindGroupLayout.address();
-//        if(environment != null && environment.depthPass)
-//            layouts[groups++] = depthBindGroupLayout.address();
         Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
 
         // Create the pipeline layout to define the bind groups needed : 3 or 4 bind groups
