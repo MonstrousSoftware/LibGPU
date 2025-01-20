@@ -13,16 +13,21 @@ public class Pipeline implements Disposable {
     private Pointer pipeline;
     public PipelineSpecification specification;
 
-
     public Pipeline(Pointer pipelineLayout, PipelineSpecification spec) {
         this.specification = new PipelineSpecification(spec);
 
         this.pipelineLayout = pipelineLayout;
 
-        String prefix = ShaderPrefix.buildPrefix(spec.vertexAttributes);
-        ShaderProgram shader = new ShaderProgram(spec.shaderSourceFile, prefix);
+        // if the specification does not already have a shader, create one from the source file, customized to the vertex attributes.
+        if(spec.shader == null){
+            String prefix = ShaderPrefix.buildPrefix(spec.vertexAttributes);
+            System.out.println("Prefix: ["+prefix+"]");
+            spec.shader = new ShaderProgram(spec.shaderSourceFile, prefix);
+            spec.ownsShader = true;
+        }
+
         //spec.shader = shader;
-        Pointer shaderModule = shader.getShaderModule(); //spec.shader.getShaderModule();
+        Pointer shaderModule = spec.shader.getShaderModule(); //spec.shader.getShaderModule();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes.getVertexBufferLayout();
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
@@ -101,7 +106,10 @@ public class Pipeline implements Disposable {
 
     public boolean canRender(PipelineSpecification spec){    // perhaps we need more params
         // crude check, to be refined
-        return spec.hashCode() == this.specification.hashCode();
+        int h = spec.hashCode();
+        int h2 = this.specification.hashCode();
+        return h == h2;
+        //return spec.hashCode() == this.specification.hashCode();
         // could be too strict, e.g. name changes or different instances of same shader
 
 //        return (spec.vertexAttributes.attributes.size() == this.specification.vertexAttributes.attributes.size() &&

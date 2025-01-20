@@ -3,6 +3,7 @@ package com.monstrous.graphics.webgpu;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttributes;
+import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.WGPUBlendFactor;
 import com.monstrous.wgpu.WGPUBlendOperation;
 import com.monstrous.wgpu.WGPUCullMode;
@@ -10,11 +11,12 @@ import com.monstrous.wgpu.WGPUTextureFormat;
 
 import java.util.Objects;
 
-public class PipelineSpecification {
+public class PipelineSpecification implements Disposable {
     public String name;
     public VertexAttributes vertexAttributes;
     public String shaderSourceFile;
     public ShaderProgram shader;
+    public boolean ownsShader;
     public boolean hasDepth;
 
     public WGPUBlendFactor blendSrcColor;
@@ -31,6 +33,7 @@ public class PipelineSpecification {
 
     public PipelineSpecification() {
         this.name = "pipeline";
+        ownsShader = false;
         enableDepth();
         enableBlending();
         setCullMode(WGPUCullMode.None);
@@ -107,6 +110,12 @@ public class PipelineSpecification {
 
     @Override
     public int hashCode() {
-        return Objects.hash(vertexAttributes, shaderSourceFile, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha);
+        return Objects.hash(vertexAttributes.getUsageFlags(), shaderSourceFile, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha);
+    }
+
+    @Override
+    public void dispose() {
+        if(ownsShader)
+            shader.dispose();
     }
 }

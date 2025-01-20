@@ -17,6 +17,9 @@ public class ShaderPrefix {
         if(vertexAttributes.hasUsage(VertexAttribute.Usage.NORMAL)){
             sb.append("#define NORMAL\n");
         }
+        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT)){   // this is taken as indication that a normal map is used
+            sb.append("#define NORMAL_MAP\n");
+        }
         return sb.toString();
     }
 }
