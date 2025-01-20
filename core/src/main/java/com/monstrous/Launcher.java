@@ -13,6 +13,8 @@ public class Launcher {
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.D3D12;
+
+        // don't use. will cause crash
         //config.enableGPUtiming = true;
 
         new Application(new TestShadow(), config);

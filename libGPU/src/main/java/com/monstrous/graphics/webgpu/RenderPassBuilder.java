@@ -111,7 +111,7 @@ public class RenderPassBuilder {
         renderPassDescriptor.setColorAttachments(renderPassColorAttachment);
 
 
-        //gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
+        LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
         Pointer renderPassPtr = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
         RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat);

@@ -25,7 +25,7 @@ public class TestShadow extends ApplicationAdapter {
     private OrthographicCamera shadowCam;
     private Environment environment;
     private Matrix4 modelMatrix;
-    private Model model, model2;
+    private Model model, model2, model3;
     private ModelInstance modelInstance1;
     private ModelInstance modelInstance2;
     private ArrayList<ModelInstance> instances;
@@ -54,6 +54,10 @@ public class TestShadow extends ApplicationAdapter {
         modelInstance2 = new ModelInstance(model2, 0,0,0);
         instances.add(modelInstance2);
 
+        model3 = new Model("models/waterbottle/WaterBottle.gltf");
+        ModelInstance modelInstance3 = new ModelInstance(model3, 0,1,0);
+        instances.add(modelInstance3);
+
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(-0, 3.5f, -5f);
@@ -67,7 +71,7 @@ public class TestShadow extends ApplicationAdapter {
         camera.update();
 
         // unit vector from main light source
-        Vector3 lightDirection = new Vector3(0.3f, -1f, .3f).nor();
+        Vector3 lightDirection = new Vector3(1.3f, -1f, .3f).nor();
 
         shadowCam = new OrthographicCamera(SHADOW_VIEWPORT_SIZE, SHADOW_VIEWPORT_SIZE); // in world units
 
@@ -85,7 +89,7 @@ public class TestShadow extends ApplicationAdapter {
 
         environment = new Environment();
         DirectionalLight sun = new DirectionalLight( Color.WHITE, lightDirection);
-        sun.setIntensity(4f);
+        sun.setIntensity(1f);
         environment.add( sun );
         environment.setShadowMap(shadowCam, depthMap);
         environment.ambientLightLevel = 0.5f;
@@ -122,10 +126,11 @@ public class TestShadow extends ApplicationAdapter {
         }
 
         currentTime += LibGPU.graphics.getDeltaTime();
-        ScreenUtils.clear(Color.GRAY);
-
         updateModelMatrix(modelMatrix, currentTime);
         camController.update();
+
+
+        ScreenUtils.clear(Color.GRAY);
 
         // pass #1 : depth map
         environment.depthPass = true;
@@ -139,8 +144,8 @@ public class TestShadow extends ApplicationAdapter {
         // pass #2 : render colours
         environment.depthPass = false;
         environment.renderShadows = true;
-
         environment.setShadowMap(shadowCam, depthMap);
+
         modelBatch.begin(camera, environment);
         modelBatch.render(instances);
         modelBatch.end();
@@ -154,10 +159,8 @@ public class TestShadow extends ApplicationAdapter {
 
         batch.begin();
         font.draw(batch, "camera "+shadowCam.position.toString()+" angleX:"+camController.anglex, 10, 500);
-        batch.draw(colorMap,0, 0, 200, 200);
+        batch.draw(colorMap,0, 0, 200, 200);        // debug view of depth map
         batch.end();
-
-
 
 
         // At the end of the frame

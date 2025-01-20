@@ -21,7 +21,7 @@ public class Application {
     private boolean surfaceConfigured = false;
     private boolean isMinimized = false;
     private WindowedApp winApp;
-    private GPUTiming gpuTiming;
+    public GPUTiming gpuTiming;
 
 
     public Application(ApplicationListener listener) {
