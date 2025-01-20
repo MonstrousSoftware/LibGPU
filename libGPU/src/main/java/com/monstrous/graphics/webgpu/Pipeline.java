@@ -1,6 +1,8 @@
 package com.monstrous.graphics.webgpu;
 
 import com.monstrous.LibGPU;
+import com.monstrous.ShaderPrefix;
+import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
@@ -17,7 +19,10 @@ public class Pipeline implements Disposable {
 
         this.pipelineLayout = pipelineLayout;
 
-        Pointer shaderModule = spec.shader.getShaderModule();
+        String prefix = ShaderPrefix.buildPrefix(spec.vertexAttributes);
+        ShaderProgram shader = new ShaderProgram(spec.shaderSourceFile, prefix);
+        //spec.shader = shader;
+        Pointer shaderModule = shader.getShaderModule(); //spec.shader.getShaderModule();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes.getVertexBufferLayout();
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
@@ -90,6 +95,8 @@ public class Pipeline implements Disposable {
 
         pipelineDesc.setLayout(pipelineLayout);
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
+        if(pipeline == null)
+            throw new RuntimeException("Pipeline createion failed");
     }
 
     public boolean canRender(PipelineSpecification spec){    // perhaps we need more params

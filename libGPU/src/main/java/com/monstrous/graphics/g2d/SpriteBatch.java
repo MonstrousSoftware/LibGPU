@@ -91,14 +91,15 @@ public class SpriteBatch implements Disposable {
         pipelineLayout = makePipelineLayout(bindGroupLayout);
 
         vertexAttributes = new VertexAttributes();
-        vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add("uv",          WGPUVertexFormat.Float32x2, 1 );
-        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 2 );
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",    WGPUVertexFormat.Float32x2, 0 );
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv",          WGPUVertexFormat.Float32x2, 1 );
+        vertexAttributes.add(VertexAttribute.Usage.COLOR,"color",       WGPUVertexFormat.Float32x4, 2 );
         //vertexAttributes.add("packedColor", WGPUVertexFormat.Float32, 2 );
         vertexAttributes.end();
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.defaultShader);
+        pipelineSpec.shaderSourceFile = "shaders/sprite.wgsl";  // todo
 
     }
 

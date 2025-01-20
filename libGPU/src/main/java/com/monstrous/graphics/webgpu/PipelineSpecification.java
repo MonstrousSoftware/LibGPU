@@ -13,6 +13,7 @@ import java.util.Objects;
 public class PipelineSpecification {
     public String name;
     public VertexAttributes vertexAttributes;
+    public String shaderSourceFile;
     public ShaderProgram shader;
     public boolean hasDepth;
 
@@ -37,6 +38,12 @@ public class PipelineSpecification {
         depthFormat = WGPUTextureFormat.Depth24Plus;       // todo get from adapter?
     }
 
+    public PipelineSpecification(VertexAttributes vertexAttributes, String shaderSourceFile) {
+        this();
+        this.vertexAttributes = vertexAttributes;
+        this.shaderSourceFile = shaderSourceFile;
+    }
+
     public PipelineSpecification(VertexAttributes vertexAttributes, ShaderProgram shader) {
         this();
         this.vertexAttributes = vertexAttributes;
@@ -46,6 +53,7 @@ public class PipelineSpecification {
     public PipelineSpecification(PipelineSpecification spec) {
         this.name  = spec.name;
         this.vertexAttributes = spec.vertexAttributes;       // should be deep copy
+        this.shaderSourceFile = spec.shaderSourceFile;
         this.shader = spec.shader;
         this.hasDepth = spec.hasDepth;
         this.blendSrcColor = spec.blendSrcColor;
@@ -94,11 +102,11 @@ public class PipelineSpecification {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PipelineSpecification that = (PipelineSpecification) o;
-        return hasDepth == that.hasDepth && Objects.equals(vertexAttributes, that.vertexAttributes) && Objects.equals(shader, that.shader) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor && blendOpColor == that.blendOpColor && blendSrcAlpha == that.blendSrcAlpha && blendDstAlpha == that.blendDstAlpha && blendOpAlpha == that.blendOpAlpha;
+        return hasDepth == that.hasDepth && Objects.equals(vertexAttributes, that.vertexAttributes) && shaderSourceFile.contentEquals(that.shaderSourceFile) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor && blendOpColor == that.blendOpColor && blendSrcAlpha == that.blendSrcAlpha && blendDstAlpha == that.blendDstAlpha && blendOpAlpha == that.blendOpAlpha;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vertexAttributes, shader, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha);
+        return Objects.hash(vertexAttributes, shaderSourceFile, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha);
     }
 }

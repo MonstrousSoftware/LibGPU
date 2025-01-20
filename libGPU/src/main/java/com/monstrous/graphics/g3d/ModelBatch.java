@@ -1,6 +1,7 @@
 package com.monstrous.graphics.g3d;
 
 import com.monstrous.LibGPU;
+import com.monstrous.ShaderPrefix;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
@@ -123,6 +124,7 @@ public class ModelBatch implements Disposable {
             return;
         }
         boolean pbr = true;
+        //String prefix = ShaderPrefix.buildPrefix(vertexAttributes);
         if(pbr) {
             shaderStd = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","");      // todo get from library storage
             shaderNormalMap = new ShaderProgram("shaders/modelbatchPBRUber.wgsl","#define NORMAL_MAP");      // todo get from library storage
@@ -148,7 +150,7 @@ public class ModelBatch implements Disposable {
 
     public void begin(Camera camera, Environment environment, Texture outputTexture, Texture depthTexture){
         this.environment = environment;
-        loadShaders();
+        //loadShaders();
         pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, instancingBindGroupLayout, shadowBindGroupLayout);
 
         pass = RenderPassBuilder.create(true, outputTexture,  depthTexture);
@@ -276,7 +278,7 @@ public class ModelBatch implements Disposable {
             materialBindGroupLayout = createMaterialBindGroupLayout();
             if(materialBindGroup != null)
                 wgpu.BindGroupRelease(materialBindGroup);
-            materialBindGroup = makeMaterialBindGroup(material, materialBindGroupLayout, materialUniformBuffer, meshPart.mesh.vertexAttributes.hasNormalMap);   // bind group for textures and uniforms
+            materialBindGroup = makeMaterialBindGroup(material, materialBindGroupLayout, materialUniformBuffer, meshPart.mesh.vertexAttributes);   // bind group for textures and uniforms
 
             // set dynamic offset into uniform buffer
             int[] offset = new int[1];
@@ -295,6 +297,8 @@ public class ModelBatch implements Disposable {
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         pass.setVertexBuffer(0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
+        //ShaderProgram shader = setShader(meshPart.mesh.vertexAttributes);
+
         setPipeline(meshPart.mesh.vertexAttributes);
 
 
@@ -307,14 +311,56 @@ public class ModelBatch implements Disposable {
             pass.draw(meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
     }
 
+    private String selectShaderSourceFile() {
+
+        if (environment != null && environment.depthPass) {
+            return "shaders/modelbatchDepth.wgsl";
+        } else if (environment != null && !environment.depthPass && environment.renderShadows) {
+            return "shaders/modelbatchPBRUberShadows.wgsl";
+        }
+        return "shaders/modelbatchPBRUber.wgsl";
+
+//            // todo use push constants? use dynamic shader selection?
+//        }
+//        else {
+//            shader = new ShaderProgram("shaders/modelbatchUber.wgsl", prefix);      // todo get from library storage
+//        }
+//        return shader;
+    }
+
+    private ShaderProgram setShader(VertexAttributes vertexAttributes){
+        ShaderProgram shader;
+
+        // todo avoid recompiling for each frame
+
+        boolean pbr = true;
+
+        String prefix = ShaderPrefix.buildPrefix(vertexAttributes);
+        // hacky
+        if(environment != null && environment.depthPass){
+            shader = new ShaderProgram("shaders/modelbatchDepth.wgsl",prefix);
+        } else if(environment != null && !environment.depthPass && environment.renderShadows){
+            shader = new ShaderProgram("shaders/modelbatchPBRUberShadows.wgsl",prefix);
+        } else if(pbr) {
+            shader = new ShaderProgram("shaders/modelbatchPBRUber.wgsl",prefix);      // todo get from library storage
+            // todo use push constants? use dynamic shader selection?
+        }
+        else {
+            shader = new ShaderProgram("shaders/modelbatchUber.wgsl", prefix);      // todo get from library storage
+        }
+        return shader;
+    }
+
     // create or reuse pipeline on demand when we know the model
-    private void setPipeline(VertexAttributes vertexAttributes) {
+    private void setPipeline(VertexAttributes vertexAttributes ) {
 
         pipelineSpec.vertexAttributes = vertexAttributes;
-        if(vertexAttributes.hasNormalMap)
-           pipelineSpec.shader = shaderNormalMap;
-        else
-           pipelineSpec.shader = shaderStd;
+        pipelineSpec.shaderSourceFile = selectShaderSourceFile();
+//        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT))        // hmm....
+//           pipelineSpec.shader = shaderNormalMap;
+//        else
+//           pipelineSpec.shader = shaderStd;
+        //pipelineSpec.shader = shader;
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
@@ -510,7 +556,7 @@ public class ModelBatch implements Disposable {
 
 
     // per material bind group
-    private Pointer makeMaterialBindGroup(Material material, Pointer bindGroupLayout, Pointer materialUniformBuffer, boolean hasNormalMap) {
+    private Pointer makeMaterialBindGroup(Material material, Pointer bindGroupLayout, Pointer materialUniformBuffer, VertexAttributes vertexAttributes) {
         // Create a binding
         WGPUBindGroupEntry uniformBinding = WGPUBindGroupEntry.createDirect();
         uniformBinding.setNextInChain();
@@ -528,7 +574,7 @@ public class ModelBatch implements Disposable {
         bindGroupDesc.setLayout(bindGroupLayout);
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(6);
-        if(hasNormalMap && material.normalTexture != null) {
+        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT) && material.normalTexture != null) {
             bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), material.normalTexture.getBinding(4),
                     material.metallicRoughnessTexture.getBinding(5));
         }

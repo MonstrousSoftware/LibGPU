@@ -2,6 +2,7 @@ package com.monstrous.graphics.g3d;
 
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.Material;
+import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.loaders.*;
 import com.monstrous.graphics.loaders.gltf.*;
@@ -351,15 +352,15 @@ public class Model implements Disposable {
         // todo adjust this based on the file contents:
         meshData.vertexAttributes = new VertexAttributes();
         int location = 0;
-        meshData.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, location++);
-        meshData.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, location++);
-        meshData.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x3, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, location++);
         if(hasNormalMap) {
-            meshData.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, location++);
-            meshData.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, location++);
+            meshData.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, location++);
+            meshData.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, location++);
         }
         meshData.vertexAttributes.end();
-        meshData.vertexAttributes.hasNormalMap = hasNormalMap;
+        //meshData.vertexAttributes.hasNormalMap = hasNormalMap;
 
         return new Mesh(meshData);
     }

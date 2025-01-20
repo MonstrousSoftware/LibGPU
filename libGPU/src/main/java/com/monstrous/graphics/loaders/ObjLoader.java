@@ -1,6 +1,7 @@
 package com.monstrous.graphics.loaders;
 
 import com.monstrous.FileInput;
+import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
@@ -151,11 +152,11 @@ public class ObjLoader {
         data.objectName = name;
 
         data.vertexAttributes = new VertexAttributes();
-        data.vertexAttributes.add("position", WGPUVertexFormat.Float32x3, 0);
-        data.vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 1);
-        data.vertexAttributes.add("normal", WGPUVertexFormat.Float32x3, 2);
-        data.vertexAttributes.add("tangent", WGPUVertexFormat.Float32x3, 3);
-        data.vertexAttributes.add("bitangent", WGPUVertexFormat.Float32x3, 4);
+        data.vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x3, 0);
+        data.vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
+        data.vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+        data.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, 3);
+        data.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, 4);
 
 
         data.vertexAttributes.end();

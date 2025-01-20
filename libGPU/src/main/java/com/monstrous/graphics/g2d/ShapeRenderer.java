@@ -3,6 +3,7 @@ package com.monstrous.graphics.g2d;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.ShaderProgram;
+import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
@@ -19,7 +20,7 @@ import jnr.ffi.Pointer;
 
 public class ShapeRenderer implements Disposable {
     private WGPU wgpu;
-    private ShaderProgram shader;
+    //private ShaderProgram shader;
     private int maxShapes;
     private boolean begun;
     private int vertexSize;
@@ -56,7 +57,7 @@ public class ShapeRenderer implements Disposable {
 
         // vertex: x, y, r, g, b, a
         vertexSize = 6; // floats
-        shader = new ShaderProgram("shaders/shape.wgsl");
+        //shader = new ShaderProgram("shaders/shape.wgsl");
 
         indexValues = new short[maxShapes * 6];    // 6 indices per rectangle
         vertFloats = new float[maxShapes * 4 * vertexSize]; // 4 points per rectangle
@@ -72,12 +73,12 @@ public class ShapeRenderer implements Disposable {
         pipelineLayout = makePipelineLayout(bindGroupLayout);
 
         vertexAttributes = new VertexAttributes();
-        vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 1 );
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",    WGPUVertexFormat.Float32x2, 0 );
+        vertexAttributes.add(VertexAttribute.Usage.COLOR, "color",       WGPUVertexFormat.Float32x4, 1 );
         vertexAttributes.end();
 
         pipelines = new Pipelines();
-        pipelineSpec = new PipelineSpecification(vertexAttributes, shader);
+        pipelineSpec = new PipelineSpecification(vertexAttributes, "shaders/shape.wgsl");
 
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -429,6 +430,6 @@ public class ShapeRenderer implements Disposable {
         wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
-        shader.dispose();
+        //shader.dispose();
     }
 }
