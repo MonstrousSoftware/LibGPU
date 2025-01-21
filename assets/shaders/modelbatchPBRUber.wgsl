@@ -1,4 +1,9 @@
 
+// Shader source can be tuned by #defines of the following:
+// NORMAL_MAP
+// SHADOWS
+
+
 const MAX_DIR_LIGHTS : i32 = 5;
 const MAX_POINT_LIGHTS : i32 = 5;
 

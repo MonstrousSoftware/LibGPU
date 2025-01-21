@@ -15,7 +15,6 @@ struct PointLight {
     intensity: vec4f,
 }
 
-
 struct FrameUniforms {
     projectionMatrix: mat4x4f,
     viewMatrix : mat4x4f,

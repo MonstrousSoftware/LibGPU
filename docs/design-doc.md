@@ -31,5 +31,30 @@ SpriteBatch was updated to adapt the shader and the vertex buffer contents to th
 There is now a method setVertexAttributes() which allows to change the format on the fly (between begin and end).
 Not a very useful or user-friendly method, but it demonstrates a proof of concept: changing pipelines and shaders during a batch.
 
+Shader prefix is constructed from vertex attributes and environment.  Shader is compiled in the Pipeline constructor.  Because pipelines are cached in Pipelines this needs
+only be performed once.
+
+
+
+Clear Screen
+------------
+In OpenGL there is a specific call to clear the screen, in WebGPU this is part of the render pass construction.  If a frame is rendered in multiple passes, it is necessary to
+indicate per pass if the screen needs to be cleared or not.  E.g. imagine a 3D scene with a GUI overlaid.  The 3D scene is rendered by ModelBatch with a background colour, but
+the GUI is rendered via SpriteBatch without clearing the screen.
+
+Creation of a render pass takes place in SpriteBatch.begin() and ModelBatch.begin().
+
+There are now two ways to set the background colour:
+
+ScreenUtils.clear(Color clear);
+
+This sets the default clear colour.  A null value indicates not to clear the screen.
+
+SpriteBatch.begin(Color clear) takes a parameter Color clearColor to provide the background colour, a null indicates to use the default clear color.
+
+If ScreenUtils.clear() is not called and no color value is provided to SpriteBatxh.begin() the screen will be cleared to black.
+
+An extra parameter was also added to ModelBatch.begin().
+
 
 

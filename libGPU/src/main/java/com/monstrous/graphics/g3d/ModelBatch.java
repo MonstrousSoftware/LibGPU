@@ -109,19 +109,23 @@ public class ModelBatch implements Disposable {
 
 
     public void begin(Camera camera){
-        begin(camera, null, null, null);
+        begin(camera, null, null, null, null);
     }
 
     public void begin(Camera camera, Environment environment) {
-        begin(camera, environment, null, null);
+        begin(camera, environment, null, null, null);
     }
 
-    public void begin(Camera camera, Environment environment, Texture outputTexture, Texture depthTexture){
+    public void begin(Camera camera, Environment environment, Color clearColor) {
+        begin(camera, environment, clearColor, null, null);
+    }
+
+    public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture){
         this.environment = environment;
         //loadShaders();
         pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, instancingBindGroupLayout, shadowBindGroupLayout);
 
-        pass = RenderPassBuilder.create(true, outputTexture,  depthTexture);
+        pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture);
 
         materialUniformIndex = 0;       // reset offset into uniform buffer
         prevMaterial = null;

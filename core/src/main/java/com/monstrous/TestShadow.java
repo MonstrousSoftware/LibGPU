@@ -130,14 +130,13 @@ public class TestShadow extends ApplicationAdapter {
         camController.update();
 
 
-        ScreenUtils.clear(Color.GRAY);
 
         // pass #1 : depth map
         environment.depthPass = true;
         environment.renderShadows = false;
         environment.setShadowMap(shadowCam, null);
 
-        modelBatch.begin(shadowCam, environment, colorMap, depthMap);
+        modelBatch.begin(shadowCam, environment, Color.GRAY, colorMap, depthMap);
         modelBatch.render(instances);
         modelBatch.end();
 
@@ -146,7 +145,7 @@ public class TestShadow extends ApplicationAdapter {
         environment.renderShadows = true;
         environment.setShadowMap(shadowCam, depthMap);
 
-        modelBatch.begin(camera, environment);
+        modelBatch.begin(camera, environment, Color.BLUE);
         modelBatch.render(instances);
         modelBatch.end();
 
@@ -157,6 +156,7 @@ public class TestShadow extends ApplicationAdapter {
 //        batch.draw(colorMap,LibGPU.graphics.getWidth()/2f, 0, 500, 500);
 //        batch.end();
 
+        ScreenUtils.clear(null);
         batch.begin();
         font.draw(batch, "camera "+shadowCam.position.toString()+" angleX:"+camController.anglex, 10, 500);
         batch.draw(colorMap,0, 0, 200, 200);        // debug view of depth map

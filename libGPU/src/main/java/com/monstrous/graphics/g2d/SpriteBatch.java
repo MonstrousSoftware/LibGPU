@@ -154,8 +154,12 @@ public class SpriteBatch implements Disposable {
         setPipeline();
     }
 
-    public void begin() {
-        renderPass = RenderPassBuilder.create(false);       // todo assuming no clear in case this is for a gui
+    public void begin(){
+        begin(null);
+    }
+
+    public void begin(Color clearColor) {
+        renderPass = RenderPassBuilder.create(clearColor);
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");
