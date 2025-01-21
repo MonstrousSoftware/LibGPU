@@ -152,7 +152,7 @@ public class TestShadow extends ApplicationAdapter {
 
         ScreenUtils.clear(null);
         batch.begin();
-        font.draw(batch, "camera "+shadowCam.position.toString()+" angleX:"+camController.anglex, 10, 500);
+        font.draw(batch, "camera "+camera.position.toString()+" angleX:"+camController.anglex, 10, 500);
         batch.draw(colorMap,0, 0, 200, 200);        // debug view of depth map
         batch.end();
 

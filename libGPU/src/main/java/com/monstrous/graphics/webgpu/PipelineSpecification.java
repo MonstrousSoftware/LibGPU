@@ -72,6 +72,7 @@ public class PipelineSpecification implements Disposable {
 
         this.colorFormat = spec.colorFormat;
         this.depthFormat = spec.depthFormat;
+        this.numSamples = spec.numSamples;
     }
 
     public void enableDepth(){
