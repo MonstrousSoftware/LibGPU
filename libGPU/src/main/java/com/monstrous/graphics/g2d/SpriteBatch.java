@@ -159,7 +159,7 @@ public class SpriteBatch implements Disposable {
     }
 
     public void begin(Color clearColor) {
-        renderPass = RenderPassBuilder.create(clearColor);
+        renderPass = RenderPassBuilder.create(clearColor, null, null, LibGPU.app.configuration.numSamples);
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");
@@ -181,6 +181,7 @@ public class SpriteBatch implements Disposable {
         pipelineSpec.disableDepth();
         pipelineSpec.shader = specificShader;
         pipelineSpec.vertexAttributes = vertexAttributes;
+        pipelineSpec.numSamples =  LibGPU.app.configuration.numSamples;
         setPipeline();
         setUniforms();
 

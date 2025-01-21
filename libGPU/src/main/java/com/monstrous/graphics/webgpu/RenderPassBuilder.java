@@ -35,17 +35,17 @@ public class RenderPassBuilder {
     }
 
     public static RenderPass create() {
-        return create(null, null, null);
+        return create(null, null, null, 1);
     }
 
     public static RenderPass create(Color clearColor) {
-        return create(clearColor, null, null);
+        return create(clearColor, null, null, 1);
     }
 
 
     // clearColor: can be null the default clear color will be used or if none is set (see ScreenUtils.clear) the screen
     // is not cleared.
-    public static RenderPass create(Color clearColor, Texture outTexture, Texture outDepthTexture) {
+    public static RenderPass create(Color clearColor, Texture outTexture, Texture outDepthTexture, int sampleCount) {
         if(encoder == null)
             throw new RuntimeException("Encoder must be set before calling RenderPass.create()");
 
@@ -56,7 +56,7 @@ public class RenderPassBuilder {
 
         renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
         renderPassColorAttachment.setNextInChain();
-        renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+
         renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
         renderPassColorAttachment.setDepthSlice(WGPU.WGPU_DEPTH_SLICE_UNDEFINED);
@@ -75,13 +75,21 @@ public class RenderPassBuilder {
         }
 
         if(outputTexture == null) {
-            renderPassColorAttachment.setView(LibGPU.app.targetView);
+            if(sampleCount > 1){
+                renderPassColorAttachment.setView(LibGPU.app.multiSamplingTexture.getTextureView());
+                renderPassColorAttachment.setResolveTarget(LibGPU.app.targetView);
+            } else {
+                renderPassColorAttachment.setView(LibGPU.app.targetView);
+                renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+            }
             colorFormat = LibGPU.surfaceFormat;
             //depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
         }
         else {
             renderPassColorAttachment.setView(outputTexture.getTextureView());
+            renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
             colorFormat = outputTexture.getFormat();
+            sampleCount = 1;
         }
 
 
@@ -121,7 +129,7 @@ public class RenderPassBuilder {
         LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
         Pointer renderPassPtr = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-        RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat);
+        RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat, sampleCount);
         if(viewport != null)
             viewport.apply(pass);
         return pass;

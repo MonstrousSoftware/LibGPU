@@ -11,12 +11,14 @@ public class RenderPass {
     private final Pointer renderPass;                   // handle used by WebGPU
     private final WGPUTextureFormat textureFormat;
     private final WGPUTextureFormat depthFormat;
+    private int sampleCount;
 
     // don't call this directly, use RenderPassBuilder.create()
-    RenderPass(Pointer renderPass, WGPUTextureFormat textureFormat, WGPUTextureFormat depthFormat) {
+    RenderPass(Pointer renderPass, WGPUTextureFormat textureFormat, WGPUTextureFormat depthFormat, int sampleCount) {
         this.renderPass = renderPass;
         this.textureFormat = textureFormat;
         this.depthFormat = depthFormat;
+        this.sampleCount = sampleCount;
     }
 
     public void end() {
@@ -34,6 +36,14 @@ public class RenderPass {
 
     public WGPUTextureFormat getDepthFormat(){
         return depthFormat;
+    }
+
+    public void setSampleCount(int n){
+        sampleCount = n;
+    }
+
+    public int getSampleCount(){
+        return sampleCount;
     }
 
     public void setPipeline(Pointer pipeline) {

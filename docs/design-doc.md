@@ -57,4 +57,11 @@ If ScreenUtils.clear() is not called and no color value is provided to SpriteBat
 An extra parameter was also added to ModelBatch.begin().
 
 
+MSAA
+====
+
+Multisamping can be enabled by setting the application configuration numSamples to 4.  This lets Application create a multisampling texture.
+ModelBatch will create a render pass that does multi-sampling.  Pipelines will adapt to the RenderPass.
+
+
 

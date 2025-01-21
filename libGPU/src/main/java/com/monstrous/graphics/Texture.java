@@ -13,6 +13,7 @@ public class Texture {
     private int width;
     private int height;
     private int nativeFormat;
+    private int mipLevelCount;
     private Pointer image;
     private Pointer texture;
     private Pointer textureView;
@@ -24,13 +25,13 @@ public class Texture {
     }
 
     public Texture(int width, int height){
-        this(width, height, true, false, WGPUTextureFormat.RGBA8Unorm);
+        this(width, height, true, false, WGPUTextureFormat.RGBA8Unorm, 1);
     }
 
-    public Texture(int width, int height, boolean mipMapping, boolean renderAttachment,WGPUTextureFormat format ) {
+    public Texture(int width, int height, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numSamples ) {
         this.width = width;
         this.height = height;
-        load(null, mipMapping, renderAttachment, format);
+        create( mipMapping, renderAttachment, format, numSamples);
     }
 
 
@@ -59,7 +60,8 @@ public class Texture {
             this.height = info.height.intValue();
             this.nativeFormat = info.format.intValue();
             Pointer pixelPtr = info.pixels.get();
-            load(pixelPtr, mipMapping, renderAttachment, format);
+            create( mipMapping, renderAttachment, format, 1);
+            load(pixelPtr);
 
 
         } catch (IOException e) {
@@ -115,12 +117,12 @@ public class Texture {
         }
     }
 
-    private void load(Pointer pixelPtr, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
-        if(LibGPU.device == null || LibGPU.queue == null )
+    private void create( boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numSamples) {
+        if (LibGPU.device == null || LibGPU.queue == null)
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
-        int mipLevelCount = 1;
-        if(mipMapping)
+        mipLevelCount = 1;
+        if (mipMapping)
             mipLevelCount = bitWidth(Math.max(width, height));      // todo test for non-square, non POT etc.
 
         // Create the texture
@@ -130,11 +132,11 @@ public class Texture {
         this.format = format; //
         textureDesc.setFormat(format);
         textureDesc.setMipLevelCount(mipLevelCount);
-        textureDesc.setSampleCount(1);
+        textureDesc.setSampleCount(numSamples);
         textureDesc.getSize().setWidth(width);
         textureDesc.getSize().setHeight(height);
         textureDesc.getSize().setDepthOrArrayLayers(1);
-        if(renderAttachment)
+        if (renderAttachment)
             textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst | WGPUTextureUsage.RenderAttachment);
         else
             textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
@@ -149,29 +151,29 @@ public class Texture {
         textureViewDesc.setArrayLayerCount(1);
         textureViewDesc.setBaseMipLevel(0);
         textureViewDesc.setMipLevelCount(mipLevelCount);
-        textureViewDesc.setDimension( WGPUTextureViewDimension._2D);
-        textureViewDesc.setFormat( textureDesc.getFormat() );
+        textureViewDesc.setDimension(WGPUTextureViewDimension._2D);
+        textureViewDesc.setFormat(textureDesc.getFormat());
         textureView = LibGPU.wgpu.TextureCreateView(texture, textureViewDesc);
 
         // Create a sampler
         WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
-        samplerDesc.setAddressModeU( WGPUAddressMode.Repeat);
-        samplerDesc.setAddressModeV( WGPUAddressMode.Repeat);
-        samplerDesc.setAddressModeW( WGPUAddressMode.Repeat);
-        samplerDesc.setMagFilter( WGPUFilterMode.Linear);
-        samplerDesc.setMinFilter( WGPUFilterMode.Linear);
-        samplerDesc.setMipmapFilter( WGPUMipmapFilterMode.Linear);
+        samplerDesc.setAddressModeU(WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeV(WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeW(WGPUAddressMode.Repeat);
+        samplerDesc.setMagFilter(WGPUFilterMode.Linear);
+        samplerDesc.setMinFilter(WGPUFilterMode.Linear);
+        samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Linear);
 
         samplerDesc.setLodMinClamp(0);
         samplerDesc.setLodMaxClamp(mipLevelCount);
-        samplerDesc.setCompare( WGPUCompareFunction.Undefined);
-        samplerDesc.setMaxAnisotropy( 1);
+        samplerDesc.setCompare(WGPUCompareFunction.Undefined);
+        samplerDesc.setMaxAnisotropy(1);
         sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
+    }
 
-        if(pixelPtr == null)
-            return;
+   private void load(Pointer pixelPtr) {
 
-        // Arguments telling which part of the texture we upload to
+           // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
         WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
         destination.setTexture(texture);

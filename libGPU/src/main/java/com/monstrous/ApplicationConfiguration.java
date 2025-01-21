@@ -7,6 +7,7 @@ public class ApplicationConfiguration {
     public int height;
     public String title;
     public boolean vsyncEnabled;
+    public int numSamples;
     public WGPUBackendType backend;
     public boolean enableGPUtiming;     // enable for GPU performance measurements
 
@@ -16,6 +17,7 @@ public class ApplicationConfiguration {
         height = 480;
         title = "Application";
         vsyncEnabled = true;
+        numSamples = 1;
         backend = WGPUBackendType.D3D12;
         enableGPUtiming = false;
     }

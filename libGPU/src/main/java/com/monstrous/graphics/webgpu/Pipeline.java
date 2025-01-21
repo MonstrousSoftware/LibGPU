@@ -94,7 +94,7 @@ public class Pipeline implements Disposable {
 
         pipelineDesc.setDepthStencil(depthStencilState);
 
-        pipelineDesc.getMultisample().setCount(1);
+        pipelineDesc.getMultisample().setCount(spec.numSamples);
         pipelineDesc.getMultisample().setMask( -1L );
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 

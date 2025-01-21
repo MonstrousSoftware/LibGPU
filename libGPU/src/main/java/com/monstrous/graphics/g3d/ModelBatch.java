@@ -125,7 +125,7 @@ public class ModelBatch implements Disposable {
         //loadShaders();
         pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, instancingBindGroupLayout, shadowBindGroupLayout);
 
-        pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture);
+        pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture, LibGPU.app.configuration.numSamples);
 
         materialUniformIndex = 0;       // reset offset into uniform buffer
         prevMaterial = null;
@@ -261,9 +261,8 @@ public class ModelBatch implements Disposable {
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         pass.setVertexBuffer(0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
-        //ShaderProgram shader = setShader(meshPart.mesh.vertexAttributes);
 
-        setPipeline(meshPart.mesh.vertexAttributes, environment);
+        setPipeline(pass, meshPart.mesh.vertexAttributes, environment);
 
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
@@ -286,21 +285,17 @@ public class ModelBatch implements Disposable {
 
 
     // create or reuse pipeline on demand when we know the model
-    private void setPipeline(VertexAttributes vertexAttributes, Environment environment ) {
+    private void setPipeline(RenderPass pass, VertexAttributes vertexAttributes, Environment environment ) {
 
         pipelineSpec.vertexAttributes = vertexAttributes;
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
         pipelineSpec.shaderSourceFile = selectShaderSourceFile();
-//        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT))        // hmm....
-//           pipelineSpec.shader = shaderNormalMap;
-//        else
-//           pipelineSpec.shader = shaderStd;
-        //pipelineSpec.shader = shader;
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
         pipelineSpec.depthFormat = pass.getDepthFormat();
+        pipelineSpec.numSamples = pass.getSampleCount();
 
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches

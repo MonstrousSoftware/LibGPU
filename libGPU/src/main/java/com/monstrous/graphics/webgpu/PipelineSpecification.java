@@ -20,6 +20,7 @@ public class PipelineSpecification implements Disposable {
     public ShaderProgram shader;
     public boolean ownsShader;
     public boolean hasDepth;
+    public int numSamples;
 
     public WGPUBlendFactor blendSrcColor;
     public WGPUBlendFactor blendDstColor;
@@ -41,6 +42,7 @@ public class PipelineSpecification implements Disposable {
         setCullMode(WGPUCullMode.None);
         colorFormat = LibGPU.surfaceFormat;
         depthFormat = WGPUTextureFormat.Depth24Plus;       // todo get from adapter?
+        numSamples = 1;
     }
 
     public PipelineSpecification(VertexAttributes vertexAttributes, String shaderSourceFile) {
@@ -107,12 +109,14 @@ public class PipelineSpecification implements Disposable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PipelineSpecification that = (PipelineSpecification) o;
-        return hasDepth == that.hasDepth && Objects.equals(vertexAttributes, that.vertexAttributes) && shaderSourceFile.contentEquals(that.shaderSourceFile) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor && blendOpColor == that.blendOpColor && blendSrcAlpha == that.blendSrcAlpha && blendDstAlpha == that.blendDstAlpha && blendOpAlpha == that.blendOpAlpha;
+        return hasDepth == that.hasDepth && Objects.equals(vertexAttributes, that.vertexAttributes) && shaderSourceFile.contentEquals(that.shaderSourceFile) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor
+                && blendOpColor == that.blendOpColor && blendSrcAlpha == that.blendSrcAlpha && blendDstAlpha == that.blendDstAlpha && blendOpAlpha == that.blendOpAlpha &&
+                numSamples == that.numSamples;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vertexAttributes.getUsageFlags(), shaderSourceFile, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha);
+        return Objects.hash(vertexAttributes.getUsageFlags(), shaderSourceFile, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples);
     }
 
     @Override

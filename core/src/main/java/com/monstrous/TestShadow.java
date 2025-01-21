@@ -83,8 +83,8 @@ public class TestShadow extends ApplicationAdapter {
         shadowCam.zoom = 1f;
         shadowCam.update();
 
-        colorMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.RGBA8Unorm);
-        depthMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.Depth32Float);
+        colorMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
+        depthMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.Depth32Float, 1);
 
 
         environment = new Environment();
@@ -149,12 +149,6 @@ public class TestShadow extends ApplicationAdapter {
         modelBatch.render(instances);
         modelBatch.end();
 
-//        ScreenUtils.clear(Color.WHITE);
-//        batch.begin();
-//        batch.draw(colorMap,0,0, 500, 500);
-//        batch.setShader(filter);
-//        batch.draw(colorMap,LibGPU.graphics.getWidth()/2f, 0, 500, 500);
-//        batch.end();
 
         ScreenUtils.clear(null);
         batch.begin();
