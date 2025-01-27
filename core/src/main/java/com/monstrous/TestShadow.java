@@ -16,13 +16,16 @@ import java.util.ArrayList;
 
 public class TestShadow extends ApplicationAdapter {
 
+    private static int SHADOW_MAP_SIZE = 4096;      // size (in pixels) of depth map
+    private static int SHADOW_VIEWPORT_SIZE = 25;   // area (in world units) covered by shadow
+
     private ModelBatch modelBatch;
     private Camera camera;
     private CameraController camController;
     private OrthographicCamera shadowCam;
     private Environment environment;
     private Matrix4 modelMatrix;
-    private Model model, model2;
+    private Model model, model2, model3;
     private ModelInstance modelInstance1;
     private ModelInstance modelInstance2;
     private ArrayList<ModelInstance> instances;
@@ -40,7 +43,8 @@ public class TestShadow extends ApplicationAdapter {
 
         instances = new ArrayList<>();
 
-        model = new Model("models/stanfordDragon.gltf");
+        //model = new Model("models/stanfordDragon.gltf");
+        model = new Model("models/torus.gltf");
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);
@@ -49,6 +53,10 @@ public class TestShadow extends ApplicationAdapter {
         model2 = new Model("models/groundplane.gltf");
         modelInstance2 = new ModelInstance(model2, 0,0,0);
         instances.add(modelInstance2);
+
+        model3 = new Model("models/waterbottle/WaterBottle.gltf");
+        ModelInstance modelInstance3 = new ModelInstance(model3, 0,1,0);
+        instances.add(modelInstance3);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -62,24 +70,29 @@ public class TestShadow extends ApplicationAdapter {
         camera.near = 0.1f;
         camera.update();
 
-        shadowCam = new OrthographicCamera(10, 10); // in world units
-        shadowCam.position.set(0,6f,0);
-        shadowCam.direction.set(0.5f,-1,0);
+        // unit vector from main light source
+        Vector3 lightDirection = new Vector3(1.3f, -1f, .3f).nor();
+
+        shadowCam = new OrthographicCamera(SHADOW_VIEWPORT_SIZE, SHADOW_VIEWPORT_SIZE); // in world units
+
+        shadowCam.direction.set(lightDirection);
+        shadowCam.position.set(lightDirection).scl(-6);
         shadowCam.up.set(0,0,1);
         shadowCam.near = 0f;
-        shadowCam.far = 10f;
+        shadowCam.far = 20f;
         shadowCam.zoom = 1f;
         shadowCam.update();
 
-        colorMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.RGBA8Unorm);
-        depthMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.Depth32Float);
+        colorMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
+        depthMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.Depth32Float, 1);
 
 
         environment = new Environment();
-        DirectionalLight sun = new DirectionalLight( Color.WHITE, new Vector3(0,-5,0));
-        sun.setIntensity(4f);
+        DirectionalLight sun = new DirectionalLight( Color.WHITE, lightDirection);
+        sun.setIntensity(1f);
         environment.add( sun );
         environment.setShadowMap(shadowCam, depthMap);
+        environment.ambientLightLevel = 0.5f;
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor(camController);
@@ -99,7 +112,7 @@ public class TestShadow extends ApplicationAdapter {
     private void updateModelMatrix(Matrix4 modelMatrix, float currentTime){
         Matrix4 RT = new Matrix4().idt(); //setToXRotation((float) ( -0.5f*Math.PI ));
         Matrix4 R1 = new Matrix4().setToYRotation(currentTime*0.3f);
-        Matrix4 T = new Matrix4(); //.translate(1.8f, 0f, 0f);
+        Matrix4 T = new Matrix4();//.translate(0f, 1f, 0f);
         modelMatrix.idt().mul(R1).mul(T).mul(RT);
     }
 
@@ -108,42 +121,40 @@ public class TestShadow extends ApplicationAdapter {
 
 
     public void render(){
+        if(LibGPU.input.isKeyPressed(Input.Keys.L)){    // to force shaders to be recompiled
+            modelBatch.invalidatePipelines();
+        }
 
         currentTime += LibGPU.graphics.getDeltaTime();
-        ScreenUtils.clear(Color.GRAY);
-
         updateModelMatrix(modelMatrix, currentTime);
         camController.update();
 
 
+
+        // pass #1 : depth map
         environment.depthPass = true;
         environment.renderShadows = false;
         environment.setShadowMap(shadowCam, null);
-        modelBatch.begin(shadowCam, environment, colorMap, depthMap);
+
+        modelBatch.begin(shadowCam, environment, Color.GRAY, colorMap, depthMap);
         modelBatch.render(instances);
         modelBatch.end();
 
-
+        // pass #2 : render colours
         environment.depthPass = false;
         environment.renderShadows = true;
         environment.setShadowMap(shadowCam, depthMap);
-        modelBatch.begin(camera, environment);
+
+        modelBatch.begin(camera, environment, Color.BLUE);
         modelBatch.render(instances);
         modelBatch.end();
 
-//        ScreenUtils.clear(Color.WHITE);
-//        batch.begin();
-//        batch.draw(colorMap,0,0, 500, 500);
-//        batch.setShader(filter);
-//        batch.draw(colorMap,LibGPU.graphics.getWidth()/2f, 0, 500, 500);
-//        batch.end();
 
-//        batch.begin();
-//        font.draw(batch, "camera "+shadowCam.position.toString()+" angleX:"+camController.anglex, 10, 500);
-//        batch.draw(colorMap,0, 0, 200, 200);
-//        batch.end();
-
-
+        ScreenUtils.clear(null);
+        batch.begin();
+        font.draw(batch, "camera "+camera.position.toString()+" angleX:"+camController.anglex, 10, 500);
+        batch.draw(colorMap,0, 0, 200, 200);        // debug view of depth map
+        batch.end();
 
 
         // At the end of the frame

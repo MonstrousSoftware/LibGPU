@@ -86,9 +86,9 @@ public class TestModelBuild extends ApplicationAdapter {
         };
 
         VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add("position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add("color", WGPUVertexFormat.Float32x4, 1);
-        vertexAttributes.add("uv", WGPUVertexFormat.Float32x2, 2);
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.add(VertexAttribute.Usage.COLOR, "color", WGPUVertexFormat.Float32x4, 1);
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 2);
         vertexAttributes.end();
 
         Mesh mesh = new Mesh();

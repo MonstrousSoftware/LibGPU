@@ -1,4 +1,9 @@
 
+// Shader source can be tuned by #defines of the following:
+// NORMAL_MAP
+// SHADOWS
+
+
 const MAX_DIR_LIGHTS : i32 = 5;
 const MAX_POINT_LIGHTS : i32 = 5;
 
@@ -28,6 +33,9 @@ struct FrameUniforms {
     pointLights : array<PointLight, MAX_POINT_LIGHTS>,
     numPointLights: i32,
 
+    lightCombinedMatrix: mat4x4f,
+    lightPosition: vec3f,
+
 };
 
 struct MaterialUniforms {
@@ -56,6 +64,12 @@ struct ModelUniforms {
 
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
+#ifdef SHADOWS
+@group(3) @binding(0) var shadowMap: texture_depth_2d;
+@group(3) @binding(1) var shadowSampler: sampler_comparison;
+#endif
+
+
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -78,6 +92,7 @@ struct VertexOutput {
     @location(4) viewDirection : vec3f,
     @location(5) cameraPosition: vec3f,
     @location(6) worldPosition: vec3f,
+    @location(7) shadowPos: vec3f,
 };
 
 @vertex
@@ -100,6 +115,19 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    out.viewDirection = cameraPosition.xyz - worldPosition.xyz;
    out.cameraPosition = cameraPosition.xyz;
    out.worldPosition = worldPosition.xyz;
+
+#ifdef SHADOWS
+    let posFromLight= uFrame.lightCombinedMatrix * worldPosition;
+    // XY is in (-1, 1) space, Z is in (0, 1) space
+
+    // Convert XY to (0, 1)
+    // Y is flipped because texture coords are Y-down.
+    out.shadowPos = vec3(
+        posFromLight.xy * vec2(0.5, -0.5) + vec2(0.5),
+        posFromLight.z
+    );
+#endif
+
    return out;
 }
 
@@ -155,6 +183,26 @@ fn BRDF( L : vec3f, V:vec3f, N: vec3f, roughness:f32, metallic:f32, baseColor: v
     let Lo : vec3f = diffuse + specular;
     return Lo;
 }
+
+#ifdef SHADOWS
+// returns value 0..1 for the amount of "sunlight"
+fn getShadowNess( shadowPos:vec3f ) -> f32 {
+
+    // PCF filtering: take 9 samples and use the average value
+    let shadowDepthTextureSize = 4096.0; // should be push constant
+    let oneOverDepthTextureSize = 1.0 / shadowDepthTextureSize;
+    var visibility = 0.0;
+    for( var y = -1; y <= 1; y++){
+        for( var x = -1; x <= 1; x++){
+        let offset = vec2f(vec2(x,y))*oneOverDepthTextureSize;
+            // returns 0 or 1
+            visibility += textureSampleCompare(shadowMap, shadowSampler, shadowPos.xy+offset, shadowPos.z - 0.007);
+        }
+    }
+    visibility /= 9.0;  // divide by nr of samples
+    return visibility;
+}
+#endif
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
@@ -220,7 +268,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let ambient : vec3f = baseColor * uFrame.ambientLightLevel;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
 
-    var color  = radiance + ambient + emissiveColor;
+#ifdef SHADOWS
+    let visibility = getShadowNess( in.shadowPos );
+#else
+    let visibility = 1.0;
+#endif
+
+    var color  = radiance*visibility + ambient + emissiveColor;
 
     //color = vec3f(roughness);
     //color = Lo;

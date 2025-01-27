@@ -3,11 +3,24 @@ package com.monstrous.graphics;
 import com.monstrous.wgpu.WGPUVertexFormat;
 
 public class VertexAttribute {
+
+    public static class Usage {
+        static public final long POSITION = 1;
+        static public final long COLOR = 2;
+        static public final long TEXTURE_COORDINATE = 4;
+        static public final long NORMAL= 8;
+        static public final long TANGENT = 16;
+        static public final long BITANGENT = 32;
+    }
+
+
     public String label;
     public WGPUVertexFormat format;
     public int shaderLocation;
+    public long usage;
 
-    public VertexAttribute(String name, WGPUVertexFormat format, int shaderLocation) {
+    public VertexAttribute(long usage, String name, WGPUVertexFormat format, int shaderLocation) {
+        this.usage = usage;
         this.label = name;
         this.format = format;
         this.shaderLocation = shaderLocation;

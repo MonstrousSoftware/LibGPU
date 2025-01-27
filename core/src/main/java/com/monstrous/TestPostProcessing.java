@@ -59,7 +59,7 @@ public class TestPostProcessing extends ApplicationAdapter {
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
-        colorMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.RGBA8Unorm);
+        colorMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.RGBA8Unorm, 1);
 
         modelBatch = new ModelBatch();
 
@@ -84,7 +84,7 @@ public class TestPostProcessing extends ApplicationAdapter {
         ScreenUtils.clear(Color.WHITE);
 
         // render 3d scene to texture
-        modelBatch.begin(camera, environment, colorMap, null);
+        modelBatch.begin(camera, environment,Color.WHITE, colorMap,  null);
         modelBatch.render(instances);
         modelBatch.end();
 

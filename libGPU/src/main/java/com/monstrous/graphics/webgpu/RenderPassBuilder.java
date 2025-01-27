@@ -21,7 +21,8 @@ import static com.monstrous.LibGPU.wgpu;
 public class RenderPassBuilder {
 
     private static Pointer encoder;
-    private static final Color clearColor = new Color(Color.BLACK);
+    private static final Color defaultClearColor = new Color(Color.BLACK);
+    private static boolean mustClear = true;
     private static Texture outputTexture;
     private static Texture outputDepthTexture;
     private static Viewport viewport = null;
@@ -34,16 +35,17 @@ public class RenderPassBuilder {
     }
 
     public static RenderPass create() {
-        return create(true, null, null);
+        return create(null, null, null, 1);
     }
 
-    public static RenderPass create(boolean clear) {
-        return create(clear, null, null);
+    public static RenderPass create(Color clearColor) {
+        return create(clearColor, null, null, 1);
     }
 
-    // clear: need to clear the screen? or we overlay on the existing content?
-    // todo perhaps should pass the clear color here
-    public static RenderPass create(boolean clear, Texture outTexture, Texture outDepthTexture) {
+
+    // clearColor: can be null the default clear color will be used or if none is set (see ScreenUtils.clear) the screen
+    // is not cleared.
+    public static RenderPass create(Color clearColor, Texture outTexture, Texture outDepthTexture, int sampleCount) {
         if(encoder == null)
             throw new RuntimeException("Encoder must be set before calling RenderPass.create()");
 
@@ -52,29 +54,42 @@ public class RenderPassBuilder {
         WGPUTextureFormat colorFormat;
         WGPUTextureFormat depthFormat;
 
-       // if(renderPassColorAttachment == null) {
-            renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
-            renderPassColorAttachment.setNextInChain();
-            renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
-            renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
+        renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
+        renderPassColorAttachment.setNextInChain();
 
-            renderPassColorAttachment.setDepthSlice(WGPU.WGPU_DEPTH_SLICE_UNDEFINED);
-        //}
-        renderPassColorAttachment.setLoadOp(clear ? WGPULoadOp.Clear : WGPULoadOp.Load);
+        renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
-        renderPassColorAttachment.getClearValue().setR(clearColor.r);
-        renderPassColorAttachment.getClearValue().setG(clearColor.g);
-        renderPassColorAttachment.getClearValue().setB(clearColor.b);
-        renderPassColorAttachment.getClearValue().setA(clearColor.a);
+        renderPassColorAttachment.setDepthSlice(WGPU.WGPU_DEPTH_SLICE_UNDEFINED);
+
+        renderPassColorAttachment.setLoadOp((clearColor != null || mustClear) ? WGPULoadOp.Clear : WGPULoadOp.Load);
+
+        if(clearColor == null && mustClear){
+            clearColor = defaultClearColor;
+        }
+
+        if(clearColor != null) {
+            renderPassColorAttachment.getClearValue().setR(clearColor.r);
+            renderPassColorAttachment.getClearValue().setG(clearColor.g);
+            renderPassColorAttachment.getClearValue().setB(clearColor.b);
+            renderPassColorAttachment.getClearValue().setA(clearColor.a);
+        }
 
         if(outputTexture == null) {
-            renderPassColorAttachment.setView(LibGPU.app.targetView);
+            if(sampleCount > 1){
+                renderPassColorAttachment.setView(LibGPU.app.multiSamplingTexture.getTextureView());
+                renderPassColorAttachment.setResolveTarget(LibGPU.app.targetView);
+            } else {
+                renderPassColorAttachment.setView(LibGPU.app.targetView);
+                renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+            }
             colorFormat = LibGPU.surfaceFormat;
             //depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
         }
         else {
             renderPassColorAttachment.setView(outputTexture.getTextureView());
+            renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
             colorFormat = outputTexture.getFormat();
+            sampleCount = 1;
         }
 
 
@@ -111,10 +126,10 @@ public class RenderPassBuilder {
         renderPassDescriptor.setColorAttachments(renderPassColorAttachment);
 
 
-        //gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
+        LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
         Pointer renderPassPtr = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-        RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat);
+        RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat, sampleCount);
         if(viewport != null)
             viewport.apply(pass);
         return pass;
@@ -125,12 +140,19 @@ public class RenderPassBuilder {
         return outputTexture;
     }
 
+    // color null to not clear screen
     public static void setClearColor(Color color) {
-        clearColor.set(color);
+        if(color == null){
+            mustClear = false;
+        }
+        else {
+            defaultClearColor.set(color);
+            mustClear = true;
+        }
     }
 
     public static void setClearColor(float r, float g, float b, float a) {
-        clearColor.set(r, g, b, a);
+        defaultClearColor.set(r, g, b, a);
     }
 
     // set viewport on future render passes created, set to null to not apply a viewport.

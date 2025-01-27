@@ -18,9 +18,7 @@ import java.nio.ShortBuffer;
 
 public class SpriteBatch implements Disposable {
     private WGPU wgpu;
-    private ShaderProgram defaultShader;
-    private boolean ownsDefaultShader;
-    private ShaderProgram customShader;
+    private ShaderProgram specificShader;
     private int maxSprites;
     private boolean begun;
     private int vertexSize;
@@ -33,6 +31,7 @@ public class SpriteBatch implements Disposable {
     private Pointer uniformBuffer;
     private final Pointer bindGroupLayout;
     private VertexAttributes vertexAttributes;
+    private VertexAttributes defaultVertexAttributes;
     private final Pointer pipelineLayout;
     private PipelineSpecification pipelineSpec;
     private int uniformBufferSize;
@@ -55,28 +54,29 @@ public class SpriteBatch implements Disposable {
         this(maxSprites, null);
     }
 
-    public SpriteBatch(int maxSprites, ShaderProgram defaultShader) {
+    public SpriteBatch(int maxSprites, ShaderProgram specificShader) {
         this.maxSprites = maxSprites;
+        this.specificShader = specificShader;
+
         begun = false;
         wgpu = LibGPU.wgpu;
 
+        vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",        WGPUVertexFormat.Float32x2, 0 );
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv",    WGPUVertexFormat.Float32x2, 1 );
+        vertexAttributes.add(VertexAttribute.Usage.COLOR,"color",               WGPUVertexFormat.Float32x4, 2 );
+        vertexAttributes.end();
+        defaultVertexAttributes = vertexAttributes;
+
         // vertex: x, y, u, v, r, g, b, a
-        vertexSize = 8; // floats
+        vertexSize = vertexAttributes.getVertexSizeInBytes(); // bytes
 
-        if (defaultShader == null) {
-            this.defaultShader = new ShaderProgram("shaders/sprite.wgsl");
-            ownsDefaultShader = true;
-        } else {
-            this.defaultShader = defaultShader;
-            ownsDefaultShader = false;  // don't dispose it
-        }
-        customShader = null;
-
+        // allocate data buffers based on default vertex attributes which are assumed to be the worst case.
+        // i.e. with setVertexAttributes() you can specify a subset
         createBuffers();
-
         fillIndexBuffer();
 
-        ByteBuffer vertexBB = ByteBuffer.allocateDirect(maxSprites * 4 * vertexSize * Float.BYTES);
+        ByteBuffer vertexBB = ByteBuffer.allocateDirect(maxSprites * 4 * vertexSize);
         vertexBB.order(ByteOrder.nativeOrder());  // important
         vertexData = vertexBB.asFloatBuffer();
         vertexDataPtr = Pointer.wrap(WgpuJava.getRuntime(), vertexBB);
@@ -90,16 +90,9 @@ public class SpriteBatch implements Disposable {
         bindGroupLayout = createBindGroupLayout();
         pipelineLayout = makePipelineLayout(bindGroupLayout);
 
-        vertexAttributes = new VertexAttributes();
-        vertexAttributes.add("position",    WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add("uv",          WGPUVertexFormat.Float32x2, 1 );
-        vertexAttributes.add("color",       WGPUVertexFormat.Float32x4, 2 );
-        //vertexAttributes.add("packedColor", WGPUVertexFormat.Float32, 2 );
-        vertexAttributes.end();
-
         pipelines = new Pipelines();
-        pipelineSpec = new PipelineSpecification(vertexAttributes, this.defaultShader);
-
+        pipelineSpec = new PipelineSpecification(vertexAttributes, this.specificShader);
+        pipelineSpec.shaderSourceFile = "shaders/sprite.wgsl";
     }
 
     // the index buffer is fixed and only has to be filled on start-up
@@ -150,8 +143,23 @@ public class SpriteBatch implements Disposable {
         setPipeline();
     }
 
-    public void begin() {
-        renderPass = RenderPassBuilder.create(false);       // todo assuming no clear
+    public void setVertexAttributes(VertexAttributes vattr){
+        if (!begun) // catch incorrect usage
+            throw new RuntimeException("Call begin() before calling setVertexAttributes().");
+        flush();
+        vertexAttributes = vattr;
+        vertexSize = vertexAttributes.getVertexSizeInBytes(); // bytes
+        pipelineSpec.vertexAttributes = vattr;
+        pipelineSpec.shader = null;     // force recompile of shader
+        setPipeline();
+    }
+
+    public void begin(){
+        begin(null);
+    }
+
+    public void begin(Color clearColor) {
+        renderPass = RenderPassBuilder.create(clearColor, null, null, LibGPU.app.configuration.numSamples);
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");
@@ -159,6 +167,8 @@ public class SpriteBatch implements Disposable {
         numRects = 0;
         vbOffset = 0;
         vertexData.clear();
+        vertexAttributes = defaultVertexAttributes;
+        vertexSize = vertexAttributes.getVertexSizeInBytes(); // bytes
         maxSpritesInBatch = 0;
         renderCalls = 0;
 
@@ -169,10 +179,13 @@ public class SpriteBatch implements Disposable {
         blendingEnabled = true;
         pipelineSpec.enableBlending();
         pipelineSpec.disableDepth();
-        pipelineSpec.shader = defaultShader;
+        pipelineSpec.shader = specificShader;
+        pipelineSpec.vertexAttributes = vertexAttributes;
+        pipelineSpec.numSamples =  LibGPU.app.configuration.numSamples;
         setPipeline();
         setUniforms();
 
+        // for testing
         //wgpu.RenderPassEncoderSetViewport(renderPass, 100, 500, 500, 200, 0, 1);
     }
 
@@ -185,8 +198,8 @@ public class SpriteBatch implements Disposable {
 
         // Add number of vertices to the GPU's vertex buffer
         //
-        int numFloats = numRects * 4 * vertexSize;
-        int numBytes = numFloats * Float.BYTES;
+        int numBytes = numRects * 4 * vertexSize;
+
 
         // append new vertex data to GPU vertex buffer
         wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexDataPtr, numBytes);
@@ -234,10 +247,9 @@ public class SpriteBatch implements Disposable {
     public void setShader(ShaderProgram shaderProgram){
         flush();
         if(shaderProgram == null)
-            pipelineSpec.shader = defaultShader;
+            pipelineSpec.shader = specificShader;
         else {
             pipelineSpec.shader = shaderProgram;
-            customShader = shaderProgram;
         }
         setPipeline();
     }
@@ -307,41 +319,60 @@ public class SpriteBatch implements Disposable {
 
 
     private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
+        boolean hasColor = vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR);
+        boolean hasUV = vertexAttributes.hasUsage(VertexAttribute.Usage.TEXTURE_COORDINATE);
+
         vertexData.put(x);
         vertexData.put(y);
-        vertexData.put(u);
-        vertexData.put(v);
-        vertexData.put(tint.r);
-        vertexData.put(tint.g);
-        vertexData.put(tint.b);
-        vertexData.put(tint.a);
+        if(hasUV) {
+            vertexData.put(u);
+            vertexData.put(v);
+        }
+        if(hasColor) {
+            vertexData.put(tint.r);
+            vertexData.put(tint.g);
+            vertexData.put(tint.b);
+            vertexData.put(tint.a);
+        }
 
         vertexData.put(x);
         vertexData.put(y+h);
-        vertexData.put(u);
-        vertexData.put(v2);
-        vertexData.put(tint.r);
-        vertexData.put(tint.g);
-        vertexData.put(tint.b);
-        vertexData.put(tint.a);
+        if(hasUV) {
+            vertexData.put(u);
+            vertexData.put(v2);
+        }
+        if(hasColor) {
+            vertexData.put(tint.r);
+            vertexData.put(tint.g);
+            vertexData.put(tint.b);
+            vertexData.put(tint.a);
+        }
 
         vertexData.put(x+w);
         vertexData.put(y+h);
-        vertexData.put(u2);
-        vertexData.put(v2);
-        vertexData.put(tint.r);
-        vertexData.put(tint.g);
-        vertexData.put(tint.b);
-        vertexData.put(tint.a);
+        if(hasUV) {
+            vertexData.put(u2);
+            vertexData.put(v2);
+        }
+        if(hasColor) {
+            vertexData.put(tint.r);
+            vertexData.put(tint.g);
+            vertexData.put(tint.b);
+            vertexData.put(tint.a);
+        }
 
         vertexData.put(x+w);
         vertexData.put(y);
-        vertexData.put(u2);
-        vertexData.put(v);
-        vertexData.put(tint.r);
-        vertexData.put(tint.g);
-        vertexData.put(tint.b);
-        vertexData.put(tint.a);
+        if(hasUV) {
+            vertexData.put(u2);
+            vertexData.put(v);
+        }
+        if(hasColor) {
+            vertexData.put(tint.r);
+            vertexData.put(tint.g);
+            vertexData.put(tint.b);
+            vertexData.put(tint.a);
+        }
     }
 
 
@@ -357,7 +388,7 @@ public class SpriteBatch implements Disposable {
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("Vertex buffer");
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex);
-        bufferDesc.setSize((long) maxSprites * 4 * vertexSize * Float.BYTES);
+        bufferDesc.setSize((long) maxSprites * 4 * vertexSize );
         bufferDesc.setMappedAtCreation(0L);
         vertexBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
@@ -485,7 +516,5 @@ public class SpriteBatch implements Disposable {
         wgpu.BufferRelease(indexBuffer);
         wgpu.BufferRelease(uniformBuffer);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
-        if(ownsDefaultShader)
-            defaultShader.dispose();
     }
 }

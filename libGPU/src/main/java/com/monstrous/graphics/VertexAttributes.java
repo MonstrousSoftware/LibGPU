@@ -13,17 +13,18 @@ public class VertexAttributes implements Disposable {
     public ArrayList<VertexAttribute> attributes;
     private WGPUVertexBufferLayout vertexBufferLayout;
     private int vertexSize; // in floats
-    public boolean hasNormalMap;        // HACK
+    private long usageFlags;        // bit mask of Usage values
 
     public VertexAttributes() {
         attributes = new ArrayList<>();
-        hasNormalMap = false;
         vertexBufferLayout = null;
         vertexSize = -1;
+        usageFlags = 0L;
     }
 
-    public void add(String label, WGPUVertexFormat format, int shaderLocation){
-        VertexAttribute va = new VertexAttribute(label, format, shaderLocation);
+    public void add(long usage, String label, WGPUVertexFormat format, int shaderLocation){
+        VertexAttribute va = new VertexAttribute(usage, label, format, shaderLocation);
+        usageFlags |= usage;
         attributes.add(va);
     }
 
@@ -32,6 +33,14 @@ public class VertexAttributes implements Disposable {
         for(VertexAttribute va : attributes) {
             vertexSize += va.getSize();
         }
+    }
+
+    public boolean hasUsage(long usage){
+        return (usageFlags & usage) == usage;
+    }
+
+    public long getUsageFlags(){
+        return usageFlags;
     }
 
 

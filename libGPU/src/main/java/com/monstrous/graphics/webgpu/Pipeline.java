@@ -1,6 +1,8 @@
 package com.monstrous.graphics.webgpu;
 
 import com.monstrous.LibGPU;
+import com.monstrous.ShaderPrefix;
+import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
@@ -11,13 +13,21 @@ public class Pipeline implements Disposable {
     private Pointer pipeline;
     public PipelineSpecification specification;
 
-
     public Pipeline(Pointer pipelineLayout, PipelineSpecification spec) {
         this.specification = new PipelineSpecification(spec);
 
         this.pipelineLayout = pipelineLayout;
 
-        Pointer shaderModule = spec.shader.getShaderModule();
+        // if the specification does not already have a shader, create one from the source file, customized to the vertex attributes.
+        if(spec.shader == null){
+            String prefix = ShaderPrefix.buildPrefix(spec.vertexAttributes, spec.environment);
+            System.out.println("Shader Source ["+spec.shaderSourceFile+"] Prefix: ["+prefix+"]");
+            spec.shader = new ShaderProgram(spec.shaderSourceFile, prefix);
+            spec.ownsShader = true;
+        }
+
+        //spec.shader = shader;
+        Pointer shaderModule = spec.shader.getShaderModule(); //spec.shader.getShaderModule();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes.getVertexBufferLayout();
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
@@ -84,17 +94,22 @@ public class Pipeline implements Disposable {
 
         pipelineDesc.setDepthStencil(depthStencilState);
 
-        pipelineDesc.getMultisample().setCount(1);
+        pipelineDesc.getMultisample().setCount(spec.numSamples);
         pipelineDesc.getMultisample().setMask( -1L );
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 
         pipelineDesc.setLayout(pipelineLayout);
         pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
+        if(pipeline == null)
+            throw new RuntimeException("Pipeline createion failed");
     }
 
     public boolean canRender(PipelineSpecification spec){    // perhaps we need more params
         // crude check, to be refined
-        return spec.hashCode() == this.specification.hashCode();
+        int h = spec.hashCode();
+        int h2 = this.specification.hashCode();
+        return h == h2;
+        //return spec.hashCode() == this.specification.hashCode();
         // could be too strict, e.g. name changes or different instances of same shader
 
 //        return (spec.vertexAttributes.attributes.size() == this.specification.vertexAttributes.attributes.size() &&

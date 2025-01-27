@@ -1,6 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.Color;
+import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.webgpu.RenderPassBuilder;
 import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
@@ -17,11 +18,11 @@ public class Application {
     public Pointer depthTextureView;
     public Pointer depthTexture;
     public Pointer targetView;
-    public Color clearColor;
     private boolean surfaceConfigured = false;
     private boolean isMinimized = false;
     private WindowedApp winApp;
-    private GPUTiming gpuTiming;
+    public GPUTiming gpuTiming;
+    public Texture multiSamplingTexture;
 
 
     public Application(ApplicationListener listener) {
@@ -36,8 +37,6 @@ public class Application {
         LibGPU.input = new Input();
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
-
-        clearColor = new Color(1, 1, 1, 1);
 
         winApp = new WindowedApp();
         winApp.openWindow(this, config);
@@ -108,6 +107,12 @@ public class Application {
                 listener.resume();  // resume after restore from minimize
             isMinimized = false;
             listener.resize(width, height); // don't call listener with resize(0,0)
+
+            if(configuration.numSamples > 1) {
+                if(multiSamplingTexture != null)
+                    multiSamplingTexture.dispose();
+                multiSamplingTexture = new Texture(width, height, false, true, LibGPU.surfaceFormat, configuration.numSamples);
+            }
         } else {
             if(!isMinimized)
                 listener.pause();   // pause on minimize
@@ -331,7 +336,7 @@ public class Application {
         depthTextureDesc.setDimension( WGPUTextureDimension._2D);
         depthTextureDesc.setFormat( depthTextureFormat );
         depthTextureDesc.setMipLevelCount(1);
-        depthTextureDesc.setSampleCount(1);
+        depthTextureDesc.setSampleCount(configuration.numSamples);
         depthTextureDesc.getSize().setWidth(width);
         depthTextureDesc.getSize().setHeight(height);
         depthTextureDesc.getSize().setDepthOrArrayLayers(1);

@@ -7,7 +7,7 @@ public class ScreenUtils {
 
 
     public static void clear(Color color){
-        clear(color.r, color.g, color.b, color.a);
+        RenderPassBuilder.setClearColor(null);
     }
 
     public static void clear(float r, float g, float b, float a){

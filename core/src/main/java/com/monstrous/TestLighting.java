@@ -87,8 +87,8 @@ public class TestLighting extends ApplicationAdapter {
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
             LibGPU.app.exit();
 
-        if(LibGPU.input.isKeyPressed(Input.Keys.L)){
-            modelBatch.loadShaders();
+        if(LibGPU.input.isKeyPressed(Input.Keys.L)){    // to force shaders to be recompiled
+            modelBatch.invalidatePipelines();
         }
         //currentTime += LibGPU.graphics.getDeltaTime();
 

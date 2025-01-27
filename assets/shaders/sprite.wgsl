@@ -11,13 +11,19 @@ struct Uniforms {
 
 struct VertexInput {
     @location(0) position: vec2f,
+#ifdef TEXTURE_COORDINATE
     @location(1) uv: vec2f,
+#endif
+#ifdef COLOR
     @location(2) color: vec4f,
+#endif
 };
 
 struct VertexOutput {
     @builtin(position) position: vec4f,
+#ifdef TEXTURE_COORDINATE
     @location(0) uv : vec2f,
+#endif
     @location(1) color: vec4f,
 };
 
@@ -28,8 +34,16 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
    var pos =  uniforms.projectionMatrix * vec4f(in.position, 0.0, 1.0);
    out.position = pos;
+#ifdef TEXTURE_COORDINATE
    out.uv = in.uv;
-   out.color = in.color;
+#endif
+
+#ifdef COLOR
+   let color:vec4f = in.color;
+#else
+   let color:vec4f = vec4f(1,1,1,1);   // white
+#endif
+   out.color = color;
 
    return out;
 }
@@ -37,6 +51,10 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
+#ifdef TEXTURE_COORDINATE
     let color = in.color * textureSample(texture, textureSampler, in.uv);
+#else
+    let color = in.color;
+#endif
     return vec4f(color);
 }
