@@ -23,7 +23,8 @@ public class TestModelBuild extends ApplicationAdapter {
     private Environment environment;
 
     public void create() {
-        model = buildModel();//new Model("models/ducky.obj");
+        model = buildModel();//
+        //model = new Model("models/ducky.obj");
         modelInstance = new ModelInstance(model, 0,0,0);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());

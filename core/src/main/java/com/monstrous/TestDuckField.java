@@ -45,7 +45,7 @@ public class TestDuckField extends ApplicationAdapter {
         camera.update();
 
         environment = new Environment();
-        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+        environment.add( new DirectionalLight( Color.WHITE, new Vector3(0,-1,0)));
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 

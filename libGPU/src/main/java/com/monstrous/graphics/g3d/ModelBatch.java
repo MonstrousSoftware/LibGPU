@@ -1,7 +1,6 @@
 package com.monstrous.graphics.g3d;
 
 import com.monstrous.LibGPU;
-import com.monstrous.ShaderPrefix;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
@@ -26,11 +25,8 @@ public class ModelBatch implements Disposable {
     private final int MAX_INSTANCES = 4096;
 
     private final int FRAME_UB_SIZE = 1024; //384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
-    private final int MATERIAL_UB_SIZE = 8 * Float.BYTES;
     private final int SHADOW_UB_SIZE = (16 + 4) * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
-
-    private final int MAX_MATERIALS = 256;   // limits nr of materials!
 
     private final WGPU wgpu;
     private final Pointer device;
@@ -40,17 +36,13 @@ public class ModelBatch implements Disposable {
 
     private Pointer uniformData;            // scratch buffer in native memory
     private Pointer frameUniformBuffer;
-    private Pointer materialUniformBuffer;
     private Pointer shadowUniformBuffer;
-    private int materialUniformIndex;
 
     private Pointer frameBindGroupLayout;
-    private Pointer materialBindGroupLayout;
     private Pointer instancingBindGroupLayout;
     private Pointer shadowBindGroupLayout;
     private Pointer pipelineLayout;
     private Pointer frameBindGroup;
-    private Pointer materialBindGroup;
     private Pointer instancingBindGroup;
     private Pointer shadowBindGroup;
     private Material prevMaterial;
@@ -86,11 +78,8 @@ public class ModelBatch implements Disposable {
         frameUniformBuffer = createUniformBuffer( FRAME_UB_SIZE, 1);
         shadowUniformBuffer = createUniformBuffer( SHADOW_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
-        materialBindGroupLayout = createMaterialBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
         shadowBindGroupLayout = createShadowBindGroupLayout();
-
-        materialUniformBuffer = createUniformBuffer( MATERIAL_UB_SIZE, MAX_MATERIALS);
 
         int instanceSize = 16*Float.BYTES;      // data size per instance
         instanceBuffer = createInstancingBuffer(instanceSize, MAX_INSTANCES);
@@ -123,11 +112,10 @@ public class ModelBatch implements Disposable {
     public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture){
         this.environment = environment;
         //loadShaders();
-        pipelineLayout = makePipelineLayout(frameBindGroupLayout, materialBindGroupLayout, instancingBindGroupLayout, shadowBindGroupLayout);
+        pipelineLayout = makePipelineLayout(frameBindGroupLayout, Material.getBindGroupLayout(), instancingBindGroupLayout, shadowBindGroupLayout);
 
         pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture, LibGPU.app.configuration.numSamples);
 
-        materialUniformIndex = 0;       // reset offset into uniform buffer
         prevMaterial = null;
         prevPipeline = null;
         numPipelineSwitches = 0;
@@ -138,9 +126,6 @@ public class ModelBatch implements Disposable {
 
         instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer, 16*Float.BYTES*MAX_INSTANCES);
         pass.setBindGroup(2, instancingBindGroup);
-
-        materialBindGroup = null;
-
 
         if(environment != null && environment.renderShadows) {
             shadowBindGroup = makeShadowBindGroup(shadowBindGroupLayout, shadowUniformBuffer);
@@ -172,11 +157,6 @@ public class ModelBatch implements Disposable {
 
         wgpu.BindGroupRelease(frameBindGroup);
         wgpu.BindGroupRelease(instancingBindGroup);
-        if(materialBindGroup != null) {
-            wgpu.BindGroupRelease(materialBindGroup);
-            materialBindGroup = null;
-        }
-
         //System.out.println("materials: "+materialUniformIndex+"\t\tpipe switches: "+numPipelineSwitches);
         pass.end();
         pass = null;
@@ -235,22 +215,10 @@ public class ModelBatch implements Disposable {
         renderablesCount++; // nr of renderables in buffer
         instanceCount++;    // nr of instances of the same meshPart
 
-        // make a new bind group every time we change texture
+        // if we change material, bind new material
         if(material != prevMaterial) {
             prevMaterial = material;
-            writeMaterialUniforms(materialUniformBuffer, materialUniformIndex, material);
-            materialBindGroupLayout = createMaterialBindGroupLayout();
-            if(materialBindGroup != null)
-                wgpu.BindGroupRelease(materialBindGroup);
-            materialBindGroup = makeMaterialBindGroup(material, materialBindGroupLayout, materialUniformBuffer, meshPart.mesh.vertexAttributes);   // bind group for textures and uniforms
-
-            // set dynamic offset into uniform buffer
-            int[] offset = new int[1];
-            int uniformStride = ceilToNextMultiple(MATERIAL_UB_SIZE, uniformAlignment);
-            offset[0] = materialUniformIndex*uniformStride;
-            Pointer offsetPtr = WgpuJava.createIntegerArrayPointer(offset);
-            pass.setBindGroup(1, materialBindGroup, 1, offsetPtr);
-            materialUniformIndex++;
+            material.bindGroup(pass, 1);    // group 1 is material bind group
         }
     }
 
@@ -261,9 +229,7 @@ public class ModelBatch implements Disposable {
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
         pass.setVertexBuffer(0, vertexBuffer, 0, wgpu.BufferGetSize(vertexBuffer));
 
-
         setPipeline(pass, meshPart.mesh.vertexAttributes, environment);
-
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
@@ -310,10 +276,8 @@ public class ModelBatch implements Disposable {
     public void dispose() {
         pipelines.dispose();
         wgpu.BindGroupLayoutRelease(frameBindGroupLayout);
-        wgpu.BindGroupLayoutRelease(materialBindGroupLayout);
         wgpu.BindGroupLayoutRelease(instancingBindGroupLayout);
         wgpu.BufferRelease(frameUniformBuffer);
-        wgpu.BufferRelease(materialUniformBuffer);
         wgpu.BufferRelease(instanceBuffer);
         // todo
     }
@@ -373,66 +337,6 @@ public class ModelBatch implements Disposable {
     }
 
 
-    private Pointer createMaterialBindGroupLayout(){
-        int location = 0;
-
-        // Define binding layout
-        WGPUBindGroupLayoutEntry uniformBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(uniformBindingLayout);
-        uniformBindingLayout.setBinding(location++);
-        uniformBindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
-        uniformBindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
-        uniformBindingLayout.getBuffer().setMinBindingSize(MATERIAL_UB_SIZE);
-        uniformBindingLayout.getBuffer().setHasDynamicOffset(1L);
-
-        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(texBindingLayout);
-        texBindingLayout.setBinding(location++);
-        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(samplerBindingLayout);
-        samplerBindingLayout.setBinding(location++);
-        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
-
-        // emissive texture binding is included even if it is not used
-        WGPUBindGroupLayoutEntry emissiveTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(emissiveTexBindingLayout);
-        emissiveTexBindingLayout.setBinding(location++);
-        emissiveTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        emissiveTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        emissiveTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        // normal texture binding is included even if it is not used
-        WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(normalTexBindingLayout);
-        normalTexBindingLayout.setBinding(location++);
-        normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        // metallic roughness texture binding is included even if it is not used
-        WGPUBindGroupLayoutEntry mrTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(mrTexBindingLayout);
-        mrTexBindingLayout.setBinding(location++);
-        mrTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        mrTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        mrTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        // Create a bind group layout
-        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
-        bindGroupLayoutDesc.setNextInChain();
-        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Material)");
-        bindGroupLayoutDesc.setEntryCount(location);
-
-        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, emissiveTexBindingLayout, normalTexBindingLayout, mrTexBindingLayout );
-        return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
-    }
-
-
     // per frame bind group
     private Pointer makeFrameBindGroup(Pointer frameBindGroupLayout, Pointer uniformBuffer) {
         // Create a binding
@@ -455,36 +359,6 @@ public class ModelBatch implements Disposable {
     }
 
 
-    // per material bind group
-    private Pointer makeMaterialBindGroup(Material material, Pointer bindGroupLayout, Pointer materialUniformBuffer, VertexAttributes vertexAttributes) {
-        // Create a binding
-        WGPUBindGroupEntry uniformBinding = WGPUBindGroupEntry.createDirect();
-        uniformBinding.setNextInChain();
-        uniformBinding.setBinding(0);  // binding index
-        uniformBinding.setBuffer(materialUniformBuffer);
-        uniformBinding.setOffset(0);
-        uniformBinding.setSize(MATERIAL_UB_SIZE);
-
-        Texture diffuse = material.diffuseTexture;
-
-
-        // A bind group contains one or multiple bindings
-        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
-        bindGroupDesc.setNextInChain();
-        bindGroupDesc.setLayout(bindGroupLayout);
-        // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(6);
-        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT) && material.normalTexture != null) {
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), material.normalTexture.getBinding(4),
-                    material.metallicRoughnessTexture.getBinding(5));
-        }
-        else {
-            // use diffuse map as fake (ignored) normal map, so that we maintain the same layout
-            bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1),  diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), diffuse.getBinding(4),
-                    material.metallicRoughnessTexture.getBinding(5));
-        }
-        return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
-    }
 
      // shadow bind group
     private Pointer makeShadowBindGroup(Pointer shadowBindGroupLayout, Pointer uniformBuffer) {
@@ -653,7 +527,7 @@ public class ModelBatch implements Disposable {
         offset += setUniformInteger(uniformData, offset, numPointLights);
         offset += 3*4; // padding (important)
 
-        if(environment != null || environment.shadowCamera != null) {
+        if(environment != null && environment.shadowCamera != null) {
             offset += setUniformMatrix(uniformData, offset, environment.shadowCamera.combined);
             offset += setUniformVec3(uniformData, offset, environment.shadowCamera.position);
         }
@@ -662,36 +536,6 @@ public class ModelBatch implements Disposable {
 
         wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, FRAME_UB_SIZE);
     }
-
-    private void writeMaterialUniforms( Pointer uniformBuffer, int uniformIndex, Material material){
-        if(uniformIndex >= MAX_MATERIALS)
-            throw new RuntimeException("ModelBatch: Too many models");
-
-        int offset = 0;
-        offset += setUniformFloat(uniformData, offset, material.metallicFactor);
-        offset += setUniformFloat(uniformData, offset, material.roughnessFactor);
-        offset += 2*4; // padding (important)
-        offset += setUniformColor(uniformData, offset, material.baseColor);
-
-
-        int uniformStride = ceilToNextMultiple(MATERIAL_UB_SIZE, uniformAlignment);
-        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, uniformIndex*uniformStride, uniformData, offset);
-    }
-
-
-//    private void writeShadowUniforms( Pointer uniformBuffer, Environment environment ){
-//        if(environment == null || environment.shadowCamera == null)
-//            throw new RuntimeException("Shadow Uniforms: missing shadow data in Environment.");
-//
-//        int offset = 0;
-//        offset += setUniformMatrix(uniformData, offset, environment.shadowCamera.combined);
-//        offset += setUniformVec3(uniformData, offset, environment.shadowCamera.position);
-//
-//        // BEWARE of padding rules
-//
-//        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, SHADOW_UB_SIZE);
-//    }
-
 
     private Pointer createUniformBuffer(int bufferSize, int maxSlices) {
         int uniformStride = ceilToNextMultiple(bufferSize, uniformAlignment);

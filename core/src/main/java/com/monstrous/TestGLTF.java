@@ -63,6 +63,7 @@ public class TestGLTF extends ApplicationAdapter {
 
         environment = new Environment();
         environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+        environment.ambientLightLevel = 0.5f;
 
 
         LibGPU.input.setInputProcessor(new CameraController(camera));

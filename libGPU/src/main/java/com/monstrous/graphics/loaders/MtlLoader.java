@@ -15,6 +15,7 @@ import com.monstrous.graphics.Color;
 //        d 0.632850
 //        illum 9
 //        map_Kd C:\\Coding\\Blender Files\\palette.png
+//        map_Bump models\fourareen2K_normals.png
 
 public class MtlLoader {
 

@@ -283,5 +283,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = N;
     //color = uFrame.pointLights[0].color.rgb;
     //color = baseColor;
+    //color = N;
     return vec4f(color, 1.0);
 }
