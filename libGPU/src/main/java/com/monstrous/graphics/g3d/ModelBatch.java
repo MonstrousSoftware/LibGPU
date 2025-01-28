@@ -24,19 +24,20 @@ public class ModelBatch implements Disposable {
     private final int MAX_POINT_LIGHTS = 5;
     private final int MAX_INSTANCES = 4096;
 
-    private final int FRAME_UB_SIZE = 1024; //384; //(3*16+8+1+MAX_DIR_LIGHTS*8) * Float.BYTES;
+    private final int FRAME_UB_SIZE = 816;
     private final int SHADOW_UB_SIZE = (16 + 4) * Float.BYTES;
     private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
 
     private final WGPU wgpu;
     private final Pointer device;
-    private final int uniformAlignment;
+//    private final int uniformAlignment;
 
     private RenderPass pass;
 
-    private Pointer uniformData;            // scratch buffer in native memory
-    private Pointer frameUniformBuffer;
-    private Pointer shadowUniformBuffer;
+    private UniformBuffer frameUniformBuffer;
+//    private Pointer uniformData;            // scratch buffer in native memory
+//    private Pointer frameUniformBufferHandle;
+//    private Pointer shadowUniformBuffer;
 
     private Pointer frameBindGroupLayout;
     private Pointer instancingBindGroupLayout;
@@ -65,7 +66,7 @@ public class ModelBatch implements Disposable {
     public ModelBatch (){
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
-        uniformAlignment = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
+//        uniformAlignment = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
 
 
         pipelines = new Pipelines();
@@ -75,8 +76,9 @@ public class ModelBatch implements Disposable {
 
         defaultDirectionalLight = new DirectionalLight(new Color(1,0,0,1), new Vector3(0, -1, 0));
 
-        frameUniformBuffer = createUniformBuffer( FRAME_UB_SIZE, 1);
-        shadowUniformBuffer = createUniformBuffer( SHADOW_UB_SIZE, 1);
+        frameUniformBuffer = new UniformBuffer(FRAME_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
+        //frameUniformBufferHandle = createUniformBuffer( FRAME_UB_SIZE, 1);
+        //shadowUniformBuffer = createUniformBuffer( SHADOW_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
         shadowBindGroupLayout = createShadowBindGroupLayout();
@@ -84,8 +86,8 @@ public class ModelBatch implements Disposable {
         int instanceSize = 16*Float.BYTES;      // data size per instance
         instanceBuffer = createInstancingBuffer(instanceSize, MAX_INSTANCES);
 
-        float[] uniforms = new float[MAX_UB_SIZE/Float.BYTES];
-        uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
+//        float[] uniforms = new float[MAX_UB_SIZE/Float.BYTES];
+//        uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
 
         float[] floatData = new float[16];
         instanceData = WgpuJava.createFloatArrayPointer(floatData);       // native memory buffer for one instance to aid write buffer
@@ -121,14 +123,14 @@ public class ModelBatch implements Disposable {
         numPipelineSwitches = 0;
 
         writeFrameUniforms(frameUniformBuffer, camera, environment);
-        frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer);
+        frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer.getHandle());
         pass.setBindGroup(0, frameBindGroup);
 
         instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer, 16*Float.BYTES*MAX_INSTANCES);
         pass.setBindGroup(2, instancingBindGroup);
 
         if(environment != null && environment.renderShadows) {
-            shadowBindGroup = makeShadowBindGroup(shadowBindGroupLayout, shadowUniformBuffer);
+            shadowBindGroup = makeShadowBindGroup(shadowBindGroupLayout);
             pass.setBindGroup(3, shadowBindGroup);
         }
     }
@@ -277,8 +279,9 @@ public class ModelBatch implements Disposable {
         pipelines.dispose();
         wgpu.BindGroupLayoutRelease(frameBindGroupLayout);
         wgpu.BindGroupLayoutRelease(instancingBindGroupLayout);
-        wgpu.BufferRelease(frameUniformBuffer);
+        //wgpu.BufferRelease(frameUniformBufferHandle);
         wgpu.BufferRelease(instanceBuffer);
+        frameUniformBuffer.dispose();
         // todo
     }
 
@@ -361,7 +364,7 @@ public class ModelBatch implements Disposable {
 
 
      // shadow bind group
-    private Pointer makeShadowBindGroup(Pointer shadowBindGroupLayout, Pointer uniformBuffer) {
+    private Pointer makeShadowBindGroup(Pointer shadowBindGroupLayout) {
         if(environment.shadowMap == null)
             throw new RuntimeException("Shadow Bind Group needs shadow map in environment.");
 
@@ -464,17 +467,14 @@ public class ModelBatch implements Disposable {
         return 16*Float.BYTES;
     }
 
-
-
-    private void writeFrameUniforms( Pointer uniformBuffer, Camera camera, Environment environment ){
-        int offset = 0;
-        offset += setUniformMatrix(uniformData, offset, camera.projection);
-        offset += setUniformMatrix(uniformData, offset, camera.view);
-        offset += setUniformMatrix(uniformData, offset, camera.combined);
-        offset += setUniformVec3(uniformData, offset, camera.position);
-
-        offset += setUniformFloat(uniformData, offset, environment == null ? 0 : environment.ambientLightLevel);
-        offset += 3*4; // padding (important) align to 16 bytes
+    private void writeFrameUniforms( UniformBuffer uniformBuffer, Camera camera, Environment environment ){
+        uniformBuffer.beginFill();
+        uniformBuffer.append(camera.projection);
+        uniformBuffer.append(camera.view);
+        uniformBuffer.append(camera.combined);
+        uniformBuffer.append(camera.position);
+        uniformBuffer.append(environment == null ? 0f : environment.ambientLightLevel);
+        uniformBuffer.pad(3*4);
 
         int numDirLights = 0;
         if(environment != null){
@@ -483,23 +483,24 @@ public class ModelBatch implements Disposable {
                 if(light instanceof DirectionalLight && numDirLights < MAX_DIR_LIGHTS-1) {
                     numDirLights++;
                     dirLight = (DirectionalLight) light;
-                    offset += setUniformColor(uniformData, offset, dirLight.color);
-                    offset += setUniformVec3(uniformData, offset, dirLight.direction);
-                    offset += setUniformFloat(uniformData, offset, dirLight.intensity);
-                    offset += 3*4; // padding
+                    uniformBuffer.append(dirLight.color);
+                    uniformBuffer.append(dirLight.direction);
+                    uniformBuffer.append(dirLight.intensity);
+                    uniformBuffer.pad(3*4); // padding
                 }
             }
             // fixed length array, fill with placeholders up to MAX_DIR_LIGHTS
             for(int i = numDirLights; i < MAX_DIR_LIGHTS; i++) {
                 dirLight = defaultDirectionalLight; // will be ignored anyway
-                offset += setUniformColor(uniformData, offset, dirLight.color);
-                offset += setUniformVec3(uniformData, offset, dirLight.direction);
-                offset += setUniformFloat(uniformData, offset, dirLight.intensity);
-                offset += 3*4; // padding
+                uniformBuffer.append(dirLight.color);
+                uniformBuffer.append(dirLight.direction);
+                uniformBuffer.append(dirLight.intensity);
+                uniformBuffer.pad(3*4); // padding
             }
         }
-        offset += setUniformInteger(uniformData, offset, numDirLights);
-        offset += 3*4; // padding (important)
+        uniformBuffer.append(numDirLights);
+        uniformBuffer.pad(3*4); // padding
+
 
         int numPointLights = 0;
         if(environment != null){
@@ -508,46 +509,47 @@ public class ModelBatch implements Disposable {
                 if(light instanceof PointLight && numPointLights < MAX_POINT_LIGHTS-1) {
                     numPointLights++;
                     pointLight = (PointLight) light;
-                    offset += setUniformColor(uniformData, offset, pointLight.color);
-                    offset += setUniformVec3(uniformData, offset, pointLight.position);
-                    offset += setUniformFloat(uniformData, offset, pointLight.intensity);
+                    uniformBuffer.append(pointLight.color);
+                    uniformBuffer.append(pointLight.position);
+                    uniformBuffer.append(pointLight.intensity);
                     // need padding?
-                    offset += 3*4;  // padding
+                    uniformBuffer.pad(3*4); // padding
                 }
             }
             // fixed length array, fill with placeholders up to MAX
             pointLight = new PointLight(Color.BLACK, new Vector3(), 0);// will be ignored anyway
             for(int i = numPointLights; i < MAX_POINT_LIGHTS; i++) {
-                offset += setUniformColor(uniformData, offset, pointLight.color);
-                offset += setUniformVec3(uniformData, offset, pointLight.position);
-                offset += setUniformFloat(uniformData, offset, pointLight.intensity);
-                offset += 3*4;  // padding
+                uniformBuffer.append(pointLight.color);
+                uniformBuffer.append(pointLight.position);
+                uniformBuffer.append(pointLight.intensity);
+                uniformBuffer.pad(3*4); // padding
             }
         }
-        offset += setUniformInteger(uniformData, offset, numPointLights);
-        offset += 3*4; // padding (important)
+        uniformBuffer.append(numPointLights);
+        uniformBuffer.pad(3*4); // padding
+
 
         if(environment != null && environment.shadowCamera != null) {
-            offset += setUniformMatrix(uniformData, offset, environment.shadowCamera.combined);
-            offset += setUniformVec3(uniformData, offset, environment.shadowCamera.position);
+            uniformBuffer.append(environment.shadowCamera.combined);
+            uniformBuffer.append(environment.shadowCamera.position);
         }
 
-        // BEWARE of padding rules
+        System.out.println("Uiform buffer size "+uniformBuffer.getOffset());
 
-        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, FRAME_UB_SIZE);
+        uniformBuffer.endFill();   // write to GPU buffer
     }
 
-    private Pointer createUniformBuffer(int bufferSize, int maxSlices) {
-        int uniformStride = ceilToNextMultiple(bufferSize, uniformAlignment);
-
-        // Create uniform buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Uniform object buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize((long) uniformStride * maxSlices);
-        bufferDesc.setMappedAtCreation(0L);
-        return wgpu.DeviceCreateBuffer(device, bufferDesc);
-    }
+//    private Pointer createUniformBuffer(int bufferSize, int maxSlices) {
+//        int uniformStride = ceilToNextMultiple(bufferSize, uniformAlignment);
+//
+//        // Create uniform buffer
+//        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+//        bufferDesc.setLabel("Uniform object buffer");
+//        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
+//        bufferDesc.setSize((long) uniformStride * maxSlices);
+//        bufferDesc.setMappedAtCreation(0L);
+//        return wgpu.DeviceCreateBuffer(device, bufferDesc);
+//    }
 
     private Pointer createInstancingBuffer(int instanceSize, int maxRenderables) {
 
