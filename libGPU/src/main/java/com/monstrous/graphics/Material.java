@@ -10,7 +10,6 @@ import jnr.ffi.Pointer;
 
 import static com.monstrous.LibGPU.wgpu;
 
-// todo make 1 pixel default textures and reuse...
 
 public class Material implements Disposable {
     private static final int MATERIAL_UB_SIZE = 8 * Float.BYTES;
@@ -24,6 +23,8 @@ public class Material implements Disposable {
     public float metallicFactor = 0.0f;
     public float roughnessFactor = 0.5f;
 
+    private static Texture whitePixel;  // fallback texture
+    private static Texture blackPixel;  // fallback texture
 
     private static Pointer materialBindGroupLayout;
     private Pointer materialUniformBuffer;
@@ -34,50 +35,55 @@ public class Material implements Disposable {
         baseColor = new Color(materialData.diffuse);
         String fileName;
         if(materialData.diffuseMapFilePath == null)
-            fileName = "textures\\white.png";
+            this.diffuseTexture = getDefaultWhiteTexture();
         else
-            fileName = materialData.diffuseMapFilePath;
-        this.diffuseTexture = new Texture(fileName, true);
-        // todo use caching of textures in case we reuse the same texture in different materials
+            this.diffuseTexture = new Texture(materialData.diffuseMapFilePath, true);
 
-        fileName = "textures\\black.png";               // placeholder
-        if( materialData.normalMapFilePath != null)
-            fileName = materialData.normalMapFilePath;
-        this.normalTexture = new Texture(fileName, true);
 
-        fileName = "textures\\black.png";
+        if( materialData.normalMapFilePath != null) {
+            this.normalTexture = new Texture(materialData.normalMapFilePath, true);
+            hasNormalMap = true;
+        } else {
+            this.normalTexture = getDefaultBlackTexture();  // will not be used anyway
+            hasNormalMap = false;
+        }
+
         if( materialData.emissiveMapFilePath != null)
-            fileName = materialData.emissiveMapFilePath;
-        this.emissiveTexture = new Texture(fileName, true);
+            this.emissiveTexture = new Texture(materialData.emissiveMapFilePath, true);
+        else
+            this.emissiveTexture = getDefaultBlackTexture();    // no emissive colour
 
         roughnessFactor = materialData.roughnessFactor;
-        if(roughnessFactor < 0)
+        if(roughnessFactor < 0) // not provided
             roughnessFactor = 1f; // default
         metallicFactor = materialData.metallicFactor;
-        if(metallicFactor < 0)
+        if(metallicFactor < 0)  // not provided
             metallicFactor = 1f; // default
 
-        fileName = "textures\\white.png";
         if( materialData.metallicRoughnessMapFilePath != null)
-            fileName = materialData.metallicRoughnessMapFilePath;
-        this.metallicRoughnessTexture = new Texture(fileName, true);
+            this.metallicRoughnessTexture = new Texture(materialData.metallicRoughnessMapFilePath, true);
+        else
+            this.metallicRoughnessTexture = getDefaultWhiteTexture();
+
         createBindGroup();
     }
 
     // todo merge constructors
     public Material(Texture texture) {
-        baseColor = new Color(Color.WHITE);
+        this.baseColor = new Color(Color.WHITE);
         this.diffuseTexture = texture;
-        this.emissiveTexture = new Texture("textures\\black.png", false);
+        this.emissiveTexture = getDefaultBlackTexture();
+        this.normalTexture = getDefaultBlackTexture();
+        this.metallicRoughnessTexture = getDefaultBlackTexture();
         createBindGroup();
     }
 
     public Material(Color baseColor) {
         this.baseColor = new Color(baseColor);
-        this.diffuseTexture = new Texture("textures\\white.png", false);
-        this.emissiveTexture = new Texture("textures\\black.png", false);
-        this.normalTexture = new Texture("textures\\black.png", false);
-        this.metallicRoughnessTexture = new Texture("textures\\black.png", true);
+        this.diffuseTexture = getDefaultWhiteTexture();
+        this.emissiveTexture = getDefaultBlackTexture();
+        this.normalTexture = getDefaultBlackTexture();
+        this.metallicRoughnessTexture = getDefaultBlackTexture();
         createBindGroup();
     }
 
@@ -103,6 +109,23 @@ public class Material implements Disposable {
         //wgpu.BindGroupLayoutRelease(materialBindGroupLayout);
 
         wgpu.BufferRelease(materialUniformBuffer);
+    }
+
+
+    private Texture getDefaultWhiteTexture(){
+        if(whitePixel == null){
+            whitePixel = new Texture(1,1);
+            whitePixel.fill(Color.WHITE);
+        }
+        return whitePixel;
+    }
+
+    private Texture getDefaultBlackTexture(){
+        if(blackPixel == null){
+            blackPixel = new Texture(2,2);
+            blackPixel.fill(Color.BLACK);
+        }
+        return blackPixel;
     }
 
     private void createBindGroup(){

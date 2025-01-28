@@ -1,6 +1,5 @@
 package com.monstrous;
 
-import com.monstrous.graphics.Color;
 import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.webgpu.RenderPassBuilder;
 import com.monstrous.wgpu.*;
@@ -163,6 +162,7 @@ public class Application {
         options.setNextInChain();
         options.setCompatibleSurface(LibGPU.surface);
         options.setBackendType(LibGPU.app.configuration.backend);
+        options.setPowerPreference(WGPUPowerPreference.HighPerformance);
 
         System.out.println("defined adapter options");
 

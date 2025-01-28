@@ -123,7 +123,7 @@ public class Texture {
 
         mipLevelCount = 1;
         if (mipMapping)
-            mipLevelCount = bitWidth(Math.max(width, height));      // todo test for non-square, non POT etc.
+            mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));      // todo test for non-square, non POT etc.
 
         // Create the texture
         WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
@@ -170,6 +170,54 @@ public class Texture {
         samplerDesc.setMaxAnisotropy(1);
         sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
     }
+
+    public void fill(Color color) {
+        // Arguments telling which part of the texture we upload to
+        // (together with the last argument of writeTexture)
+        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+        destination.setTexture(texture);
+        destination.setMipLevel(0);
+        destination.getOrigin().setX(0);
+        destination.getOrigin().setY(0);
+        destination.getOrigin().setZ(0);
+        destination.setAspect(WGPUTextureAspect.All);   // not relevant
+
+        // Arguments telling how the C++ side pixel memory is laid out
+        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+        source.setOffset(0);
+        source.setBytesPerRow(4 * width);
+        source.setRowsPerImage(height);
+
+
+
+        byte[] pixels = new byte[4 * width * height];
+        byte r = (byte) (color.r * 255);
+        byte g = (byte) (color.g * 255);
+        byte b = (byte) (color.b * 255);
+        byte a = (byte) (color.a * 255);
+
+        int offset = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                pixels[offset++] = r;
+                pixels[offset++] = g;
+                pixels[offset++] = b;
+                pixels[offset++] = a;
+            }
+        }
+
+        Pointer pixelPtr = WgpuJava.createByteArrayPointer(pixels);
+
+        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+        ext.setWidth(width);
+        ext.setHeight(height);
+        ext.setDepthOrArrayLayers(1);
+
+        destination.setMipLevel(0);
+
+        // N.B. using textureDesc.getSize() for param won't work!
+        LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
+   }
 
    private void load(Pointer pixelPtr) {
 
