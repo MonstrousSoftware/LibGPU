@@ -29,7 +29,7 @@ public class SpriteBatch implements Disposable {
     private final Color tint;
     private Pointer vertexBuffer;
     private Pointer indexBuffer;
-    private Pointer uniformBuffer;
+    private UniformBuffer uniformBuffer;
     private final Pointer bindGroupLayout;
     private VertexAttributes vertexAttributes;
     private VertexAttributes defaultVertexAttributes;
@@ -405,22 +405,13 @@ public class SpriteBatch implements Disposable {
         // Create uniform buffer
         uniformBufferSize = 16 * Float.BYTES;
 
-        //WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Uniform buffer");
-        bufferDesc.setUsage(WGPUBufferUsage.CopyDst |WGPUBufferUsage.Uniform );
-        bufferDesc.setSize(16 * Float.BYTES);
-        bufferDesc.setMappedAtCreation(0L);
-        uniformBuffer =LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device,bufferDesc);
+        uniformBuffer = new UniformBuffer(uniformBufferSize,WGPUBufferUsage.CopyDst |WGPUBufferUsage.Uniform  );
     }
 
     private void setUniforms(){
-        // P matrix: 16 float
-        float[] uniforms = new float[16];
-        Pointer uniformData = WgpuJava.createFloatArrayPointer(uniforms);   // copy to native memory
-
-        setUniformMatrix(uniformData, 0, projectionMatrix);
-
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
+        uniformBuffer.beginFill();
+        uniformBuffer.append(projectionMatrix);
+        uniformBuffer.endFill();
     }
 
     private Pointer createBindGroupLayout() {
@@ -461,7 +452,7 @@ public class SpriteBatch implements Disposable {
         WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
         binding.setNextInChain();
         binding.setBinding(0);  // binding index
-        binding.setBuffer(uniformBuffer);
+        binding.setBuffer(uniformBuffer.getHandle());
         binding.setOffset(0);
         binding.setSize(uniformBufferSize);
 
@@ -515,7 +506,7 @@ public class SpriteBatch implements Disposable {
         pipelines.dispose();
         wgpu.BufferRelease(vertexBuffer);
         wgpu.BufferRelease(indexBuffer);
-        wgpu.BufferRelease(uniformBuffer);
         wgpu.BindGroupLayoutRelease(bindGroupLayout);
+        uniformBuffer.dispose();
     }
 }
