@@ -117,9 +117,14 @@ public class UniformBuffer implements Disposable {
 
 
     public void endFill(){
+        endFill(0);
+    }
+
+
+    public void endFill(int writeOffset){
         if(offset > contentSize)
             throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, handle, dynamicOffset, floatData, offset);
+        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, handle, dynamicOffset+writeOffset, floatData, offset);
     }
 
     public Pointer getHandle(){

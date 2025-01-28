@@ -15,6 +15,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 // todo support packed color to reduce vertex size
+// todo make use of UniformBuffer
 
 public class SpriteBatch implements Disposable {
     private WGPU wgpu;

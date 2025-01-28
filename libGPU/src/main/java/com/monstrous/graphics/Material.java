@@ -3,9 +3,9 @@ package com.monstrous.graphics;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.loaders.MaterialData;
 import com.monstrous.graphics.webgpu.RenderPass;
+import com.monstrous.graphics.webgpu.UniformBuffer;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
-import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
 import static com.monstrous.LibGPU.wgpu;
@@ -27,13 +27,12 @@ public class Material implements Disposable {
     private static Texture blackPixel;  // fallback texture
 
     private static Pointer materialBindGroupLayout;
-    private Pointer materialUniformBuffer;
+    private UniformBuffer materialUniformBuffer;
     private Pointer materialBindGroup;
-    private static Pointer uniformData;
+
 
     public Material(MaterialData materialData) {
         baseColor = new Color(materialData.diffuse);
-        String fileName;
         if(materialData.diffuseMapFilePath == null)
             this.diffuseTexture = getDefaultWhiteTexture();
         else
@@ -108,7 +107,7 @@ public class Material implements Disposable {
         // cannot be released as it is shared by all materials
         //wgpu.BindGroupLayoutRelease(materialBindGroupLayout);
 
-        wgpu.BufferRelease(materialUniformBuffer);
+        materialUniformBuffer.dispose();
     }
 
 
@@ -133,13 +132,14 @@ public class Material implements Disposable {
         materialBindGroupLayout = getBindGroupLayout();
 
         // create a uniform buffer
-        materialUniformBuffer = createUniformBuffer( MATERIAL_UB_SIZE );
+        materialUniformBuffer = new UniformBuffer( MATERIAL_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
+        //materialUniformBuffer = createUniformBuffer( MATERIAL_UB_SIZE );
 
         // fill the uniform buffer
         writeMaterialUniforms(materialUniformBuffer);
 
         // create a bind group
-        materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer);   // bind group for textures and uniforms
+        materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getHandle());   // bind group for textures and uniforms
     }
 
     // bind material to the render pass
@@ -213,17 +213,6 @@ public class Material implements Disposable {
         return wgpu.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
-
-    private Pointer createUniformBuffer(int bufferSize ) {
-        // Create uniform buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Uniform object buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize(bufferSize);
-        bufferDesc.setMappedAtCreation(0L);
-        return wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
-    }
-
     // per material bind group
     private Pointer createMaterialBindGroup(Material material, Pointer bindGroupLayout, Pointer materialUniformBuffer) {
         // Create a binding
@@ -250,35 +239,15 @@ public class Material implements Disposable {
         return wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
-    private int setUniformFloat(Pointer data, int offset, float value ){
-        data.putFloat(offset, value);
-        return Float.BYTES;
-    }
+    private void writeMaterialUniforms( UniformBuffer uniformBuffer){
 
-    private int setUniformColor(Pointer data, int offset, Color color ){
-        data.putFloat(offset+0*Float.BYTES, color.r);
-        data.putFloat(offset+1*Float.BYTES, color.g);
-        data.putFloat(offset+2*Float.BYTES, color.b);
-        data.putFloat(offset+3*Float.BYTES, color.a);
-        return 4*Float.BYTES;
-    }
+        uniformBuffer.beginFill();
+        uniformBuffer.append(metallicFactor);
+        uniformBuffer.append(roughnessFactor);
+        uniformBuffer.pad(2*4); // padding (important)
+        uniformBuffer.append(baseColor);
 
-    private void writeMaterialUniforms( Pointer uniformBuffer){
-
-        // working native buffer to fill uniform buffer
-        // static so it can be reused
-        if(uniformData == null) {
-            float[] uniforms = new float[MATERIAL_UB_SIZE / Float.BYTES];
-            uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
-        }
-
-        int offset = 0;
-        offset += setUniformFloat(uniformData, offset, metallicFactor);
-        offset += setUniformFloat(uniformData, offset, roughnessFactor);
-        offset += 2*4; // padding (important)
-        offset += setUniformColor(uniformData, offset, baseColor);
-
-        wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, offset);
+        uniformBuffer.endFill(); // write to GPU
     }
 
     // default binding layout values

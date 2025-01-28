@@ -25,20 +25,13 @@ public class ModelBatch implements Disposable {
     private final int MAX_INSTANCES = 4096;
 
     private final int FRAME_UB_SIZE = 816;
-    private final int SHADOW_UB_SIZE = (16 + 4) * Float.BYTES;
-    private final int MAX_UB_SIZE = FRAME_UB_SIZE;  // max of the above
 
     private final WGPU wgpu;
     private final Pointer device;
-//    private final int uniformAlignment;
 
     private RenderPass pass;
 
     private UniformBuffer frameUniformBuffer;
-//    private Pointer uniformData;            // scratch buffer in native memory
-//    private Pointer frameUniformBufferHandle;
-//    private Pointer shadowUniformBuffer;
-
     private Pointer frameBindGroupLayout;
     private Pointer instancingBindGroupLayout;
     private Pointer shadowBindGroupLayout;
@@ -57,8 +50,7 @@ public class ModelBatch implements Disposable {
     public Environment environment;
 
     private DirectionalLight defaultDirectionalLight;
-    private Pointer instanceBuffer;
-    private Pointer instanceData;
+    private UniformBuffer instanceBuffer;
 
 
 
@@ -66,7 +58,6 @@ public class ModelBatch implements Disposable {
     public ModelBatch (){
         wgpu = LibGPU.wgpu;
         device = LibGPU.device;
-//        uniformAlignment = (int)LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
 
 
         pipelines = new Pipelines();
@@ -77,20 +68,12 @@ public class ModelBatch implements Disposable {
         defaultDirectionalLight = new DirectionalLight(new Color(1,0,0,1), new Vector3(0, -1, 0));
 
         frameUniformBuffer = new UniformBuffer(FRAME_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
-        //frameUniformBufferHandle = createUniformBuffer( FRAME_UB_SIZE, 1);
-        //shadowUniformBuffer = createUniformBuffer( SHADOW_UB_SIZE, 1);
         frameBindGroupLayout = createFrameBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
         shadowBindGroupLayout = createShadowBindGroupLayout();
 
         int instanceSize = 16*Float.BYTES;      // data size per instance
-        instanceBuffer = createInstancingBuffer(instanceSize, MAX_INSTANCES);
-
-//        float[] uniforms = new float[MAX_UB_SIZE/Float.BYTES];
-//        uniformData = WgpuJava.createFloatArrayPointer(uniforms);       // native memory buffer for one instance to aid write buffer
-
-        float[] floatData = new float[16];
-        instanceData = WgpuJava.createFloatArrayPointer(floatData);       // native memory buffer for one instance to aid write buffer
+        instanceBuffer = new UniformBuffer(instanceSize*MAX_INSTANCES, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage);
     }
 
     // todo allow hot-loading of shaders
@@ -113,9 +96,10 @@ public class ModelBatch implements Disposable {
 
     public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture){
         this.environment = environment;
-        //loadShaders();
+
         pipelineLayout = makePipelineLayout(frameBindGroupLayout, Material.getBindGroupLayout(), instancingBindGroupLayout, shadowBindGroupLayout);
 
+        // create a new render pass
         pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture, LibGPU.app.configuration.numSamples);
 
         prevMaterial = null;
@@ -126,7 +110,7 @@ public class ModelBatch implements Disposable {
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer.getHandle());
         pass.setBindGroup(0, frameBindGroup);
 
-        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer, 16*Float.BYTES*MAX_INSTANCES);
+        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer.getHandle(), 16*Float.BYTES*MAX_INSTANCES);
         pass.setBindGroup(2, instancingBindGroup);
 
         if(environment != null && environment.renderShadows) {
@@ -279,9 +263,9 @@ public class ModelBatch implements Disposable {
         pipelines.dispose();
         wgpu.BindGroupLayoutRelease(frameBindGroupLayout);
         wgpu.BindGroupLayoutRelease(instancingBindGroupLayout);
-        //wgpu.BufferRelease(frameUniformBufferHandle);
-        wgpu.BufferRelease(instanceBuffer);
+
         frameUniformBuffer.dispose();
+        instanceBuffer.dispose();
         // todo
     }
 
@@ -425,47 +409,6 @@ public class ModelBatch implements Disposable {
         return LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }
 
-    private int ceilToNextMultiple(int value, int step){
-        int d = value / step + (value % step == 0 ? 0 : 1);
-        return step * d;
-    }
-
-    private int setUniformInteger(Pointer data, int offset, int value ){
-        data.putInt(offset, value);
-        return Integer.BYTES;
-    }
-    private int setUniformFloat(Pointer data, int offset, float value ){
-        data.putFloat(offset, value);
-        return Float.BYTES;
-    }
-
-    private int setUniformColor(Pointer data, int offset, float r, float g, float b, float a ){
-        data.putFloat(offset+0*Float.BYTES, r);
-        data.putFloat(offset+1*Float.BYTES, g);
-        data.putFloat(offset+2*Float.BYTES, b);
-        data.putFloat(offset+3*Float.BYTES, a);
-        return 4*Float.BYTES;
-    }
-
-    private int setUniformColor(Pointer data, int offset, Color color ){
-        data.putFloat(offset+0*Float.BYTES, color.r);
-        data.putFloat(offset+1*Float.BYTES, color.g);
-        data.putFloat(offset+2*Float.BYTES, color.b);
-        data.putFloat(offset+3*Float.BYTES, color.a);
-        return 4*Float.BYTES;
-    }
-
-    private int setUniformVec3(Pointer data, int offset, Vector3 vec ){
-        data.putFloat(offset+0*Float.BYTES, vec.x);
-        data.putFloat(offset+1*Float.BYTES, vec.y);
-        data.putFloat(offset+2*Float.BYTES, vec.z);
-        return 4*Float.BYTES;           // with padding!
-    }
-
-    private int setUniformMatrix(Pointer data, int offset, Matrix4 mat ){
-        data.put(offset, mat.val, 0, 16);
-        return 16*Float.BYTES;
-    }
 
     private void writeFrameUniforms( UniformBuffer uniformBuffer, Camera camera, Environment environment ){
         uniformBuffer.beginFill();
@@ -534,43 +477,17 @@ public class ModelBatch implements Disposable {
             uniformBuffer.append(environment.shadowCamera.position);
         }
 
-        System.out.println("Uiform buffer size "+uniformBuffer.getOffset());
-
         uniformBuffer.endFill();   // write to GPU buffer
     }
-
-//    private Pointer createUniformBuffer(int bufferSize, int maxSlices) {
-//        int uniformStride = ceilToNextMultiple(bufferSize, uniformAlignment);
-//
-//        // Create uniform buffer
-//        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-//        bufferDesc.setLabel("Uniform object buffer");
-//        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-//        bufferDesc.setSize((long) uniformStride * maxSlices);
-//        bufferDesc.setMappedAtCreation(0L);
-//        return wgpu.DeviceCreateBuffer(device, bufferDesc);
-//    }
-
-    private Pointer createInstancingBuffer(int instanceSize, int maxRenderables) {
-
-        // Create uniform buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Instancing storage buffer");
-        bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage );
-        bufferDesc.setSize((long) instanceSize * maxRenderables);
-        bufferDesc.setMappedAtCreation(0L);
-        return wgpu.DeviceCreateBuffer(device, bufferDesc);
-    }
-
 
     // add an instance to the instance buffer
     private void addInstance(int instanceIndex, Matrix4 modelTransform){
         if(instanceIndex >= MAX_INSTANCES)
             throw new RuntimeException("Too many instances: "+instanceIndex);
 
-        int instanceSize = 16*Float.BYTES;      // data size per instance
-        instanceData.put(0, modelTransform.val, 0, 16);
-        wgpu.QueueWriteBuffer(LibGPU.queue, instanceBuffer, instanceIndex*instanceSize, instanceData, instanceSize);
+        instanceBuffer.beginFill();
+        instanceBuffer.append(modelTransform);
+        instanceBuffer.endFill(instanceIndex*16*Float.BYTES);   // write to GPU buffer at offset for this instance
     }
 
 
@@ -620,7 +537,7 @@ public class ModelBatch implements Disposable {
 
         bindingLayout.getBuffer().setNextInChain();
         bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-        bindingLayout.getBuffer().setHasDynamicOffset(1L);
+        bindingLayout.getBuffer().setHasDynamicOffset(0L);
 
         bindingLayout.getSampler().setNextInChain();
         bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);

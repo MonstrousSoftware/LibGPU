@@ -47,7 +47,12 @@ public class TestShadow extends ApplicationAdapter {
         model = new Model("models/torus.gltf");
 
         modelMatrix = new Matrix4();
-        modelInstance1 = new ModelInstance(model, modelMatrix);
+        Matrix4 modelMatrix2 = new Matrix4();
+        modelMatrix2.setToTranslation(5, 0, 0);
+        ArrayList<Matrix4> matrices = new ArrayList<>();
+        matrices.add(modelMatrix);
+        matrices.add(modelMatrix2);
+        modelInstance1 = new ModelInstance(model, matrices);
         instances.add(modelInstance1);
 
         model2 = new Model("models/groundplane.gltf");
