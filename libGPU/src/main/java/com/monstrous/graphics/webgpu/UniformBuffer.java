@@ -9,6 +9,9 @@ import com.monstrous.wgpu.WGPUBufferDescriptor;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
+// todo auto padding between elements
+// todo test dynamic offsets
+
 public class UniformBuffer implements Disposable {
 
 
