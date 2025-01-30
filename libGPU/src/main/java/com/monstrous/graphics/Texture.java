@@ -31,7 +31,7 @@ public class Texture {
     public Texture(int width, int height, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numSamples ) {
         this.width = width;
         this.height = height;
-        create( mipMapping, renderAttachment, format, numSamples);
+        create( "texture", mipMapping, renderAttachment, format, 1, numSamples);
     }
 
 
@@ -60,12 +60,50 @@ public class Texture {
             this.height = info.height.intValue();
             this.nativeFormat = info.format.intValue();
             Pointer pixelPtr = info.pixels.get();
-            create( mipMapping, renderAttachment, format, 1);
-            load(pixelPtr);
+            create( fileName, mipMapping, renderAttachment, format, 1, 1);
+            load(pixelPtr, 0);
 
 
         } catch (IOException e) {
             throw new RuntimeException("Texture file not found: "+fileName);
+        }
+    }
+
+    // for a multi-layer texture, e.g. a cube map
+    public Texture(String[] fileNames, boolean mipMapping, WGPUTextureFormat format) {
+
+        int numLayers = fileNames.length;
+
+        for(int layer = 0; layer < numLayers; layer++) {
+
+            byte[] fileData;
+            try {
+                fileData = Files.readAllBytes(Paths.get(fileNames[layer]));
+                int len = fileData.length;
+                Pointer data = WgpuJava.createByteArrayPointer(fileData);
+
+                image = LibGPU.wgpu.gdx2d_load(data, len);        // use native function to parse image file
+                PixmapInfo info = PixmapInfo.createAt(image);
+
+                // use the first image to
+                if(layer == 0) {
+                    this.width = info.width.intValue();
+                    this.height = info.height.intValue();
+                    create(fileNames[layer], mipMapping, false, format, numLayers, 1);
+                } else {
+                    if(info.width.intValue() != width || info.height.intValue() != height)
+                        throw new RuntimeException("Texture: layers must have same size");
+                }
+
+                this.nativeFormat = info.format.intValue();
+                Pointer pixelPtr = info.pixels.get();
+
+                load(pixelPtr, layer);
+
+
+            } catch (IOException e) {
+                throw new RuntimeException("Texture file not found: " + fileNames[layer]);
+            }
         }
     }
 
@@ -117,7 +155,11 @@ public class Texture {
         }
     }
 
-    private void create( boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numSamples) {
+    // renderAttachment - will this texture be used for render output
+    // numLayers - normally 1, e.g. 6 for a cube map
+    // numSamples - for anti-aliasing
+    //
+    private void create( String label, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numLayers, int numSamples) {
         if (LibGPU.device == null || LibGPU.queue == null)
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
@@ -128,14 +170,15 @@ public class Texture {
         // Create the texture
         WGPUTextureDescriptor textureDesc = WGPUTextureDescriptor.createDirect();
         textureDesc.setNextInChain();
-        textureDesc.setDimension(WGPUTextureDimension._2D);
+        textureDesc.setLabel(label);
+        textureDesc.setDimension( WGPUTextureDimension._2D);
         this.format = format; //
         textureDesc.setFormat(format);
         textureDesc.setMipLevelCount(mipLevelCount);
         textureDesc.setSampleCount(numSamples);
         textureDesc.getSize().setWidth(width);
         textureDesc.getSize().setHeight(height);
-        textureDesc.getSize().setDepthOrArrayLayers(1);
+        textureDesc.getSize().setDepthOrArrayLayers(numLayers);
         if (renderAttachment)
             textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst | WGPUTextureUsage.RenderAttachment);
         else
@@ -144,14 +187,17 @@ public class Texture {
         textureDesc.setViewFormats(WgpuJava.createNullPointer());
         texture = LibGPU.wgpu.DeviceCreateTexture(LibGPU.device, textureDesc);
 
+        System.out.println("dimensions: "+textureDesc.getSize().getDepthOrArrayLayers());
+
+
         // Create the view of the  texture manipulated by the rasterizer
         WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
         textureViewDesc.setAspect(WGPUTextureAspect.All);
         textureViewDesc.setBaseArrayLayer(0);
-        textureViewDesc.setArrayLayerCount(1);
+        textureViewDesc.setArrayLayerCount(numLayers);
         textureViewDesc.setBaseMipLevel(0);
         textureViewDesc.setMipLevelCount(mipLevelCount);
-        textureViewDesc.setDimension(WGPUTextureViewDimension._2D);
+        textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : WGPUTextureViewDimension.Cube);    // assume it's a cube map if layers > 1
         textureViewDesc.setFormat(textureDesc.getFormat());
         textureView = LibGPU.wgpu.TextureCreateView(texture, textureViewDesc);
 
@@ -188,8 +234,6 @@ public class Texture {
         source.setBytesPerRow(4 * width);
         source.setRowsPerImage(height);
 
-
-
         byte[] pixels = new byte[4 * width * height];
         byte r = (byte) (color.r * 255);
         byte g = (byte) (color.g * 255);
@@ -219,7 +263,8 @@ public class Texture {
         LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
    }
 
-   private void load(Pointer pixelPtr) {
+   // layer : which layer to load for a 3d texture, otherwise 0
+   private void load(Pointer pixelPtr, int layer) {
 
            // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -239,9 +284,6 @@ public class Texture {
 
         // Generate mipmap levels
         // candidate for compute shader
-//        if(pixelPtr == null)
-//            return;
-
 
         int mipLevelWidth = width;
         int mipLevelHeight = height;
@@ -251,54 +293,53 @@ public class Texture {
         byte[] prevPixels = null;
         for(int mipLevel = 0; mipLevel < mipLevelCount; mipLevel++) {
 
-                byte[] pixels = new byte[4 * mipLevelWidth * mipLevelHeight];
+            byte[] pixels = new byte[4 * mipLevelWidth * mipLevelHeight];
 
-                int offset = 0;
-                for (int y = 0; y < mipLevelHeight; y++) {
-                    for (int x = 0; x < mipLevelWidth; x++) {
-                        if(mipLevel == 0) {
-                            if(pixelPtr == null) {
-                                // generate test pattern
+            int offset = 0;
+            for (int y = 0; y < mipLevelHeight; y++) {
+                for (int x = 0; x < mipLevelWidth; x++) {
+                    if(mipLevel == 0) {
+                        if(pixelPtr == null) {
+                            // generate test pattern
 //                                pixels[offset++] = (byte) x;
 //                                pixels[offset++] = (byte) x;
 //                                pixels[offset++] = (byte) x;
-                                pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
-                                pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
-                                pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
-                                pixels[offset++] = (byte) 255;
-                            }
-                            else {
-                                pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
-                                pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
-                                pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
-                                pixels[offset] = pixelPtr.getByte(offset);  offset++;
-                            }
-
-                        } else {
-                            // Get the corresponding 4 pixels from the previous level
-                            int offset00 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+0));
-                            int offset01 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+1));
-                            int offset10 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+0));
-                            int offset11 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+1));
-
-                            // Average r, g and b components
-                            // beware that java bytes are signed. So we convert to integer first
-                            int r = toUnsignedInt(prevPixels[offset00])   + toUnsignedInt(prevPixels[offset01])   + toUnsignedInt(prevPixels[offset10])   + toUnsignedInt(prevPixels[offset11]);
-                            int g = toUnsignedInt(prevPixels[offset00+1]) + toUnsignedInt(prevPixels[offset01+1]) + toUnsignedInt(prevPixels[offset10+1]) + toUnsignedInt(prevPixels[offset11+1]);
-                            int b = toUnsignedInt(prevPixels[offset00+2]) + toUnsignedInt(prevPixels[offset01+2]) + toUnsignedInt(prevPixels[offset10+2]) + toUnsignedInt(prevPixels[offset11+2]);
-                            int a = toUnsignedInt(prevPixels[offset00+3]) + toUnsignedInt(prevPixels[offset01+3]) + toUnsignedInt(prevPixels[offset10+3]) + toUnsignedInt(prevPixels[offset11+3]);
-                            pixels[offset++] = (byte)(r>>2);    // divide by 4
-                            pixels[offset++] = (byte)(g>>2);
-                            pixels[offset++] = (byte)(b>>2);
-                            pixels[offset++] = (byte)(a>>2);  // alpha
+                            pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
+                            pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
+                            pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
+                            pixels[offset++] = (byte) 255;
+                        }
+                        else {
+                            pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
+                            pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
+                            pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
+                            pixels[offset] = pixelPtr.getByte(offset);  offset++;
                         }
 
-                    }
-                }
-                pixelPtr = WgpuJava.createByteArrayPointer(pixels);
+                    } else {
+                        // Get the corresponding 4 pixels from the previous level
+                        int offset00 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+0));
+                        int offset01 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+1));
+                        int offset10 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+0));
+                        int offset11 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+1));
 
+                        // Average r, g and b components
+                        // beware that java bytes are signed. So we convert to integer first
+                        int r = toUnsignedInt(prevPixels[offset00])   + toUnsignedInt(prevPixels[offset01])   + toUnsignedInt(prevPixels[offset10])   + toUnsignedInt(prevPixels[offset11]);
+                        int g = toUnsignedInt(prevPixels[offset00+1]) + toUnsignedInt(prevPixels[offset01+1]) + toUnsignedInt(prevPixels[offset10+1]) + toUnsignedInt(prevPixels[offset11+1]);
+                        int b = toUnsignedInt(prevPixels[offset00+2]) + toUnsignedInt(prevPixels[offset01+2]) + toUnsignedInt(prevPixels[offset10+2]) + toUnsignedInt(prevPixels[offset11+2]);
+                        int a = toUnsignedInt(prevPixels[offset00+3]) + toUnsignedInt(prevPixels[offset01+3]) + toUnsignedInt(prevPixels[offset10+3]) + toUnsignedInt(prevPixels[offset11+3]);
+                        pixels[offset++] = (byte)(r>>2);    // divide by 4
+                        pixels[offset++] = (byte)(g>>2);
+                        pixels[offset++] = (byte)(b>>2);
+                        pixels[offset++] = (byte)(a>>2);  // alpha
+                    }
+
+                }
+            }
 
             destination.setMipLevel(mipLevel);
+            destination.getOrigin().setZ(layer);
 
             source.setBytesPerRow(4*mipLevelWidth);
             source.setRowsPerImage(mipLevelHeight);
@@ -307,8 +348,10 @@ public class Texture {
             ext.setHeight(mipLevelHeight);
             ext.setDepthOrArrayLayers(1);
 
+            // wrap byte array in native pointer
+            Pointer pixelData = WgpuJava.createByteArrayPointer(pixels);
             // N.B. using textureDesc.getSize() for param won't work!
-            LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, mipLevelWidth * mipLevelHeight * 4, source, ext);
+            LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
 
             mipLevelWidth /= 2;
             mipLevelHeight /= 2;

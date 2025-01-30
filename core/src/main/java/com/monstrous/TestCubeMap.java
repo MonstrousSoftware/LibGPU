@@ -14,7 +14,7 @@ import com.monstrous.wgpu.WGPUTextureFormat;
 
 import java.util.ArrayList;
 
-public class TestShadow extends ApplicationAdapter {
+public class TestCubeMap extends ApplicationAdapter {
 
     private static int SHADOW_MAP_SIZE = 4096;      // size (in pixels) of depth map
     private static int SHADOW_VIEWPORT_SIZE = 25;   // area (in world units) covered by shadow
@@ -36,6 +36,7 @@ public class TestShadow extends ApplicationAdapter {
     private SpriteBatch batch;
     private ShaderProgram filter;
     private BitmapFont font;
+    private Texture cubeMap;
 
     public void create() {
         startTime = System.nanoTime();
@@ -64,9 +65,24 @@ public class TestShadow extends ApplicationAdapter {
         instances.add(modelInstance3);
 
 
+        // the order of the layers is +X, -X, +Y, -Y, +Z, -Z
+        String[] fileNames = {
+                "textures/daysky/environment_posx.jpg",
+                "textures/daysky/environment_negx.jpg",
+                "textures/daysky/environment_posy.jpg",
+                "textures/daysky/environment_negy.jpg",
+                "textures/daysky/environment_posz.jpg",
+                "textures/daysky/environment_negz.jpg"
+        };
+
+        cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
+
+
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
+
         camera.position.set(0, 6, 0);
-        camera.direction.set(0, -1, 0.001f);
+        camera.direction.set(0, -1, 0.0001f);
+        camera.up.set(0,1,0);
 
         camera.far = 50f;
         camera.near = 0.1f;
@@ -95,6 +111,7 @@ public class TestShadow extends ApplicationAdapter {
         environment.add( sun );
         environment.setShadowMap(shadowCam, depthMap);
         environment.ambientLightLevel = 0.5f;
+        environment.setCubeMap(cubeMap);
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor(camController);
@@ -176,6 +193,7 @@ public class TestShadow extends ApplicationAdapter {
         model.dispose();
         modelBatch.dispose();
         font.dispose();
+        cubeMap.dispose();
     }
 
     @Override

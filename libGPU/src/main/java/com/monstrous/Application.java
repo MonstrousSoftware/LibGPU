@@ -205,9 +205,11 @@ public class Application {
         requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
         requiredLimits.getLimits().setMaxTextureDimension1D(2048);
         requiredLimits.getLimits().setMaxTextureDimension2D(2048);
-        requiredLimits.getLimits().setMaxTextureArrayLayers(1);
+        requiredLimits.getLimits().setMaxTextureArrayLayers(6);
         requiredLimits.getLimits().setMaxSampledTexturesPerShaderStage(1);
         requiredLimits.getLimits().setMaxSamplersPerShaderStage(1);
+
+        // todo these values are incorrect
 
         requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
         requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage

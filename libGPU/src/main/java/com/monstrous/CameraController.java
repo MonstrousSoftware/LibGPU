@@ -25,9 +25,9 @@ public class CameraController extends InputAdapter {
         // left of screen 2PI, right of screen 0
         anglex = 2f * (float) Math.PI * (1f - (float)x / LibGPU.graphics.getWidth());
 
-        // mouse at top of the screen => angleY := PI/2, at bottom of the screen => angleY := -Y/2
+        // mouse at top of the screen => angleY := PI/2, at bottom of the screen => angleY := -PI/2
         angley = (float) Math.PI * (0.5f - (float)y / LibGPU.graphics.getHeight());
-        update();
+        //update();
         return true;
     }
 
@@ -39,8 +39,11 @@ public class CameraController extends InputAdapter {
 
         // camera direction is in the opposite direction of camera position
         camera.direction.set(-sinx*cosy, -siny, -cosx*cosy);
+        //camera.up.set(siny, cosy, siny);
         camera.position.set(camera.direction).scl(-distance);
         camera.update();
+
+        // todo orthonormalize the up vector
     }
 
     @Override
@@ -50,7 +53,7 @@ public class CameraController extends InputAdapter {
             distance *= 1.1f;
         else if (y > 0 && distance > 0.0)
             distance *= 0.9f;
-        update();
+        //update();
         return true;
     }
 }

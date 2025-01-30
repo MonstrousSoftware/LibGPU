@@ -18,7 +18,7 @@ public class Launcher {
         // don't use. will cause crash
         //config.enableGPUtiming = true;
 
-        new Application(new TestShadow(), config);
+        new Application(new TestCubeMap(), config);
 
     }
 }
