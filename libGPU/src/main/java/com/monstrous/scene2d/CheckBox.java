@@ -66,18 +66,27 @@ public class CheckBox extends Widget implements Disposable {
 
 
     @Override
-    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+    public void draw(SpriteBatch batch){
         batch.setColor(color);
-        batch.draw(controlledValue.value ? textureTicked : textureNotTicked, x+xoffset+parentCell.x, y+yoffset+parentCell.y, textureTicked.getWidth(), textureTicked.getHeight());
+        batch.draw(controlledValue.value ? textureTicked : textureNotTicked, x+parentCell.x, y+parentCell.y, textureTicked.getWidth(), textureTicked.getHeight());
 
         batch.setColor(style.fontColor);
-        style.font.draw(batch, text, x+labelX +xoffset+ parentCell.x, y+labelY+yoffset+ parentCell.y);
+        style.font.draw(batch, text, x+labelX + parentCell.x, y+labelY+ parentCell.y);
     }
 
     public void onClick(){
         controlledValue.value = !controlledValue.value;
     }
 
+    @Override
+    public void onMouseEnters(){
+        setColor(Color.YELLOW);
+    }
+
+    @Override
+    public void onMouseExits(){
+        setColor(Color.WHITE);
+    }
 
     @Override
     public void dispose() {

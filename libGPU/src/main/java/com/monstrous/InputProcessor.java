@@ -12,6 +12,8 @@ public interface InputProcessor {
 
     boolean touchUp (int x, int y, int pointer, int button);
 
+    boolean touchDragged(int x, int y, int pointer);
+
     boolean scrolled(float x, float y);
 
 }

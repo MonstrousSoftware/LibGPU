@@ -54,12 +54,12 @@ public class Stage implements Disposable, InputProcessor {
         table.pack();
 
         batch.begin();
-        table.draw(batch, cell.x, cell.y);
+        table.draw(batch);
         batch.end();
 
         if(debug){
             shapeRenderer.begin();
-            table.debugDraw(shapeRenderer, cell.x, cell.y);
+            table.debugDraw(shapeRenderer);
             shapeRenderer.end();
         }
     }
@@ -86,9 +86,30 @@ public class Stage implements Disposable, InputProcessor {
         System.out.println("mouse click "+x+", "+y);
         y = cell.h - y;
 
-        Widget found = table.hit(x, y, 0, 0);
+        Widget found = table.hit(x, y);
         if(found != null)
             found.onClick();
+
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int x, int y, int pointer) {
+        //System.out.println("mouse drag "+x+", "+y);
+        y = cell.h - y;
+
+        Widget found = table.hit(x, y);
+
+        if(found != null) {
+            found.onMouseEnters();
+            widgetUnderMouse = found;
+            found.onDrag(x, y);
+        }
+        else if (widgetUnderMouse != null){
+            widgetUnderMouse.onMouseExits();
+            widgetUnderMouse = null;
+        }
+
 
         return false;
     }
@@ -105,7 +126,7 @@ public class Stage implements Disposable, InputProcessor {
     public boolean mouseMoved(int x, int y) {
         y = cell.h - y;
 
-        Widget found = table.hit(x, y, 0, 0);
+        Widget found = table.hit(x, y);
         if(found != null) {
             found.onMouseEnters();
             widgetUnderMouse = found;

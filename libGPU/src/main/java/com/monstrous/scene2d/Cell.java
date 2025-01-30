@@ -1,7 +1,11 @@
 package com.monstrous.scene2d;
 
+// cell position is absolute, i.e. screen position
+// widget position is relative to its parent cell
+//
 public class Cell {
-    public int x, y, w, h;
+    public int x, y;
+    public int w, h;
     public int row, col;
 
     public Cell() {

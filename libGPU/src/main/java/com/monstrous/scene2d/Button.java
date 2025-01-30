@@ -20,9 +20,9 @@ public class Button extends Table implements Disposable {
     }
 
     @Override
-    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+    public void draw(SpriteBatch batch){
         batch.setColor(color);
-        batch.draw(texture, x+xoffset, y+yoffset, w, h);
+        batch.draw(texture, x+parentCell.x, y+parentCell.y, w, h);
     }
 
     @Override

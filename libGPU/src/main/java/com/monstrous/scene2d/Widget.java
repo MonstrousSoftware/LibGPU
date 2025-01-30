@@ -64,7 +64,7 @@ public class Widget {
 
     }
 
-    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+    public void draw(SpriteBatch batch){
 
     }
 
@@ -80,17 +80,21 @@ public class Widget {
 
     }
 
-    public Widget hit(float mx, float my, float xoff, float yoff){
-        if(mx < x+parentCell.x+xoff || my < y+parentCell.y+yoff || mx > x+parentCell.x+w+xoff || my >  y+parentCell.y+h+yoff)
+    public void onDrag(int x, int y){
+
+    }
+
+    public Widget hit(float mx, float my){
+        if(mx < x+parentCell.x || my < y+parentCell.y || mx > x+parentCell.x+w || my >  y+parentCell.y+h)
             return null;
         return this;
     }
 
-    public void debugDraw(ShapeRenderer sr, int xoffset, int yoffset){
+    public void debugDraw(ShapeRenderer sr){
         sr.setColor(debugActorColor);
         sr.setLineWidth(1f);
-        float xb = x+xoffset+parentCell.x;
-        float yb = y+yoffset+parentCell.y;
+        float xb = x+parentCell.x;
+        float yb = y+parentCell.y;
 
         sr.box(xb-1, yb-1, xb+w, yb+h);
     }

@@ -40,10 +40,10 @@ public class Label extends Widget implements Disposable {
     }
 
     @Override
-    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+    public void draw(SpriteBatch batch){
 
         batch.setColor(style.fontColor);
-        style.font.draw(batch, text, tx+xoffset+ parentCell.x, ty+yoffset+ parentCell.y);
+        style.font.draw(batch, text, tx+ parentCell.x, ty+ parentCell.y);
     }
 
     @Override

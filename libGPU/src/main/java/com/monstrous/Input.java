@@ -136,6 +136,7 @@ public class Input {
     private final boolean[] keyPressed = new boolean[Input.Keys.LAST+1];
     private int pressedKeyCount;
     private float mouseX, mouseY;
+    private int mousePressed;
 
     public void setInputProcessor (InputProcessor processor){
         this.processor = processor;
@@ -161,18 +162,26 @@ public class Input {
     public void processMouseMove(int x, int y){
         mouseX = x;
         mouseY = y;
-        if(LibGPU.input.processor != null)
-            LibGPU.input.processor.mouseMoved( x, y);
+        if(LibGPU.input.processor != null) {
+            if(mousePressed == 0)
+                LibGPU.input.processor.mouseMoved(x, y);
+            else
+                LibGPU.input.processor.touchDragged(x, y, 0);
+        }
     }
 
     public void processMouseEvent(int x, int y, int button, int action){
         mouseX = x;
         mouseY = y;
         if(LibGPU.input.processor != null) {
-            if (action == GLFW_PRESS)
-                LibGPU.input.processor.touchDown(x, y, 0, button);     // todo pointer?
-            else if (action == GLFW_RELEASE)
-                LibGPU.input.processor.touchUp(x, y, 0, button);     // todo pointer?
+            if (action == GLFW_PRESS) {
+                mousePressed++;
+                LibGPU.input.processor.touchDown(x, y, 0, button);
+            }
+            else if (action == GLFW_RELEASE) {
+                mousePressed = Math.max(0, mousePressed-1);
+                LibGPU.input.processor.touchUp(x, y, 0, button);
+            }
         }
     }
 

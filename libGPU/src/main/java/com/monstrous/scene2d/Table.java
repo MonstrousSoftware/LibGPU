@@ -67,7 +67,8 @@ public class Table extends Widget {
             cell.setSize(colWidth, rowHeight);
             // note y goes up, but row numbers go down
             // the position of a cell is for the bottom left corner
-            cell.setPosition(cell.col * colWidth, ((numRows-1)-cell.row) * rowHeight);
+            //
+            cell.setPosition(parentCell.x + cell.col * colWidth, parentCell.y + ((numRows-1)-cell.row) * rowHeight);
         }
         for(Widget widget : widgets) {
             widget.pack();
@@ -78,29 +79,29 @@ public class Table extends Widget {
 
 
     @Override
-    public Widget hit(float mx, float my, float xoff, float yoff){
-        if(mx < x+parentCell.x+xoff || my < y+parentCell.y+yoff || mx > x+parentCell.x+w+xoff || my >  y+parentCell.y+h+yoff)
+    public Widget hit(float mx, float my){
+        if(mx < x+parentCell.x || my < y+parentCell.y || mx > x+parentCell.x+w || my >  y+parentCell.y+h)
             return null;
         for(Widget widget : widgets){
-            Widget found = widget.hit(mx, my, parentCell.x+xoff, parentCell.y+yoff);
+            Widget found = widget.hit(mx, my);
             if(found != null)
                 return found;
         }
         return null;
     }
 
-    public void draw(SpriteBatch batch, int xoffset, int yoffset){
+    public void draw(SpriteBatch batch){
         for(Widget widget : widgets)
-            widget.draw(batch, xoffset+parentCell.x, yoffset+parentCell.y);
+            widget.draw(batch);
     }
 
     @Override
-    public void debugDraw(ShapeRenderer sr, int xoffset, int yoffset){
+    public void debugDraw(ShapeRenderer sr){
         sr.setColor(debugCellColor);
         sr.setLineWidth(1f);
         for(Cell cell : cells)
-            sr.box(xoffset+cell.x+parentCell.x, xoffset+cell.y+parentCell.y, cell.x+cell.w, cell.y+cell.h);
+            sr.box(cell.x+parentCell.x, cell.y+parentCell.y, cell.x+cell.w, cell.y+cell.h);
         for(Widget widget : widgets)
-            widget.debugDraw(sr, xoffset+parentCell.x, yoffset+parentCell.y);
+            widget.debugDraw(sr);
     }
 }

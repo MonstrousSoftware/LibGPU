@@ -16,6 +16,8 @@ public class TestGUI extends ApplicationAdapter {
     CheckBox.Wrapper cheese = new CheckBox.Wrapper(true);
     CheckBox.Wrapper fries = new CheckBox.Wrapper(false);
     CheckBox.Wrapper all = new CheckBox.Wrapper(false);
+    Slider.Wrapper volume = new Slider.Wrapper(0);
+    Slider.Wrapper degrees = new Slider.Wrapper(0);
 
     public void create() {
         startTime = System.nanoTime();
@@ -48,11 +50,25 @@ public class TestGUI extends ApplicationAdapter {
             cb3.setAlign(Align.left | Align.top);
             cb3.pad(10);
 
+            Slider slider = new Slider(volume, 0, 10, 2f);
+            slider.setAlign(Align.left | Align.top);
+            slider.setSize(200,16);
+            slider.pad(10);
+
+            Slider slider2 = new Slider(degrees, 0, 360, 5f);
+            slider2.setAlign(Align.left | Align.top);
+            slider2.setSize(200,32);
+            slider2.pad(10);
+
             cbTable.add(cb);
             cbTable.row();
             cbTable.add(cb2);
             cbTable.row();
             cbTable.add(cb3);
+            cbTable.row();
+            cbTable.add(slider);
+            cbTable.row();
+            cbTable.add(slider2);
 
 
         stage.add(cbTable);
@@ -118,18 +134,18 @@ public class TestGUI extends ApplicationAdapter {
     public void render(  ){
 
 
-        ScreenUtils.clear(Color.BLACK);
+        ScreenUtils.clear(Color.WHITE); // todo broken
         stage.draw();
 
-        System.out.println("Values : "+cheese.value + ", "+ fries.value +" , "+ all.value );
+        System.out.println("Values : "+cheese.value + ", "+ fries.value +" , "+ all.value+", "+volume.value +", "+degrees.value);
 
         // At the end of the frame
-        if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch : fps: " + frames  );
-            frames = 0;
-            startTime = System.nanoTime();
-        }
-        frames++;
+//        if (System.nanoTime() - startTime > 1000000000) {
+//            System.out.println("SpriteBatch : fps: " + frames  );
+//            frames = 0;
+//            startTime = System.nanoTime();
+//        }
+//        frames++;
 
     }
 
