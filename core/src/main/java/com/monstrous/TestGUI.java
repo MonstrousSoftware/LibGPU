@@ -2,9 +2,6 @@ package com.monstrous;
 
 import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
-import com.monstrous.graphics.Texture;
-import com.monstrous.graphics.TextureRegion;
-import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.scene2d.*;
 import com.monstrous.utils.ScreenUtils;
 
@@ -15,6 +12,10 @@ public class TestGUI extends ApplicationAdapter {
     private long startTime;
     private int frames;
     private Stage stage;
+
+    CheckBox.Wrapper cheese = new CheckBox.Wrapper(true);
+    CheckBox.Wrapper fries = new CheckBox.Wrapper(false);
+    CheckBox.Wrapper all = new CheckBox.Wrapper(false);
 
     public void create() {
         startTime = System.nanoTime();
@@ -28,12 +29,35 @@ public class TestGUI extends ApplicationAdapter {
         block.pad(10);
         stage.add(block);
 
-        Block block2 = new Block();
-        block2.setSize( 50, 50);
-        block2.setAlign(Align.right | Align.top);
-        block2.pad(10);
-        stage.add(block2);
+        CheckBox.Style cbStyle = new CheckBox.Style();
+        cbStyle.font = new BitmapFont();
+        cbStyle.fontColor = Color.WHITE;
+
+        Table cbTable = new Table();
+
+            CheckBox cb = new CheckBox(cheese, "Do you like cheese?", cbStyle);
+            cb.setAlign(Align.left | Align.top);
+            cb.pad(10);
+
+
+            CheckBox cb2 = new CheckBox(fries, "You want fries with that?", cbStyle);
+            cb2.setAlign(Align.left | Align.top);
+            cb2.pad(10);
+
+            CheckBox cb3 = new CheckBox(all, "Will that be all?", cbStyle);
+            cb3.setAlign(Align.left | Align.top);
+            cb3.pad(10);
+
+            cbTable.add(cb);
+            cbTable.row();
+            cbTable.add(cb2);
+            cbTable.row();
+            cbTable.add(cb3);
+
+
+        stage.add(cbTable);
         stage.row();
+
 
         Table table = new Table();
         Block b1 = new Block();
@@ -97,6 +121,7 @@ public class TestGUI extends ApplicationAdapter {
         ScreenUtils.clear(Color.BLACK);
         stage.draw();
 
+        System.out.println("Values : "+cheese.value + ", "+ fries.value +" , "+ all.value );
 
         // At the end of the frame
         if (System.nanoTime() - startTime > 1000000000) {

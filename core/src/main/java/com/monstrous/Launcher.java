@@ -13,12 +13,12 @@ public class Launcher {
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.Vulkan; //D3D12;
-        config.numSamples = 4;      // MSAA samples: can be 1 (no MSAA) or 4 (multi-sampling)
+        config.numSamples = 1;      // MSAA samples: can be 1 (no MSAA) or 4 (multi-sampling)
 
         // don't use. will cause crash
         //config.enableGPUtiming = true;
 
-        new Application(new TestCubeMap(), config);
+        new Application(new TestGUI(), config);
 
     }
 }

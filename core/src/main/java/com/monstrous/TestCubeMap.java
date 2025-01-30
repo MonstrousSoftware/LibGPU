@@ -45,7 +45,7 @@ public class TestCubeMap extends ApplicationAdapter {
         instances = new ArrayList<>();
 
         //model = new Model("models/stanfordDragon.gltf");
-        model = new Model("models/torus.gltf");
+        model = new Model("models/Cube.gltf");
 
         modelMatrix = new Matrix4();
         Matrix4 modelMatrix2 = new Matrix4();
@@ -58,11 +58,12 @@ public class TestCubeMap extends ApplicationAdapter {
 
         model2 = new Model("models/groundplane.gltf");
         modelInstance2 = new ModelInstance(model2, 0,0,0);
-        instances.add(modelInstance2);
+        //instances.add(modelInstance2);
 
         model3 = new Model("models/waterbottle/WaterBottle.gltf");
         ModelInstance modelInstance3 = new ModelInstance(model3, 0,1,0);
         instances.add(modelInstance3);
+
 
 
         // the order of the layers is +X, -X, +Y, -Y, +Z, -Z

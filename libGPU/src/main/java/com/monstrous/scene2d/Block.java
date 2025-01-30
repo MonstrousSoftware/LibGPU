@@ -12,8 +12,9 @@ public class Block extends Widget implements Disposable {
     private Color color;
 
     public Block() {
-        texture = new Texture("textures/white.png", false);
-        this.color = new Color(Color.WHITE);
+        texture = new Texture(1,1);
+        texture.fill(Color.WHITE);
+        color = new Color(Color.WHITE);
     }
 
     public void setColor( Color color ){

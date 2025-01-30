@@ -93,6 +93,12 @@ public class Stage implements Disposable, InputProcessor {
         return false;
     }
 
+    @Override
+    public boolean touchUp(int x, int y, int pointer, int button) {
+        return true;
+    }
+
+
     private Widget widgetUnderMouse;
 
     @Override

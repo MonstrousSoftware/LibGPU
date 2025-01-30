@@ -165,11 +165,15 @@ public class Input {
             LibGPU.input.processor.mouseMoved( x, y);
     }
 
-    public void processMouseClick(int x, int y, int button){
+    public void processMouseEvent(int x, int y, int button, int action){
         mouseX = x;
         mouseY = y;
-        if(LibGPU.input.processor != null)
-            LibGPU.input.processor.touchDown( x, y, 0, button);     // todo pointer?
+        if(LibGPU.input.processor != null) {
+            if (action == GLFW_PRESS)
+                LibGPU.input.processor.touchDown(x, y, 0, button);     // todo pointer?
+            else if (action == GLFW_RELEASE)
+                LibGPU.input.processor.touchUp(x, y, 0, button);     // todo pointer?
+        }
     }
 
     public void processScroll(float x, float y){

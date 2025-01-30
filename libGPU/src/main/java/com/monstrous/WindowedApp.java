@@ -49,7 +49,7 @@ public class WindowedApp {
     private final GLFWMouseButtonCallback mouseCallback = new GLFWMouseButtonCallback() {
         @Override
         public void invoke(long window, int button, int action, int mods) {
-            LibGPU.input.processMouseClick(mouseX, mouseY, button);
+            LibGPU.input.processMouseEvent(mouseX, mouseY, button, action);
         }
     };
 

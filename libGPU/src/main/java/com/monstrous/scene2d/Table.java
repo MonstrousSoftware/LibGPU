@@ -22,7 +22,7 @@ public class Table extends Widget {
         colNr = 0;
         rowNr = 0;
         cells = new ArrayList<>();
-        widgets = new ArrayList<>();
+        widgets = new ArrayList<>();            // should widgets be accessed via Cell?
         numRows = 1;
         numCols = 0;
     }
@@ -42,7 +42,6 @@ public class Table extends Widget {
         colNr++;
         if(colNr > numCols)
             numCols = colNr;
-
         return cell;
     }
 
@@ -55,9 +54,11 @@ public class Table extends Widget {
 
     @Override
     public void pack(){
-        // assume same size for all cells...
-        if(numCols == 0 || numRows == 0)
+
+
+        if(numCols == 0 || numRows == 0)    // empty table
             return;
+        // todo : assumes same size for all cells...
         int colWidth = parentCell.w / numCols;
         int rowHeight = parentCell.h / numRows;
         w = parentCell.w;   // fill parent by default (for now)

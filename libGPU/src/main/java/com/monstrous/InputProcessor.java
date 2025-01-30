@@ -10,6 +10,8 @@ public interface InputProcessor {
 
     boolean touchDown (int x, int y, int pointer, int button);
 
+    boolean touchUp (int x, int y, int pointer, int button);
+
     boolean scrolled(float x, float y);
 
 }
