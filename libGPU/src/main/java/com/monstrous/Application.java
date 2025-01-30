@@ -199,6 +199,7 @@ public class Application {
         requiredLimits.getLimits().setMaxVertexBuffers(2);
         requiredLimits.getLimits().setMaxInterStageShaderComponents(20); //
 
+
         // from vert to frag
         requiredLimits.getLimits().setMaxBufferSize(300);
         requiredLimits.getLimits().setMaxVertexBufferArrayStride(11*Float.BYTES);
@@ -211,8 +212,8 @@ public class Application {
 
         // todo these values are incorrect
 
-        requiredLimits.getLimits().setMaxBindGroups(1);        // We use at most 1 bind group for now
-        requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(1);// We use at most 1 uniform buffer per stage
+        requiredLimits.getLimits().setMaxBindGroups(6);
+        requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(4);// We use at most 1 uniform buffer per stage
         // Uniform structs have a size of maximum 16 float (more than what we need)
         requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4*Float.BYTES);
 

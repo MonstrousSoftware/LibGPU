@@ -35,10 +35,12 @@ public class ModelBatch implements Disposable {
     private Pointer frameBindGroupLayout;
     private Pointer instancingBindGroupLayout;
     private Pointer shadowBindGroupLayout;
+    private Pointer cubeMapBindGroupLayout;
     private Pointer pipelineLayout;
     private Pointer frameBindGroup;
     private Pointer instancingBindGroup;
     private Pointer shadowBindGroup;
+    private Pointer cubeMapBindGroup;
     private Material prevMaterial;
 
     private final Pipelines pipelines;
@@ -68,9 +70,11 @@ public class ModelBatch implements Disposable {
         defaultDirectionalLight = new DirectionalLight(new Color(1,0,0,1), new Vector3(0, -1, 0));
 
         frameUniformBuffer = new UniformBuffer(FRAME_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
+
         frameBindGroupLayout = createFrameBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
         shadowBindGroupLayout = createShadowBindGroupLayout();
+        cubeMapBindGroupLayout = createCubeMapBindGroupLayout();
 
         int instanceSize = 16*Float.BYTES;      // data size per instance
         instanceBuffer = new UniformBuffer(instanceSize*MAX_INSTANCES, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage);
@@ -97,7 +101,7 @@ public class ModelBatch implements Disposable {
     public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture){
         this.environment = environment;
 
-        pipelineLayout = makePipelineLayout(frameBindGroupLayout, Material.getBindGroupLayout(), instancingBindGroupLayout, shadowBindGroupLayout);
+        pipelineLayout = makePipelineLayout(frameBindGroupLayout, Material.getBindGroupLayout(), instancingBindGroupLayout, shadowBindGroupLayout, cubeMapBindGroupLayout);
 
         // create a new render pass
         pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture, LibGPU.app.configuration.numSamples);
@@ -113,10 +117,16 @@ public class ModelBatch implements Disposable {
         instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer.getHandle(), 16*Float.BYTES*MAX_INSTANCES);
         pass.setBindGroup(2, instancingBindGroup);
 
-        if(environment != null && environment.renderShadows) {
-            shadowBindGroup = makeShadowBindGroup(shadowBindGroupLayout);
-            pass.setBindGroup(3, shadowBindGroup);
+//        if(environment != null && environment.renderShadows) {
+//            shadowBindGroup = makeShadowBindGroup(shadowBindGroupLayout);
+//            pass.setBindGroup(3, shadowBindGroup);
+//        }
+
+        if(environment != null && environment.cubeMap != null) {
+            cubeMapBindGroup = createCubeMapBindGroup(cubeMapBindGroupLayout, environment.cubeMap);
+            pass.setBindGroup(3, cubeMapBindGroup);
         }
+
     }
 
     public void render(ArrayList<ModelInstance> instances) {
@@ -323,6 +333,32 @@ public class ModelBatch implements Disposable {
         return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
+    private Pointer createCubeMapBindGroupLayout(){
+        int location = 0;
+
+        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(texBindingLayout);
+        texBindingLayout.setBinding(location++);
+        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Cube);
+
+        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+        setDefault(samplerBindingLayout);
+        samplerBindingLayout.setBinding(location++);
+        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
+
+        // Create a bind group layout
+        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
+        bindGroupLayoutDesc.setNextInChain();
+        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Cubemap)");
+        bindGroupLayoutDesc.setEntryCount(location);
+
+        bindGroupLayoutDesc.setEntries( texBindingLayout, samplerBindingLayout);
+        return wgpu.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+    }
+
 
     // per frame bind group
     private Pointer makeFrameBindGroup(Pointer frameBindGroupLayout, Pointer uniformBuffer) {
@@ -387,24 +423,39 @@ public class ModelBatch implements Disposable {
         return wgpu.DeviceCreateBindGroup(device, bindGroupDesc);
     }
 
+    private Pointer createCubeMapBindGroup(Pointer bindGroupLayout, Texture cubeMap) {
+
+        // A bind group contains one or multiple bindings
+        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
+        bindGroupDesc.setNextInChain();
+        bindGroupDesc.setLayout(bindGroupLayout);
+
+        // There must be as many bindings as declared in the layout!
+        bindGroupDesc.setEntryCount(2);
+        bindGroupDesc.setEntries(cubeMap.getBinding(0), cubeMap.getSamplerBinding(1));
+
+        return wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
+    }
 
 
-    private Pointer makePipelineLayout(Pointer frameBindGroupLayout, Pointer materialBindGroupLayout, Pointer instancingBindGroupLayout, Pointer shadowBindGroupLayout) {
+    private Pointer makePipelineLayout(Pointer frameBindGroupLayout, Pointer materialBindGroupLayout, Pointer instancingBindGroupLayout, Pointer shadowBindGroupLayout, Pointer cubeMapBindGroupLayout) {
 
-        long[] layouts = new long[4];
+        long[] layouts = new long[5];
         int groups = 0;
-        layouts[groups++] = frameBindGroupLayout.address();
-        layouts[groups++] = materialBindGroupLayout.address();
-        layouts[groups++] = instancingBindGroupLayout.address();
-        if(environment != null && environment.renderShadows)
-            layouts[groups++] = shadowBindGroupLayout.address();
+        layouts[0] = frameBindGroupLayout.address();
+        layouts[1] = materialBindGroupLayout.address();
+        layouts[2] = instancingBindGroupLayout.address();
+//        if(environment != null && environment.renderShadows)
+//            layouts[3] = shadowBindGroupLayout.address();
+        if(environment != null && environment.cubeMap != null)
+            layouts[3] = cubeMapBindGroupLayout.address();           // todo in case the previous one is missing what happens to the group numbering?
         Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
 
-        // Create the pipeline layout to define the bind groups needed : 3 or 4 bind groups
+        // Create the pipeline layout to define the bind groups needed
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
         layoutDesc.setNextInChain();
-        layoutDesc.setLabel("Pipeline Layout");
-        layoutDesc.setBindGroupLayoutCount(groups);
+        layoutDesc.setLabel("ModelBatch Pipeline Layout");
+        layoutDesc.setBindGroupLayoutCount(4);
         layoutDesc.setBindGroupLayouts(layoutPtr);
         return LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }

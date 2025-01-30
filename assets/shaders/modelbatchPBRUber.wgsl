@@ -48,7 +48,10 @@ struct ModelUniforms {
     modelMatrix: mat4x4f,
 };
 
-// The memory location of the uniform is given by a pair of a *bind group* and a *binding*
+// Group 0 - Frame
+// Group 1 = Material
+// Group 2 - Instance
+// Group 3 - Shadows
 
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
 
@@ -64,10 +67,15 @@ struct ModelUniforms {
 
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
-#ifdef SHADOWS
-@group(3) @binding(0) var shadowMap: texture_depth_2d;
-@group(3) @binding(1) var shadowSampler: sampler_comparison;
-#endif
+//#ifdef SHADOWS
+//@group(3) @binding(0) var shadowMap: texture_depth_2d;
+//@group(3) @binding(1) var shadowSampler: sampler_comparison;
+//#endif
+
+//#ifdef CUBEMAP
+@group(3) @binding(0) var cubeMap: texture_cube<f32>;
+@group(3) @binding(1) var cubeMapSampler: sampler;
+//#endif
 
 
 
@@ -284,5 +292,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = uFrame.pointLights[0].color.rgb;
     //color = baseColor;
     //color = normalize(in.normal);
+
+    let rdir:vec3f = reflect(V, N)*vec3f(1, -1, -1);
+
+    color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
+
+
     return vec4f(color, 1.0);
 }

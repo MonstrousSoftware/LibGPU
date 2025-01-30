@@ -67,12 +67,17 @@ public class TestCubeMap extends ApplicationAdapter {
 
         // the order of the layers is +X, -X, +Y, -Y, +Z, -Z
         String[] fileNames = {
-                "textures/daysky/environment_posx.jpg",
-                "textures/daysky/environment_negx.jpg",
-                "textures/daysky/environment_posy.jpg",
-                "textures/daysky/environment_negy.jpg",
-                "textures/daysky/environment_posz.jpg",
-                "textures/daysky/environment_negz.jpg"
+                "textures/leadenhall/pos-x.jpg",
+                "textures/leadenhall/neg-x.jpg",
+                "textures/leadenhall/pos-y.jpg",
+                "textures/leadenhall/neg-y.jpg",
+                "textures/leadenhall/pos-z.jpg",
+                "textures/leadenhall/neg-z.jpg",
+//                "textures/daysky/environment_negx.jpg",
+//                "textures/daysky/environment_posy.jpg",
+//                "textures/daysky/environment_negy.jpg",
+//                "textures/daysky/environment_posz.jpg",
+//                "textures/daysky/environment_negz.jpg"
         };
 
         cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
@@ -144,25 +149,25 @@ public class TestCubeMap extends ApplicationAdapter {
             modelBatch.invalidatePipelines();
         }
 
-        currentTime += LibGPU.graphics.getDeltaTime();
+        currentTime += 0.2f*LibGPU.graphics.getDeltaTime();
         updateModelMatrix(modelMatrix, currentTime);
         camController.update();
 
 
 
         // pass #1 : depth map
-        environment.depthPass = true;
-        environment.renderShadows = false;
-        environment.setShadowMap(shadowCam, null);
-
-        modelBatch.begin(shadowCam, environment, Color.GRAY, colorMap, depthMap);
-        modelBatch.render(instances);
-        modelBatch.end();
+//        environment.depthPass = true;
+//        environment.renderShadows = false;
+//        environment.setShadowMap(shadowCam, null);
+//
+//        modelBatch.begin(shadowCam, environment, Color.GRAY, colorMap, depthMap);
+//        modelBatch.render(instances);
+//        modelBatch.end();
 
         // pass #2 : render colours
         environment.depthPass = false;
-        environment.renderShadows = true;
-        environment.setShadowMap(shadowCam, depthMap);
+        environment.renderShadows = false;
+        //environment.setShadowMap(shadowCam, depthMap);
 
         modelBatch.begin(camera, environment, Color.BLUE);
         modelBatch.render(instances);
