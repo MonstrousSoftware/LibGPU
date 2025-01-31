@@ -7,27 +7,17 @@ import com.monstrous.utils.Disposable;
 
 public class Slider extends Widget implements Disposable {
 
-
     private Texture textureSliderBg;  // should be static & shared (and from an atlas)
     private Texture textureKnob;
     private Color color;
-    private Wrapper controlledValue;
+    private WrappedFloat controlledValue;
     private float min, max, step;
 
-
-    public static class Wrapper{
-        public float value;
-        public Wrapper(float value) {
-            this.value = value;
-        }
-    }
-
-
-    public Slider(Wrapper controlledValue, float min, float max, float step) {
+    public Slider(WrappedFloat controlledValue, float min, float max, float step) {
         this.min = min;
         this.max = max;
         this.step = step;
-        this.controlledValue = controlledValue != null ? controlledValue : new Wrapper((max+min)/2f);
+        this.controlledValue = controlledValue != null ? controlledValue : new WrappedFloat((max+min)/2f);
 
         textureSliderBg = new Texture("guiElements/slider_bg.png");
         textureKnob = new Texture("guiElements/slider_knob.png");
@@ -50,15 +40,6 @@ public class Slider extends Widget implements Disposable {
         batch.draw( textureKnob, x+parentCell.x + sliderX, y+parentCell.y, textureKnob.getWidth(), textureKnob.getHeight());
     }
 
-//    @Override
-//    public void onMouseEnters(){
-//        setColor(Color.BLUE);
-//    }
-//
-//    @Override
-//    public void onMouseExits(){
-//        setColor(Color.WHITE);
-//    }
 
     @Override
     public void onDrag(int mx, int my){

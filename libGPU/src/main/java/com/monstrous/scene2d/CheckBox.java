@@ -16,23 +16,16 @@ public class CheckBox extends Widget implements Disposable {
     private Style style;
     private int labelX, labelY;         // relative position of label
     private int internalPadding = 10;   // between texture and label
-    private Wrapper controlledValue;
-
-
-    public static class Wrapper{
-        public boolean value;
-        public Wrapper(boolean value) {
-            this.value = value;
-        }
-    }
+    private final WrappedBoolean controlledValue;
 
     public static class Style {
         public Color fontColor;
         public BitmapFont font;
     }
 
-    public CheckBox( Wrapper controlledValue, String label, Style style) {
-        this.controlledValue = controlledValue != null ? controlledValue : new Wrapper(false);
+    public CheckBox(WrappedBoolean controlledValue, String label, Style style) {
+        this.controlledValue = controlledValue != null ? controlledValue : new WrappedBoolean(false);
+        assert controlledValue != null;
 
         setText(label);
 
@@ -54,6 +47,20 @@ public class CheckBox extends Widget implements Disposable {
 
         this.color = new Color(Color.WHITE);
         this.style = style;
+
+        addListener(new EventListener() {
+            @Override
+            public boolean handle(int event) {
+                if(event == Event.CLICKED) {
+                    controlledValue.value = !controlledValue.value;
+                }
+                else if (event == Event.MOUSE_ENTERS)
+                    setColor(Color.YELLOW);
+                else if (event == Event.MOUSE_EXITS)
+                    setColor(Color.WHITE);
+                return false;
+            }
+        });
     }
 
     public void setColor( Color color ){
@@ -62,6 +69,14 @@ public class CheckBox extends Widget implements Disposable {
 
     public void setText(String text){
         this.text = text;
+    }
+
+    public void setValue(boolean state){
+        controlledValue.value = state;
+    }
+
+    public boolean getValue(){
+        return controlledValue.value;
     }
 
 
@@ -74,19 +89,6 @@ public class CheckBox extends Widget implements Disposable {
         style.font.draw(batch, text, x+labelX + parentCell.x, y+labelY+ parentCell.y);
     }
 
-    public void onClick(){
-        controlledValue.value = !controlledValue.value;
-    }
-
-    @Override
-    public void onMouseEnters(){
-        setColor(Color.YELLOW);
-    }
-
-    @Override
-    public void onMouseExits(){
-        setColor(Color.WHITE);
-    }
 
     @Override
     public void dispose() {

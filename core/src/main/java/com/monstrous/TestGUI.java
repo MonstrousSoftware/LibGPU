@@ -13,11 +13,11 @@ public class TestGUI extends ApplicationAdapter {
     private int frames;
     private Stage stage;
 
-    CheckBox.Wrapper cheese = new CheckBox.Wrapper(true);
-    CheckBox.Wrapper fries = new CheckBox.Wrapper(false);
-    CheckBox.Wrapper all = new CheckBox.Wrapper(false);
-    Slider.Wrapper volume = new Slider.Wrapper(0);
-    Slider.Wrapper degrees = new Slider.Wrapper(0);
+    WrappedBoolean cheese = new WrappedBoolean(true);
+    WrappedBoolean fries = new WrappedBoolean(false);
+    WrappedBoolean all = new WrappedBoolean(false);
+    WrappedFloat volume = new WrappedFloat(0);
+    WrappedFloat degrees = new WrappedFloat(0);
 
     public void create() {
         startTime = System.nanoTime();
@@ -35,12 +35,22 @@ public class TestGUI extends ApplicationAdapter {
         cbStyle.font = new BitmapFont();
         cbStyle.fontColor = Color.WHITE;
 
+        Label.Style style = new Label.Style();
+        style.font = new BitmapFont();
+        style.fontColor = Color.WHITE;
+
+        Label.Style editStyle = new Label.Style();
+        editStyle.font = new BitmapFont();
+        editStyle.fontColor = Color.BLACK;
+
+
+
+
         Table cbTable = new Table();
 
             CheckBox cb = new CheckBox(cheese, "Do you like cheese?", cbStyle);
             cb.setAlign(Align.left | Align.top);
             cb.pad(10);
-
 
             CheckBox cb2 = new CheckBox(fries, "You want fries with that?", cbStyle);
             cb2.setAlign(Align.left | Align.top);
@@ -50,15 +60,35 @@ public class TestGUI extends ApplicationAdapter {
             cb3.setAlign(Align.left | Align.top);
             cb3.pad(10);
 
-            Slider slider = new Slider(volume, 0, 10, 2f);
-            slider.setAlign(Align.left | Align.top);
-            slider.setSize(200,16);
-            slider.pad(10);
+//            Slider slider = new Slider(volume, 0, 10, 2f);
+//            slider.setAlign(Align.left | Align.top);
+//            slider.setSize(200,16);
+//            slider.pad(10);
 
             Slider slider2 = new Slider(degrees, 0, 360, 5f);
             slider2.setAlign(Align.left | Align.top);
             slider2.setSize(200,32);
             slider2.pad(10);
+
+            FloatLabel fl = new FloatLabel(degrees,"heading:", style);
+
+            TextField tf = new TextField(editStyle);
+            tf.setSize(200, 20);
+            tf.setText("Name");
+
+
+
+            Button button2 = new Button();
+            button2.setSize(100, 30);
+            button2.setAlign(Align.center);
+            button2.addListener(new EventListener() {
+                @Override
+                public boolean handle(int event) {
+                    if(event == Event.CLICKED)
+                        System.out.println("CLICKED!");
+                    return false;
+                }
+            });
 
             cbTable.add(cb);
             cbTable.row();
@@ -66,9 +96,15 @@ public class TestGUI extends ApplicationAdapter {
             cbTable.row();
             cbTable.add(cb3);
             cbTable.row();
-            cbTable.add(slider);
-            cbTable.row();
+//            cbTable.add(slider);
+//            cbTable.row();
             cbTable.add(slider2);
+            cbTable.row();
+            cbTable.add(fl);
+            cbTable.row();
+            cbTable.add(tf);
+            cbTable.row();
+            cbTable.add(button2);
 
 
         stage.add(cbTable);
@@ -77,8 +113,7 @@ public class TestGUI extends ApplicationAdapter {
 
         Table table = new Table();
         Block b1 = new Block();
-        b1.setColor(Color.GREEN);
-        b1.setSize(20,20);
+        b1.setColor(Color.GREEN).setSize(20,20);
         table.add(b1);
         Block b2 = new Block();
         b2.setColor(Color.RED);
@@ -101,28 +136,47 @@ public class TestGUI extends ApplicationAdapter {
 
         Table t2 = new Table();
 
-        Label.LabelStyle style = new Label.LabelStyle();
-        style.font = new BitmapFont();
-        style.fontColor = Color.WHITE;
 
-        Label label = new Label("libGPU", style);
-        label.setSize( 1, 1);
-        label.setAlign(Align.center);
-        label.pad(10);
+        Label label = new Label("Welcome to the wonderful world of libGPU!", style);
+        label.setAlign(Align.top).pad(10);
+
         t2.add(label);
 
         t2.row();
 
         Button button = new Button();
-        button.setSize(100, 30);
-        button.setAlign(Align.center);
-        //button.add(new Label("OKAY", style));
+        button.setSize(100, 30).setAlign(Align.center);
         t2.add(button);
+        t2.row();
+
         button.pack();
         //t2.pack();
 
+        TextButton.Style TBstyle = new TextButton.Style();
+
+        TBstyle.font = new BitmapFont();
+        TBstyle.fontColor = Color.BLUE;
+        TBstyle.bgColor = Color.WHITE;
+
+        TextButton textButton = new TextButton("OKAY", TBstyle);
+        textButton.setSize(100, 30).setAlign(Align.center);
+        textButton.addListener(new EventListener() {
+            @Override
+            public boolean handle(int event) {
+                if(event == Event.CLICKED)
+                    System.out.println("Hello OKAY!");
+                return false;
+            }
+        });
+        t2.add(textButton);
+
+
+
         stage.add(t2);
+
         //t2.pack();
+
+
 
         //stage.pack();
         stage.debug();
@@ -137,7 +191,7 @@ public class TestGUI extends ApplicationAdapter {
         ScreenUtils.clear(Color.WHITE); // todo broken
         stage.draw();
 
-        System.out.println("Values : "+cheese.value + ", "+ fries.value +" , "+ all.value+", "+volume.value +", "+degrees.value);
+        //System.out.println("Values : "+cheese.value + ", "+ fries.value +" , "+ all.value+", "+volume.value +", "+degrees.value);
 
         // At the end of the frame
 //        if (System.nanoTime() - startTime > 1000000000) {

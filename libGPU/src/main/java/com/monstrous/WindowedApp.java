@@ -37,6 +37,13 @@ public class WindowedApp {
         }
     };
 
+    private final GLFWCharCallback charCallback = new GLFWCharCallback() {
+        @Override
+        public void invoke(long window, int codepoint) {
+            LibGPU.input.processCharEvent(codepoint);
+        }
+    };
+
     private final GLFWCursorPosCallback mouseMoveCallback = new GLFWCursorPosCallback() {
         @Override
         public void invoke (long windowHandle, double x, double y) {
@@ -89,6 +96,7 @@ public class WindowedApp {
         glfwSetCursorPosCallback(window, mouseMoveCallback);
         glfwSetScrollCallback(window, scrollCallback);
         glfwSetKeyCallback(window, keyCallback);
+        glfwSetCharCallback(window, charCallback);
         glfwSetMouseButtonCallback(window, mouseCallback);
 
 

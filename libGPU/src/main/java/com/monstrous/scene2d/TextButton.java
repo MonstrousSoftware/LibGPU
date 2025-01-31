@@ -2,42 +2,33 @@ package com.monstrous.scene2d;
 
 import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
-import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.Disposable;
 
-public class TextButton extends Widget implements Disposable {
+public class TextButton extends Button implements Disposable {
 
-    private Texture texture;
     private String text;
-    private LabelStyle style;
-    private Color color;    // TMP
+    private Style style;
     private int tx, ty;
     private int textAlignment;
     private int textPad;
 
-    public static class LabelStyle {
+    public static class Style {
         public Color fontColor;
         public Color bgColor;
         public BitmapFont font;
     }
 
-    public TextButton(String text, LabelStyle style ) {
-        texture = new Texture("textures/white.png", false);
+    public TextButton(String text, Style style ) {
         this.text = text;
         this.style = style;
-        this.color = new Color(style.bgColor);
+        setColor( style.bgColor );
         textAlignment = Align.center;
         textPad = 10;
-
     }
 
     public void setText(String text){
         this.text = text;
-    }
-
-    public void setColor( Color color ){
-        this.color.set(color);
     }
 
     @Override
@@ -53,30 +44,11 @@ public class TextButton extends Widget implements Disposable {
         tx = x + (int)(w  - textWidth)/2;
     }
 
-    public void draw(SpriteBatch batch, float xoffset, float yoffset){
-        batch.setColor(color);
-        batch.draw(texture, x+xoffset, y+yoffset, w, h);
+    @Override
+    public void draw(SpriteBatch batch){
+        super.draw(batch);
         batch.setColor(style.fontColor);
-        style.font.draw(batch, text, tx+(int)xoffset, ty+(int)yoffset);
+        style.font.draw(batch, text, tx+parentCell.x, ty+parentCell.y);
     }
 
-    @Override
-    public void onMouseEnters(){
-        setColor(Color.BLUE);
-    }
-
-    @Override
-    public void onMouseExits(){
-        setColor(style.bgColor);
-    }
-
-    public void onClick(){
-        setColor(Color.RED);
-    }
-
-
-    @Override
-    public void dispose() {
-        texture.dispose();
-    }
 }

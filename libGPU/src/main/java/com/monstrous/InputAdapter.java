@@ -13,6 +13,12 @@ public class InputAdapter implements InputProcessor {
     }
 
     @Override
+    public boolean keyTyped(char character) {
+        return false;
+    }
+
+
+    @Override
     public boolean touchDown(int x, int y, int pointer, int button) {
         return false;
     }

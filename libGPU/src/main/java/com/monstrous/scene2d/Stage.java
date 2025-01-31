@@ -9,6 +9,9 @@ import com.monstrous.utils.Disposable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
+
 public class Stage implements Disposable, InputProcessor {
 
     private SpriteBatch batch;
@@ -17,6 +20,7 @@ public class Stage implements Disposable, InputProcessor {
     private Table table;
     private boolean debug;
     private ShapeRenderer shapeRenderer;
+    private Widget keyboardFocus;
 
     public Stage() {
         batch = new SpriteBatch();
@@ -30,6 +34,7 @@ public class Stage implements Disposable, InputProcessor {
         table = new Table();
         table.setCell(cell);
         table.setSize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
+        table.setStage(this);
     }
 
     public void debug(){
@@ -75,20 +80,30 @@ public class Stage implements Disposable, InputProcessor {
     public boolean keyDown(int keycode) {
         return false;
     }
-
     @Override
     public boolean keyUp(int keycode) {
         return false;
     }
 
     @Override
+    public boolean keyTyped(char character) {
+        if(keyboardFocus != null)
+            return keyboardFocus.keyTyped(character);
+        return false;
+    }
+
+    @Override
     public boolean touchDown(int x, int y, int pointer, int button) {
-        System.out.println("mouse click "+x+", "+y);
+        //System.out.println("mouse click "+x+", "+y);
         y = cell.h - y;
 
         Widget found = table.hit(x, y);
-        if(found != null)
-            found.onClick();
+        if(found != null) {
+            if(button == GLFW_MOUSE_BUTTON_LEFT)
+                found.processEvent(Event.CLICKED);
+            else if(button == GLFW_MOUSE_BUTTON_RIGHT)
+                found.processEvent(Event.CLICKED_RIGHT);
+        }
 
         return false;
     }
@@ -101,12 +116,12 @@ public class Stage implements Disposable, InputProcessor {
         Widget found = table.hit(x, y);
 
         if(found != null) {
-            found.onMouseEnters();
+            found.processEvent(Event.MOUSE_ENTERS);
             widgetUnderMouse = found;
             found.onDrag(x, y);
         }
         else if (widgetUnderMouse != null){
-            widgetUnderMouse.onMouseExits();
+            widgetUnderMouse.processEvent(Event.MOUSE_EXITS);
             widgetUnderMouse = null;
         }
 
@@ -128,11 +143,13 @@ public class Stage implements Disposable, InputProcessor {
 
         Widget found = table.hit(x, y);
         if(found != null) {
-            found.onMouseEnters();
+            found.processEvent(Event.MOUSE_ENTERS);
+            //found.onMouseEnters();
             widgetUnderMouse = found;
         }
         else if (widgetUnderMouse != null){
-            widgetUnderMouse.onMouseExits();
+            widgetUnderMouse.processEvent(Event.MOUSE_EXITS);
+            //widgetUnderMouse.onMouseExits();
             widgetUnderMouse = null;
         }
         return false;
@@ -143,5 +160,10 @@ public class Stage implements Disposable, InputProcessor {
     @Override
     public boolean scrolled(float x, float y) {
         return false;
+    }
+
+    // provide null to remove focus
+    public void setKeyboardFocus( Widget widget ){
+        keyboardFocus = widget;
     }
 }

@@ -195,8 +195,12 @@ public class Input {
         if(action == GLFW_PRESS){
             pressedKeyCount++;
             keyPressed[key] = true;
-            if(processor != null)
+            if(processor != null) {
                 processor.keyDown(key);
+                char character = characterForKeyCode(key);
+                if(character != 0)
+                    processor.keyTyped(character);
+            }
         }
         else if(action == GLFW_RELEASE) {
             pressedKeyCount--;
@@ -205,6 +209,24 @@ public class Input {
                 processor.keyUp(key);
         }
     }
+
+    public void processCharEvent(int codepoint){
+        if(processor != null)
+            processor.keyTyped((char)codepoint);
+    }
+
+    private char characterForKeyCode(int keycode ){
+        switch (keycode) {
+            case Keys.BACKSPACE:
+                return 8;
+            case Keys.TAB:
+                return '\t';
+            case Keys.ENTER:
+                return '\n';
+        }
+        return 0;
+    }
+
 
     private int convertFromGLFW(int key){
         return key; // since we use the same code values, the mapping is 1 to 1

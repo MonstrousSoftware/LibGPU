@@ -54,10 +54,9 @@ public class Table extends Widget {
 
     @Override
     public void pack(){
-
-
-        if(numCols == 0 || numRows == 0)    // empty table
+        if(numCols == 0 || numRows == 0)    // empty table, don't divide by zero
             return;
+
         // todo : assumes same size for all cells...
         int colWidth = parentCell.w / numCols;
         int rowHeight = parentCell.h / numRows;
@@ -70,7 +69,10 @@ public class Table extends Widget {
             //
             cell.setPosition(parentCell.x + cell.col * colWidth, parentCell.y + ((numRows-1)-cell.row) * rowHeight);
         }
+
+        Stage stage = getStage();
         for(Widget widget : widgets) {
+            widget.setStage(stage);   // propagate downwards so that each widget can find the stage
             widget.pack();
             widget.setPosition();
         }
@@ -97,10 +99,13 @@ public class Table extends Widget {
 
     @Override
     public void debugDraw(ShapeRenderer sr){
+        // draw cell outlines
         sr.setColor(debugCellColor);
         sr.setLineWidth(1f);
         for(Cell cell : cells)
-            sr.box(cell.x+parentCell.x, cell.y+parentCell.y, cell.x+cell.w, cell.y+cell.h);
+            sr.box(cell.x, cell.y, cell.x+cell.w, cell.y+cell.h);
+
+        // now recursively debugDraw the child widgets
         for(Widget widget : widgets)
             widget.debugDraw(sr);
     }

@@ -5,18 +5,33 @@ import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.Disposable;
 
-public class Button extends Table implements Disposable {
+public class Button extends Widget implements Disposable {
 
     private Texture texture;
     private Color color;
 
     public Button() {
-        texture = new Texture("textures/white.png", false);
+        texture = new Texture(1,1);
+        texture.fill(Color.WHITE);
         this.color = new Color(Color.WHITE);
+
+        addListener(new EventListener() {
+            @Override
+            public boolean handle(int event) {
+                if(event == Event.CLICKED)
+                    setColor(Color.RED);                        // todo use style definitions
+                else if (event == Event.MOUSE_ENTERS)
+                    setColor(Color.YELLOW);
+                else if (event == Event.MOUSE_EXITS)
+                    setColor(Color.WHITE);
+                return false;
+            }
+        });
     }
 
-    public void setColor( Color color ){
+    public Button setColor( Color color ){
         this.color.set(color);
+        return this;
     }
 
     @Override
@@ -24,21 +39,6 @@ public class Button extends Table implements Disposable {
         batch.setColor(color);
         batch.draw(texture, x+parentCell.x, y+parentCell.y, w, h);
     }
-
-    @Override
-    public void onMouseEnters(){
-        setColor(Color.BLUE);
-    }
-
-    @Override
-    public void onMouseExits(){
-        setColor(Color.WHITE);
-    }
-
-    public void onClick(){
-        setColor(Color.RED);
-    }
-
 
     @Override
     public void dispose() {

@@ -4,36 +4,47 @@ import com.monstrous.graphics.Color;
 import com.monstrous.graphics.g2d.ShapeRenderer;
 import com.monstrous.graphics.g2d.SpriteBatch;
 
+import java.util.ArrayList;
+
 public class Widget {
 
     static public Color debugActorColor = new Color(0, 1, 0, 1);
 
+    private Stage stage;
     protected int x, y, w, h;   // x, y relative to parentCell
     protected int padLeft, padRight, padTop, padBottom;
     protected Cell parentCell;
     protected int alignment;
+    protected ArrayList<EventListener> eventListeners;
 
-    public void setSize(int w, int h){
+    public Widget() {
+        eventListeners = new ArrayList<>(1);
+        this.alignment = Align.center;
+        pad(0);
+    }
+
+    public Widget setSize(int w, int h){
         this.w = w;
         this.h = h;
-        this.alignment = Align.center;
-        this.padLeft = this.padRight = this.padTop = this.padBottom = 0;
+        return this;
+    }
+
+    public Widget pad(int pad){
+        return pad(pad, pad, pad, pad);
+    }
+
+    public Widget pad(int top, int left, int bottom, int right){
+        this.padTop = top;
+        this.padLeft = left;
+        this.padBottom = bottom;
+        this.padRight = right;
+        return this;
     }
 
     public void setCell( Cell parent ){
         this.parentCell = parent;
     }
 
-    public void pad(int pad){
-        pad(pad, pad, pad, pad);
-    }
-
-    public void pad(int top, int left, int bottom, int right){
-        this.padTop = top;
-        this.padLeft = left;
-        this.padBottom = bottom;
-        this.padRight = right;
-    }
 
     // position the widget within the enclosing cell taking into account alignment and padding
     // x,y is relative to cell position
@@ -56,8 +67,30 @@ public class Widget {
         }
     }
 
-    public void setAlign(int align){
+    public Widget setAlign(int align){
         this.alignment = align;
+        return this;
+    }
+
+    public void addListener( EventListener listener ){
+        eventListeners.add(listener);
+    }
+
+    public void removeListener( EventListener listener ){
+        eventListeners.remove(listener);
+    }
+
+    public void processEvent(int event){
+        for(EventListener listener : eventListeners)
+            listener.handle(event);
+    }
+
+    public void setStage(Stage stage){
+        this.stage = stage;
+    }
+
+    public Stage getStage(){
+        return stage;
     }
 
     public void pack(){
@@ -68,17 +101,10 @@ public class Widget {
 
     }
 
-    public void onMouseEnters(){
-
+    public boolean keyTyped(char character) {
+        return false;
     }
 
-    public void onMouseExits(){
-
-    }
-
-    public void onClick(){
-
-    }
 
     public void onDrag(int x, int y){
 
