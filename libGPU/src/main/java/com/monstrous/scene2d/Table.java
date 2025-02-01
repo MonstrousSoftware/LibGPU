@@ -31,6 +31,7 @@ public class Table extends Widget {
         Cell cell = addCell();
         widget.setCell(cell);
         widgets.add(widget);
+        widget.setStage(getStage());   // propagate downwards so that each widget can find the stage
         return cell;
     }
 
@@ -58,6 +59,8 @@ public class Table extends Widget {
             return;
 
         // todo : assumes same size for all cells...
+
+        // size and position all the cells
         int colWidth = parentCell.w / numCols;
         int rowHeight = parentCell.h / numRows;
         w = parentCell.w;   // fill parent by default (for now)
@@ -70,11 +73,14 @@ public class Table extends Widget {
             cell.setPosition(parentCell.x + cell.col * colWidth, parentCell.y + ((numRows-1)-cell.row) * rowHeight);
         }
 
-        Stage stage = getStage();
+        // position each widget within its cell depending e.g. on its alignment and padding values
+
+        //Stage stage = getStage();
         for(Widget widget : widgets) {
-            widget.setStage(stage);   // propagate downwards so that each widget can find the stage
-            widget.pack();
+            //widget.setStage(stage);   // propagate downwards so that each widget can find the stage
             widget.setPosition();
+            widget.pack();              // and recurse down
+
         }
     }
 

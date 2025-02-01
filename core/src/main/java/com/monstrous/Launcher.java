@@ -12,7 +12,7 @@ public class Launcher {
         config.setSize(1200, 800);
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
-        config.backend = WGPUBackendType.Vulkan; //D3D12;
+        config.backend = WGPUBackendType.D3D12;
         config.numSamples = 1;      // MSAA samples: can be 1 (no MSAA) or 4 (multi-sampling)
 
         // don't use. will cause crash

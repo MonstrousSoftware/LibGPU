@@ -51,7 +51,7 @@ public class Slider extends Widget implements Disposable {
         // convert mouse position to slider value
         float sliderValue = (max-min)*((float) mx /w);
         sliderValue = min + (step * Math.round(sliderValue/step));
-        controlledValue.value = Math.clamp(sliderValue, min, max);
+        controlledValue.value = Math.max(min, Math.min(sliderValue, max));
     }
 
 

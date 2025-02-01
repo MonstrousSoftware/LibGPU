@@ -12,32 +12,17 @@ public class Widget {
 
     private Stage stage;
     protected int x, y, w, h;   // x, y relative to parentCell
-    protected int padLeft, padRight, padTop, padBottom;
     protected Cell parentCell;
-    protected int alignment;
+
     protected ArrayList<EventListener> eventListeners;
 
     public Widget() {
         eventListeners = new ArrayList<>(1);
-        this.alignment = Align.center;
-        pad(0);
     }
 
     public Widget setSize(int w, int h){
         this.w = w;
         this.h = h;
-        return this;
-    }
-
-    public Widget pad(int pad){
-        return pad(pad, pad, pad, pad);
-    }
-
-    public Widget pad(int top, int left, int bottom, int right){
-        this.padTop = top;
-        this.padLeft = left;
-        this.padBottom = bottom;
-        this.padRight = right;
         return this;
     }
 
@@ -50,27 +35,24 @@ public class Widget {
     // x,y is relative to cell position
     public void setPosition(){
 
-        if((alignment & Align.left) != 0){
-            x = padLeft;
-        } else if((alignment & Align.right) != 0){
-            x = parentCell.w - (w+padRight);
+        if((parentCell.alignment & Align.left) != 0){
+            x = parentCell.padLeft;
+        } else if((parentCell.alignment & Align.right) != 0){
+            x = parentCell.w - (w+parentCell.padRight);
         } else {
             x = (parentCell.w - w) / 2;
         }
         // y goes up
-        if((alignment & Align.bottom) != 0){
-            y = padBottom;
-        } else if((alignment & Align.top) != 0){
-            y = parentCell.h - (h+padTop);
+        if((parentCell.alignment & Align.bottom) != 0){
+            y = parentCell.padBottom;
+        } else if((parentCell.alignment & Align.top) != 0){
+            y = parentCell.h - (h+parentCell.padTop);
         } else {
             y = (parentCell.h - h) / 2;
         }
     }
 
-    public Widget setAlign(int align){
-        this.alignment = align;
-        return this;
-    }
+
 
     public void addListener( EventListener listener ){
         eventListeners.add(listener);

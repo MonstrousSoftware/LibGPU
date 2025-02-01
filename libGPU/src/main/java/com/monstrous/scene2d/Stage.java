@@ -15,16 +15,17 @@ import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
 public class Stage implements Disposable, InputProcessor {
 
     private SpriteBatch batch;
-    private List<Widget> widgets;
-    private Cell cell;
-    private Table table;
-    private boolean debug;
-    private ShapeRenderer shapeRenderer;
-    private Widget keyboardFocus;
+    //private List<Widget> widgets;
+    private Cell cell;                      // root cell
+    private Table table;                    // root table
+    private boolean debug;                  // debug mode
+    private ShapeRenderer shapeRenderer;    // for debug lines
+    private Widget keyboardFocus;           // widget that gets keyboard input (can be null)
+    private Widget widgetUnderMouse;
 
     public Stage() {
         batch = new SpriteBatch();
-        widgets = new ArrayList<>();
+        //widgets = new ArrayList<>();
         debug = false;
 
         cell = new Cell();
@@ -37,18 +38,10 @@ public class Stage implements Disposable, InputProcessor {
         table.setStage(this);
     }
 
-    public void debug(){
-        debug(true);
-    }
 
-    public void debug(boolean mode){
-        this.debug = mode;
-        if(debug)
-            shapeRenderer = new ShapeRenderer();
-    }
 
-    public void add( Widget widget ){
-        table.add(widget);
+    public Cell add( Widget widget ){
+        return table.add(widget);
     }
 
     public void row(){
@@ -56,7 +49,7 @@ public class Stage implements Disposable, InputProcessor {
     }
 
     public void draw(){
-        table.pack();
+        table.pack();   // can we avoid doing this for every draw call?
 
         batch.begin();
         table.draw(batch);
@@ -69,6 +62,16 @@ public class Stage implements Disposable, InputProcessor {
         }
     }
 
+    public void debug(){
+        debug(true);
+    }
+
+    public void debug(boolean mode){
+        this.debug = mode;
+        if(debug)
+            shapeRenderer = new ShapeRenderer();
+    }
+
     @Override
     public void dispose() {
         batch.dispose();
@@ -76,10 +79,29 @@ public class Stage implements Disposable, InputProcessor {
             shapeRenderer.dispose();
     }
 
+    public void clear(){
+        //table.clear();
+    }
+
+    public void resize(int width, int height) {
+        batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+        cell.setSize( width, height);
+        table.setSize( width, height);
+        // to do recalculate layouts
+    }
+
+
+    // provide null to remove focus
+    public void setKeyboardFocus( Widget widget ){
+        keyboardFocus = widget;
+    }
+
+
     @Override
     public boolean keyDown(int keycode) {
         return false;
     }
+
     @Override
     public boolean keyUp(int keycode) {
         return false;
@@ -134,9 +156,6 @@ public class Stage implements Disposable, InputProcessor {
         return true;
     }
 
-
-    private Widget widgetUnderMouse;
-
     @Override
     public boolean mouseMoved(int x, int y) {
         y = cell.h - y;
@@ -144,26 +163,18 @@ public class Stage implements Disposable, InputProcessor {
         Widget found = table.hit(x, y);
         if(found != null) {
             found.processEvent(Event.MOUSE_ENTERS);
-            //found.onMouseEnters();
             widgetUnderMouse = found;
         }
         else if (widgetUnderMouse != null){
             widgetUnderMouse.processEvent(Event.MOUSE_EXITS);
-            //widgetUnderMouse.onMouseExits();
             widgetUnderMouse = null;
         }
         return false;
     }
-
-
 
     @Override
     public boolean scrolled(float x, float y) {
         return false;
     }
 
-    // provide null to remove focus
-    public void setKeyboardFocus( Widget widget ){
-        keyboardFocus = widget;
-    }
 }
