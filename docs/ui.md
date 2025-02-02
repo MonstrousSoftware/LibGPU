@@ -9,3 +9,8 @@ Table#pack() calculates the size of each cell based on the preferred size of eac
 
 Table size is determined by its content. (apart from tables where we use the fill parent option).  This means table size must be determined bottom up.
 Table itself can also be padded within its parent cell.
+
+We do the layout in two passes:
+1. determine sizes bottom up
+2. set positions top down
+
