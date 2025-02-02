@@ -8,17 +8,16 @@ public class Cell {
     public int x, y;
     public int w, h;
     public int row, col;
-    protected int padLeft, padRight, padTop, padBottom;
-    protected int alignment;
+    public int padLeft, padRight, padTop, padBottom;
+    private int alignment;
 
     public Cell() {
         this.alignment = Align.center;
     }
 
-    public void setSize(int w, int h){
-        this.w = w;
-        this.h = h;
-    }
+    // the following methods return this Cell to support chaining of method calls
+
+
 
     public Cell setAlign(int align){
         this.alignment = align;
@@ -37,17 +36,46 @@ public class Cell {
         return this;
     }
 
-
-    public void setWidth(int w){
+    public Cell setSize(int w, int h){
         this.w = w;
-    }
-
-    public void setHeight(int h){
         this.h = h;
+        return this;
     }
 
-    public void setPosition(int x, int y){
+    public Cell setWidth(int w){
+        this.w = w;
+        return this;
+    }
+
+    public Cell setHeight(int h){
+        this.h = h;
+        return this;
+    }
+
+    public Cell setPosition(int x, int y){
         this.x = x;
         this.y = y;
+        return this;
+    }
+
+    public void positionWidget(Widget widget){
+        if(widget.parentCell != this)
+            throw new RuntimeException("Widget does not belong in this Cell.");
+
+        if((alignment & Align.left) != 0){
+            widget.x = padLeft;
+        } else if((alignment & Align.right) != 0){
+            widget.x = w - (widget.w + padRight);
+        } else {
+            widget.x = (w - widget.w) / 2;
+        }
+        // y goes up
+        if((alignment & Align.bottom) != 0){
+            widget.y = padBottom;
+        } else if((alignment & Align.top) != 0){
+            widget.y = h - (widget.h + padTop);
+        } else {
+            widget.y = (h - widget.h) / 2;
+        }
     }
 }

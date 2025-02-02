@@ -43,7 +43,7 @@ public class CheckBox extends Widget implements Disposable {
         int ht = Math.max(lineHeight,textureTicked.getHeight());
 
         labelY = lineHeight + (ht - lineHeight)/2;  // center-align label vertically with texture
-        setSize(wt, ht);
+        setPreferredSize(wt, ht);
 
         this.color = new Color(Color.WHITE);
         this.style = style;

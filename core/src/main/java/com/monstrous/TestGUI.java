@@ -31,8 +31,8 @@ public class TestGUI extends ApplicationAdapter {
         stage.clear();
 
         Block block = new Block();
-        block.setSize( 100, 100);
-        stage.add(block).pad(10).setAlign(Align.left | Align.top);
+        block.setPreferredSize( 100, 100);
+        stage.add(block).pad(10).setAlign(Align.left | Align.top).setWidth(400);
 
         CheckBox.Style cbStyle = new CheckBox.Style();
         cbStyle.font = new BitmapFont();
@@ -50,40 +50,39 @@ public class TestGUI extends ApplicationAdapter {
 
 
         Table cbTable = new Table();
+        cbTable.setFillParent(true);
 
             CheckBox cb = new CheckBox(cheese, "Do you like cheese?", cbStyle);
-            cbTable.add(cb).setAlign(Align.center | Align.top).pad(10);
+            cbTable.add(cb).setAlign(Align.left | Align.top).pad(5);//.setHeight(80);
+
             cbTable.row();
 
             CheckBox cb2 = new CheckBox(fries, "You want fries with that?", cbStyle);
-            cbTable.add(cb2).setAlign(Align.center | Align.top).pad(10);
+            cbTable.add(cb2).setAlign(Align.left | Align.top).pad(5);
             cbTable.row();
 
             CheckBox cb3 = new CheckBox(all, "Will that be all?", cbStyle);
-            cbTable.add(cb3).setAlign(Align.center | Align.top).pad(10);;
+            cbTable.add(cb3).setAlign(Align.left | Align.top).pad(5);;
             cbTable.row();
-
 
             Slider slider2 = new Slider(degrees, 0, 360, 5f);
-            cbTable.add(slider2).setAlign(Align.left | Align.top).pad(10);
+            cbTable.add(slider2).setAlign(Align.center | Align.top).pad(10);
             cbTable.row();
-            slider2.setSize(200,32);
-
+            slider2.setPreferredSize(200,32);
 
             FloatLabel fl = new FloatLabel(degrees,"heading:", style);
             cbTable.add(fl);
             cbTable.row();
 
             TextField tf = new TextField(editStyle);
-            tf.setSize(200, 20);
+            tf.setPreferredSize(200, 20);
             tf.setText("Name");
             cbTable.add(tf);
             cbTable.row();
 
 
-
             Button button2 = new Button();
-            button2.setSize(100, 30);
+            button2.setPreferredSize(100, 30);
             cbTable.add(button2).setAlign(Align.center);
             button2.addListener(new EventListener() {
                 @Override
@@ -100,44 +99,39 @@ public class TestGUI extends ApplicationAdapter {
 
 
         Table table = new Table();
-        Block b1 = new Block();
-        b1.setColor(Color.GREEN).setSize(20,20);
-        table.add(b1);
-        Block b2 = new Block();
-        b2.setColor(Color.RED);
-        b2.setSize(20,20);
-        table.add(b2);
-        table.row();
-        Block b3 = new Block();
-        b3.setColor(Color.BLUE);
-        b3.setSize(20,20);
-        table.add(b3);
-        Block b4 = new Block();
-        b4.setColor(Color.GREEN);
-        b4.setSize(20,20);
-        table.add(b4);
-
-
-
+        table.setFillParent(true);
+            Block b1 = new Block();
+            b1.setColor(Color.GREEN).setPreferredSize(20,20);
+            table.add(b1).setAlign(Align.center);
+            Block b2 = new Block();
+            b2.setColor(Color.RED);
+            b2.setPreferredSize(20,20);
+            table.add(b2);
+            table.row();
+            Block b3 = new Block();
+            b3.setColor(Color.BLUE);
+            b3.setPreferredSize(20,20);
+            table.add(b3);
+            Block b4 = new Block();
+            b4.setColor(Color.GREEN);
+            b4.setPreferredSize(20,20);
+            table.add(b4);
         stage.add(table);
-        //table.pack();
 
         Table t2 = new Table();
+        t2.setFillParent(true);
 
 
         Label label = new Label("Welcome to the wonderful world of libGPU!", style);
-        t2.add(label).setAlign(Align.top).pad(10);;
-
-        t2.row();
-
-        Button button = new Button();
-        button.setSize(100, 30);
-        t2.add(button).setAlign(Align.center);;
-        t2.row();
-
-        button.pack();
-        //t2.pack();
-
+        t2.add(label).setAlign(Align.top).pad(10);
+//
+//        t2.row();
+//
+////        Button button = new Button();
+////        button.setPreferredSize(100, 30);
+////        t2.add(button).setAlign(Align.center);
+////        t2.row();
+//
         TextButton.Style TBstyle = new TextButton.Style();
 
         TBstyle.font = new BitmapFont();
@@ -145,7 +139,7 @@ public class TestGUI extends ApplicationAdapter {
         TBstyle.bgColor = Color.WHITE;
 
         TextButton textButton = new TextButton("OKAY", TBstyle);
-        textButton.setSize(100, 30);
+        textButton.setPreferredSize(100, 30);
         textButton.addListener(new EventListener() {
             @Override
             public boolean handle(int event) {
@@ -154,17 +148,12 @@ public class TestGUI extends ApplicationAdapter {
                 return false;
             }
         });
-        t2.add(textButton).setAlign(Align.center);;
+        t2.add(textButton).setAlign(Align.center).pad(10);
 
 
 
         stage.add(t2);
 
-        //t2.pack();
-
-
-
-        //stage.pack();
         stage.debug();
 
     }

@@ -34,7 +34,9 @@ public class Stage implements Disposable, InputProcessor {
 
         table = new Table();
         table.setCell(cell);
-        table.setSize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
+        cell.setAlign(Align.center);
+        table.setFillParent(true);
+
         table.setStage(this);
     }
 
@@ -50,6 +52,7 @@ public class Stage implements Disposable, InputProcessor {
 
     public void draw(){
         table.pack();   // can we avoid doing this for every draw call?
+        table.setPosition();
 
         batch.begin();
         table.draw(batch);
@@ -86,7 +89,7 @@ public class Stage implements Disposable, InputProcessor {
     public void resize(int width, int height) {
         batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
         cell.setSize( width, height);
-        table.setSize( width, height);
+        //table.setSize( width, height);
         // to do recalculate layouts
     }
 

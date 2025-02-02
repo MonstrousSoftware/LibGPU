@@ -11,20 +11,46 @@ public class Widget {
     static public Color debugActorColor = new Color(0, 1, 0, 1);
 
     private Stage stage;
-    protected int x, y, w, h;   // x, y relative to parentCell
+    protected int x, y;   // x, y relative to parentCell
+    protected int w, h;     // actual width, height
+    protected boolean fillParent;
+    protected int preferredWidth, preferredHeight;
+    protected int minWidth, minHeight;
+    protected int maxWidth, maxHeight;
     protected Cell parentCell;
 
     protected ArrayList<EventListener> eventListeners;
 
     public Widget() {
         eventListeners = new ArrayList<>(1);
+        fillParent = false;
     }
 
-    public Widget setSize(int w, int h){
+    public Widget setPreferredSize(int w, int h){
+        this.preferredWidth = w;
+        this.preferredHeight = h;
         this.w = w;
         this.h = h;
         return this;
     }
+
+    public Widget setMinSize(int w, int h){
+        this.minWidth = w;
+        this.minHeight = h;
+        return this;
+    }
+
+    public Widget setMaxSize(int w, int h){
+        this.maxWidth = w;
+        this.maxHeight = h;
+        return this;
+    }
+
+    public Widget setFillParent(boolean fill){
+        this.fillParent = fill;
+        return this;
+    }
+
 
     public void setCell( Cell parent ){
         this.parentCell = parent;
@@ -34,22 +60,7 @@ public class Widget {
     // position the widget within the enclosing cell taking into account alignment and padding
     // x,y is relative to cell position
     public void setPosition(){
-
-        if((parentCell.alignment & Align.left) != 0){
-            x = parentCell.padLeft;
-        } else if((parentCell.alignment & Align.right) != 0){
-            x = parentCell.w - (w+parentCell.padRight);
-        } else {
-            x = (parentCell.w - w) / 2;
-        }
-        // y goes up
-        if((parentCell.alignment & Align.bottom) != 0){
-            y = parentCell.padBottom;
-        } else if((parentCell.alignment & Align.top) != 0){
-            y = parentCell.h - (h+parentCell.padTop);
-        } else {
-            y = (parentCell.h - h) / 2;
-        }
+        parentCell.positionWidget(this);
     }
 
 
@@ -78,6 +89,7 @@ public class Widget {
     public void pack(){
 
     }
+
 
     public void draw(SpriteBatch batch){
 

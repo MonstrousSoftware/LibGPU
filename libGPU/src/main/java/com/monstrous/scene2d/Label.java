@@ -25,7 +25,7 @@ public class Label extends Widget  {
 
         int lineHeight = style.font.getLineHeight();
         int textWidth = (int) style.font.width(text);
-        setSize(textWidth, lineHeight);
+        setPreferredSize(textWidth, lineHeight);
     }
 
 

@@ -22,7 +22,7 @@ public class Slider extends Widget implements Disposable {
         textureSliderBg = new Texture("guiElements/slider_bg.png");
         textureKnob = new Texture("guiElements/slider_knob.png");
 
-        setSize(100, textureKnob.getHeight());
+        setPreferredSize(100, textureKnob.getHeight());
 
         this.color = new Color(Color.WHITE);
     }

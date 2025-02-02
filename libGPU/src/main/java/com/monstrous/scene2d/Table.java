@@ -17,6 +17,8 @@ public class Table extends Widget {
     public int numCols, numRows;
     private List<Cell> cells;
     private List<Widget> widgets;
+    int[] colX;
+    int[] rowY;
 
     public Table() {
         colNr = 0;
@@ -31,11 +33,11 @@ public class Table extends Widget {
         Cell cell = addCell();
         widget.setCell(cell);
         widgets.add(widget);
-        widget.setStage(getStage());   // propagate downwards so that each widget can find the stage
+
         return cell;
     }
 
-    public Cell addCell(){
+    private Cell addCell(){
         Cell cell = new Cell();
         cell.row = rowNr;
         cell.col = colNr;
@@ -54,36 +56,123 @@ public class Table extends Widget {
     }
 
     @Override
+    public void setPosition(){
+        super.setPosition();
+
+        // position all the cells now that we have the table position
+        for(Cell cell : cells) {
+            // note y goes up, but row numbers go down
+            // the position of a cell is for the bottom left corner
+            //
+            cell.setPosition(parentCell.x + x + colX[cell.col], parentCell.y + y + rowY[cell.row] - cell.h);
+        }
+
+        // position each widget within its cell depending e.g. on its alignment and padding values
+        for(Widget widget : widgets) {
+            widget.setStage(getStage());   // propagate downwards so that each widget can find the stage
+            widget.setPosition();
+        }
+    }
+
+    @Override
     public void pack(){
         if(numCols == 0 || numRows == 0)    // empty table, don't divide by zero
             return;
 
-        // todo : assumes same size for all cells...
-
-        // size and position all the cells
-        int colWidth = parentCell.w / numCols;
-        int rowHeight = parentCell.h / numRows;
-        w = parentCell.w;   // fill parent by default (for now)
-        h = parentCell.h;
-        for(Cell cell : cells){
-            cell.setSize(colWidth, rowHeight);
-            // note y goes up, but row numbers go down
-            // the position of a cell is for the bottom left corner
-            //
-            cell.setPosition(parentCell.x + cell.col * colWidth, parentCell.y + ((numRows-1)-cell.row) * rowHeight);
+        for(Widget widget : widgets) {
+            widget.pack();              // and recurse down
         }
 
-        // position each widget within its cell depending e.g. on its alignment and padding values
+        int[] colWidths = new int[numCols];
+        colX = new int[numCols];
+        int totalWidth = 0;
+        for(int col = 0; col < numCols; col++){
+            colWidths[col] = getPreferredColWidth(col);
+            totalWidth += colWidths[col];
+        }
+        if(fillParent)
+            this.w = parentCell.w;
+        else
+            this.w = totalWidth;
 
-        //Stage stage = getStage();
-        for(Widget widget : widgets) {
-            //widget.setStage(stage);   // propagate downwards so that each widget can find the stage
-            widget.setPosition();
-            widget.pack();              // and recurse down
+        // distribute the remainder evenly over all columns
+        // to add: expand
+        int remainder = w - totalWidth;
 
+        int extra = remainder/numCols;
+        colX[0] = 0;
+        for(int col = 0; col < numCols; col++){
+            colWidths[col] += extra;
+            if(col > 0)
+                colX[col] = colX[col-1] + colWidths[col-1];
+            setColumnWidth(col, colWidths[col]);
+        }
+
+        int[] rowHeights = new int[numRows];
+
+        int totalHeight = 0;
+        for(int row = 0; row < numRows; row++){
+            rowHeights[row] = getPreferredRowHeight(row);
+            totalHeight += rowHeights[row];
+        }
+        if(fillParent)
+            this.h = parentCell.h;
+        else
+            this.h = totalHeight;
+
+        remainder = h - totalHeight;
+        int extraHeight = remainder/numRows;
+        rowY = new int[numRows];
+        rowY[0] = h;
+        for(int row = 0; row < numRows; row++){
+            rowHeights[row] += extraHeight;
+            if(row > 0)
+                rowY[row] = rowY[row-1] - rowHeights[row-1];
+            setRowHeight(row, rowHeights[row]);
         }
     }
 
+    private int getPreferredColWidth(int col){
+        //get maximum preferred width of all cells in this column
+        int max = 0;
+        for(Widget widget : widgets) {
+            if(widget.parentCell.col == col) {
+                int padded = widget.w + widget.parentCell.padLeft + +widget.parentCell.padRight;
+                int width = Math.max(parentCell.w, padded);
+                if (width > max)
+                    max = width;
+            }
+        }
+        return max;
+    }
+
+    private void setColumnWidth(int col, int width){
+        // set width of all cells in this column
+        for(Cell cell : cells){
+            if(cell.col == col)
+                cell.setWidth(width);
+        }
+    }
+    private int getPreferredRowHeight(int row){
+        int max = 0;
+        for(Widget widget : widgets) {
+            if(widget.parentCell.row == row) {
+                int padded = widget.h+ widget.parentCell.padTop + +widget.parentCell.padBottom;
+                int height = Math.max(0, padded);
+                if (height > max)
+                    max = height;
+            }
+        }
+        return max;
+    }
+
+    private void setRowHeight(int row, int height){
+        // set width of all cells in this column
+        for(Cell cell : cells){
+            if(cell.row == row)
+                cell.setHeight(height);
+        }
+    }
 
 
     @Override
