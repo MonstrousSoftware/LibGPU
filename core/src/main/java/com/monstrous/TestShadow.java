@@ -14,11 +14,12 @@ import com.monstrous.wgpu.WGPUTextureFormat;
 
 import java.util.ArrayList;
 
-public class TestShadow extends ApplicationAdapter {
+public class TestShadow extends ScreenAdapter {
 
     private static int SHADOW_MAP_SIZE = 4096;      // size (in pixels) of depth map
     private static int SHADOW_VIEWPORT_SIZE = 25;   // area (in world units) covered by shadow
 
+    private Game game;
     private ModelBatch modelBatch;
     private Camera camera;
     private CameraController camController;
@@ -37,7 +38,12 @@ public class TestShadow extends ApplicationAdapter {
     private ShaderProgram filter;
     private BitmapFont font;
 
-    public void create() {
+    public TestShadow(Game game) {
+        this.game = game;
+    }
+
+
+    public void show() {
         startTime = System.nanoTime();
         frames = 0;
 
@@ -122,7 +128,11 @@ public class TestShadow extends ApplicationAdapter {
 
 
 
-    public void render(){
+    public void render( float deltaTime  ){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
+            game.setScreen( new TestMenu(game));
+            return;
+        }
         if(LibGPU.input.isKeyPressed(Input.Keys.L)){    // to force shaders to be recompiled
             modelBatch.invalidatePipelines();
         }

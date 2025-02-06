@@ -21,12 +21,19 @@ public class Table extends Widget {
     int[] rowY;
 
     public Table() {
-        colNr = 0;
-        rowNr = 0;
         cells = new ArrayList<>();
         widgets = new ArrayList<>();            // should widgets be accessed via Cell?
-        numRows = 1;
+        clear();
+    }
+
+    public void clear(){
+        widgets.clear();
+        cells.clear();
         numCols = 0;
+        colNr = 0;
+        numRows = 1;
+        rowNr = 0;
+        // todo dispose?
     }
 
     public Cell add( Widget widget ){

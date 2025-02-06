@@ -6,9 +6,9 @@ import com.monstrous.utils.ScreenUtils;
 import com.monstrous.wgpu.WGPUVertexFormat;
 
 
-public class TestSpriteBatch extends ApplicationAdapter {
+public class TestSpriteBatch extends ScreenAdapter {
 
-
+    private Game game;
     private SpriteBatch batch;
     private Texture texture;
     private Texture texture2;
@@ -17,7 +17,11 @@ public class TestSpriteBatch extends ApplicationAdapter {
     private VertexAttributes vaNoTex;
     private VertexAttributes vaNoColor;
 
-    public void create() {
+    public TestSpriteBatch(Game game) {
+        this.game = game;
+    }
+
+    public void show() {
         startTime = System.nanoTime();
         frames = 0;
 
@@ -40,7 +44,11 @@ public class TestSpriteBatch extends ApplicationAdapter {
 
     }
 
-    public void render(  ){
+    public void render( float deltaTime  ){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
+            game.setScreen( new TestMenu(game));
+            return;
+        }
 
         // SpriteBatch testing
         ScreenUtils.clear(Color.WHITE);

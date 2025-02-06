@@ -83,7 +83,7 @@ public class Stage implements Disposable, InputProcessor {
     }
 
     public void clear(){
-        //table.clear();
+        table.clear();
     }
 
     public void resize(int width, int height) {
