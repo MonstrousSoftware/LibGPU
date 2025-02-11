@@ -214,6 +214,15 @@ EXPORT int SurfaceGetPreferredFormat(WGPUSurface surface, WGPUAdapter adapter){
     return format;
 }
 
+EXPORT int SurfaceGetCapabilities(WGPUSurface surface, WGPUAdapter adapter, WGPUSurfaceCapabilities *caps){
+    LOG( "SurfaceGetCapabilities ");
+
+    WGPUStatus status = wgpuSurfaceGetCapabilities(surface, adapter, caps);
+
+    //cout << "preferred format " << format << endl;
+    return status;
+}
+
 EXPORT void SurfaceGetCurrentTexture(WGPUSurface surface, WGPUSurfaceTexture *surfaceTexture ){
     //cout << "SurfaceGetCurrentTexture " << endl;
 

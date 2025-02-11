@@ -260,7 +260,17 @@ public class Application {
 //        };
 //        wgpu.QueueOnSubmittedWorkDone(LibGPU.queue, queueCallback, null);
 
-        LibGPU.surfaceFormat = wgpu.SurfaceGetPreferredFormat(LibGPU.surface, adapter);
+
+
+        WGPUSurfaceCapabilities caps = WGPUSurfaceCapabilities.createDirect();
+        wgpu.SurfaceGetCapabilities(LibGPU.surface, adapter, caps);
+        //System.out.println("Surface Capabilities: formatCount: "+caps.getFormatCount());
+        Pointer formats = caps.getFormats();
+        int format = formats.getInt(0);
+        LibGPU.surfaceFormat = WGPUTextureFormat.values()[format];
+
+        // Deprecated:
+        //LibGPU.surfaceFormat = wgpu.SurfaceGetPreferredFormat(LibGPU.surface, adapter);
         System.out.println("Using format: " + LibGPU.surfaceFormat);
 
         wgpu.AdapterRelease(adapter);       // we can release our adapter as soon as we have a device
