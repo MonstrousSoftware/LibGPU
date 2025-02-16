@@ -40,33 +40,6 @@ using namespace std;
 extern "C" {
 #endif
 
-/*
- * Class:     org_example_Main
- * Method:    add
- * Signature: (II)I
- */
-EXPORT int add(int a, int b ){
-    return a +b;
- }
-
-
-EXPORT  void testStruct( WGPURequestAdapterOptions options ){
-    printf("backend: %d\n", options.backendType);
-    printf("power: %d\n", options.powerPreference);
-    printf("fallback: %d\n", options.forceFallbackAdapter);
-    printf("surface: %p\n", options.compatibleSurface);
- }
-
-
-EXPORT   void testLimitsStruct( WGPUSupportedLimits *supported ){
-     printf("supported: %p\n", supported);
-     printf("supported.nextInChain: %p @ %p\n", supported->nextInChain, &(supported->nextInChain));
-     printf("supported.limits.maxTextureDimension1D: %d\n", supported->limits.maxTextureDimension1D);
-  }
-
-
-
-
 
 EXPORT WGPUInstance CreateInstance( void ){
 

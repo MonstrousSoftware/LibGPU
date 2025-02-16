@@ -62,7 +62,7 @@ public class ShaderProgram {
 
             shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
-        shaderModule = LibGPU.wgpu.DeviceCreateShaderModule(LibGPU.device, shaderDesc);
+        shaderModule = LibGPU.webGPU.DeviceCreateShaderModule(LibGPU.device, shaderDesc);
         if(shaderModule == null)
             throw new RuntimeException("ShaderModule: compile failed "+name);
 
@@ -82,7 +82,7 @@ public class ShaderProgram {
 //    }
 
     public void dispose(){
-        LibGPU.wgpu.ShaderModuleRelease(shaderModule);
+        LibGPU.webGPU.ShaderModuleRelease(shaderModule);
         shaderModule = null;
     }
 

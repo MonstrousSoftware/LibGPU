@@ -52,7 +52,7 @@ public class Texture {
             int len = fileData.length;
             Pointer data = WgpuJava.createByteArrayPointer(fileData);
 
-            image = LibGPU.wgpu.gdx2d_load(data, len);        // use native function to parse image file
+            image = LibGPU.webGPU.gdx2d_load(data, len);        // use native function to parse image file
             //System.out.println("loaded: "+image);
 
             PixmapInfo info = PixmapInfo.createAt(image);
@@ -82,7 +82,7 @@ public class Texture {
                 int len = fileData.length;
                 Pointer data = WgpuJava.createByteArrayPointer(fileData);
 
-                image = LibGPU.wgpu.gdx2d_load(data, len);        // use native function to parse image file
+                image = LibGPU.webGPU.gdx2d_load(data, len);        // use native function to parse image file
                 PixmapInfo info = PixmapInfo.createAt(image);
 
                 // use the first image to
@@ -185,7 +185,7 @@ public class Texture {
             textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
         textureDesc.setViewFormatCount(0);
         textureDesc.setViewFormats(WgpuJava.createNullPointer());
-        texture = LibGPU.wgpu.DeviceCreateTexture(LibGPU.device, textureDesc);
+        texture = LibGPU.webGPU.DeviceCreateTexture(LibGPU.device, textureDesc);
 
         System.out.println("dimensions: "+textureDesc.getSize().getDepthOrArrayLayers());
 
@@ -199,7 +199,7 @@ public class Texture {
         textureViewDesc.setMipLevelCount(mipLevelCount);
         textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : WGPUTextureViewDimension.Cube);    // assume it's a cube map if layers > 1
         textureViewDesc.setFormat(textureDesc.getFormat());
-        textureView = LibGPU.wgpu.TextureCreateView(texture, textureViewDesc);
+        textureView = LibGPU.webGPU.TextureCreateView(texture, textureViewDesc);
 
         // Create a sampler
         WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
@@ -214,7 +214,7 @@ public class Texture {
         samplerDesc.setLodMaxClamp(mipLevelCount);
         samplerDesc.setCompare(WGPUCompareFunction.Undefined);
         samplerDesc.setMaxAnisotropy(1);
-        sampler = LibGPU.wgpu.DeviceCreateSampler(LibGPU.device, samplerDesc);
+        sampler = LibGPU.webGPU.DeviceCreateSampler(LibGPU.device, samplerDesc);
     }
 
     public void fill(Color color) {
@@ -260,7 +260,7 @@ public class Texture {
         destination.setMipLevel(0);
 
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
+        LibGPU.webGPU.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
    }
 
    // layer : which layer to load for a 3d texture, otherwise 0
@@ -351,7 +351,7 @@ public class Texture {
             // wrap byte array in native pointer
             Pointer pixelData = WgpuJava.createByteArrayPointer(pixels);
             // N.B. using textureDesc.getSize() for param won't work!
-            LibGPU.wgpu.QueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
+            LibGPU.webGPU.QueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
 
             mipLevelWidth /= 2;
             mipLevelHeight /= 2;
@@ -373,10 +373,10 @@ public class Texture {
     public void dispose(){
         if(image != null) {
             //System.out.println("free: "+image);
-            LibGPU.wgpu.gdx2d_free(image);
+            LibGPU.webGPU.gdx2d_free(image);
         }
-        LibGPU.wgpu.TextureViewRelease(textureView);
-        LibGPU.wgpu.TextureDestroy(texture);
-        LibGPU.wgpu.TextureRelease(texture);
+        LibGPU.webGPU.TextureViewRelease(textureView);
+        LibGPU.webGPU.TextureDestroy(texture);
+        LibGPU.webGPU.TextureRelease(texture);
     }
 }

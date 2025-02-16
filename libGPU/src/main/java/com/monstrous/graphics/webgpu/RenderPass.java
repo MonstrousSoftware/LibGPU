@@ -4,7 +4,7 @@ import com.monstrous.wgpu.WGPUIndexFormat;
 import com.monstrous.wgpu.WGPUTextureFormat;
 import jnr.ffi.Pointer;
 
-import static com.monstrous.LibGPU.wgpu;
+import static com.monstrous.LibGPU.webGPU;
 
 public class RenderPass {
 
@@ -22,8 +22,8 @@ public class RenderPass {
     }
 
     public void end() {
-        wgpu.RenderPassEncoderEnd(renderPass);
-        wgpu.RenderPassEncoderRelease(renderPass);
+        webGPU.RenderPassEncoderEnd(renderPass);
+        webGPU.RenderPassEncoderRelease(renderPass);
     }
 
     public Pointer getPointer() {
@@ -47,7 +47,7 @@ public class RenderPass {
     }
 
     public void setPipeline(Pointer pipeline) {
-        wgpu.RenderPassEncoderSetPipeline(renderPass, pipeline);
+        webGPU.RenderPassEncoderSetPipeline(renderPass, pipeline);
     }
 
     public void setBindGroup(int groupIndex, Pointer bindGroup) {
@@ -55,30 +55,30 @@ public class RenderPass {
     }
 
     public void setBindGroup(int groupIndex, Pointer bindGroup, int dynamicOffsetCount, Pointer dynamicOffsets) {
-        wgpu.RenderPassEncoderSetBindGroup(renderPass, groupIndex, bindGroup, dynamicOffsetCount, dynamicOffsets);
+        webGPU.RenderPassEncoderSetBindGroup(renderPass, groupIndex, bindGroup, dynamicOffsetCount, dynamicOffsets);
     }
 
     public void setVertexBuffer(int slot, Pointer vertexBuffer, long offset, long size) {
-        wgpu.RenderPassEncoderSetVertexBuffer(renderPass,slot ,vertexBuffer, offset, size);
+        webGPU.RenderPassEncoderSetVertexBuffer(renderPass,slot ,vertexBuffer, offset, size);
     }
 
     public void setIndexBuffer(Pointer indexBuffer, WGPUIndexFormat wgpuIndexFormat, int offset, long size) {
-        wgpu.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, wgpuIndexFormat, offset, size);
+        webGPU.RenderPassEncoderSetIndexBuffer(renderPass, indexBuffer, wgpuIndexFormat, offset, size);
     }
 
     public void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth){
-        wgpu.RenderPassEncoderSetViewport(renderPass, x, y, width, height, minDepth, maxDepth);
+        webGPU.RenderPassEncoderSetViewport(renderPass, x, y, width, height, minDepth, maxDepth);
     }
 
     public void setScissorRect(int x, int y, int width, int height){
-        wgpu.RenderPassEncoderSetScissorRect(renderPass,  x,  y,  width,  height);
+        webGPU.RenderPassEncoderSetScissorRect(renderPass,  x,  y,  width,  height);
     }
 
     public void drawIndexed(int indexCount, int numInstances, int firstIndex, int baseVertex, int firstInstance) {
-        wgpu.RenderPassEncoderDrawIndexed (renderPass, indexCount,  numInstances,  firstIndex,  baseVertex,  firstInstance);
+        webGPU.RenderPassEncoderDrawIndexed (renderPass, indexCount,  numInstances,  firstIndex,  baseVertex,  firstInstance);
     }
 
     public void draw(int numVertices, int numInstances, int firstVertex, int firstInstance){
-        wgpu.RenderPassEncoderDraw(renderPass, numVertices, numInstances, firstVertex, firstInstance);
+        webGPU.RenderPassEncoderDraw(renderPass, numVertices, numInstances, firstVertex, firstInstance);
     }
 }

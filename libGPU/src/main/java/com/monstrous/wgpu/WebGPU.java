@@ -2,20 +2,17 @@ package com.monstrous.wgpu;
 
 import jnr.ffi.Pointer;
 
-public interface WGPU { // A representation of the C interface in Java
+public interface WebGPU { // A representation of the C interface in Java
 
     final static long WGPU_DEPTH_SLICE_UNDEFINED = -1L;
 
     Pointer gdx2d_load (Pointer buffer, int len);
     void gdx2d_free(Pointer pixmapInfo);
 
-    int add(int a, int b);
+    Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
 
-    void testStruct(WGPURequestAdapterOptions options);
-    void testLimitsStruct(WGPUSupportedLimits supported);
 
     Pointer CreateInstance();
-    Pointer glfwGetWGPUSurface(Pointer instance, long HWND);
     void InstanceRelease(Pointer instance);
     Pointer RequestAdapterSync(Pointer instance, WGPURequestAdapterOptions options);
 
@@ -38,6 +35,7 @@ public interface WGPU { // A representation of the C interface in Java
 
     Pointer DeviceCreateCommandEncoder(Pointer device, WGPUCommandEncoderDescriptor encoderDesc);
     void CommandEncoderRelease(Pointer commandEncoder);
+    Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
     void CommandEncoderInsertDebugMarker(Pointer encoder, String marker);
     Pointer CommandEncoderBeginRenderPass(Pointer encoder, WGPURenderPassDescriptor renderPassDescriptor);
 
@@ -52,34 +50,32 @@ public interface WGPU { // A representation of the C interface in Java
     void RenderPassEncoderSetViewport(Pointer renderPass, float x, float y, float width, float height, float minDepth, float maxDepth);
     void RenderPassEncoderSetBindGroup(Pointer renderPass, int groupIndex, Pointer bindGroup, int dynamicOffsetCount, Pointer dynamicOffsets);
 
-    Pointer CommandEncoderFinish(Pointer encoder, WGPUCommandBufferDescriptor cmdBufferDescriptor);
-    void CommandBufferRelease(Pointer commandBuffer);
 
+    void CommandBufferRelease(Pointer commandBuffer);
 
 
     void SurfaceRelease(Pointer surface);
     void SurfaceConfigure(Pointer surface, WGPUSurfaceConfiguration config);
     void SurfaceUnconfigure(Pointer surface);
+    void SurfacePresent(Pointer surface);
     WGPUTextureFormat SurfaceGetPreferredFormat(Pointer surface, Pointer adapter);
+    int SurfaceGetCapabilities(Pointer surface, Pointer adapter, WGPUSurfaceCapabilities caps);
 
     void SurfaceGetCurrentTexture(Pointer surface, WGPUSurfaceTexture texture);
 
-    WGPUTextureFormat TextureGetFormat(Pointer Texture);
-    Pointer TextureCreateView(Pointer Texture, WGPUTextureViewDescriptor viewDescriptor);
-
-    void TextureViewRelease(Pointer view);
-
-    void SurfacePresent(Pointer surface);
 
 
     Pointer DeviceCreateRenderPipeline(Pointer device, WGPURenderPipelineDescriptor pipelineDesc);
-    Pointer DeviceCreateShaderModule(Pointer device, WGPUShaderModuleDescriptor shaderDesc);
     void RenderPipelineRelease(Pointer pipeline);
+
+    Pointer DeviceCreateShaderModule(Pointer device, WGPUShaderModuleDescriptor shaderDesc);
     void ShaderModuleRelease(Pointer shaderModule);
 
     Pointer DeviceCreateBuffer(Pointer device, WGPUBufferDescriptor bufferDesc);
     void BufferRelease(Pointer buffer);
     void BufferDestroy(Pointer buffer);
+    void BufferUnmap(Pointer buffer1);
+    long BufferGetSize(Pointer vertexBuffer);
 
     void QueueWriteBuffer(Pointer queue, Pointer buffer, int dynamicOffset, Pointer data, int length);
 
@@ -88,29 +84,24 @@ public interface WGPU { // A representation of the C interface in Java
 
     Pointer BufferGetConstMappedRange(Pointer buffer1, int offset, int size);       // todo use long for size_t?
 
-    void BufferUnmap(Pointer buffer1);
-
-    long BufferGetSize(Pointer vertexBuffer);
-
 
     Pointer DeviceCreateBindGroup(Pointer device, WGPUBindGroupDescriptor bindGroupDesc);
-
     void BindGroupRelease(Pointer bindGroup);
 
+    Pointer DeviceCreateBindGroupLayout(Pointer device, WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc);
     void BindGroupLayoutRelease(Pointer bindGroupLayout);
 
+    Pointer DeviceCreatePipelineLayout(Pointer device, WGPUPipelineLayoutDescriptor layoutDesc);
     void PipelineLayoutRelease(Pointer layout);
 
-    Pointer DeviceCreateBindGroupLayout(Pointer device, WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc);
-
-
-    Pointer DeviceCreatePipelineLayout(Pointer device, WGPUPipelineLayoutDescriptor layoutDesc);
 
     Pointer DeviceCreateTexture(Pointer device, WGPUTextureDescriptor depthTextureDesc);
-
     void TextureDestroy(Pointer depthTexture);
-
     void TextureRelease(Pointer depthTexture);
+    WGPUTextureFormat TextureGetFormat(Pointer Texture);
+
+    Pointer TextureCreateView(Pointer Texture, WGPUTextureViewDescriptor viewDescriptor);
+    void TextureViewRelease(Pointer view);
 
     void QueueWriteTexture(Pointer queue, WGPUImageCopyTexture destination, Pointer pixelPtr, int i, WGPUTextureDataLayout source, WGPUExtent3D size);
 
@@ -120,5 +111,4 @@ public interface WGPU { // A representation of the C interface in Java
 
     void CommandEncoderResolveQuerySet(Pointer commandEncoder, Pointer querySet, int firstQuery, int queryCount, Pointer destination, long destinationOffset);
 
-    int SurfaceGetCapabilities(Pointer surface, Pointer adapter, WGPUSurfaceCapabilities caps);
 }

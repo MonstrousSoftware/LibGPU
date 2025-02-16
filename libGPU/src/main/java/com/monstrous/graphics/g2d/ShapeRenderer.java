@@ -2,7 +2,6 @@ package com.monstrous.graphics.g2d;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Color;
-import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.webgpu.*;
@@ -19,7 +18,7 @@ import jnr.ffi.Pointer;
 // only does line mode, not fill mode.
 
 public class ShapeRenderer implements Disposable {
-    private WGPU wgpu;
+    private WebGPU webGPU;
     //private ShaderProgram shader;
     private int maxShapes;
     private boolean begun;
@@ -53,7 +52,7 @@ public class ShapeRenderer implements Disposable {
     public ShapeRenderer(int maxShapes) {
         this.maxShapes = maxShapes;
         begun = false;
-        wgpu = LibGPU.wgpu;
+        webGPU = LibGPU.webGPU;
 
         // vertex: x, y, r, g, b, a
         vertexSize = 6; // floats
@@ -143,13 +142,13 @@ public class ShapeRenderer implements Disposable {
         int numFloats = numRects * 4 * vertexSize;
         Pointer data = WgpuJava.createDirectPointer(numFloats * Float.BYTES);
         data.put(0, vertFloats, 0, numFloats);
-        wgpu.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, data, (int) numFloats*Float.BYTES);
+        webGPU.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, data, (int) numFloats*Float.BYTES);
 
 
         // Upload index data to the buffer
         Pointer idata = WgpuJava.createDirectPointer( numRects*6*Short.BYTES);
         idata.put(0, indexValues, 0, numRects*6);
-        wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Short.BYTES);
+        webGPU.QueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Short.BYTES);
 
 
         Pointer bg = makeBindGroup();
@@ -160,7 +159,7 @@ public class ShapeRenderer implements Disposable {
 
         renderPass.setBindGroup( 0, bg, 0, WgpuJava.createNullPointer());
         renderPass.drawIndexed( numRects * 6, 1, 0, 0, 0);
-        wgpu.BindGroupRelease(bg);
+        webGPU.BindGroupRelease(bg);
 
 
         vbOffset += numFloats*Float.BYTES;
@@ -314,7 +313,7 @@ public class ShapeRenderer implements Disposable {
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex);
         bufferDesc.setSize((long) maxShapes * 4 * vertexSize * Float.BYTES);
         bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        vertexBuffer = webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
@@ -323,7 +322,7 @@ public class ShapeRenderer implements Disposable {
         sz = (sz + 3) & ~3; // round up to the next multiple of 4
         bufferDesc.setSize(sz);
         bufferDesc.setMappedAtCreation(0L);
-        indexBuffer = wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        indexBuffer = webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // Create uniform buffer
         uniformBufferSize = 16 * Float.BYTES;
@@ -333,7 +332,7 @@ public class ShapeRenderer implements Disposable {
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst |WGPUBufferUsage.Uniform );
         bufferDesc.setSize(16 * Float.BYTES);
         bufferDesc.setMappedAtCreation(0L);
-        uniformBuffer =LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device,bufferDesc);
+        uniformBuffer =LibGPU.webGPU.DeviceCreateBuffer(LibGPU.device,bufferDesc);
     }
 
     private void setUniforms(){
@@ -346,7 +345,7 @@ public class ShapeRenderer implements Disposable {
         setUniformMatrix(uniformData, offset, projectionMatrix);
         offset += 16*Float.BYTES;
 
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
+        LibGPU.webGPU.QueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
     }
 
     private Pointer createBindGroupLayout() {
@@ -365,7 +364,7 @@ public class ShapeRenderer implements Disposable {
         bindGroupLayoutDesc.setLabel("ShapeRenderer binding group layout");
         bindGroupLayoutDesc.setEntryCount(1);
         bindGroupLayoutDesc.setEntries(bindingLayout); //, texBindingLayout, samplerBindingLayout);
-        return LibGPU.wgpu.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+        return LibGPU.webGPU.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
 
@@ -385,7 +384,7 @@ public class ShapeRenderer implements Disposable {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(1);
         bindGroupDesc.setEntries(binding);
-        return LibGPU.wgpu.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
+        return LibGPU.webGPU.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
     private Pointer makePipelineLayout(Pointer bindGroupLayout) {
@@ -399,7 +398,7 @@ public class ShapeRenderer implements Disposable {
         layoutDesc.setLabel("ShapeRenderer Pipeline Layout");
         layoutDesc.setBindGroupLayoutCount(1);
         layoutDesc.setBindGroupLayouts(layoutPtr);
-        return LibGPU.wgpu.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
+        return LibGPU.webGPU.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
@@ -426,10 +425,10 @@ public class ShapeRenderer implements Disposable {
     @Override
     public void dispose(){
         pipelines.dispose();
-        wgpu.BufferRelease(vertexBuffer);
-        wgpu.BufferRelease(indexBuffer);
-        wgpu.BufferRelease(uniformBuffer);
-        wgpu.BindGroupLayoutRelease(bindGroupLayout);
+        webGPU.BufferRelease(vertexBuffer);
+        webGPU.BufferRelease(indexBuffer);
+        webGPU.BufferRelease(uniformBuffer);
+        webGPU.BindGroupLayoutRelease(bindGroupLayout);
         //shader.dispose();
     }
 }

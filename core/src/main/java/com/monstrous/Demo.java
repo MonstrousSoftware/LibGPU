@@ -12,7 +12,7 @@ import com.monstrous.wgpu.*;
 
 
 public class Demo extends ApplicationAdapter {
-    private WGPU wgpu;
+    private WebGPU webGPU;
 
     private Mesh mesh;
     private MeshPart meshPart;
@@ -35,7 +35,7 @@ public class Demo extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
-        wgpu = LibGPU.wgpu;
+        webGPU = LibGPU.webGPU;
 
         MeshData meshData = ObjLoader.load("pyramid.txt");
         mesh = new Mesh(meshData);

@@ -64,11 +64,11 @@ public class Mesh {
             bufferDesc.setSize((long)vertexData.length *Float.BYTES);
             System.out.println("VB "+(long)vertexData.length *Float.BYTES);
             bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer =LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device,bufferDesc);
+        vertexBuffer =LibGPU.webGPU.DeviceCreateBuffer(LibGPU.device,bufferDesc);
 
         Pointer dataBuf = WgpuJava.createFloatArrayPointer(vertexData);
         // Upload geometry data to the buffer
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue,vertexBuffer,0,dataBuf,(int)bufferDesc.getSize());
+        LibGPU.webGPU.QueueWriteBuffer(LibGPU.queue,vertexBuffer,0,dataBuf,(int)bufferDesc.getSize());
     }
 
 
@@ -118,15 +118,15 @@ public class Mesh {
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index);
         bufferDesc.setSize(indexBufferSize);
         bufferDesc.setMappedAtCreation(0L);
-        indexBuffer = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        indexBuffer = LibGPU.webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // Upload data to the buffer
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, indexBufferSize);
+        LibGPU.webGPU.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, indexBufferSize);
     }
 
     public void dispose(){
-        LibGPU.wgpu.BufferRelease(indexBuffer);
-        LibGPU.wgpu.BufferRelease(vertexBuffer);
+        LibGPU.webGPU.BufferRelease(indexBuffer);
+        LibGPU.webGPU.BufferRelease(vertexBuffer);
     }
 
     public Pointer getVertexBuffer(){

@@ -51,7 +51,7 @@ public class UniformBuffer implements Disposable {
         bufferDesc.setUsage( usage ); //WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
         bufferDesc.setSize( bufferSize );
         bufferDesc.setMappedAtCreation(0L);
-        this.handle = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        this.handle = LibGPU.webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // working buffer in native memory to use as input to WriteBuffer
         float[] floats = new float[contentSize/Float.BYTES];
@@ -127,7 +127,7 @@ public class UniformBuffer implements Disposable {
     public void endFill(int writeOffset){
         if(offset > contentSize)
             throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
-        LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, handle, dynamicOffset+writeOffset, floatData, offset);
+        LibGPU.webGPU.QueueWriteBuffer(LibGPU.queue, handle, dynamicOffset+writeOffset, floatData, offset);
     }
 
     public Pointer getHandle(){
@@ -136,7 +136,7 @@ public class UniformBuffer implements Disposable {
 
     @Override
     public void dispose() {
-        LibGPU.wgpu.BufferRelease(handle);
+        LibGPU.webGPU.BufferRelease(handle);
         handle = null;
     }
 }

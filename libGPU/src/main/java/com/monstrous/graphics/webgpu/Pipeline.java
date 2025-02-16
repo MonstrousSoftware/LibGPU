@@ -99,7 +99,7 @@ public class Pipeline implements Disposable {
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 
         pipelineDesc.setLayout(pipelineLayout);
-        pipeline = LibGPU.wgpu.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
+        pipeline = LibGPU.webGPU.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
         if(pipeline == null)
             throw new RuntimeException("Pipeline createion failed");
     }
@@ -123,8 +123,8 @@ public class Pipeline implements Disposable {
 
     @Override
     public void dispose() {
-        LibGPU.wgpu.PipelineLayoutRelease(pipelineLayout);
-        LibGPU.wgpu.RenderPipelineRelease(pipeline);
+        LibGPU.webGPU.PipelineLayoutRelease(pipelineLayout);
+        LibGPU.webGPU.RenderPipelineRelease(pipeline);
     }
 
 

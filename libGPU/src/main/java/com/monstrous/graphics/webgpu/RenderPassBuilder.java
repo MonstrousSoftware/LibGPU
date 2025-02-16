@@ -8,7 +8,7 @@ import com.monstrous.wgpu.*;
 import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
-import static com.monstrous.LibGPU.wgpu;
+import static com.monstrous.LibGPU.webGPU;
 
 // Factory class to create RenderPass objects.
 //
@@ -59,7 +59,7 @@ public class RenderPassBuilder {
 
         renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
-        renderPassColorAttachment.setDepthSlice(WGPU.WGPU_DEPTH_SLICE_UNDEFINED);
+        renderPassColorAttachment.setDepthSlice(WebGPU.WGPU_DEPTH_SLICE_UNDEFINED);
 
         renderPassColorAttachment.setLoadOp((clearColor != null || mustClear) ? WGPULoadOp.Clear : WGPULoadOp.Load);
 
@@ -128,7 +128,7 @@ public class RenderPassBuilder {
 
         LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
-        Pointer renderPassPtr = wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+        Pointer renderPassPtr = webGPU.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
         RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat, sampleCount);
         if(viewport != null)
             viewport.apply(pass);

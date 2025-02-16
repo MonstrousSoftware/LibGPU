@@ -4,8 +4,7 @@ import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.*;
 import jnr.ffi.Pointer;
 
-import static com.monstrous.LibGPU.wgpu;
-import static com.monstrous.wgpuUtils.WgpuJava.createIntegerArrayPointer;
+import static com.monstrous.LibGPU.webGPU;
 
 public class GPUTiming implements Disposable {
 
@@ -27,7 +26,7 @@ public class GPUTiming implements Disposable {
         querySetDescriptor.setType(WGPUQueryType.Timestamp);
         querySetDescriptor.setCount(2); // start and end
 
-        timestampQuerySet = wgpu.CreateQuerySet(device, querySetDescriptor);
+        timestampQuerySet = webGPU.CreateQuerySet(device, querySetDescriptor);
 
         // Create buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
@@ -35,12 +34,12 @@ public class GPUTiming implements Disposable {
         bufferDesc.setUsage( WGPUBufferUsage.CopySrc | WGPUBufferUsage.QueryResolve );
         bufferDesc.setSize(32);
         bufferDesc.setMappedAtCreation(0L);
-        timeStampResolveBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
+        timeStampResolveBuffer = webGPU.DeviceCreateBuffer(device, bufferDesc);
 
         bufferDesc.setLabel("timestamp map buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
         bufferDesc.setSize(32);
-        timeStampMapBuffer = wgpu.DeviceCreateBuffer(device, bufferDesc);
+        timeStampMapBuffer = webGPU.DeviceCreateBuffer(device, bufferDesc);
     }
 
     // call this before configuration of render pass
@@ -62,10 +61,10 @@ public class GPUTiming implements Disposable {
             return;
 
         // Resolve the timestamp queries (write their result to the resolve buffer)
-        wgpu.CommandEncoderResolveQuerySet(encoder, timestampQuerySet, 0, 2, timeStampResolveBuffer, 0);
+        webGPU.CommandEncoderResolveQuerySet(encoder, timestampQuerySet, 0, 2, timeStampResolveBuffer, 0);
 
         // Copy to the map buffer
-        wgpu.CommandEncoderCopyBufferToBuffer(encoder, timeStampResolveBuffer, 0,  timeStampMapBuffer, 0,32);
+        webGPU.CommandEncoderCopyBufferToBuffer(encoder, timeStampResolveBuffer, 0,  timeStampMapBuffer, 0,32);
     }
 
 
@@ -78,10 +77,10 @@ public class GPUTiming implements Disposable {
             if(status != WGPUBufferMapAsyncStatus.Success)
                 System.out.println("*** ERROR: Timestamp buffer mapped with status: " + status);
             else {
-                Pointer ram =  wgpu.BufferGetConstMappedRange(timeStampMapBuffer, 0, 32);
+                Pointer ram =  webGPU.BufferGetConstMappedRange(timeStampMapBuffer, 0, 32);
                 long start = ram.getLong(0);
                 long end = ram.getLong(Long.BYTES);
-                wgpu.BufferUnmap(timeStampMapBuffer);
+                webGPU.BufferUnmap(timeStampMapBuffer);
                 long ns = end - start;
                 int microseconds = (int)(0.001 * ns);
                 addTimeSample(microseconds);
@@ -91,7 +90,7 @@ public class GPUTiming implements Disposable {
         };
 
         timeStampMapOngoing = true;
-        wgpu.BufferMapAsync(timeStampMapBuffer, WGPUMapMode.Read, 0, 32, onTimestampBufferMapped, null);
+        webGPU.BufferMapAsync(timeStampMapBuffer, WGPUMapMode.Read, 0, 32, onTimestampBufferMapped, null);
     }
 
     @Override
@@ -99,10 +98,10 @@ public class GPUTiming implements Disposable {
        if(!timingEnabled)
             return;
         //  timestampQuerySet release
-        wgpu.BufferDestroy(timeStampMapBuffer);
-        wgpu.BufferRelease(timeStampMapBuffer);
-        wgpu.BufferDestroy(timeStampResolveBuffer);
-        wgpu.BufferRelease(timeStampResolveBuffer);
+        webGPU.BufferDestroy(timeStampMapBuffer);
+        webGPU.BufferRelease(timeStampMapBuffer);
+        webGPU.BufferDestroy(timeStampResolveBuffer);
+        webGPU.BufferRelease(timeStampResolveBuffer);
     }
 
     private long cumulative = 0;
