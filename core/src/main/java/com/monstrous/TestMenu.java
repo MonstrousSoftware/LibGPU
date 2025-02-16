@@ -9,20 +9,15 @@ import com.monstrous.scene2d.TextButton;
 import com.monstrous.utils.ScreenUtils;
 
 
-public class TestMenu extends ScreenAdapter {
+public class TestMenu extends ApplicationAdapter {
 
-    private static final String[] testNames = { "SpriteBatch", "FontSDF", "Shadow"};
+    private static final String[] testNames = { "SpriteBatch", "FontSDF", "Shadow", "Post-Processing", "ShapeRenderer", "Simple Game"};
 
-    private Game game;
     private Stage stage;
 
 
-    public TestMenu(Game game) {
-        this.game = game;
-    }
-
     @Override
-    public void show() {
+    public void create() {
         stage = new Stage();
         LibGPU.input.setInputProcessor(stage);
     }
@@ -58,20 +53,30 @@ public class TestMenu extends ScreenAdapter {
 
 
     private boolean switchScreen(String name){
-        if(name.contentEquals("FontSDF"))
-            game.setScreen(new TestFontSDF(game));
-        else if(name.contentEquals("SpriteBatch"))
-            game.setScreen(new TestSpriteBatch(game));
+        ApplicationListener listener = null;
+        if(name.contentEquals("SpriteBatch"))
+            listener = new TestSpriteBatch();
+        else if(name.contentEquals("FontSDF"))
+            listener = new TestFontSDF();
         else if(name.contentEquals("Shadow"))
-            game.setScreen(new TestShadow(game));
+            listener = new TestShadow();
+        else if(name.contentEquals("Post-Processing"))
+            listener = new TestPostProcessing();
+        else if(name.contentEquals("ShapeRenderer"))
+            listener = new TestShapeRenderer();
+        else if(name.contentEquals("Simple Game"))
+            listener = new TestSimpleGame();
         else
             throw new RuntimeException("No class known for test: "+name);
+
+        LibGPU.app.setNextListener(listener, true);
+        LibGPU.app.exit();
         return true;
     }
 
 
     @Override
-    public void render( float deltaTime ){
+    public void render( ){
         ScreenUtils.clear(Color.WHITE); // todo broken
         stage.draw();
     }

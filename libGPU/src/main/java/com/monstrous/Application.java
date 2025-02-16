@@ -13,6 +13,9 @@ import static com.monstrous.wgpuUtils.WgpuJava.createIntegerArrayPointer;
 public class Application {
     public ApplicationConfiguration configuration;
     private final ApplicationListener listener;
+    private ApplicationListener nextListener;
+    private boolean returnToPreviousListener;
+    private boolean mustExit = false;
     private WGPU wgpu;
     public Pointer depthTextureView;
     public Pointer depthTexture;
@@ -41,50 +44,64 @@ public class Application {
         winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());
 
-        listener.create();
-        resize(config.width, config.height);
+        while(listener != null) {
+
+            System.out.println("Creating application listener");
+            listener.create();
+            resize(config.width, config.height);
 
 
-        // Run the rendering loop until the user has attempted to close
-        // the window or has pressed the ESCAPE key.
-        while (!winApp.getShouldClose()) {
+            // Run the rendering loop until the user has attempted to close
+            // the window or has pressed the ESCAPE key.
+            while (!mustExit && !winApp.getShouldClose()) {
 
-            // skip rendering if window is minimized to size zero
-            // note: also means render() is not called
-            if(!isMinimized) {
-                targetView = getNextSurfaceTextureView();
-                if (targetView.address() == 0) {
-                    System.out.println("*** Invalid target view");
-                    return;
+                // skip rendering if window is minimized to size zero
+                // note: also means render() is not called
+                if (!isMinimized) {
+                    targetView = getNextSurfaceTextureView();
+                    if (targetView.address() == 0) {
+                        System.out.println("*** Invalid target view");
+                        return;
+                    }
+
+                    Pointer encoder = prepareEncoder();
+                    RenderPassBuilder.setCommandEncoder(encoder);
+
+                    LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
+
+                    listener.render();
+
+                    finishEncoder(encoder);
+
+                    // At the end of the frame
+                    wgpu.TextureViewRelease(targetView);
+                    wgpu.SurfacePresent(LibGPU.surface);
                 }
 
-                Pointer encoder = prepareEncoder();
-                RenderPassBuilder.setCommandEncoder(encoder);
+                wgpu.DeviceTick(LibGPU.device);
 
-                LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
-
-                listener.render();
-
-                finishEncoder(encoder);
-
-                // At the end of the frame
-                wgpu.TextureViewRelease(targetView);
-                wgpu.SurfacePresent(LibGPU.surface);
+                // Poll for window events. The key callback above will only be
+                // invoked during this call.
+                winApp.pollEvents();
             }
 
-            wgpu.DeviceTick(LibGPU.device);
-
-            // Poll for window events. The key callback above will only be
-            // invoked during this call.
-            winApp.pollEvents();
+            System.out.println("Application exit");
+            listener.pause();
+            listener.dispose();
+            ApplicationListener after = returnToPreviousListener ? listener : null;
+            listener = nextListener;
+            nextListener = after;
+            mustExit = false;
         }
-
-        System.out.println("Application exit");
-        listener.pause();
-        listener.dispose();
         System.out.println("Close Window");
         winApp.closeWindow();
         exitWebGPU();
+    }
+
+    // set next listener to create after exiting the current one.
+    public void setNextListener( ApplicationListener next, boolean returnAfter ){
+        this.nextListener = next;
+        this.returnToPreviousListener = returnAfter;
     }
 
     public void resize(int width, int height){
@@ -120,7 +137,10 @@ public class Application {
     }
 
     public void exit(){
-        winApp.setShouldClose(true);
+        if(nextListener != null)
+            mustExit = true;
+        else
+            winApp.setShouldClose(true);
     }
 
 

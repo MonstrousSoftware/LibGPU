@@ -25,6 +25,10 @@ public class TestShapeRenderer extends ApplicationAdapter {
     }
 
     public void render(  ){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
+            LibGPU.app.exit();
+            return;
+        }
 
 
         ScreenUtils.clear(Color.BLACK);

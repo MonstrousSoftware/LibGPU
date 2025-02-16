@@ -14,11 +14,10 @@ import com.monstrous.utils.ScreenUtils;
 // But adding one extra uniform is not so trivial.
 
 
-public class TestFontSDF extends ScreenAdapter {
+public class TestFontSDF extends ApplicationAdapter {
 
     private final float[] SCALES = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
-    private Game game;
     private SpriteBatch batch;
     private Texture texture;
     private BitmapFont font;
@@ -26,11 +25,8 @@ public class TestFontSDF extends ScreenAdapter {
     private long startTime;
     private int frames;
 
-    public TestFontSDF(Game game) {
-        this.game = game;
-    }
-
-    public void show() {
+    @Override
+    public void create() {
         startTime = System.nanoTime();
         frames = 0;
 
@@ -42,9 +38,10 @@ public class TestFontSDF extends ScreenAdapter {
         batch = new SpriteBatch(8192);
     }
 
-    public void render( float deltaTime  ){
+    @Override
+    public void render(   ){
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
-            game.setScreen( new TestMenu(game));
+            LibGPU.app.exit();
             return;
         }
 
@@ -78,6 +75,7 @@ public class TestFontSDF extends ScreenAdapter {
 
     }
 
+    @Override
     public void dispose(){
         // cleanup
         font.dispose();

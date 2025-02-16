@@ -29,6 +29,7 @@ public class TestPostProcessing extends ApplicationAdapter {
     private SpriteBatch batch;
     private ShaderProgram filter;
 
+    @Override
     public void create() {
         startTime = System.nanoTime();
         frames = 0;
@@ -76,6 +77,7 @@ public class TestPostProcessing extends ApplicationAdapter {
         modelMatrix.idt().mul(R1).mul(T).mul(RT);
     }
 
+    @Override
     public void render(){
         currentTime += LibGPU.graphics.getDeltaTime();
 
@@ -113,6 +115,7 @@ public class TestPostProcessing extends ApplicationAdapter {
 
     }
 
+    @Override
     public void dispose(){
         // cleanup
         model.dispose();

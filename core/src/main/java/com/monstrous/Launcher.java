@@ -18,7 +18,7 @@ public class Launcher {
         // don't use. will cause crash
         //config.enableGPUtiming = true;
 
-        new Application(new DemoMenu(), config);
+        new Application(new TestSimpleGame(), config);
 
     }
 }

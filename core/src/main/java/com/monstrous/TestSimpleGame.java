@@ -27,7 +27,7 @@ public class TestSimpleGame extends ApplicationAdapter {
     private ArrayList<Sprite> dropSprites;
     private float dropTimer = 0;
 
-
+    @Override
     public void create() {
 
         background = new Texture("textures/simplegame/background.png", true);
@@ -68,7 +68,12 @@ public class TestSimpleGame extends ApplicationAdapter {
         }
     }
 
+    @Override
     public void render(  ){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
+            LibGPU.app.exit();
+            return;
+        }
         float delta = LibGPU.graphics.getDeltaTime();
         input( delta );
 
@@ -110,6 +115,7 @@ public class TestSimpleGame extends ApplicationAdapter {
         batch.end();
     }
 
+    @Override
     public void dispose(){
         // cleanup
         background.dispose();
