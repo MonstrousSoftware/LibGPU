@@ -24,6 +24,9 @@ public class ShaderPrefix {
         if (environment != null && !environment.depthPass && environment.renderShadows) {
             sb.append("#define SHADOWS\n");
         }
+        if (environment != null && environment.cubeMap != null) {
+            sb.append("#define CUBEMAP\n");
+        }
         return sb.toString();
     }
 }

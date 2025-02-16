@@ -12,7 +12,7 @@ import com.monstrous.utils.ScreenUtils;
 
 public class TestMenu extends ApplicationAdapter {
 
-    private static final String[] testNames = { "SpriteBatch", "FontSDF", "Shadow", "Post-Processing", "ShapeRenderer", "Simple Game"};
+    private static final String[] testNames = { "SpriteBatch", "FontSDF", "Shadow", "Post-Processing", "ShapeRenderer", "Simple Game", "Cube Map"};
 
     private Stage stage;
 
@@ -67,6 +67,8 @@ public class TestMenu extends ApplicationAdapter {
             listener = new TestShapeRenderer();
         else if(name.contentEquals("Simple Game"))
             listener = new TestSimpleGame();
+        else if(name.contentEquals("Cube Map"))
+            listener = new TestCubeMap();
         else
             throw new RuntimeException("No class known for test: "+name);
 

@@ -28,6 +28,7 @@ public class TestPostProcessing extends ApplicationAdapter {
     private Texture colorMap;
     private SpriteBatch batch;
     private ShaderProgram filter;
+    private BitmapFont font;
 
     @Override
     public void create() {
@@ -55,7 +56,8 @@ public class TestPostProcessing extends ApplicationAdapter {
         camera.update();
 
         environment = new Environment();
-        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+        environment.add( new DirectionalLight( new Color(Color.WHITE), new Vector3(0,-1,0)));
+        environment.ambientLightLevel = 0.2f;
 
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
@@ -68,6 +70,8 @@ public class TestPostProcessing extends ApplicationAdapter {
 
         // post-processing shader
         filter = new ShaderProgram("shaders/sprite-greyscale.wgsl");
+
+        font = new BitmapFont();
     }
 
     private void updateModelMatrix(Matrix4 modelMatrix, float currentTime){
@@ -79,6 +83,9 @@ public class TestPostProcessing extends ApplicationAdapter {
 
     @Override
     public void render(){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
+            LibGPU.app.exit();
+        }
         currentTime += LibGPU.graphics.getDeltaTime();
 
         updateModelMatrix(modelMatrix, currentTime);
@@ -100,6 +107,11 @@ public class TestPostProcessing extends ApplicationAdapter {
 
         batch.setShader(filter);    // use the post-processing shader
         batch.draw(colorMap,W/2+10, 10, W/2-20, H-20);
+
+        batch.setShader(null);
+
+        font.draw(batch, "Original", 20, 30);
+        font.draw(batch, "via Post-processing shader", W/2 + 20, 30);
         batch.end();
 
 
@@ -121,6 +133,7 @@ public class TestPostProcessing extends ApplicationAdapter {
         model.dispose();
         model2.dispose();
         modelBatch.dispose();
+        font.dispose();
     }
 
     @Override

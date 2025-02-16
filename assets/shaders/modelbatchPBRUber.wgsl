@@ -2,6 +2,7 @@
 // Shader source can be tuned by #defines of the following:
 // NORMAL_MAP
 // SHADOWS
+// CUBEMAP
 
 
 const MAX_DIR_LIGHTS : i32 = 5;
@@ -54,13 +55,17 @@ struct ModelUniforms {
 // Group 3 - Shadows
 
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
+#ifdef CUBEMAP
+    @group(0) @binding(1) var cubeMap: texture_cube<f32>;
+    @group(0) @binding(2) var cubeMapSampler: sampler;
+#endif
 
 @group(1) @binding(0) var<uniform> material: MaterialUniforms;
 @group(1) @binding(1) var albedoTexture: texture_2d<f32>;
 @group(1) @binding(2) var textureSampler: sampler;
 @group(1) @binding(3) var emissiveTexture: texture_2d<f32>;
 #ifdef NORMAL_MAP
-@group(1) @binding(4) var normalTexture: texture_2d<f32>;
+    @group(1) @binding(4) var normalTexture: texture_2d<f32>;
 #endif
 @group(1) @binding(5) var metallicRoughnessTexture: texture_2d<f32>;
 
@@ -72,10 +77,7 @@ struct ModelUniforms {
 //@group(3) @binding(1) var shadowSampler: sampler_comparison;
 //#endif
 
-//#ifdef CUBEMAP
-@group(3) @binding(0) var cubeMap: texture_cube<f32>;
-@group(3) @binding(1) var cubeMapSampler: sampler;
-//#endif
+
 
 
 
@@ -292,10 +294,12 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = uFrame.pointLights[0].color.rgb;
     //color = baseColor;
     //color = normalize(in.normal);
+#ifdef CUBEMAP
 
     let rdir:vec3f = reflect(V, N)*vec3f(1, -1, -1);
 
     color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
+#endif
 
 
     return vec4f(color, 1.0);

@@ -146,6 +146,9 @@ public class TestCubeMap extends ApplicationAdapter {
 
 
     public void render(){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){    // to force shaders to be recompiled
+            LibGPU.app.exit();
+        }
         if(LibGPU.input.isKeyPressed(Input.Keys.L)){    // to force shaders to be recompiled
             modelBatch.invalidatePipelines();
         }

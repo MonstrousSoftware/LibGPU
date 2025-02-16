@@ -38,7 +38,6 @@ public class Material implements Disposable {
         else
             this.diffuseTexture = new Texture(materialData.diffuseMapFilePath, true);
 
-
         if( materialData.normalMapFilePath != null) {
             this.normalTexture = new Texture(materialData.normalMapFilePath, true);
             hasNormalMap = true;
@@ -99,10 +98,12 @@ public class Material implements Disposable {
         diffuseTexture.dispose();
         if(normalTexture != null)
             normalTexture.dispose();
-        if(materialBindGroup != null) {
+        //if(materialBindGroup != null) {
+            System.out.println("Release mat bind group "+materialBindGroup);
             webGPU.BindGroupRelease(materialBindGroup);
+            System.out.println("Released mat bind group "+materialBindGroup);       // todo crash in testpostprocessing
             materialBindGroup = null;
-        }
+        //}
 
         // cannot be released as it is shared by all materials
         //wgpu.BindGroupLayoutRelease(materialBindGroupLayout);
@@ -140,12 +141,15 @@ public class Material implements Disposable {
 
         // create a bind group
         materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getHandle());   // bind group for textures and uniforms
+        System.out.println("Create mat bind group "+materialBindGroup);
     }
 
     // bind material to the render pass
     public void bindGroup(RenderPass renderPass, int groupId ){
         renderPass.setBindGroup(groupId, materialBindGroup, 0, null);
     }
+
+
 
     public static Pointer getBindGroupLayout(){
         // make a bind group layout (shared by all materials)
@@ -233,8 +237,13 @@ public class Material implements Disposable {
 
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(6);
-        bindGroupDesc.setEntries(uniformBinding, diffuse.getBinding(1), diffuse.getSamplerBinding(2), material.emissiveTexture.getBinding(3), material.normalTexture.getBinding(4),
-                    material.metallicRoughnessTexture.getBinding(5));
+        bindGroupDesc.setEntries(
+                uniformBinding,
+                diffuse.getBinding(1),
+                diffuse.getSamplerBinding(2),
+                material.emissiveTexture.getBinding(3),
+                material.normalTexture.getBinding(4),
+                material.metallicRoughnessTexture.getBinding(5));
 
         return webGPU.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }

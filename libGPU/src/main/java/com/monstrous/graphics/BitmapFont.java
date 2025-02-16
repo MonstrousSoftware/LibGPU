@@ -126,7 +126,7 @@ public class BitmapFont implements Disposable {
 
         String[] lines = fileData.split("\n");
 
-        System.out.println("Fnt lines: "+lines.length);
+        //System.out.println("Fnt lines: "+lines.length);
         for(String line : lines ){
             String trimmed = line.trim();
 

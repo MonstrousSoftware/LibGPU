@@ -43,8 +43,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     var color = in.color * textureSample(texture, textureSampler, in.uv);
     let grey:f32 = (color.r + color.g + color.b )/3.0;
     var col = vec3f(grey, grey, grey,);
+    col *= 0.5 + 0.5 * sin(in.uv.g * 800.0)*vec3f(0,1,0);
 
-        // vignette effect
+    // vignette effect
     let dist = in.uv * (1.0 - in.uv.yx);
     let vigExtent = 45.0;
     var vig = dist.x*dist.y * vigExtent; // multiply with sth for intensity

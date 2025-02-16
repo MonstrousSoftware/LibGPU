@@ -197,6 +197,7 @@ public class Application {
         WGPUSupportedLimits supportedLimits = LibGPU.supportedLimits;
         webGPU.AdapterGetLimits(adapter, supportedLimits);
         System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
+        System.out.println("adapter maxBindGroups " + supportedLimits.getLimits().getMaxBindGroups());
 
         System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
         System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
