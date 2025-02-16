@@ -119,4 +119,6 @@ public interface WGPU { // A representation of the C interface in Java
     Pointer CreateQuerySet(Pointer device, WGPUQuerySetDescriptor queryDesc);
 
     void CommandEncoderResolveQuerySet(Pointer commandEncoder, Pointer querySet, int firstQuery, int queryCount, Pointer destination, long destinationOffset);
+
+    int SurfaceGetCapabilities(Pointer surface, Pointer adapter, WGPUSurfaceCapabilities caps);
 }
