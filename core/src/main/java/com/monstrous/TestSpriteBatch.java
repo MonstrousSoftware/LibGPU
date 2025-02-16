@@ -8,7 +8,6 @@ import com.monstrous.wgpu.WGPUVertexFormat;
 
 public class TestSpriteBatch extends ApplicationAdapter {
 
-//    private Game game;
     private SpriteBatch batch;
     private Texture texture;
     private Texture texture2;
@@ -17,9 +16,6 @@ public class TestSpriteBatch extends ApplicationAdapter {
     private VertexAttributes vaNoTex;
     private VertexAttributes vaNoColor;
 
-//    public TestSpriteBatch(Game game) {
-//        this.game = game;
-//    }
 
     @Override
     public void create() {

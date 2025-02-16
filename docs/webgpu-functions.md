@@ -3,12 +3,12 @@
 The framework hides the details of WebGPU.  However, it is possible to call WebGPU functions directly if so desired.
 
 ## Functions
-The WebGPU functions are defined in the interface WGPU.java and are a direct Java counterpart of the functions from the C header file `webgpu.h`.
-For example: the C function `wgpuDeviceCreateBuffer()` is available as Java method `DeviceCreateBuffer` in the `WGPU` interface.
+The WebGPU functions are defined in the interface `WebGPU` and are a direct Java counterpart of the functions from the C header file `webgpu.h`.
+For example: the C function `wgpuDeviceCreateBuffer()` is available as Java method `DeviceCreateBuffer` in the `WebGPU` interface.
 Most but not all functions have been translated.
 
 ## Calling WebGPU functions
-The functions can be called via LibGPU.wgpu which provides an interface to the native WebGPU library.  There are two native implementations available. 
+The functions can be called via `LibGPU.webGPU` which provides an interface to the native WebGPU library.  There are two native implementations available. 
 - wgpu-native, exposing a native interface to the wgpu Rust library developed for Firefox.
 - Google’s Dawn, developed for Chrome.
 
@@ -21,7 +21,7 @@ This descriptor is a C-style `struct`.  So calling a WebGPU function generally g
 2.	Fill in the descriptor values
 3.	Call the WebGPU function with the descriptor as parameter.
 
-Here is an example in C to create a 16 byte GPU buffer:
+Here is an example in C++ to create a 16 byte GPU buffer:
 ```C
   // create a buffer descriptor
   WGPUBufferDescriptor bufferDesc = {};
@@ -36,7 +36,7 @@ Here is an example in C to create a 16 byte GPU buffer:
 ```
 
 For WebGPU to be able to use the descriptor it must be placed in native memory. We cannot use a Java object for this, because the memory layout of a Java object is not defined.
-Therefore there are many descriptor types defined as special Java classes that can be placed in native memory use the `createDirect()` method and will access this memory via getters and setters.
+Therefore, there are many descriptor types defined as special Java classes that can be placed in native memory use the `createDirect()` method and will access this memory via getters and setters.
 
 ```java
         // create a buffer descriptor
@@ -47,7 +47,7 @@ Therefore there are many descriptor types defined as special Java classes that c
         bufferDesc.setSize( 16 );
         bufferDesc.setMappedAtCreation(0L);
         // create a buffer
-        Pointer handle = LibGPU.wgpu.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        Pointer handle = LibGPU.webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
 ```
 
 
@@ -66,16 +66,24 @@ For example you could use `WgpuJava.createFloatArrayPointer` or use a ByteBuffer
       float[] floats = new float[256];
       floatData = WgpuJava.createFloatArrayPointer(floats); 
       // write data to GPU buffer 
-      LibGPU.wgpu.QueueWriteBuffer(LibGPU.queue, buffer, 0, floatData, 0);
+      LibGPU.webGPU.QueueWriteBuffer(LibGPU.queue, buffer, 0, floatData, 0);
 ```
 
 ## Convenience Classes
 There are also a number of convenience classes which encapsulate a WebGPU concept in a more user friendly Java class. For example:
--	UniformBuffer
--	Pipeline
+- UniformBuffer
+- Pipeline
+- PipelineSpecification
+- Pipelines
+- RenderPass
+- RenderPassBuilder
 
 
-Note: the WebGPU specification is still under active development and the WebGPU API is not yet fully stable. For example you may encounter versions of the webgpu header file with slight differences.
+## WebGPU maturity
+
+Note: the WebGPU specification is still under active development and the WebGPU API is not yet fully stable. 
+For example, you may encounter versions of the webgpu header file with slight differences.
+Or functions that differ between the wgpu (Firefox and the dawn (Chrome) library.
 
 References:
 

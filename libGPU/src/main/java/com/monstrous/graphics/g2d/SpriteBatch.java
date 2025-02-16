@@ -507,6 +507,7 @@ public class SpriteBatch implements Disposable {
         webGPU.BufferRelease(vertexBuffer);
         webGPU.BufferRelease(indexBuffer);
         webGPU.BindGroupLayoutRelease(bindGroupLayout);
+        webGPU.PipelineLayoutRelease(pipelineLayout);
         uniformBuffer.dispose();
     }
 }

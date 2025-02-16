@@ -123,7 +123,7 @@ public class Pipeline implements Disposable {
 
     @Override
     public void dispose() {
-        LibGPU.webGPU.PipelineLayoutRelease(pipelineLayout);
+        //LibGPU.webGPU.PipelineLayoutRelease(pipelineLayout);
         LibGPU.webGPU.RenderPipelineRelease(pipeline);
     }
 

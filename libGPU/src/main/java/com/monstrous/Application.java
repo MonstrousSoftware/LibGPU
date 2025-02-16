@@ -88,9 +88,10 @@ public class Application {
             System.out.println("Application exit");
             listener.pause();
             listener.dispose();
-            ApplicationListener after = returnToPreviousListener ? listener : null;
+            ApplicationListener afterNext = returnToPreviousListener ? listener : null;
             listener = nextListener;
-            nextListener = after;
+            nextListener = afterNext;
+            returnToPreviousListener = false;
             mustExit = false;
         }
         System.out.println("Close Window");

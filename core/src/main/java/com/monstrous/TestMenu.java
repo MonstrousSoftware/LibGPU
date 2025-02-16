@@ -8,6 +8,7 @@ import com.monstrous.scene2d.Stage;
 import com.monstrous.scene2d.TextButton;
 import com.monstrous.utils.ScreenUtils;
 
+// This implements a selection menu for different test applications
 
 public class TestMenu extends ApplicationAdapter {
 
