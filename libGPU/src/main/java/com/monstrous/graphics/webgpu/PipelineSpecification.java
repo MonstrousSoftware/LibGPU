@@ -117,7 +117,7 @@ public class PipelineSpecification implements Disposable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(vertexAttributes.getUsageFlags(), shaderSourceFile, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples);
+        return Objects.hash(vertexAttributes.getUsageFlags(), shaderSourceFile, shader, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples);
     }
 
     @Override

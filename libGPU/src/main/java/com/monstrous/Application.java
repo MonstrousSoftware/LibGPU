@@ -15,7 +15,7 @@ public class Application {
     private final ApplicationListener listener;
     private ApplicationListener nextListener;
     private boolean returnToPreviousListener;
-    private boolean mustExit = false;
+    private boolean mustExitRenderLoop = false;
     private WebGPU webGPU;
     public Pointer depthTextureView;
     public Pointer depthTexture;
@@ -52,8 +52,8 @@ public class Application {
 
 
             // Run the rendering loop until the user has attempted to close
-            // the window or has pressed the ESCAPE key.
-            while (!mustExit && !winApp.getShouldClose()) {
+            // the window or the application has called Application.exit().
+            while (!mustExitRenderLoop && !winApp.getShouldClose()) {
 
                 // skip rendering if window is minimized to size zero
                 // note: also means render() is not called
@@ -88,11 +88,13 @@ public class Application {
             System.out.println("Application exit");
             listener.pause();
             listener.dispose();
-            ApplicationListener afterNext = returnToPreviousListener ? listener : null;
-            listener = nextListener;
-            nextListener = afterNext;
+
+            // Application chaining
+            ApplicationListener currentListener = listener;
+            listener = nextListener;    // switch to next listener (null is there is none)
+            nextListener = returnToPreviousListener ? currentListener : null;   // return to current listener afterwards
             returnToPreviousListener = false;
-            mustExit = false;
+            mustExitRenderLoop = false;
         }
         System.out.println("Close Window");
         winApp.closeWindow();
@@ -139,7 +141,7 @@ public class Application {
 
     public void exit(){
         if(nextListener != null)
-            mustExit = true;
+            mustExitRenderLoop = true;
         else
             winApp.setShouldClose(true);
     }
