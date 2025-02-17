@@ -12,7 +12,7 @@ import static com.monstrous.wgpuUtils.WgpuJava.createIntegerArrayPointer;
 
 public class Application {
     public ApplicationConfiguration configuration;
-    private final ApplicationListener listener;
+    private ApplicationListener listener;
     private ApplicationListener nextListener;
     private boolean returnToPreviousListener;
     private boolean mustExitRenderLoop = false;
@@ -31,10 +31,10 @@ public class Application {
         this(listener, new ApplicationConfiguration());
     }
 
-    public Application(ApplicationListener listener, ApplicationConfiguration config) {
+    public Application(ApplicationListener applicationListener, ApplicationConfiguration config) {
         LibGPU.app = this;
+        this.listener = applicationListener;
         this.configuration = config;
-        this.listener = listener;
 
         LibGPU.input = new Input();
         LibGPU.graphics = new Graphics();

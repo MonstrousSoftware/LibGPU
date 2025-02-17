@@ -32,7 +32,7 @@ public class TestViewport extends ApplicationAdapter {
         getViewports();
         index = 0;
         viewport = viewports[index];
-        resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
+        //resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
 
         font = new BitmapFont();
     }
@@ -59,7 +59,7 @@ public class TestViewport extends ApplicationAdapter {
 
         ScreenUtils.clear(Color.BLACK);
         batch.begin();
-        batch.draw(background, 0,0); //, viewport.getWorldWidth(), viewport.getWorldHeight());
+        batch.draw(background, 0,0);
         font.draw(batch, names[index], 50, 90);
         font.draw(batch, "Press SPACE to switch viewport", 50, 30);
         batch.end();
