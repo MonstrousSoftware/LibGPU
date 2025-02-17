@@ -34,6 +34,13 @@ public class Texture {
         create( "texture", mipMapping, renderAttachment, format, 1, numSamples);
     }
 
+    public Texture(int width, int height, int numLayers ){
+        this.width = width;
+        this.height = height;
+        create( "3d texture map", false, false,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1);
+    }
+
+
 
     public Texture(String fileName) {
         this(fileName, true);
@@ -106,6 +113,8 @@ public class Texture {
             }
         }
     }
+
+
 
     public int getWidth() {
         return width;

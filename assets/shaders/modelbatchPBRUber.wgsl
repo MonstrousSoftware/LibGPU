@@ -50,16 +50,21 @@ struct ModelUniforms {
 };
 
 // Group 0 - Frame
-// Group 1 = Material
+// Group 1 - Material
 // Group 2 - Instance
-// Group 3 - Shadows
 
+// Frame
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
+#ifdef SHADOWS
+    @group(0) @binding(1) var shadowMap: texture_depth_2d;
+    @group(0) @binding(2) var shadowSampler: sampler_comparison;
+#endif
 #ifdef CUBEMAP
-    @group(0) @binding(1) var cubeMap: texture_cube<f32>;
-    @group(0) @binding(2) var cubeMapSampler: sampler;
+    @group(0) @binding(3) var cubeMap: texture_cube<f32>;
+    @group(0) @binding(4) var cubeMapSampler: sampler;
 #endif
 
+// Material
 @group(1) @binding(0) var<uniform> material: MaterialUniforms;
 @group(1) @binding(1) var albedoTexture: texture_2d<f32>;
 @group(1) @binding(2) var textureSampler: sampler;
@@ -69,15 +74,8 @@ struct ModelUniforms {
 #endif
 @group(1) @binding(5) var metallicRoughnessTexture: texture_2d<f32>;
 
-
+// Instance
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
-
-//#ifdef SHADOWS
-//@group(3) @binding(0) var shadowMap: texture_depth_2d;
-//@group(3) @binding(1) var shadowSampler: sampler_comparison;
-//#endif
-
-
 
 
 
