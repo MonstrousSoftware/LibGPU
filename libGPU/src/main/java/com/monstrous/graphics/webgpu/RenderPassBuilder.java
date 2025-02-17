@@ -91,20 +91,16 @@ public class RenderPassBuilder {
             colorFormat = outputTexture.getFormat();
             sampleCount = 1;
         }
+        depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
+        depthStencilAttachment.setDepthClearValue(1.0f);
+        depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
+        depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
+        depthStencilAttachment.setDepthReadOnly(0L);
+        depthStencilAttachment.setStencilClearValue(0);
+        depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
+        depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
+        depthStencilAttachment.setStencilReadOnly(1L);
 
-
-
-        //if(depthStencilAttachment == null) {
-            depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
-            depthStencilAttachment.setDepthClearValue(1.0f);
-            depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
-            depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
-            depthStencilAttachment.setDepthReadOnly(0L);
-            depthStencilAttachment.setStencilClearValue(0);
-            depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
-            depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
-            depthStencilAttachment.setStencilReadOnly(1L);
-        //}
         if(outDepthTexture == null) {
             depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
             depthStencilAttachment.setView(LibGPU.app.depthTextureView);
@@ -114,13 +110,12 @@ public class RenderPassBuilder {
             depthStencilAttachment.setView(outputDepthTexture.getTextureView());
         }
 
-        //if(renderPassDescriptor == null) {
-            renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
-            renderPassDescriptor.setNextInChain();
+        renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
+        renderPassDescriptor.setNextInChain();
 
-            renderPassDescriptor.setLabel("Render Pass");
-            renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-        //}
+        renderPassDescriptor.setLabel("Render Pass");
+        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
+
         renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
         renderPassDescriptor.setColorAttachmentCount(1);
         renderPassDescriptor.setColorAttachments(renderPassColorAttachment);
@@ -129,7 +124,9 @@ public class RenderPassBuilder {
         LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
         Pointer renderPassPtr = webGPU.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-        RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat, sampleCount);
+        RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat, sampleCount,
+                outputTexture == null ? LibGPU.graphics.getWidth() : outputTexture.getWidth(),
+                outputTexture == null ? LibGPU.graphics.getHeight() : outputTexture.getHeight());
         if(viewport != null)
             viewport.apply(pass);
         return pass;

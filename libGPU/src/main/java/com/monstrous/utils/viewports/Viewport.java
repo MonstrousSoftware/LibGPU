@@ -28,10 +28,13 @@ public abstract class Viewport {
     }
 
     public void apply(RenderPass pass){
+        // webgpu does not allow out of bound viewports
+        // viewport has to be contained in the render target dimensions
+        //
         pass.setViewport(screenX, screenY, screenWidth, screenHeight, 0, 1);
     }
 
-    public void update(float screenWidth, float screenHeight, boolean centerCamera){
+    public void update(int screenWidth, int screenHeight, boolean centerCamera){
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         apply(centerCamera);
@@ -51,6 +54,12 @@ public abstract class Viewport {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
     }
+
+    public void setWorldSize( float worldWidth, float worldHeight){
+        this.worldWidth = worldWidth;
+        this.worldHeight = worldHeight;
+    }
+
     public float getWorldWidth() {
         return worldWidth;
     }

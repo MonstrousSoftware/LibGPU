@@ -108,7 +108,6 @@ public class Application {
     }
 
     public void resize(int width, int height){
-        System.out.println("Application resize");
         LibGPU.graphics.setSize(width, height);
 
         terminateDepthBuffer();
@@ -122,10 +121,11 @@ public class Application {
             surfaceConfigured = true;
             initDepthBuffer(width, height);
 
-            if(isMinimized)
+            if(isMinimized) {
                 listener.resume();  // resume after restore from minimize
-            isMinimized = false;
-            listener.resize(width, height); // don't call listener with resize(0,0)
+                isMinimized = false;
+            }
+            listener.resize(width, height);
 
             if(configuration.numSamples > 1) {
                 if(multiSamplingTexture != null)
@@ -133,9 +133,10 @@ public class Application {
                 multiSamplingTexture = new Texture(width, height, false, true, LibGPU.surfaceFormat, configuration.numSamples);
             }
         } else {
-            if(!isMinimized)
+            if(!isMinimized) {
                 listener.pause();   // pause on minimize
-            isMinimized = true;
+                isMinimized = true;
+            }
         }
     }
 

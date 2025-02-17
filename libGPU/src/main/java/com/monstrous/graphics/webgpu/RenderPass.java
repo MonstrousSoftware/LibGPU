@@ -11,14 +11,17 @@ public class RenderPass {
     private final Pointer renderPass;                   // handle used by WebGPU
     private final WGPUTextureFormat textureFormat;
     private final WGPUTextureFormat depthFormat;
+    public int targetWidth, targetHeight;
     private int sampleCount;
 
     // don't call this directly, use RenderPassBuilder.create()
-    RenderPass(Pointer renderPass, WGPUTextureFormat textureFormat, WGPUTextureFormat depthFormat, int sampleCount) {
+    RenderPass(Pointer renderPass, WGPUTextureFormat textureFormat, WGPUTextureFormat depthFormat, int sampleCount, int targetWidth, int targetHeight) {
         this.renderPass = renderPass;
         this.textureFormat = textureFormat;
         this.depthFormat = depthFormat;
         this.sampleCount = sampleCount;
+        this.targetWidth = targetWidth;
+        this.targetHeight = targetHeight;
     }
 
     public void end() {
