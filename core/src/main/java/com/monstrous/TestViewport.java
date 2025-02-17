@@ -1,8 +1,6 @@
 package com.monstrous;
 
-import com.monstrous.graphics.BitmapFont;
-import com.monstrous.graphics.Color;
-import com.monstrous.graphics.Texture;
+import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.ScreenUtils;
 import com.monstrous.utils.viewports.FitViewport;
@@ -21,6 +19,24 @@ public class TestViewport extends ApplicationAdapter {
     private int index;
     private BitmapFont font;
     private boolean keyUp = true;
+
+    // demonstrate a derived viewport that shows the content in a window at the centre of the screen
+    public static class WindowViewport extends Viewport {
+        public WindowViewport(float worldWidth, float worldHeight ) {
+            this(worldWidth, worldHeight, new OrthographicCamera());
+        }
+
+        public WindowViewport(float worldWidth, float worldHeight, Camera camera ) {
+            setWorldSize(worldWidth, worldHeight);
+            setCamera( camera );
+        }
+
+        @Override
+        public void update (int screenWidth, int screenHeight, boolean centerCamera) {
+            setScreenBounds(screenWidth/4, screenHeight/4, screenWidth/2, screenHeight/2);
+            apply(centerCamera);
+        }
+    }
 
     @Override
     public void create() {
@@ -79,13 +95,14 @@ public class TestViewport extends ApplicationAdapter {
     }
 
     private void getViewports(){
-        viewports = new Viewport[3];
+        viewports = new Viewport[4];
 
         viewports[0] = new StretchViewport(800, 500);
         viewports[1] = new ScreenViewport();
         viewports[2] = new FitViewport(800,500);
+        viewports[3] = new WindowViewport(800,500);
 
-        names = new String[]{ "StretchViewport", "ScreenViewport", "FitViewport"};
+        names = new String[]{ "StretchViewport", "ScreenViewport", "FitViewport", "WindowViewport"};
     }
 
 
