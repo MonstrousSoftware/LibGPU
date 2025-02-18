@@ -31,7 +31,7 @@ public class TestDuckField extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/Ducky.obj");
+        model = new Model("models/Ducky/ducky.gltf");
         modelInstances = new ArrayList<>();
 
         transforms = makeTransforms();
@@ -46,6 +46,7 @@ public class TestDuckField extends ApplicationAdapter {
 
         environment = new Environment();
         environment.add( new DirectionalLight( Color.WHITE, new Vector3(0,-1,0)));
+        environment.ambientLightLevel = 0.4f;
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
@@ -54,11 +55,11 @@ public class TestDuckField extends ApplicationAdapter {
 
     private ArrayList<Matrix4> makeTransforms(){
         ArrayList<Matrix4> transforms = new ArrayList<>();
-        float x = -35;
+        float x = -15;
 
-        for(int i = 0; i < 35; i++, x += 2f) {
-            float z = -35;
-            for (int j = 0; j < 35; j++, z += 2f) {
+        for(int i = 0; i < 15; i++, x += 2f) {
+            float z = -15;
+            for (int j = 0; j < 15; j++, z += 2f) {
                 transforms.add(new Matrix4().translate(x, 0, z).scale(new Vector3( 1f,1f+.3f*(float)Math.sin(x-z), 1f)).rotate(up, 30f * x + 20f * z));
             }
         }
@@ -89,7 +90,7 @@ public class TestDuckField extends ApplicationAdapter {
 
         // At the end of the frame
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch : fps: " + frames  );
+            System.out.println("SpriteBatch : fps: " + frames +" instances: "+ transforms.size() );
             frames = 0;
             startTime = System.nanoTime();
         }

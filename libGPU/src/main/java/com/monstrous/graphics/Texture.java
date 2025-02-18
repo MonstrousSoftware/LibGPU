@@ -19,6 +19,7 @@ public class Texture {
     private Pointer textureView;
     private Pointer sampler;
     private WGPUTextureFormat format;
+    private String label;
 
     public Texture() {
         this(256, 256);
@@ -172,6 +173,8 @@ public class Texture {
         if (LibGPU.device == null || LibGPU.queue == null)
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
+        this.label = label;
+
         mipLevelCount = 1;
         if (mipMapping)
             mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));      // todo test for non-square, non POT etc.
@@ -196,7 +199,7 @@ public class Texture {
         textureDesc.setViewFormats(WgpuJava.createNullPointer());
         texture = LibGPU.webGPU.DeviceCreateTexture(LibGPU.device, textureDesc);
 
-        System.out.println("dimensions: "+textureDesc.getSize().getDepthOrArrayLayers());
+        //System.out.println("dimensions: "+textureDesc.getSize().getDepthOrArrayLayers());
 
 
         // Create the view of the  texture manipulated by the rasterizer
@@ -384,6 +387,7 @@ public class Texture {
             //System.out.println("free: "+image);
             LibGPU.webGPU.gdx2d_free(image);
         }
+        System.out.println("Destroy texture "+label);
         LibGPU.webGPU.TextureViewRelease(textureView);
         LibGPU.webGPU.TextureDestroy(texture);
         LibGPU.webGPU.TextureRelease(texture);

@@ -21,7 +21,7 @@ public class Pipeline implements Disposable {
         // if the specification does not already have a shader, create one from the source file, customized to the vertex attributes.
         if(spec.shader == null){
             String prefix = ShaderPrefix.buildPrefix(spec.vertexAttributes, spec.environment);
-            System.out.println("Shader Source ["+spec.shaderSourceFile+"] Prefix: ["+prefix+"]");
+            //System.out.println("Shader Source ["+spec.shaderSourceFile+"] Prefix: ["+prefix+"]");
             spec.shader = new ShaderProgram(spec.shaderSourceFile, prefix);
             spec.ownsShader = true;
         }

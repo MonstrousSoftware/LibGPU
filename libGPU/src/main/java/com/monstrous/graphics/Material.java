@@ -95,20 +95,24 @@ public class Material implements Disposable {
 
     @Override
     public void dispose() {
-        diffuseTexture.dispose();
-        if(normalTexture != null)
-            normalTexture.dispose();
-        //if(materialBindGroup != null) {
-            System.out.println("Release mat bind group "+materialBindGroup);
-            webGPU.BindGroupRelease(materialBindGroup);
-            System.out.println("Released mat bind group "+materialBindGroup);       // todo crash in testpostprocessing
-            materialBindGroup = null;
-        //}
+        disposeUnlessStatic(diffuseTexture);
+        disposeUnlessStatic(normalTexture);
+        disposeUnlessStatic(emissiveTexture);
+        disposeUnlessStatic(metallicRoughnessTexture);
+
+        webGPU.BindGroupRelease(materialBindGroup);
+        materialBindGroup = null;
 
         // cannot be released as it is shared by all materials
         //wgpu.BindGroupLayoutRelease(materialBindGroupLayout);
 
         materialUniformBuffer.dispose();
+    }
+
+    // avoid disposing shared static placeholder textures
+    private void disposeUnlessStatic(Texture texture){
+        if(texture != null && texture != whitePixel && texture != blackPixel)
+            texture.dispose();
     }
 
 
@@ -122,7 +126,7 @@ public class Material implements Disposable {
 
     private Texture getDefaultBlackTexture(){
         if(blackPixel == null){
-            blackPixel = new Texture(2,2);
+            blackPixel = new Texture(1,1);
             blackPixel.fill(Color.BLACK);
         }
         return blackPixel;
@@ -140,8 +144,9 @@ public class Material implements Disposable {
         writeMaterialUniforms(materialUniformBuffer);
 
         // create a bind group
+
         materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getHandle());   // bind group for textures and uniforms
-        System.out.println("Create mat bind group "+materialBindGroup);
+
     }
 
     // bind material to the render pass

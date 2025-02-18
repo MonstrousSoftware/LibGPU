@@ -48,34 +48,40 @@ public class TestSkyBox extends ApplicationAdapter {
 
         //model = new Model("models/stanfordDragon.gltf");
         model = new Model("models/Cube.gltf");
+//
+//        modelMatrix = new Matrix4();
+//        Matrix4 modelMatrix2 = new Matrix4();
+//        modelMatrix2.setToTranslation(5, 0, 0);
+//        ArrayList<Matrix4> matrices = new ArrayList<>();
+//        matrices.add(modelMatrix);
+//        matrices.add(modelMatrix2);
+//        modelInstance1 = new ModelInstance(model, matrices);
+//        instances.add(modelInstance1);
 
-        modelMatrix = new Matrix4();
-        Matrix4 modelMatrix2 = new Matrix4();
-        modelMatrix2.setToTranslation(5, 0, 0);
-        ArrayList<Matrix4> matrices = new ArrayList<>();
-        matrices.add(modelMatrix);
-        matrices.add(modelMatrix2);
-        modelInstance1 = new ModelInstance(model, matrices);
-        instances.add(modelInstance1);
+//        model2 = new Model("models/groundplane.gltf");
+//        modelInstance2 = new ModelInstance(model2, 0,0,0);
+//        //instances.add(modelInstance2);
 
-        model2 = new Model("models/groundplane.gltf");
-        modelInstance2 = new ModelInstance(model2, 0,0,0);
-        //instances.add(modelInstance2);
-
-        model3 = new Model("models/waterbottle/WaterBottle.gltf");
-        ModelInstance modelInstance3 = new ModelInstance(model3, 0,1,0);
-        instances.add(modelInstance3);
+//        model3 = new Model("models/waterbottle/WaterBottle.gltf");
+//        ModelInstance modelInstance3 = new ModelInstance(model3, 0,1,0);
+//        instances.add(modelInstance3);
 
 
 
         // the order of the layers is +X, -X, +Y, -Y, +Z, -Z
         String[] fileNames = {
-                "textures/leadenhall/pos-x.jpg",
-                "textures/leadenhall/neg-x.jpg",
-                "textures/leadenhall/pos-y.jpg",
-                "textures/leadenhall/neg-y.jpg",
-                "textures/leadenhall/pos-z.jpg",
-                "textures/leadenhall/neg-z.jpg",
+//                "textures/leadenhall/pos-x.jpg",
+//                "textures/leadenhall/neg-x.jpg",
+//                "textures/leadenhall/pos-y.jpg",
+//                "textures/leadenhall/neg-y.jpg",
+//                "textures/leadenhall/pos-z.jpg",
+//                "textures/leadenhall/neg-z.jpg",
+                "textures/daysky/environment_posx.jpg",
+                 "textures/daysky/environment_negx.jpg",
+                "textures/daysky/environment_posy.jpg",
+                "textures/daysky/environment_negy.jpg",
+                "textures/daysky/environment_posz.jpg",
+                "textures/daysky/environment_negz.jpg"
         };
 
         cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
@@ -152,7 +158,7 @@ public class TestSkyBox extends ApplicationAdapter {
         }
 
         currentTime += 0.2f*LibGPU.graphics.getDeltaTime();
-        updateModelMatrix(modelMatrix, currentTime);
+        //updateModelMatrix(modelMatrix, currentTime);
         camController.update();
 
 
