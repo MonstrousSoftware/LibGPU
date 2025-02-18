@@ -27,14 +27,14 @@ public class Pipeline implements Disposable {
         }
 
         //spec.shader = shader;
-        Pointer shaderModule = spec.shader.getShaderModule(); //spec.shader.getShaderModule();
-        WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes.getVertexBufferLayout();
+        Pointer shaderModule = spec.shader.getShaderModule();
+        WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes != null ? spec.vertexAttributes.getVertexBufferLayout() : null;
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
         pipelineDesc.setNextInChain();
         pipelineDesc.setLabel( spec.name );
 
-        pipelineDesc.getVertex().setBufferCount(1);
+        pipelineDesc.getVertex().setBufferCount(vertexBufferLayout != null ? 1 : 0);
         pipelineDesc.getVertex().setBuffers(vertexBufferLayout);
 
         pipelineDesc.getVertex().setModule(shaderModule);
@@ -77,7 +77,10 @@ public class Pipeline implements Disposable {
         WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
         setDefault(depthStencilState);
 
-        if(spec.hasDepth) {
+        if (spec.isSkyBox) {
+            depthStencilState.setDepthCompare(WGPUCompareFunction.LessEqual);// we are clearing to 1.0 and rendering at 1.0
+            depthStencilState.setDepthWriteEnabled(1L);
+        } else if(spec.hasDepth) {
             depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
             depthStencilState.setDepthWriteEnabled(1L);
         } else {
@@ -101,7 +104,7 @@ public class Pipeline implements Disposable {
         pipelineDesc.setLayout(pipelineLayout);
         pipeline = LibGPU.webGPU.DeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
         if(pipeline == null)
-            throw new RuntimeException("Pipeline createion failed");
+            throw new RuntimeException("Pipeline creation failed");
     }
 
     public boolean canRender(PipelineSpecification spec){    // perhaps we need more params

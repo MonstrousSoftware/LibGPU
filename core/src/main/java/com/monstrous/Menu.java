@@ -10,9 +10,9 @@ import com.monstrous.utils.ScreenUtils;
 
 // This implements a selection menu for different test applications
 
-public class TestMenu extends ApplicationAdapter {
+public class Menu extends ApplicationAdapter {
 
-    private static final String[] testNames = { "SpriteBatch", "FontSDF", "Shadow", "Post-Processing", "ShapeRenderer", "Simple Game", "Cube Map", "Viewport"};
+    private static final String[] testNames = { "SpriteBatch", "FontSDF", "Shadow", "Post-Processing", "ShapeRenderer", "Simple Game", "Cube Map", "Skybox", "Viewport"};
 
     private Stage stage;
 
@@ -69,6 +69,8 @@ public class TestMenu extends ApplicationAdapter {
             listener = new TestSimpleGame();
         else if(name.contentEquals("Cube Map"))
             listener = new TestCubeMap();
+        else if(name.contentEquals("Skybox"))
+            listener = new TestSkyBox();
         else if(name.contentEquals("Viewport"))
             listener = new TestViewport();
         else

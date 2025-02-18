@@ -84,4 +84,8 @@ public class RenderPass {
     public void draw(int numVertices, int numInstances, int firstVertex, int firstInstance){
         webGPU.RenderPassEncoderDraw(renderPass, numVertices, numInstances, firstVertex, firstInstance);
     }
+
+    public void draw(int numVertices){
+        draw(numVertices, 1, 0, 0);
+    }
 }

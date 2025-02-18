@@ -20,6 +20,7 @@ public class PipelineSpecification implements Disposable {
     public ShaderProgram shader;
     public boolean ownsShader;
     public boolean hasDepth;
+    public boolean isSkyBox;
     public int numSamples;
 
     public WGPUBlendFactor blendSrcColor;
@@ -43,6 +44,7 @@ public class PipelineSpecification implements Disposable {
         colorFormat = LibGPU.surfaceFormat;
         depthFormat = WGPUTextureFormat.Depth24Plus;       // todo get from adapter?
         numSamples = 1;
+        isSkyBox = false;
     }
 
     public PipelineSpecification(VertexAttributes vertexAttributes, String shaderSourceFile) {

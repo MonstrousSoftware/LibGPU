@@ -38,6 +38,7 @@ public class ModelBatch implements Disposable {
     private Pointer frameBindGroup;
     private Pointer instancingBindGroup;
     private Material prevMaterial;
+    private Camera camera;
 
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
@@ -98,6 +99,7 @@ public class ModelBatch implements Disposable {
     }
 
     public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture){
+        this.camera = camera;
         this.environment = environment;
 
         pipelineLayout = makePipelineLayout(frameBindGroupLayout, Material.getBindGroupLayout(), instancingBindGroupLayout);
@@ -141,6 +143,9 @@ public class ModelBatch implements Disposable {
 
         webGPU.BindGroupRelease(frameBindGroup);
         webGPU.BindGroupRelease(instancingBindGroup);
+
+        if(environment.skybox != null)
+            environment.skybox.render(camera, pass);
         //System.out.println("materials: "+materialUniformIndex+"\t\tpipe switches: "+numPipelineSwitches);
         pass.end();
         pass = null;

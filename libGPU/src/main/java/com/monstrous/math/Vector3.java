@@ -5,6 +5,7 @@ public class Vector3 {
     public float y;
     public float z;
 
+    public final static Vector3 Zero = new Vector3(0, 0, 0);
 
     public Vector3(){}
 

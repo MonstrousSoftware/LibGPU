@@ -9,17 +9,19 @@ public class ShaderPrefix {
 
     public static String buildPrefix(VertexAttributes vertexAttributes, Environment environment ){
         sb.setLength(0);
-        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TEXTURE_COORDINATE)){
-            sb.append("#define TEXTURE_COORDINATE\n");
-        }
-        if(vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR)){
-            sb.append("#define COLOR\n");
-        }
-        if(vertexAttributes.hasUsage(VertexAttribute.Usage.NORMAL)){
-            sb.append("#define NORMAL\n");
-        }
-        if(vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT)){   // this is taken as indication that a normal map is used
-            sb.append("#define NORMAL_MAP\n");
+        if(vertexAttributes != null) {
+            if (vertexAttributes.hasUsage(VertexAttribute.Usage.TEXTURE_COORDINATE)) {
+                sb.append("#define TEXTURE_COORDINATE\n");
+            }
+            if (vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR)) {
+                sb.append("#define COLOR\n");
+            }
+            if (vertexAttributes.hasUsage(VertexAttribute.Usage.NORMAL)) {
+                sb.append("#define NORMAL\n");
+            }
+            if (vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT)) {   // this is taken as indication that a normal map is used
+                sb.append("#define NORMAL_MAP\n");
+            }
         }
         if (environment != null && !environment.depthPass && environment.renderShadows) {
             sb.append("#define SHADOWS\n");

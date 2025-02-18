@@ -2,13 +2,15 @@ package com.monstrous.graphics.lights;
 
 import com.monstrous.graphics.Camera;
 import com.monstrous.graphics.Texture;
+import com.monstrous.graphics.g3d.SkyBox;
 
 import java.util.ArrayList;
 
 public class Environment {
     public ArrayList<Light> lights;
-    public float ambientLightLevel;       // 0 .. 1
+    public float ambientLightLevel;         // 0 .. 1
     public Texture cubeMap;                 // 6 layered texture
+    public SkyBox skybox;
 
     public boolean depthPass = false;
     public boolean renderShadows = false;
@@ -30,5 +32,9 @@ public class Environment {
 
     public void setCubeMap(Texture texture){
         cubeMap = texture;
+    }
+
+    public void setSkybox( SkyBox skybox ){
+        this.skybox = skybox;
     }
 }
