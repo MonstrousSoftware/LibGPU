@@ -55,7 +55,7 @@ public class TestGLTF extends ApplicationAdapter {
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
-        camera.position.set(0, 1f, -3);
+        camera.position.set(0, 0f, -3);
         camera.direction.set(0,0f, 1f);
         camera.far = 1000f;
         camera.near = 0.001f;
@@ -86,6 +86,9 @@ public class TestGLTF extends ApplicationAdapter {
 
 
     public void render(){
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
+            LibGPU.app.exit();
+        }
         currentTime += LibGPU.graphics.getDeltaTime();
         ScreenUtils.clear(.7f, .7f, .7f, 1);
 

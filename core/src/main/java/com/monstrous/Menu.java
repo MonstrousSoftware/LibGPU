@@ -12,7 +12,8 @@ import com.monstrous.utils.ScreenUtils;
 
 public class Menu extends ApplicationAdapter {
 
-    private static final String[] testNames = { "SpriteBatch", "FontSDF", "Shadow", "Post-Processing", "ShapeRenderer", "Simple Game", "Cube Map", "Skybox", "Viewport"};
+    private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Simple Game", "Viewport", "GUI",
+            "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF"  };
 
     private Stage stage;
 
@@ -36,7 +37,7 @@ public class Menu extends ApplicationAdapter {
         for(String name : testNames )
         {
             TextButton textButton = new TextButton(name, TBstyle);
-            textButton.setPreferredSize(100, 30);
+            textButton.setPreferredSize(200, 20);
             textButton.addListener(new EventListener() {
                 @Override
                 public boolean handle(int event) {
@@ -73,6 +74,12 @@ public class Menu extends ApplicationAdapter {
             listener = new TestSkyBox();
         else if(name.contentEquals("Viewport"))
             listener = new TestViewport();
+        else if(name.contentEquals("GLTF"))
+            listener = new TestGLTF();
+        else if(name.contentEquals("GUI"))
+            listener = new TestGUI();
+        else if(name.contentEquals("Lighting"))
+            listener = new TestLighting();
         else
             throw new RuntimeException("No class known for test: "+name);
 

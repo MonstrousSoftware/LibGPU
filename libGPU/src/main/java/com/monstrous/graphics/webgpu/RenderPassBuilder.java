@@ -15,7 +15,7 @@ import static com.monstrous.LibGPU.webGPU;
 // use setCommandEncoder() before creating passes.
 // use create() to create a pass (at least once per frame)
 // use setClearColor() to set the background color of future passes. (see ScreenUtils.clear() )
-// use setViewport() to apply a viewport on future passes created.
+// use setViewport() to apply a viewport on the next render pass.
 
 
 public class RenderPassBuilder {
@@ -127,8 +127,10 @@ public class RenderPassBuilder {
         RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat, sampleCount,
                 outputTexture == null ? LibGPU.graphics.getWidth() : outputTexture.getWidth(),
                 outputTexture == null ? LibGPU.graphics.getHeight() : outputTexture.getHeight());
-        if(viewport != null)
+        if(viewport != null) {
             viewport.apply(pass);
+            viewport = null;        // apply only once after setViewport() is called
+        }
         return pass;
     }
 

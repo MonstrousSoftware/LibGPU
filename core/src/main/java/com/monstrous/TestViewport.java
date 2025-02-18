@@ -20,7 +20,8 @@ public class TestViewport extends ApplicationAdapter {
     private BitmapFont font;
     private boolean keyUp = true;
 
-    // demonstrate a derived viewport that shows the content in a window at the centre of the screen
+    // demonstrate a custom viewport that shows the content only in a box at the centre of the screen
+    // i.e. not using the full window.
     public static class WindowViewport extends Viewport {
         public WindowViewport(float worldWidth, float worldHeight ) {
             this(worldWidth, worldHeight, new OrthographicCamera());
@@ -48,7 +49,6 @@ public class TestViewport extends ApplicationAdapter {
         getViewports();
         index = 0;
         viewport = viewports[index];
-        //resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
 
         font = new BitmapFont();
     }
@@ -56,6 +56,7 @@ public class TestViewport extends ApplicationAdapter {
     @Override
     public void render(  ){
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
+
             LibGPU.app.exit();
             return;
         }
@@ -77,7 +78,7 @@ public class TestViewport extends ApplicationAdapter {
         batch.begin();
         batch.draw(background, 0,0);
         font.draw(batch, names[index], 50, 90);
-        font.draw(batch, "Press SPACE to switch viewport", 50, 30);
+        font.draw(batch, "Press SPACE to switch viewport. ESCAPE to quit.", 50, 30);
         batch.end();
     }
 

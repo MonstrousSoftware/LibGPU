@@ -102,6 +102,9 @@ public class TestShadow extends ApplicationAdapter {
         environment.setShadowMap(shadowCam, depthMap);
         environment.ambientLightLevel = 0.5f;
 
+        environment.add( new DirectionalLight(Color.BLUE, new Vector3(.7f,-.2f,0)));
+        environment.add( new DirectionalLight(Color.RED, new Vector3(0f,1f,0)));
+
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor(camController);
 

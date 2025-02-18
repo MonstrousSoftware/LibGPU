@@ -138,13 +138,13 @@ public class TestGUI extends ApplicationAdapter {
         TBstyle.fontColor = Color.BLUE;
         TBstyle.bgColor = Color.WHITE;
 
-        TextButton textButton = new TextButton("OKAY", TBstyle);
+        TextButton textButton = new TextButton("EXIT", TBstyle);
         textButton.setPreferredSize(100, 30);
         textButton.addListener(new EventListener() {
             @Override
             public boolean handle(int event) {
                 if(event == Event.CLICKED)
-                    System.out.println("Hello OKAY!");
+                    LibGPU.app.exit();
                 return false;
             }
         });
@@ -154,7 +154,7 @@ public class TestGUI extends ApplicationAdapter {
 
         stage.add(t2);
 
-        stage.debug();
+        //stage.debug();
 
     }
 
