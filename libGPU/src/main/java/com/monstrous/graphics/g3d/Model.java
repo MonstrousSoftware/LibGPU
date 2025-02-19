@@ -11,6 +11,9 @@ import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
 import com.monstrous.wgpu.WGPUVertexFormat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +37,9 @@ public class Model implements Disposable {
             readObj(filePath);
         } else if (this.filePath.endsWith("gltf")) {
             readGLTF(filePath);
-        } else
+        } else if (this.filePath.endsWith("glb")) {
+            readGLB(filePath);
+        }else
             throw new RuntimeException("Model: file name extension not supported : "+filePath);
 
     }
@@ -58,11 +63,43 @@ public class Model implements Disposable {
     }
 
 
+    private void readGLB(String filePath) {
+        meshMap.clear();
+        GLTF gltf = GLBLoader.load(filePath);
+        processGLTF(gltf);
+    }
+
     private void readGLTF(String filePath) {
         meshMap.clear();
         GLTF gltf = GLTFLoader.load(filePath);      // TMP
-        GLTFRawBuffer rawBuffer = new GLTFRawBuffer(gltf.buffers.get(0).uri);           // assume 1 buffer
+        //GLTFRawBuffer rawBuffer = gltf.rawBuffer; // new GLTFRawBuffer(gltf.buffers.get(0).uri);           // assume 1 buffer
+        processGLTF(gltf);
+    }
 
+    private byte[] readImageData( GLTF gltf, int textureId )  {
+        byte[] bytes;
+
+        GLTFImage image = gltf.images.get( gltf.textures.get(textureId).source );
+        if(image.uri != null){
+            try {
+                bytes = Files.readAllBytes(Paths.get(image.uri));
+            } catch (IOException e) {
+                throw new RuntimeException("Texture file not found: "+image.uri);
+            }
+        } else {
+            GLTFBufferView view = gltf.bufferViews.get(image.bufferView);
+            if(view.buffer != 0)
+                throw new RuntimeException("GLTF can only support buffer 0");
+
+            bytes = new byte[view.byteLength];
+
+            gltf.rawBuffer.byteBuffer.position(view.byteOffset);
+            gltf.rawBuffer.byteBuffer.get(bytes);
+        }
+        return bytes;
+    }
+
+    private void processGLTF(GLTF gltf){
 
         ArrayList<MaterialData> mtlData = new ArrayList<>();
         for(GLTFMaterial gltfMat :  gltf.materials){
@@ -74,15 +111,16 @@ public class Model implements Disposable {
             if(gltfMat.pbrMetallicRoughness.metallicFactor >= 0)
                 mat.metallicFactor = gltfMat.pbrMetallicRoughness.metallicFactor;
             if(gltfMat.pbrMetallicRoughness.baseColorTexture >= 0)
-                mat.diffuseMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.pbrMetallicRoughness.baseColorTexture).source).uri;
+                mat.diffuseMapData = readImageData(gltf, gltfMat.pbrMetallicRoughness.baseColorTexture);
             if(gltfMat.pbrMetallicRoughness.metallicRoughnessTexture >= 0)
-                mat.metallicRoughnessMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.pbrMetallicRoughness.metallicRoughnessTexture).source).uri;
+                mat.metallicRoughnessMapData = readImageData(gltf, gltfMat.pbrMetallicRoughness.metallicRoughnessTexture);
             if(gltfMat.normalTexture >= 0)
-                mat.normalMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.normalTexture).source).uri;
+                mat.normalMapData =  readImageData(gltf, gltfMat.normalTexture);
             if(gltfMat.emissiveTexture >= 0)
-                mat.emissiveMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.emissiveTexture).source).uri;
+                mat.emissiveMapData =  readImageData(gltf, gltfMat.emissiveTexture);
             if(gltfMat.occlusionTexture >= 0)
-                mat.occlusionMapFilePath = gltf.images.get( gltf.textures.get(gltfMat.occlusionTexture).source).uri;
+                mat.occlusionMapData =  readImageData(gltf, gltfMat.occlusionTexture);
+
             mtlData.add(mat);
         }
 
@@ -94,7 +132,7 @@ public class Model implements Disposable {
 
         for(GLTFMesh gltfMesh : gltf.meshes){
             for(GLTFPrimitive primitive : gltfMesh.primitives){
-                Mesh m = loadMesh(gltf, rawBuffer, primitive );
+                Mesh m = loadMesh(gltf, gltf.rawBuffer, primitive );
                 meshes.add(m);
                 meshMap.put(primitive, m);
             }
@@ -113,7 +151,7 @@ public class Model implements Disposable {
             rootNode.updateMatrices(true);
             rootNodes.add(rootNode);
         }
-        System.out.println("loaded "+filePath);
+        //System.out.println("loaded "+filePath);
     }
 
     private Node addNode(GLTF gltf, GLTFNode gltfNode){
@@ -188,7 +226,7 @@ public class Model implements Disposable {
                     max = index;
                 meshData.indexValues.add(index);
             }
-            System.out.println("max index "+max); // TMP
+            //System.out.println("max index "+max); // TMP
         }
 
         boolean hasNormalMap = materials.get(primitive.material).hasNormalMap;
@@ -218,8 +256,8 @@ public class Model implements Disposable {
         offset = view.byteOffset;
         offset += positionAccessor.byteOffset;
 
-        System.out.println("Position offset: "+offset);
-        System.out.println("Position count: "+positionAccessor.count);
+        //System.out.println("Position offset: "+offset);
+        //System.out.println("Position count: "+positionAccessor.count);
 
         if(positionAccessor.componentType != GLTF.FLOAT32 || !positionAccessor.type.contentEquals("VEC3"))
             throw new RuntimeException("GLTF: Can only support float positions as VEC3");
@@ -292,7 +330,7 @@ public class Model implements Disposable {
             offset = view.byteOffset;
             offset += uvAccessor.byteOffset;
 
-            System.out.println("UV offset: " + offset);
+            //System.out.println("UV offset: " + offset);
 
             if (uvAccessor.componentType != GLTF.FLOAT32 || !uvAccessor.type.contentEquals("VEC2"))
                 throw new RuntimeException("GLTF: Can only support float positions as VEC2");
@@ -454,7 +492,7 @@ public class Model implements Disposable {
 
 
 
-        System.out.println("Loaded "+meshData.objectName);
+        //System.out.println("Loaded "+meshData.objectName);
 
         // create a meshPart to cover whole mesh (temp)
         MeshPart meshPart;

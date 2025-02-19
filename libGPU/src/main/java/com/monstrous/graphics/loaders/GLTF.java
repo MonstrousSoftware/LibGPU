@@ -4,6 +4,8 @@ import com.monstrous.graphics.loaders.gltf.*;
 
 import java.util.ArrayList;
 
+// class to store the contents of a gltf file
+
 public class GLTF {
 
     public static int SBYTE8 = 5120;
@@ -24,6 +26,7 @@ public class GLTF {
     public ArrayList<GLTFAccessor> accessors;
     public ArrayList<GLTFNode> nodes;
     public ArrayList<GLTFScene> scenes;
+    public GLTFRawBuffer rawBuffer;     // binary data either from a .bin file or from second chunk in .glb file
 
     public GLTF() {
         textures = new ArrayList<>();
@@ -36,5 +39,6 @@ public class GLTF {
         accessors = new ArrayList<>();
         nodes = new ArrayList<>();
         scenes = new ArrayList<>();
+        rawBuffer = null;
     }
 }

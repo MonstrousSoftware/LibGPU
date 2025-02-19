@@ -23,34 +23,53 @@ public class GLTFLoader {
         String path = filePath.substring(0, slash + 1);
         String name = filePath.substring(slash + 1);
         MaterialData materialData = null;
-        GLTF gltf = new GLTF();
+
 
         String contents;
         try {
             contents = Files.readString(Paths.get(filePath));
         } catch (IOException e) {
-            throw new RuntimeException("Could not read GLTF file "+filePath);
+            throw new RuntimeException("Could not read GLTF file " + filePath);
         }
+        GLTF gltf = parseJSON(contents, path);
+        gltf.rawBuffer = new GLTFRawBuffer(gltf.buffers.get(0).uri);           // read .bin file, assume 1 buffer
+        return gltf;
+    }
+
+    public static GLTF parseJSON(String contents, String path) {
+        GLTF gltf = new GLTF();
 
         JSONObject file = (JSONObject)JSONValue.parse(contents);
 
         JSONArray ims = (JSONArray)file.get("images");
         if(ims != null) {
-            System.out.println("images: " + ims.size());
+            //System.out.println("images: " + ims.size());
             for (int i = 0; i < ims.size(); i++) {
+                GLTFImage im = new GLTFImage();
+
                 JSONObject image = (JSONObject) ims.get(i);
                 String imagepath = (String) image.get("uri");
-                System.out.println("image path: " + imagepath);
-                // load texture file
-                GLTFImage im = new GLTFImage();
-                im.uri = path + imagepath;
+                if(imagepath != null) {
+                    // texture file
+                    im.uri = path + imagepath;
+                    //System.out.println("image path: " + imagepath);
+                }
+                else {
+                    // section in binary buffer
+                    im.mimeType = (String) image.get("mimeType");
+                    Long view = (Long) image.get("bufferView");
+                    im.bufferView = view.intValue();
+                    im.name = (String) image.get("name");
+                    //System.out.println("image : " + im.mimeType+" "+im.name);
+                }
+
                 gltf.images.add(im);
             }
 
 
             JSONArray sampls = (JSONArray) file.get("samplers");
             if(sampls != null) {
-                System.out.println("samplers: " + sampls.size());
+                //System.out.println("samplers: " + sampls.size());
                 for (int i = 0; i < sampls.size(); i++) {
                     GLTFSampler sampler = new GLTFSampler();
 
@@ -68,7 +87,7 @@ public class GLTFLoader {
 
         JSONArray textures = (JSONArray)file.get("textures");
         if (textures != null) {
-            System.out.println("textures: " + textures.size());
+            //System.out.println("textures: " + textures.size());
             for (int i = 0; i < textures.size(); i++) {
                 GLTFTexture texture = new GLTFTexture();
 
@@ -85,7 +104,7 @@ public class GLTFLoader {
         if (mats != null) {
 
 
-            System.out.println("materials: " + mats.size());
+            //System.out.println("materials: " + mats.size());
             for (int i = 0; i < mats.size(); i++) {
 
                 GLTFMaterialPBR pbr = new GLTFMaterialPBR();
@@ -137,7 +156,7 @@ public class GLTFLoader {
         }
 
         JSONArray meshes = (JSONArray)file.get("meshes");
-        System.out.println("meshes: "+meshes.size());
+        //System.out.println("meshes: "+meshes.size());
         for(int i = 0; i < meshes.size(); i++){
             GLTFMesh mesh = new GLTFMesh();
 
@@ -170,7 +189,7 @@ public class GLTFLoader {
         }
 
         JSONArray buffers = (JSONArray)file.get("buffers");
-        System.out.println("buffers: "+buffers.size());
+        //System.out.println("buffers: "+buffers.size());
         for(int i = 0; i < buffers.size(); i++){
             GLTFBuffer buffer = new GLTFBuffer();
 
@@ -184,7 +203,7 @@ public class GLTFLoader {
         }
 
         JSONArray bufferViews = (JSONArray)file.get("bufferViews");
-        System.out.println("buffer views: "+bufferViews.size());
+        //System.out.println("buffer views: "+bufferViews.size());
         for(int i = 0; i < bufferViews.size(); i++){
             GLTFBufferView bufferView = new GLTFBufferView();
 
@@ -205,7 +224,7 @@ public class GLTFLoader {
         }
 
         JSONArray accessors = (JSONArray)file.get("accessors");
-        System.out.println("accessors: "+accessors.size());
+        //System.out.println("accessors: "+accessors.size());
         for(int i = 0; i < accessors.size(); i++){
             GLTFAccessor accessor = new GLTFAccessor();
 
@@ -228,7 +247,7 @@ public class GLTFLoader {
         }
 
         JSONArray nodes = (JSONArray)file.get("nodes");
-        System.out.println("nodes: "+accessors.size());
+        //System.out.println("nodes: "+accessors.size());
         for(int i = 0; i < nodes.size(); i++){
             GLTFNode node = new GLTFNode();
 
@@ -266,7 +285,7 @@ public class GLTFLoader {
         }
 
         JSONArray scenes = (JSONArray)file.get("scenes");
-        System.out.println("scenes: "+accessors.size());
+       //System.out.println("scenes: "+accessors.size());
         for(int i = 0; i < scenes.size(); i++){
             GLTFScene scene = new GLTFScene();
 
@@ -281,7 +300,7 @@ public class GLTFLoader {
         }
 
         gltf.scene = getInt(file, "scene", 0);
-        System.out.println("scene: "+gltf.scene);
+        //System.out.println("scene: "+gltf.scene);
 
         return gltf;
     }

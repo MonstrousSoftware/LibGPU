@@ -3,6 +3,10 @@ package com.monstrous.graphics.loaders;
 import com.monstrous.FileInput;
 import com.monstrous.graphics.Color;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 // Read .mtl file related to the .obj format
 
 //        newmtl Pallette
@@ -56,14 +60,22 @@ public class MtlLoader {
                 String[] words = line.split("[ \t]+");
                 material.illuminationModel = Integer.parseInt(words[1]);
            } else if (line.startsWith("map_Kd")) {
-                material.diffuseMapFilePath = line.substring(7).trim();
+                material.diffuseMapData = readImageData( line.substring(7).trim() );
             } else if (line.startsWith("map_Bump")) {                                       // note: also map_Kn or norm are in use
-                material.normalMapFilePath = line.substring(9).trim();
+                material.normalMapData = readImageData( line.substring(9).trim() );
             }else if (line.startsWith("newmtl")) {
                 String[] words = line.split("[ \t]+");
                 material.name = words[1];
             }
         }
         return material;
+    }
+
+    private static byte[] readImageData(String fileName )  {
+            try {
+                return Files.readAllBytes(Paths.get(fileName));
+            } catch (IOException e) {
+                throw new RuntimeException("Texture file not found: "+fileName);
+            }
     }
 }

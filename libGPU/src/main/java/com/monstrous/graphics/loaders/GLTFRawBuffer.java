@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 public class GLTFRawBuffer {
     public String path;
     public byte[] data;
-    public int byteSize;
+    //public int byteSize;
     public ByteBuffer byteBuffer;
 
     public GLTFRawBuffer(String filePath) {
@@ -21,9 +21,15 @@ public class GLTFRawBuffer {
         } catch (IOException e) {
             throw new RuntimeException("Could not read binary file "+filePath);
         }
-        byteSize = data.length;
+        //byteSize = data.length;
         byteBuffer = ByteBuffer.wrap(data);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    }
 
+    public GLTFRawBuffer(ByteBuffer byteBuffer) {
+        this.path = "internal";
+
+        this.byteBuffer = byteBuffer;
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
     }
 }

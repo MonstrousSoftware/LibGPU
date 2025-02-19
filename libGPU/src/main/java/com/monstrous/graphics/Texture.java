@@ -1,8 +1,8 @@
 package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
-import com.monstrous.wgpuUtils.WgpuJava;
 import com.monstrous.wgpu.*;
+import com.monstrous.wgpuUtils.WgpuJava;
 import jnr.ffi.Pointer;
 
 import java.io.IOException;
@@ -52,29 +52,42 @@ public class Texture {
     }
 
     public Texture(String fileName, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
-
         byte[] fileData;
 
         try {
             fileData = Files.readAllBytes(Paths.get(fileName));
-            int len = fileData.length;
-            Pointer data = WgpuJava.createByteArrayPointer(fileData);
 
-            image = LibGPU.webGPU.gdx2d_load(data, len);        // use native function to parse image file
-            //System.out.println("loaded: "+image);
+            Pointer data = WgpuJava.createByteArrayPointer(fileData);
+            image = LibGPU.webGPU.gdx2d_load(data, fileData.length);        // use native function to parse image file
 
             PixmapInfo info = PixmapInfo.createAt(image);
             this.width = info.width.intValue();
             this.height = info.height.intValue();
             this.nativeFormat = info.format.intValue();
             Pointer pixelPtr = info.pixels.get();
-            create( fileName, mipMapping, renderAttachment, format, 1, 1);
+            create( "name", mipMapping, renderAttachment, format, 1, 1);
             load(pixelPtr, 0);
-
 
         } catch (IOException e) {
             throw new RuntimeException("Texture file not found: "+fileName);
         }
+    }
+    public Texture(byte[] byteArray, boolean mipMapping) {
+        this(byteArray, "texture", mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
+    }
+
+    public Texture(byte[] byteArray, String name, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
+
+        Pointer data = WgpuJava.createByteArrayPointer(byteArray);
+        image = LibGPU.webGPU.gdx2d_load(data, byteArray.length);        // use native function to parse image file
+
+        PixmapInfo info = PixmapInfo.createAt(image);
+        this.width = info.width.intValue();
+        this.height = info.height.intValue();
+        this.nativeFormat = info.format.intValue();
+        Pointer pixelPtr = info.pixels.get();
+        create( name, mipMapping, renderAttachment, format, 1, 1);
+        load(pixelPtr, 0);
     }
 
     // for a multi-layer texture, e.g. a cube map

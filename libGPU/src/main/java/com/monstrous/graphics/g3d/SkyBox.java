@@ -75,8 +75,6 @@ public class SkyBox implements Disposable {
 
         pass.setPipeline(pipeline.getPipeline());
         pass.setBindGroup(0, bindGroup);
-
-        // draw a single triangle of 3 vertices filling thw whole screen, the vertex positions are hard coded in the shader
         pass.draw(3);
     }
 
@@ -176,7 +174,7 @@ public class SkyBox implements Disposable {
     private void writeUniforms( UniformBuffer uniformBuffer, Camera camera ){
         invertedProjectionView.set(camera.combined);
         invertedProjectionView.setTranslation(Vector3.Zero);
-        invertedProjectionView.inv();   // todo remove translation
+        invertedProjectionView.inv();
 
         uniformBuffer.beginFill();
         uniformBuffer.append(invertedProjectionView);
