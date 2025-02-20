@@ -1,5 +1,6 @@
 package com.monstrous.graphics.webgpu;
 
+import com.monstrous.FileHandle;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttributes;
@@ -16,7 +17,7 @@ public class PipelineSpecification implements Disposable {
     public String name;
     public VertexAttributes vertexAttributes;
     public Environment environment;
-    public String shaderSourceFile;
+    public FileHandle shaderSourceFile;
     public ShaderProgram shader;
     public boolean ownsShader;
     public boolean hasDepth;
@@ -47,7 +48,7 @@ public class PipelineSpecification implements Disposable {
         isSkyBox = false;
     }
 
-    public PipelineSpecification(VertexAttributes vertexAttributes, String shaderSourceFile) {
+    public PipelineSpecification(VertexAttributes vertexAttributes, FileHandle shaderSourceFile) {
         this();
         this.vertexAttributes = vertexAttributes;
         this.shaderSourceFile = shaderSourceFile;
@@ -112,9 +113,10 @@ public class PipelineSpecification implements Disposable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PipelineSpecification that = (PipelineSpecification) o;
-        return hasDepth == that.hasDepth && Objects.equals(vertexAttributes, that.vertexAttributes) && shaderSourceFile.contentEquals(that.shaderSourceFile) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor
+        return hasDepth == that.hasDepth && Objects.equals(vertexAttributes, that.vertexAttributes) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor
                 && blendOpColor == that.blendOpColor && blendSrcAlpha == that.blendSrcAlpha && blendDstAlpha == that.blendDstAlpha && blendOpAlpha == that.blendOpAlpha &&
                 numSamples == that.numSamples;
+        // todo compare shader
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.monstrous.graphics.g2d;
 
+import com.monstrous.Files;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.VertexAttribute;
@@ -77,7 +78,7 @@ public class ShapeRenderer implements Disposable {
         vertexAttributes.end();
 
         pipelines = new Pipelines();
-        pipelineSpec = new PipelineSpecification(vertexAttributes, "shaders/shape.wgsl");
+        pipelineSpec = new PipelineSpecification(vertexAttributes, Files.classpath("shaders/shape.wgsl"));
 
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());

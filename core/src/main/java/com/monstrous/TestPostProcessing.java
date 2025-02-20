@@ -69,7 +69,7 @@ public class TestPostProcessing extends ApplicationAdapter {
         batch = new SpriteBatch();
 
         // post-processing shader
-        filter = new ShaderProgram("shaders/sprite-greyscale.wgsl");
+        filter = new ShaderProgram(Files.internal("shaders/sprite-greyscale.wgsl"));
 
         font = new BitmapFont();
     }

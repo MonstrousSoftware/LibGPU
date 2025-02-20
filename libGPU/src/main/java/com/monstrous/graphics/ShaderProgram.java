@@ -1,14 +1,11 @@
 package com.monstrous.graphics;
 
+import com.monstrous.FileHandle;
 import com.monstrous.LibGPU;
 import com.monstrous.wgpu.WGPUSType;
 import com.monstrous.wgpu.WGPUShaderModuleDescriptor;
 import com.monstrous.wgpu.WGPUShaderModuleWGSLDescriptor;
 import jnr.ffi.Pointer;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class ShaderProgram {
 
@@ -19,24 +16,24 @@ public class ShaderProgram {
     private Pointer shaderModule;
     private static Preprocessor preprocessor = new Preprocessor();
 
-    public ShaderProgram(String filePath) {
-        String source = null;
-        try {
-            source = Files.readString(Paths.get(filePath));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        compile(filePath, source);
+//    public ShaderProgram(String filePath) {
+//        String source = null;
+//        try {
+//            source = Files.readString(Paths.get(filePath));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        compile(filePath, source);
+//    }
+
+    public ShaderProgram(FileHandle fileHandle) {
+        this(fileHandle, "");
     }
 
-    public ShaderProgram(String filePath, String prefix) {
+    public ShaderProgram(FileHandle fileHandle, String prefix) {
         String source = null;
-        try {
-            source = Files.readString(Paths.get(filePath));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        compile(filePath, prefix+source);
+        source = fileHandle.readString();
+        compile(fileHandle.file.getName(), prefix+source);
     }
 
     public ShaderProgram(String name, String shaderSource, String prefix){

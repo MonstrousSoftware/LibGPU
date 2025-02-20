@@ -1,12 +1,11 @@
 package com.monstrous.graphics;
 
+import com.monstrous.FileHandle;
+import com.monstrous.Files;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.Disposable;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +13,7 @@ public class BitmapFont implements Disposable {
 
     public static final int MAX_CHARS = 256;
 
-    public String fntFilePath;
+    public FileHandle fontFileHandle;
     public String textureFilePath;
     public Texture fontTexture;
     public Map<Integer, Glyph> glyphMap;
@@ -38,14 +37,18 @@ public class BitmapFont implements Disposable {
     }
 
     public BitmapFont(){
-        this("lsans-15.fnt");
+        this(Files.classpath("font/lsans-15.fnt"));      // default font
     }
 
-    public BitmapFont(String fntFilePath) {
+    public BitmapFont(String filePath) {
+        this(Files.internal(filePath));
+    }
 
-        this.fntFilePath = fntFilePath;
+    public BitmapFont(FileHandle fntFileHandle) {
+
+        this.fontFileHandle = fntFileHandle;
         glyphMap = new HashMap<>();
-        parseFontFile(fntFilePath);
+        parseFontFile(fntFileHandle);
         setScale(1f);
     }
 
@@ -113,14 +116,13 @@ public class BitmapFont implements Disposable {
         return (int) (lineHeight*scaleY);
     }
 
-    private void parseFontFile(String filePath){
+    private void parseFontFile(FileHandle fileHandle){
         String fileData;
-        try {
-            fileData = Files.readString(Paths.get(filePath));
-        } catch (IOException e) {
-            throw new RuntimeException("Font file not found: "+filePath);
-        }
+        fileData = fileHandle.readString();
+        if(fileData == null)
+            throw new RuntimeException("Font file not found: "+fileHandle.file.getPath());
 
+        String filePath = fileHandle.file.getPath();
         int slash = filePath.lastIndexOf('/');
         String path = filePath.substring(0, slash + 1);
 

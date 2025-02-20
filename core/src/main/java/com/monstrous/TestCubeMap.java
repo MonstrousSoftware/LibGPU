@@ -128,7 +128,7 @@ public class TestCubeMap extends ApplicationAdapter {
         batch = new SpriteBatch();
         font = new BitmapFont();
 
-        filter = new ShaderProgram("shaders/sprite-greyscale.wgsl");
+
     }
 
 

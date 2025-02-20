@@ -1,5 +1,6 @@
 package com.monstrous.graphics.g2d;
 
+import com.monstrous.Files;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.webgpu.*;
@@ -93,7 +94,7 @@ public class SpriteBatch implements Disposable {
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.specificShader);
-        pipelineSpec.shaderSourceFile = "shaders/sprite.wgsl";
+        pipelineSpec.shaderSourceFile = Files.classpath("shaders/sprite.wgsl");
     }
 
     // the index buffer is fixed and only has to be filled on start-up

@@ -33,7 +33,7 @@ public class TestFontSDF extends ApplicationAdapter {
         texture = new Texture("textures/jackRussel.png");
 
         font = new BitmapFont("lsans32-sdf.fnt");
-        sdfShader = new ShaderProgram("shaders/sprite-distanceField.wgsl");
+        sdfShader = new ShaderProgram(Files.classpath("shaders/sprite-distanceField.wgsl"));
 
         batch = new SpriteBatch(8192);
     }

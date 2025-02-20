@@ -34,7 +34,6 @@ public class TestSkyBox extends ApplicationAdapter {
     private long startTime;
     private int frames;
     private SpriteBatch batch;
-    private ShaderProgram filter;
     private BitmapFont font;
     private Texture cubeMap;
     private SkyBox skybox;
@@ -131,8 +130,6 @@ public class TestSkyBox extends ApplicationAdapter {
 
         batch = new SpriteBatch();
         font = new BitmapFont();
-
-        filter = new ShaderProgram("shaders/sprite-greyscale.wgsl");
     }
 
 

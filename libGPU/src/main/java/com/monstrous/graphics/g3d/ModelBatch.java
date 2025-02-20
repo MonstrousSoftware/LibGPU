@@ -1,5 +1,6 @@
 package com.monstrous.graphics.g3d;
 
+import com.monstrous.Files;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.lights.DirectionalLight;
@@ -241,7 +242,7 @@ public class ModelBatch implements Disposable {
         pipelineSpec.vertexAttributes = vertexAttributes;
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
-        pipelineSpec.shaderSourceFile = selectShaderSourceFile();
+        pipelineSpec.shaderSourceFile = Files.classpath(selectShaderSourceFile());
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output

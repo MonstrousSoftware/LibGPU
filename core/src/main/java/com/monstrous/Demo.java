@@ -43,7 +43,7 @@ public class Demo extends ApplicationAdapter {
 
         texture = new Texture("monstrous.png", false);
         texture2 = new Texture("jackRussel.png", false);
-        textureFont = new Texture("lsans-15.png", false);
+        textureFont = new Texture("font/lsans-15.png", false);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);

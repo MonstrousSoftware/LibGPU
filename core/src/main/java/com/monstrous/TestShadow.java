@@ -113,8 +113,6 @@ public class TestShadow extends ApplicationAdapter {
 
         batch = new SpriteBatch();
         font = new BitmapFont();
-
-        filter = new ShaderProgram("shaders/sprite-greyscale.wgsl");
     }
 
 
