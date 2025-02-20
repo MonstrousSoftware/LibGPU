@@ -66,12 +66,12 @@ public class TestGUI extends ApplicationAdapter {
             cbTable.row();
 
             Slider slider2 = new Slider(degrees, 0, 360, 5f);
-            cbTable.add(slider2).setAlign(Align.center | Align.top).pad(10);
+            cbTable.add(slider2).setAlign(Align.center | Align.bottom).pad(0);
             cbTable.row();
             slider2.setPreferredSize(200,32);
 
             FloatLabel fl = new FloatLabel(degrees,"heading:", style);
-            cbTable.add(fl);
+            cbTable.add(fl).setAlign(Align.top);
             cbTable.row();
 
             TextField tf = new TextField(editStyle);

@@ -2,5 +2,5 @@ rootProject.name = 'CallingWebGPU'
 include 'triangle'
 include 'libGPU'
 include 'wrapper'
-include 'core'
+include 'tests'
 
