@@ -12,7 +12,7 @@ application {
 
 run {
     workingDir = rootProject.file('assets').path
-    systemProperty "java.library.path", rootProject.file('lib').path
+    systemProperty "java.library.path", rootProject.file('native-libs').path        // where to find the DLL files
     setIgnoreExitValue(true)
 }
 

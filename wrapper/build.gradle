@@ -38,7 +38,7 @@ tasks.withType(LinkSharedLibrary).configureEach {
 
 task copyDLL(type: Copy) {
     from 'build/lib/main/debug'
-    into '../lib'
+    into '../native-libs'
     include '*.dll'
     outputs.upToDateWhen { false }
 }

@@ -4,9 +4,12 @@ Trying to build a Java wrapper for WebGPU.
 October 2024.
 
 ## Modules
-
--   ```triangle```    Sample C++ app to render a triangle using webgpu. For reference.
-  - ```libGPU``` Java library to call WebGPU
+- ```assets```  Assets folder used by tests
+- ```docs```  Some documentation
+- ```libGPU``` Java library to call WebGPU
+- ```tests```   Tests and samples of using LibGPU
+- ```triangle```    Sample C++ app to render a triangle using webgpu. For reference.
+- ```wrapper``` C++ code of wrapper.dll providing native functions
 
 ## Switching between Native WGPU and DAWN
 This turned out to be very easy. Just drop the DAWN dll to be linked by the C wrapper and use the header file from Dawn (which 
@@ -29,19 +32,11 @@ WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window);
 This didn't really work from the Java layer by regarding HWND as a pointer.  It is better to regard it as an integer, get the HWND
 for the GLFW Window at Java level and pass that to a C util function to get a surface.
 
-## Warning on deprecated API
-
-Dawn issues a deprecation warning on the Queue calllback, where a new info structure is now defined.
-
-      Warning: Old OnSubmittedWorkDone APIs are deprecated. If using C please pass a CallbackInfo struct that has two userdatas.....
-
-We'll just ignore the warning for now.
 
 
 ## GLTF support
 
 We can load and display GLTF models now.
 Not supported: skins, animation, camera.
-Only GLTF Separate is supported, not GTLF embedded or binary format.
-Rendering is not using a PBR shader so the models may look different.
+GLTF Separate and GLB formats are supported, not GTLF embedded.
 Normal maps and Emissive maps are supported.

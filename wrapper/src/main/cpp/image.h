@@ -29,6 +29,8 @@ extern "C" {
 #define GDX2D_FORMAT_RGB565				5
 #define GDX2D_FORMAT_RGBA4444			6
 
+#define GDX2D_FORMAT_HDR			    12  // experimental
+
 /**
  * blending modes, to be extended
  */

@@ -13,7 +13,7 @@ import com.monstrous.utils.ScreenUtils;
 public class Menu extends ApplicationAdapter {
 
     private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Simple Game", "Viewport", "GUI",
-            "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)"  };
+            "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)", "HDR"  };
 
     private Stage stage;
 
@@ -82,6 +82,8 @@ public class Menu extends ApplicationAdapter {
             listener = new TestGUI();
         else if(name.contentEquals("Lighting"))
             listener = new TestLighting();
+        else if(name.contentEquals("HDR"))
+            listener = new TestHDR();
         else
             throw new RuntimeException("No class known for test: "+name);
 

@@ -65,8 +65,16 @@ public class Texture {
             this.height = info.height.intValue();
             this.nativeFormat = info.format.intValue();
             Pointer pixelPtr = info.pixels.get();
+            if(nativeFormat == 12) { // HDR image
+                format = WGPUTextureFormat.RGBA16Float;
+                System.out.println("Reading HDR image: "+fileName);
+            }
+
             create( "name", mipMapping, renderAttachment, format, 1, 1);
-            load(pixelPtr, 0);
+            if(nativeFormat == 12)  // HDR image
+                loadHDR(pixelPtr);
+            else
+                load(pixelPtr, 0);
 
         } catch (IOException e) {
             throw new RuntimeException("Texture file not found: "+fileName);
@@ -86,8 +94,16 @@ public class Texture {
         this.height = info.height.intValue();
         this.nativeFormat = info.format.intValue();
         Pointer pixelPtr = info.pixels.get();
+
+        if(nativeFormat == 12) { // HDR image
+            format = WGPUTextureFormat.RGBA16Float;
+            System.out.println("Reading HDR image: "+name);
+        }
         create( name, mipMapping, renderAttachment, format, 1, 1);
-        load(pixelPtr, 0);
+        if(nativeFormat == 12)  // HDR image
+            loadHDR(pixelPtr);
+        else
+            load(pixelPtr, 0);
     }
 
     // for a multi-layer texture, e.g. a cube map
@@ -385,6 +401,59 @@ public class Texture {
 
 
     }
+
+
+    // load HDR image (RBGA16Float), no mip mapping, no layers
+    private void loadHDR(Pointer pixelPtr) {
+
+        // Arguments telling which part of the texture we upload to
+        // (together with the last argument of writeTexture)
+        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+        destination.setTexture(texture);
+        destination.setMipLevel(0);
+        destination.getOrigin().setX(0);
+        destination.getOrigin().setY(0);
+        destination.getOrigin().setZ(0);
+        destination.setAspect(WGPUTextureAspect.All);   // not relevant
+
+        // Arguments telling how the C++ side pixel memory is laid out
+        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+        source.setOffset(0);
+        source.setBytesPerRow(2*4*width);   // 2 bytes per component
+        source.setRowsPerImage(height);
+
+
+        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+
+        float[] pixels = new float[4 * width * height];
+
+        int offset = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                pixels[offset] = pixelPtr.getFloat(offset);  offset++;
+                pixels[offset] = pixelPtr.getFloat(offset);  offset++;
+                pixels[offset] = pixelPtr.getFloat(offset);  offset++;
+                pixels[offset] = pixelPtr.getFloat(offset);  offset++;
+            }
+        }
+
+        destination.setMipLevel(0);
+        destination.getOrigin().setZ(0);
+
+        source.setBytesPerRow(2*4*width);
+        source.setRowsPerImage(height);
+
+        ext.setWidth(width);
+        ext.setHeight(height);
+        ext.setDepthOrArrayLayers(1);
+
+        // wrap byte array in native pointer
+        Pointer pixelData = WgpuJava.createFloatArrayPointer(pixels);
+        // N.B. using textureDesc.getSize() for param won't work!
+        LibGPU.webGPU.QueueWriteTexture(LibGPU.queue, destination, pixelData, width * height * 8, source, ext);
+
+    }
+
 
     private static int toUnsignedInt(byte x) {
         return ((int) x) & 0xff;
