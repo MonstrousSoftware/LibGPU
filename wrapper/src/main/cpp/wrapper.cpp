@@ -1,4 +1,5 @@
 #define DAWN
+#define LEAN
 
 #if __cplusplus < 201103L
   #error This library needs at least a C++11 compliant compiler
@@ -40,6 +41,7 @@ using namespace std;
 extern "C" {
 #endif
 
+#ifndef LEAN
 
 EXPORT WGPUInstance CreateInstance( void ){
 
@@ -49,7 +51,7 @@ EXPORT WGPUInstance CreateInstance( void ){
         printf("Linked to wgpu-native.dll\n");
 #endif
         WGPUInstance instance = wgpuCreateInstance(nullptr);
-        printf("creating instance %p\n", instance);
+        LOG( printf("creating instance %p\n", instance); )
         return instance;
 }
 
@@ -452,6 +454,8 @@ EXPORT void CommandEncoderResolveQuerySet(WGPUCommandEncoder commandEncoder, WGP
     wgpuCommandEncoderResolveQuerySet(commandEncoder, querySet, firstQuery, queryCount, destination, destinationOffset);
 }
 
+#endif // LEAN
+
 /**
  * Utility function to get a WebGPU adapter, so that
  *     WGPUAdapter adapter = requestAdapterSync(options);
@@ -487,7 +491,7 @@ EXPORT WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterO
     // provided as the last argument of wgpuInstanceRequestAdapter and received
     // by the callback as its last argument.
     auto onAdapterRequestEnded = [](WGPURequestAdapterStatus status, WGPUAdapter adapter, char const * message, void * pUserData) {
-        std::cout << "onAdapterRequestEnded : " << status << std::endl;
+        //std::cout << "onAdapterRequestEnded : " << status << std::endl;
         UserData& userData = *reinterpret_cast<UserData*>(pUserData);
         if (status == WGPURequestAdapterStatus_Success) {
             userData.adapter = adapter;
@@ -497,10 +501,10 @@ EXPORT WGPUAdapter RequestAdapterSync(WGPUInstance instance, WGPURequestAdapterO
         userData.requestEnded = true;
     };
 
-    printf("backend: %d\n", options->backendType);
-    printf("power: %d\n", options->powerPreference);
-    printf("fallback: %d\n", options->forceFallbackAdapter);
-    printf("surface: %p\n", options->compatibleSurface);
+//    printf("backend: %d\n", options->backendType);
+//    printf("power: %d\n", options->powerPreference);
+//    printf("fallback: %d\n", options->forceFallbackAdapter);
+//    printf("surface: %p\n", options->compatibleSurface);
 
     LOG( printf("wgpuInstanceRequestAdapter\n"); )
 
@@ -554,8 +558,6 @@ EXPORT WGPUDevice RequestDeviceSync(WGPUAdapter adapter, WGPUDeviceDescriptor co
     );
 
     assert(userData.requestEnded);
-
-    //printf("requested device %p\n", userData.device);
     return userData.device;
 }
 
