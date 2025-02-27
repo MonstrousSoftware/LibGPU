@@ -12,7 +12,6 @@
             <option value="$PROJECT_DIR$/libGPU" />
             <option value="$PROJECT_DIR$/tests" />
             <option value="$PROJECT_DIR$/triangle" />
-            <option value="$PROJECT_DIR$/wrapper" />
           </set>
         </option>
       </GradleProjectSettings>

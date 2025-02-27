@@ -7,7 +7,7 @@ import com.monstrous.graphics.webgpu.RenderPassBuilder;
 import com.monstrous.webgpu.WebGPU_JNI;
 import jnr.ffi.Pointer;
 
-import static com.monstrous.wgpuUtilsOLD.WgpuJava.createIntegerArrayPointer;
+import static com.monstrous.utils.JavaWebGPU.createIntegerArrayPointer;
 
 public class Application {
     public ApplicationConfiguration configuration;
@@ -194,7 +194,7 @@ public class Application {
         System.out.println("defined adapter options");
 
         // Get Adapter
-        Pointer adapter = JavaWebGPU.getUtils().RequestAdapterSync(LibGPU.instance, options);
+        Pointer adapter = getAdapterSync(LibGPU.instance, options);
         System.out.println("adapter = " + adapter);
 
         LibGPU.supportedLimits = WGPUSupportedLimits.createDirect();
@@ -263,7 +263,7 @@ public class Application {
             deviceDescriptor.setRequiredFeatures( requiredFeatures );
         }
 
-        Pointer device = JavaWebGPU.getUtils().RequestDeviceSync(adapter, deviceDescriptor);
+        Pointer device = getDeviceSync(adapter, deviceDescriptor);
 
         // use a lambda expression to define a callback function
         WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
@@ -303,6 +303,35 @@ public class Application {
 
         webGPU.wgpuAdapterRelease(adapter);       // we can release our adapter as soon as we have a device
         return device;
+    }
+
+
+    private Pointer getAdapterSync(Pointer instance, WGPURequestAdapterOptions options){
+
+        Pointer userBuf = JavaWebGPU.createLongArrayPointer(new long[1]);
+        WGPURequestAdapterCallback callback = (WGPURequestAdapterStatus status, Pointer adapter, String message, Pointer userdata) -> {
+            if(status == WGPURequestAdapterStatus.Success)
+                userdata.putPointer(0, adapter);
+            else
+                System.out.println("Could not get adapter: "+message);
+        };
+        webGPU.wgpuInstanceRequestAdapter(instance, options, callback, userBuf);
+        // on native implementations, we don't have to wait for asynchronous operation. It returns result immediately.
+        return  userBuf.getPointer(0);
+    }
+
+    private Pointer getDeviceSync(Pointer adapter, WGPUDeviceDescriptor deviceDescriptor){
+
+        Pointer userBuf = JavaWebGPU.createLongArrayPointer(new long[1]);
+        WGPURequestDeviceCallback callback = (WGPURequestDeviceStatus status, Pointer device, String message, Pointer userdata) -> {
+            if(status == WGPURequestDeviceStatus.Success)
+                userdata.putPointer(0, device);
+            else
+                System.out.println("Could not get device: "+message);
+        };
+        webGPU.wgpuAdapterRequestDevice(adapter, deviceDescriptor, callback, userBuf);
+        // on native implementations, we don't have to wait for asynchronous operation. It returns result immediately.
+        return  userBuf.getPointer(0);
     }
 
     private void terminateDevice(){
