@@ -1,9 +1,9 @@
 package com.monstrous.wgpu;
 
-import com.monstrous.wgpuUtils.CStrPointer;
-import com.monstrous.wgpuUtils.RustCString;
-import com.monstrous.wgpuUtils.WgpuJava;
-import com.monstrous.wgpuUtils.WgpuJavaStruct;
+import com.monstrous.wgpuUtilsOLD.CStrPointer;
+import com.monstrous.wgpuUtilsOLD.RustCString;
+import com.monstrous.wgpuUtilsOLD.WgpuJava;
+import com.monstrous.wgpuUtilsOLD.WgpuJavaStruct;
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
 

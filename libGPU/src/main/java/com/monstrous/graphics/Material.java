@@ -5,7 +5,7 @@ import com.monstrous.graphics.loaders.MaterialData;
 import com.monstrous.graphics.webgpu.RenderPass;
 import com.monstrous.graphics.webgpu.UniformBuffer;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.*;
+import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
 import static com.monstrous.LibGPU.webGPU;
@@ -100,7 +100,7 @@ public class Material implements Disposable {
         disposeUnlessStatic(emissiveTexture);
         disposeUnlessStatic(metallicRoughnessTexture);
 
-        webGPU.BindGroupRelease(materialBindGroup);
+        webGPU.wgpuBindGroupRelease(materialBindGroup);
         materialBindGroup = null;
 
         // cannot be released as it is shared by all materials
@@ -219,7 +219,7 @@ public class Material implements Disposable {
         bindGroupLayoutDesc.setEntryCount(location);
 
         bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, emissiveTexBindingLayout, normalTexBindingLayout, mrTexBindingLayout );
-        return webGPU.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+        return webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
     // per material bind group
@@ -250,7 +250,7 @@ public class Material implements Disposable {
                 material.normalTexture.getBinding(4),
                 material.metallicRoughnessTexture.getBinding(5));
 
-        return webGPU.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
+        return webGPU.wgpuDeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
     private void writeMaterialUniforms( UniformBuffer uniformBuffer){

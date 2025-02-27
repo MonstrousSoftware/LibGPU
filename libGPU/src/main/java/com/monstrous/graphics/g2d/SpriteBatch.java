@@ -6,8 +6,8 @@ import com.monstrous.graphics.*;
 import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.*;
-import com.monstrous.wgpuUtils.WgpuJava;
+import com.monstrous.utils.JavaWebGPU;
+import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
 import java.nio.ByteBuffer;
@@ -19,7 +19,7 @@ import java.nio.ShortBuffer;
 // todo make use of UniformBuffer
 
 public class SpriteBatch implements Disposable {
-    private WebGPU webGPU;
+    private WebGPU_JNI webGPU;
     private ShaderProgram specificShader;
     private int maxSprites;
     private boolean begun;
@@ -81,7 +81,7 @@ public class SpriteBatch implements Disposable {
         ByteBuffer vertexBB = ByteBuffer.allocateDirect(maxSprites * 4 * vertexSize);
         vertexBB.order(ByteOrder.nativeOrder());  // important
         vertexData = vertexBB.asFloatBuffer();
-        vertexDataPtr = Pointer.wrap(WgpuJava.getRuntime(), vertexBB);
+        vertexDataPtr = Pointer.wrap(JavaWebGPU.getRuntime(), vertexBB);
 
         projectionMatrix = new Matrix4();
         projectionMatrix.setToOrtho(0f, LibGPU.graphics.getWidth(), 0f, LibGPU.graphics.getHeight(), -1f, 1f);
@@ -114,8 +114,8 @@ public class SpriteBatch implements Disposable {
             indexData.put((short)(vertexOffset + 3));
         }
         indexData.flip();
-        Pointer indexDataPtr = Pointer.wrap(WgpuJava.getRuntime(), bb);
-        webGPU.QueueWriteBuffer(LibGPU.queue, indexBuffer, 0, indexDataPtr, maxSprites*6*Short.BYTES);
+        Pointer indexDataPtr = Pointer.wrap(JavaWebGPU.getRuntime(), bb);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer, 0, indexDataPtr, maxSprites*6*Short.BYTES);
     }
 
 
@@ -204,7 +204,7 @@ public class SpriteBatch implements Disposable {
 
 
         // append new vertex data to GPU vertex buffer
-        webGPU.QueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexDataPtr, numBytes);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexDataPtr, numBytes);
 
         // bind texture
         Pointer texBG = makeBindGroup(texture);
@@ -214,13 +214,13 @@ public class SpriteBatch implements Disposable {
         renderPass.setVertexBuffer( 0, vertexBuffer, vbOffset, numBytes);
         renderPass.setIndexBuffer( indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
 
-        renderPass.setBindGroup( 0, texBG, 0, WgpuJava.createNullPointer());
+        renderPass.setBindGroup( 0, texBG, 0, JavaWebGPU.createNullPointer());
 
         //renderPass.setScissorRect( 20, 20, 500, 500);
 
         renderPass.drawIndexed( numRects*6, 1, 0, 0, 0);
 
-        webGPU.BindGroupRelease(texBG);
+        webGPU.wgpuBindGroupRelease(texBG);
 
         vbOffset += numBytes;
 
@@ -392,7 +392,7 @@ public class SpriteBatch implements Disposable {
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex);
         bufferDesc.setSize((long) maxSprites * 4 * vertexSize );
         bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer = webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        vertexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
@@ -401,7 +401,7 @@ public class SpriteBatch implements Disposable {
         sz = (sz + 3) & ~3; // round up to the next multiple of 4
         bufferDesc.setSize(sz);
         bufferDesc.setMappedAtCreation(0L);
-        indexBuffer = webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        indexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // Create uniform buffer
         uniformBufferSize = 16 * Float.BYTES;
@@ -444,7 +444,7 @@ public class SpriteBatch implements Disposable {
         bindGroupLayoutDesc.setLabel("SpriteBatch texture binding group layout");
         bindGroupLayoutDesc.setEntryCount(3);
         bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
-        return LibGPU.webGPU.DeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+        return LibGPU.webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
 
@@ -464,13 +464,13 @@ public class SpriteBatch implements Disposable {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(3);
         bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
-        return LibGPU.webGPU.DeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
+        return LibGPU.webGPU.wgpuDeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
     private Pointer makePipelineLayout(Pointer bindGroupLayout) {
         long[] layouts = new long[1];
         layouts[0] = bindGroupLayout.address();
-        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
+        Pointer layoutPtr = JavaWebGPU.createLongArrayPointer(layouts);
 
         // Create the pipeline layout to define the bind groups needed : 3 bind group
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
@@ -478,7 +478,7 @@ public class SpriteBatch implements Disposable {
         layoutDesc.setLabel("SpriteBatch Pipeline Layout");
         layoutDesc.setBindGroupLayoutCount(1);
         layoutDesc.setBindGroupLayouts(layoutPtr);
-        return LibGPU.webGPU.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
+        return LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
@@ -505,10 +505,10 @@ public class SpriteBatch implements Disposable {
     @Override
     public void dispose(){
         pipelines.dispose();
-        webGPU.BufferRelease(vertexBuffer);
-        webGPU.BufferRelease(indexBuffer);
-        webGPU.BindGroupLayoutRelease(bindGroupLayout);
-        webGPU.PipelineLayoutRelease(pipelineLayout);
+        webGPU.wgpuBufferRelease(vertexBuffer);
+        webGPU.wgpuBufferRelease(indexBuffer);
+        webGPU.wgpuBindGroupLayoutRelease(bindGroupLayout);
+        webGPU.wgpuPipelineLayoutRelease(pipelineLayout);
         uniformBuffer.dispose();
     }
 }

@@ -1,6 +1,6 @@
 package com.monstrous;
 
-import com.monstrous.wgpu.WGPUBackendType;
+import com.monstrous.webgpu.WGPUBackendType;
 
 public class ApplicationConfiguration {
     public int width;

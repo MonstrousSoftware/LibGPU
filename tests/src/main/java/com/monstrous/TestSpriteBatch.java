@@ -3,7 +3,7 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.ScreenUtils;
-import com.monstrous.wgpu.WGPUVertexFormat;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 
 public class TestSpriteBatch extends ApplicationAdapter {

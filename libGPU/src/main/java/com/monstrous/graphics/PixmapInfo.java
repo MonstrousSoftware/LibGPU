@@ -1,6 +1,7 @@
 package com.monstrous.graphics;
 
-import com.monstrous.wgpuUtils.WgpuJavaStruct;
+
+import com.monstrous.utils.WgpuJavaStruct;
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
 

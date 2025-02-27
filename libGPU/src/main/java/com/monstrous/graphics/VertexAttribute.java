@@ -1,6 +1,6 @@
 package com.monstrous.graphics;
 
-import com.monstrous.wgpu.WGPUVertexFormat;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 public class VertexAttribute {
 

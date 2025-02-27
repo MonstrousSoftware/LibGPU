@@ -1,4 +1,4 @@
-package com.monstrous.wgpuUtils;
+package com.monstrous.wgpuUtilsOLD;
 
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;

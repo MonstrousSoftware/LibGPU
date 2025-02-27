@@ -5,7 +5,7 @@ import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
-import com.monstrous.wgpu.WGPUVertexFormat;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
 

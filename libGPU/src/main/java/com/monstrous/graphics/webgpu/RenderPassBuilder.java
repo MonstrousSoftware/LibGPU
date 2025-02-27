@@ -3,21 +3,19 @@ package com.monstrous.graphics.webgpu;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.Texture;
+import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.utils.viewports.Viewport;
-import com.monstrous.wgpu.*;
-import com.monstrous.wgpuUtils.WgpuJava;
+import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
 import static com.monstrous.LibGPU.webGPU;
 
-// Factory class to create RenderPass objects.
-//
-// use setCommandEncoder() before creating passes.
-// use create() to create a pass (at least once per frame)
-// use setClearColor() to set the background color of future passes. (see ScreenUtils.clear() )
-// use setViewport() to apply a viewport on the next render pass.
-
-
+/** Factory class to create RenderPass objects.
+ *  use setCommandEncoder() before creating passes.
+ *  use create() to create a pass (at least once per frame)
+ *  use setClearColor() to set the background color of future passes. (see ScreenUtils.clear() )
+ *  use setViewport() to apply a viewport on the next render pass.
+ */
 public class RenderPassBuilder {
 
     private static Pointer encoder;
@@ -59,7 +57,7 @@ public class RenderPassBuilder {
 
         renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
 
-        renderPassColorAttachment.setDepthSlice(WebGPU.WGPU_DEPTH_SLICE_UNDEFINED);
+        renderPassColorAttachment.setDepthSlice(-1L);
 
         renderPassColorAttachment.setLoadOp((clearColor != null || mustClear) ? WGPULoadOp.Clear : WGPULoadOp.Load);
 
@@ -80,14 +78,14 @@ public class RenderPassBuilder {
                 renderPassColorAttachment.setResolveTarget(LibGPU.app.targetView);
             } else {
                 renderPassColorAttachment.setView(LibGPU.app.targetView);
-                renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+                renderPassColorAttachment.setResolveTarget(JavaWebGPU.createNullPointer());
             }
             colorFormat = LibGPU.surfaceFormat;
             //depthFormat = WGPUTextureFormat.Depth24Plus;    // todo
         }
         else {
             renderPassColorAttachment.setView(outputTexture.getTextureView());
-            renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
+            renderPassColorAttachment.setResolveTarget(JavaWebGPU.createNullPointer());
             colorFormat = outputTexture.getFormat();
             sampleCount = 1;
         }
@@ -114,7 +112,7 @@ public class RenderPassBuilder {
         renderPassDescriptor.setNextInChain();
 
         renderPassDescriptor.setLabel("Render Pass");
-        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
+        renderPassDescriptor.setOcclusionQuerySet(JavaWebGPU.createNullPointer());
 
         renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
         renderPassDescriptor.setColorAttachmentCount(1);
@@ -123,7 +121,7 @@ public class RenderPassBuilder {
 
         LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
-        Pointer renderPassPtr = webGPU.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+        Pointer renderPassPtr = webGPU.wgpuCommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
         RenderPass pass = new RenderPass(renderPassPtr, colorFormat, depthFormat, sampleCount,
                 outputTexture == null ? LibGPU.graphics.getWidth() : outputTexture.getWidth(),
                 outputTexture == null ? LibGPU.graphics.getHeight() : outputTexture.getHeight());

@@ -11,8 +11,8 @@ import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.*;
-import com.monstrous.wgpuUtils.WgpuJava;
+import com.monstrous.utils.JavaWebGPU;
+import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class ModelBatch implements Disposable {
 
     private final int FRAME_UB_SIZE = 816;
 
-    private final WebGPU webGPU;
+    private final WebGPU_JNI webGPU;
     private final Pointer device;
 
     private RenderPass pass;
@@ -142,8 +142,8 @@ public class ModelBatch implements Disposable {
     public void end(){
         flush();
 
-        webGPU.BindGroupRelease(frameBindGroup);
-        webGPU.BindGroupRelease(instancingBindGroup);
+        webGPU.wgpuBindGroupRelease(frameBindGroup);
+        webGPU.wgpuBindGroupRelease(instancingBindGroup);
 
         if(environment.skybox != null)
             environment.skybox.render(camera, pass);
@@ -213,13 +213,13 @@ public class ModelBatch implements Disposable {
         if(meshPart == null)
             return;
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
-        pass.setVertexBuffer(0, vertexBuffer, 0, webGPU.BufferGetSize(vertexBuffer));
+        pass.setVertexBuffer(0, vertexBuffer, 0, webGPU.wgpuBufferGetSize(vertexBuffer));
 
         setPipeline(pass, meshPart.mesh.vertexAttributes, environment);
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
-            pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.BufferGetSize(indexBuffer));
+            pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.wgpuBufferGetSize(indexBuffer));
             pass.drawIndexed( meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
         }
         else
@@ -261,8 +261,8 @@ public class ModelBatch implements Disposable {
     @Override
     public void dispose() {
         pipelines.dispose();
-        webGPU.BindGroupLayoutRelease(frameBindGroupLayout);
-        webGPU.BindGroupLayoutRelease(instancingBindGroupLayout);
+        webGPU.wgpuBindGroupLayoutRelease(frameBindGroupLayout);
+        webGPU.wgpuBindGroupLayoutRelease(instancingBindGroupLayout);
 
         frameUniformBuffer.dispose();
         instanceBuffer.dispose();
@@ -322,7 +322,7 @@ public class ModelBatch implements Disposable {
         bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Frame)");
         bindGroupLayoutDesc.setEntryCount(5);
         bindGroupLayoutDesc.setEntries(uniformBindingLayout, shadowMapBindingLayout, shadowSamplerBindingLayout, cubeMapBindingLayout, cubeMapSamplerBindingLayout);
-        return webGPU.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+        return webGPU.wgpuDeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
 
     }
 
@@ -355,7 +355,7 @@ public class ModelBatch implements Disposable {
         samplerDesc.setLodMaxClamp(1);
         samplerDesc.setCompare(WGPUCompareFunction.Less);
         samplerDesc.setMaxAnisotropy(1);
-        Pointer sampler = LibGPU.webGPU.DeviceCreateSampler(LibGPU.device, samplerDesc);
+        Pointer sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
 
         WGPUBindGroupEntry samplerBinding = null;
         samplerBinding = WGPUBindGroupEntry.createDirect();
@@ -370,7 +370,7 @@ public class ModelBatch implements Disposable {
         bindGroupDesc.setEntryCount(5);
         bindGroupDesc.setEntries(uniformBinding, shadowMap.getBinding(1), samplerBinding, cubeMap.getBinding(3), cubeMap.getSamplerBinding(4));
 
-        return webGPU.DeviceCreateBindGroup(device, bindGroupDesc);
+        return webGPU.wgpuDeviceCreateBindGroup(device, bindGroupDesc);
     }
 
 
@@ -382,7 +382,7 @@ public class ModelBatch implements Disposable {
         layouts[1] = materialBindGroupLayout.address();
         layouts[2] = instancingBindGroupLayout.address();
 
-        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
+        Pointer layoutPtr = JavaWebGPU.createLongArrayPointer(layouts);
 
         // Create the pipeline layout to define the bind groups needed
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
@@ -390,7 +390,7 @@ public class ModelBatch implements Disposable {
         layoutDesc.setLabel("ModelBatch Pipeline Layout");
         layoutDesc.setBindGroupLayoutCount(3);
         layoutDesc.setBindGroupLayouts(layoutPtr);
-        return LibGPU.webGPU.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
+        return LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }
 
 
@@ -494,7 +494,7 @@ public class ModelBatch implements Disposable {
         bindGroupLayoutDesc.setEntryCount(1);
 
         bindGroupLayoutDesc.setEntries(instancingBindGroupLayout);
-        return webGPU.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+        return webGPU.wgpuDeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
     private Pointer createInstancingBindGroup(Pointer instanceBindGroupLayout, Pointer instanceBuffer, int bufferSize) {
@@ -513,7 +513,7 @@ public class ModelBatch implements Disposable {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(1);
         bindGroupDesc.setEntries(binding);
-        return webGPU.DeviceCreateBindGroup(device, bindGroupDesc);
+        return webGPU.wgpuDeviceCreateBindGroup(device, bindGroupDesc);
     }
 
 

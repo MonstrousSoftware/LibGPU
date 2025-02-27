@@ -10,7 +10,7 @@ import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
-import com.monstrous.wgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.WGPUTextureFormat;
 
 import java.util.ArrayList;
 

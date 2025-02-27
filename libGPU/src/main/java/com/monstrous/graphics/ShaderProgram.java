@@ -2,9 +2,9 @@ package com.monstrous.graphics;
 
 import com.monstrous.FileHandle;
 import com.monstrous.LibGPU;
-import com.monstrous.wgpu.WGPUSType;
-import com.monstrous.wgpu.WGPUShaderModuleDescriptor;
-import com.monstrous.wgpu.WGPUShaderModuleWGSLDescriptor;
+import com.monstrous.webgpu.WGPUSType;
+import com.monstrous.webgpu.WGPUShaderModuleDescriptor;
+import com.monstrous.webgpu.WGPUShaderModuleWGSLDescriptor;
 import jnr.ffi.Pointer;
 
 public class ShaderProgram {
@@ -59,7 +59,7 @@ public class ShaderProgram {
 
             shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
-        shaderModule = LibGPU.webGPU.DeviceCreateShaderModule(LibGPU.device, shaderDesc);
+        shaderModule = LibGPU.webGPU.wgpuDeviceCreateShaderModule(LibGPU.device, shaderDesc);
         if(shaderModule == null)
             throw new RuntimeException("ShaderModule: compile failed "+name);
 
@@ -79,7 +79,7 @@ public class ShaderProgram {
 //    }
 
     public void dispose(){
-        LibGPU.webGPU.ShaderModuleRelease(shaderModule);
+        LibGPU.webGPU.wgpuShaderModuleRelease(shaderModule);
         shaderModule = null;
     }
 

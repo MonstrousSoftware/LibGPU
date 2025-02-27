@@ -8,11 +8,11 @@ import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.math.Matrix4;
-import com.monstrous.wgpu.*;
+import com.monstrous.webgpu.*;
 
 
 public class Demo extends ApplicationAdapter {
-    private WebGPU webGPU;
+    private WebGPU_JNI webGPU;
 
     private Mesh mesh;
     private MeshPart meshPart;

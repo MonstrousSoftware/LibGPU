@@ -6,10 +6,10 @@ import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.WGPUBlendFactor;
-import com.monstrous.wgpu.WGPUBlendOperation;
-import com.monstrous.wgpu.WGPUCullMode;
-import com.monstrous.wgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.WGPUBlendFactor;
+import com.monstrous.webgpu.WGPUBlendOperation;
+import com.monstrous.webgpu.WGPUCullMode;
+import com.monstrous.webgpu.WGPUTextureFormat;
 
 import java.util.Objects;
 

@@ -1,6 +1,6 @@
 package com.monstrous;// com.monstrous.Launcher
 
-import com.monstrous.wgpu.WGPUBackendType;
+import com.monstrous.webgpu.WGPUBackendType;
 
 public class Launcher {
 

@@ -9,7 +9,7 @@ import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
-import com.monstrous.wgpu.WGPUVertexFormat;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 // Test building a model from scratch, rather than reading a file
 // DOESN'T WORK YET

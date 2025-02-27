@@ -9,7 +9,7 @@ import com.monstrous.graphics.loaders.gltf.*;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.WGPUVertexFormat;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 import java.io.IOException;
 import java.nio.file.Files;

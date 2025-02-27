@@ -1,10 +1,10 @@
 package com.monstrous.graphics;
 
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.WGPUVertexAttribute;
-import com.monstrous.wgpu.WGPUVertexBufferLayout;
-import com.monstrous.wgpu.WGPUVertexFormat;
-import com.monstrous.wgpu.WGPUVertexStepMode;
+import com.monstrous.webgpu.WGPUVertexAttribute;
+import com.monstrous.webgpu.WGPUVertexBufferLayout;
+import com.monstrous.webgpu.WGPUVertexFormat;
+import com.monstrous.webgpu.WGPUVertexStepMode;
 
 import java.util.ArrayList;
 

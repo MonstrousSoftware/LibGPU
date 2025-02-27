@@ -5,8 +5,8 @@ import com.monstrous.graphics.Color;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.WGPUBufferDescriptor;
-import com.monstrous.wgpuUtils.WgpuJava;
+import com.monstrous.utils.JavaWebGPU;
+import com.monstrous.webgpu.WGPUBufferDescriptor;
 import jnr.ffi.Pointer;
 
 // todo auto padding between elements
@@ -51,11 +51,11 @@ public class UniformBuffer implements Disposable {
         bufferDesc.setUsage( usage ); //WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
         bufferDesc.setSize( bufferSize );
         bufferDesc.setMappedAtCreation(0L);
-        this.handle = LibGPU.webGPU.DeviceCreateBuffer(LibGPU.device, bufferDesc);
+        this.handle = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // working buffer in native memory to use as input to WriteBuffer
         float[] floats = new float[contentSize/Float.BYTES];
-        floatData = WgpuJava.createFloatArrayPointer(floats);       // native memory buffer for one instance to aid write buffer
+        floatData = JavaWebGPU.createFloatArrayPointer(floats);       // native memory buffer for one instance to aid write buffer
     }
 
     private int ceilToNextMultiple(int value, int step){
@@ -127,7 +127,7 @@ public class UniformBuffer implements Disposable {
     public void endFill(int writeOffset){
         if(offset > contentSize)
             throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
-        LibGPU.webGPU.QueueWriteBuffer(LibGPU.queue, handle, dynamicOffset+writeOffset, floatData, offset);
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, handle, dynamicOffset+writeOffset, floatData, offset);
     }
 
     public Pointer getHandle(){
@@ -136,7 +136,7 @@ public class UniformBuffer implements Disposable {
 
     @Override
     public void dispose() {
-        LibGPU.webGPU.BufferRelease(handle);
+        LibGPU.webGPU.wgpuBufferRelease(handle);
         handle = null;
     }
 }

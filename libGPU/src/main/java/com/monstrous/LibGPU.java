@@ -1,15 +1,15 @@
 package com.monstrous;
 
-import com.monstrous.wgpu.WebGPU;
-import com.monstrous.wgpu.WGPUSupportedLimits;
-import com.monstrous.wgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.WGPUSupportedLimits;
+import com.monstrous.webgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.WebGPU_JNI;
 import jnr.ffi.Pointer;
 
 public class LibGPU {
     public static Application app;
     public static Input input;
     public static Graphics graphics;
-    public static WebGPU webGPU;
+    public static WebGPU_JNI webGPU;
 
     // put the following under wgpu?
     public static Pointer instance;

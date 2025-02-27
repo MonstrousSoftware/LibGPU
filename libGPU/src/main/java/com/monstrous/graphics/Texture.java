@@ -1,8 +1,8 @@
 package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
-import com.monstrous.wgpu.*;
-import com.monstrous.wgpuUtils.WgpuJava;
+import com.monstrous.utils.JavaWebGPU;
+import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
 import java.io.IOException;
@@ -57,8 +57,8 @@ public class Texture {
         try {
             fileData = Files.readAllBytes(Paths.get(fileName));
 
-            Pointer data = WgpuJava.createByteArrayPointer(fileData);
-            image = LibGPU.webGPU.gdx2d_load(data, fileData.length);        // use native function to parse image file
+            Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
+            image = JavaWebGPU.getUtils().gdx2d_load(data, fileData.length);        // use native function to parse image file
 
             PixmapInfo info = PixmapInfo.createAt(image);
             this.width = info.width.intValue();
@@ -86,8 +86,8 @@ public class Texture {
 
     public Texture(byte[] byteArray, String name, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
 
-        Pointer data = WgpuJava.createByteArrayPointer(byteArray);
-        image = LibGPU.webGPU.gdx2d_load(data, byteArray.length);        // use native function to parse image file
+        Pointer data = JavaWebGPU.createByteArrayPointer(byteArray);
+        image = JavaWebGPU.getUtils().gdx2d_load(data, byteArray.length);        // use native function to parse image file
 
         PixmapInfo info = PixmapInfo.createAt(image);
         this.width = info.width.intValue();
@@ -117,9 +117,9 @@ public class Texture {
             try {
                 fileData = Files.readAllBytes(Paths.get(fileNames[layer]));
                 int len = fileData.length;
-                Pointer data = WgpuJava.createByteArrayPointer(fileData);
+                Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
 
-                image = LibGPU.webGPU.gdx2d_load(data, len);        // use native function to parse image file
+                image = JavaWebGPU.getUtils().gdx2d_load(data, len);        // use native function to parse image file
                 PixmapInfo info = PixmapInfo.createAt(image);
 
                 // use the first image to
@@ -225,8 +225,8 @@ public class Texture {
         else
             textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
         textureDesc.setViewFormatCount(0);
-        textureDesc.setViewFormats(WgpuJava.createNullPointer());
-        texture = LibGPU.webGPU.DeviceCreateTexture(LibGPU.device, textureDesc);
+        textureDesc.setViewFormats(JavaWebGPU.createNullPointer());
+        texture = LibGPU.webGPU.wgpuDeviceCreateTexture(LibGPU.device, textureDesc);
 
         //System.out.println("dimensions: "+textureDesc.getSize().getDepthOrArrayLayers());
 
@@ -240,7 +240,7 @@ public class Texture {
         textureViewDesc.setMipLevelCount(mipLevelCount);
         textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : WGPUTextureViewDimension.Cube);    // assume it's a cube map if layers > 1
         textureViewDesc.setFormat(textureDesc.getFormat());
-        textureView = LibGPU.webGPU.TextureCreateView(texture, textureViewDesc);
+        textureView = LibGPU.webGPU.wgpuTextureCreateView(texture, textureViewDesc);
 
         // Create a sampler
         WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
@@ -255,7 +255,7 @@ public class Texture {
         samplerDesc.setLodMaxClamp(mipLevelCount);
         samplerDesc.setCompare(WGPUCompareFunction.Undefined);
         samplerDesc.setMaxAnisotropy(1);
-        sampler = LibGPU.webGPU.DeviceCreateSampler(LibGPU.device, samplerDesc);
+        sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
     }
 
     public void fill(Color color) {
@@ -291,7 +291,7 @@ public class Texture {
             }
         }
 
-        Pointer pixelPtr = WgpuJava.createByteArrayPointer(pixels);
+        Pointer pixelPtr = JavaWebGPU.createByteArrayPointer(pixels);
 
         WGPUExtent3D ext = WGPUExtent3D.createDirect();
         ext.setWidth(width);
@@ -301,7 +301,7 @@ public class Texture {
         destination.setMipLevel(0);
 
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.webGPU.QueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
    }
 
    // layer : which layer to load for a 3d texture, otherwise 0
@@ -390,9 +390,9 @@ public class Texture {
             ext.setDepthOrArrayLayers(1);
 
             // wrap byte array in native pointer
-            Pointer pixelData = WgpuJava.createByteArrayPointer(pixels);
+            Pointer pixelData = JavaWebGPU.createByteArrayPointer(pixels);
             // N.B. using textureDesc.getSize() for param won't work!
-            LibGPU.webGPU.QueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
+            LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
 
             mipLevelWidth /= 2;
             mipLevelHeight /= 2;
@@ -448,9 +448,9 @@ public class Texture {
         ext.setDepthOrArrayLayers(1);
 
         // wrap byte array in native pointer
-        Pointer pixelData = WgpuJava.createFloatArrayPointer(pixels);
+        Pointer pixelData = JavaWebGPU.createFloatArrayPointer(pixels);
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.webGPU.QueueWriteTexture(LibGPU.queue, destination, pixelData, width * height * 8, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelData, width * height * 8, source, ext);
 
     }
 
@@ -467,11 +467,11 @@ public class Texture {
     public void dispose(){
         if(image != null) {
             //System.out.println("free: "+image);
-            LibGPU.webGPU.gdx2d_free(image);
+            JavaWebGPU.getUtils().gdx2d_free(image);
         }
         System.out.println("Destroy texture "+label);
-        LibGPU.webGPU.TextureViewRelease(textureView);
-        LibGPU.webGPU.TextureDestroy(texture);
-        LibGPU.webGPU.TextureRelease(texture);
+        LibGPU.webGPU.wgpuTextureViewRelease(textureView);
+        LibGPU.webGPU.wgpuTextureDestroy(texture);
+        LibGPU.webGPU.wgpuTextureRelease(texture);
     }
 }

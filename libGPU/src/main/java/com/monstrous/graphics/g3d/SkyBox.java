@@ -11,23 +11,24 @@ import com.monstrous.graphics.webgpu.UniformBuffer;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
-import com.monstrous.wgpu.*;
-import com.monstrous.wgpuUtils.WgpuJava;
+import com.monstrous.utils.JavaWebGPU;
+import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
-// SkyBox
-//
-// Following the approach from https://webgpufundamentals.org/webgpu/lessons/webgpu-skybox.html
-//
-// This uses a dedicated shader that renders one screen filling triangle using a cube map.
-// The camera projection view matrix is inverted and use to look up screen pixels in the cube map.
-// The sky box should be rendered after all opaque renderables.
+/**
+ * SkyBox
+ * Following the approach from https://webgpufundamentals.org/webgpu/lessons/webgpu-skybox.html
+ * This uses a dedicated shader that renders one screen filling triangle using a cube map.
+ *  The camera projection view matrix is inverted and use to look up screen pixels in the cube map.
+ *  The sky box should be rendered after all opaque renderables.
+  */
+
 
 public class SkyBox implements Disposable {
 
     private final int FRAME_UB_SIZE = 16*Float.BYTES;   // to hold one 4x4 matrix
 
-    private final WebGPU webGPU;
+    private final WebGPU_JNI webGPU;
     private final Pointer device;
 
     private final Texture cubeMap;
@@ -83,10 +84,10 @@ public class SkyBox implements Disposable {
     @Override
     public void dispose() {
         pipeline.dispose();
-        webGPU.BindGroupLayoutRelease(bindGroupLayout);
+        webGPU.wgpuBindGroupLayoutRelease(bindGroupLayout);
         uniformBuffer.dispose();
         pipelineSpec.dispose();
-        webGPU.BindGroupRelease(bindGroup);
+        webGPU.wgpuBindGroupRelease(bindGroup);
     }
 
 
@@ -129,7 +130,7 @@ public class SkyBox implements Disposable {
         bindGroupLayoutDesc.setLabel("SkyBox Bind Group Layout");
         bindGroupLayoutDesc.setEntryCount(3);
         bindGroupLayoutDesc.setEntries(uniformBindingLayout, cubeMapBindingLayout, cubeMapSamplerBindingLayout);
-        return webGPU.DeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+        return webGPU.wgpuDeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
     }
 
     //  bind group
@@ -150,7 +151,7 @@ public class SkyBox implements Disposable {
         bindGroupDesc.setEntryCount(3);
         bindGroupDesc.setEntries(uniformBinding, cubeMap.getBinding(1), cubeMap.getSamplerBinding(2));
 
-        return webGPU.DeviceCreateBindGroup(device, bindGroupDesc);
+        return webGPU.wgpuDeviceCreateBindGroup(device, bindGroupDesc);
     }
 
 
@@ -160,7 +161,7 @@ public class SkyBox implements Disposable {
         long[] layouts = new long[1];
         layouts[0] = bindGroupLayout.address();
 
-        Pointer layoutPtr = WgpuJava.createLongArrayPointer(layouts);
+        Pointer layoutPtr = JavaWebGPU.createLongArrayPointer(layouts);
 
         // Create the pipeline layout to define the bind groups needed
         WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
@@ -168,7 +169,7 @@ public class SkyBox implements Disposable {
         layoutDesc.setLabel("SkyBox Pipeline Layout");
         layoutDesc.setBindGroupLayoutCount(1);
         layoutDesc.setBindGroupLayouts(layoutPtr);
-        return LibGPU.webGPU.DeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
+        return LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
     }
 
 
