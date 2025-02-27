@@ -45,9 +45,9 @@ public class Application {
 
         while(listener != null) {
 
-            System.out.println("Creating application listener");
+            //System.out.println("Creating application listener");
             listener.create();
-            resize(config.width, config.height);
+            resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
 
 
             // Run the rendering loop until the user has attempted to close
@@ -88,7 +88,9 @@ public class Application {
             listener.pause();
             listener.dispose();
 
-            // Application chaining
+            // Application chaining: if nextListener is defined, we start up a new listener now that the current listener has exited.
+            // if returnToPreviousListener is true, then we will return to the current listener when the new listener exits.
+            //
             ApplicationListener currentListener = listener;
             listener = nextListener;    // switch to next listener (null is there is none)
             nextListener = returnToPreviousListener ? currentListener : null;   // return to current listener afterwards
@@ -149,25 +151,17 @@ public class Application {
 
     private void initWebGPU(long windowHandle) {
         webGPU = JavaWebGPU.init();
-
-        //webGPU = LibraryLoader.create(WebGPU.class).load("wrapper"); // load the library
         LibGPU.webGPU = webGPU;
 
-//        Runtime runtime =Runtime.getRuntime(webGPU);
-//        WgpuJava.setRuntime(runtime);
-
-
-        //LibGPU.instance = webGPU.CreateInstance();
         LibGPU.instance = webGPU.wgpuCreateInstance(null);
-        System.out.println("instance = "+ LibGPU.instance);
 
-        System.out.println("window = "+Long.toString(windowHandle,16));
+        // get window surface
         LibGPU.surface = JavaWebGPU.getUtils().glfwGetWGPUSurface(LibGPU.instance, windowHandle);
-        //LibGPU.surface = webGPU.glfwGetWGPUSurface(LibGPU.instance, windowHandle);
         System.out.println("surface = "+LibGPU.surface);
 
         LibGPU.device = initDevice();
 
+        // enable gpu timing if configured
         gpuTiming = new GPUTiming(LibGPU.device, configuration.enableGPUtiming);
     }
 
@@ -238,7 +232,7 @@ public class Application {
         requiredLimits.getLimits().setMaxSampledTexturesPerShaderStage(1);
         requiredLimits.getLimits().setMaxSamplersPerShaderStage(1);
 
-        // todo these values are incorrect
+        // todo these values are rather random
 
         requiredLimits.getLimits().setMaxBindGroups(4);
         requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(4);// We use at most 1 uniform buffer per stage

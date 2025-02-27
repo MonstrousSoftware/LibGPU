@@ -19,12 +19,13 @@ run {
 repositories {
     mavenLocal();
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
 
     implementation project(':libGPU')
     implementation 'com.github.jnr:jnr-ffi:2.2.17'
-    implementation 'com.github.MonstrousSoftware:Java-to-WebGPU:1.0'
+    implementation "com.github.MonstrousSoftware:Java-to-WebGPU:${j2w_version}"
 }
 

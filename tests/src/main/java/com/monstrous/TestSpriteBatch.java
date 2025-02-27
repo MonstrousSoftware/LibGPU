@@ -2,7 +2,6 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
-import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
 
@@ -49,9 +48,7 @@ public class TestSpriteBatch extends ApplicationAdapter {
         }
 
         // SpriteBatch testing
-        ScreenUtils.clear(Color.WHITE);
-
-        batch.begin();
+        batch.begin(Color.TEAL);
         //batch.setVertexAttributes(vaNoColor);
 
         batch.disableBlending();

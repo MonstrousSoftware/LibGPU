@@ -2,8 +2,8 @@ package com.monstrous;
 
 import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.scene2d.*;
-import com.monstrous.utils.ScreenUtils;
 
 
 public class TestGUI extends ApplicationAdapter {
@@ -12,6 +12,7 @@ public class TestGUI extends ApplicationAdapter {
     private long startTime;
     private int frames;
     private Stage stage;
+    private SpriteBatch batch;
 
     WrappedBoolean cheese = new WrappedBoolean(true);
     WrappedBoolean fries = new WrappedBoolean(false);
@@ -25,6 +26,7 @@ public class TestGUI extends ApplicationAdapter {
         stage = new Stage();
         LibGPU.input.setInputProcessor(stage);
         fillStage();
+        batch = new SpriteBatch();
     }
 
     private void fillStage(){
@@ -160,8 +162,10 @@ public class TestGUI extends ApplicationAdapter {
 
     public void render(  ){
 
+        batch.begin(Color.TEAL);
+        batch.end();
 
-        ScreenUtils.clear(Color.WHITE); // todo broken
+
         stage.draw();
 
         //System.out.println("Values : "+cheese.value + ", "+ fries.value +" , "+ all.value+", "+volume.value +", "+degrees.value);
@@ -180,6 +184,7 @@ public class TestGUI extends ApplicationAdapter {
         // cleanup
         System.out.println("demo exit");
         stage.dispose();
+        batch.dispose();
     }
 
     @Override

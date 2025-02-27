@@ -1,0 +1,12 @@
+
+
+
+
+allprojects {
+    group = 'com.monstrous'
+    version = '1.0.0-SNAPSHOT'
+
+    ext.j2w_version = "194d19d2f6"
+
+}
+

@@ -1,13 +1,15 @@
 package com.monstrous.graphics;
 
 public class Color {
-    public static final Color WHITE        = new Color(1,1,1,1);
-    public static final Color BLACK        = new Color(0,0,0,1);
-    public static final Color RED          = new Color(1,0,0,1);
-    public static final Color GREEN        = new Color(0,1,0,1);
-    public static final Color BLUE         = new Color(0,0,1,1);
-    public static final Color YELLOW        = new Color(1,1,0,1);
+    public static final Color WHITE        = new Color(1.0f,1.0f,1.0f,1f);
+    public static final Color BLACK        = new Color(0f,0f,0f,1);
+    public static final Color RED          = new Color(1f,0f,0f,1);
+    public static final Color GREEN        = new Color(0f,1f,0f,1);
+    public static final Color BLUE         = new Color(0f,0f,1f,1);
+    public static final Color YELLOW        = new Color(1f,1f,0f,1);
     public static final Color GRAY         = new Color(0.5f,0.5f,0.5f,1);
+    public static final Color GREEN_YELLOW   = new Color(173, 255, 47);
+    public static final Color TEAL           = new Color(0, 128, 128);
 
     public float r;
     public float g;
@@ -19,6 +21,13 @@ public class Color {
         this.g = g;
         this.b = b;
         this.a = a;
+    }
+
+    public Color(int r, int g, int b) {
+        this.r = r/255f;
+        this.g = g/255f;
+        this.b = b/255f;
+        this.a = 1.0f;
     }
 
     public Color(Color color){
