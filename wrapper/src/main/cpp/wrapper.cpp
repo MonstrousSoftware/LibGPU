@@ -1,5 +1,5 @@
 #define DAWN
-#define LEAN
+
 
 #if __cplusplus < 201103L
   #error This library needs at least a C++11 compliant compiler
