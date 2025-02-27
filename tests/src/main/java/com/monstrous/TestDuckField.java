@@ -1,6 +1,8 @@
 package com.monstrous;
 
-import com.monstrous.graphics.*;
+import com.monstrous.graphics.Camera;
+import com.monstrous.graphics.Color;
+import com.monstrous.graphics.PerspectiveCamera;
 import com.monstrous.graphics.g3d.Model;
 import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.g3d.ModelInstance;
@@ -8,7 +10,6 @@ import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
-import com.monstrous.utils.ScreenUtils;
 
 import java.util.ArrayList;
 
@@ -19,6 +20,7 @@ public class TestDuckField extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
+    private CameraController camController;
     private Model model;
     private ArrayList<ModelInstance> modelInstances;
     private Environment environment;
@@ -48,18 +50,20 @@ public class TestDuckField extends ApplicationAdapter {
         environment.add( new DirectionalLight( Color.WHITE, new Vector3(0,-1,0)));
         environment.ambientLightLevel = 0.4f;
 
-        LibGPU.input.setInputProcessor(new CameraController(camera));
+        camController = new CameraController(camera);
+        LibGPU.input.setInputProcessor(camController);
 
         modelBatch = new ModelBatch();
     }
 
     private ArrayList<Matrix4> makeTransforms(){
         ArrayList<Matrix4> transforms = new ArrayList<>();
-        float x = -15;
+        float N = 25;
+        float x = -N;
 
-        for(int i = 0; i < 15; i++, x += 2f) {
-            float z = -15;
-            for (int j = 0; j < 15; j++, z += 2f) {
+        for(int i = 0; i < N; i++, x += 2f) {
+            float z = -N;
+            for (int j = 0; j < N; j++, z += 2f) {
                 transforms.add(new Matrix4().translate(x, 0, z).scale(new Vector3( 1f,1f+.3f*(float)Math.sin(x-z), 1f)).rotate(up, 30f * x + 20f * z));
             }
         }
@@ -79,12 +83,13 @@ public class TestDuckField extends ApplicationAdapter {
     public void render( ){
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
             LibGPU.app.exit();
+        camController.update();
 
         rotate(transforms, LibGPU.graphics.getDeltaTime());
 
-        ScreenUtils.clear(.7f, .7f, .7f, 1);
 
-        modelBatch.begin(camera, environment);
+
+        modelBatch.begin(camera, environment, Color.GRAY);
         modelBatch.render(modelInstances);
         modelBatch.end();
 
