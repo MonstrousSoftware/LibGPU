@@ -12,12 +12,11 @@ application {
 
 run {
     workingDir = rootProject.file('assets').path
-    systemProperty "java.library.path", rootProject.file('native-libs').path        // where to find the DLL files
     setIgnoreExitValue(true)
 }
 
 repositories {
-    mavenLocal();
+    //mavenLocal();
     mavenCentral()
     maven { url 'https://jitpack.io' }
 }

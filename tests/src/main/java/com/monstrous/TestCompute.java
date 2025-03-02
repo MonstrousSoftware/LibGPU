@@ -227,7 +227,9 @@ public class TestCompute extends ApplicationAdapter {
             done[0] = true; // signal that the call back was executed
         };
 
-        // note: there is a newer function for this
+
+
+        // note: there is a newer function for this and using this one will raise a warning
         webGPU.wgpuBufferMapAsync(mapBuffer, WGPUMapMode.Read, 0, BUFFER_SIZE, callback, null);
 
         while(!done[0]) {
