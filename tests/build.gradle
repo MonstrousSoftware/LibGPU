@@ -25,6 +25,6 @@ dependencies {
 
     implementation project(':libGPU')
     implementation 'com.github.jnr:jnr-ffi:2.2.17'
-    implementation "com.github.MonstrousSoftware:Java-to-WebGPU:${j2w_version}"
+    implementation "com.github.MonstrousSoftware:java-to-webgpu:${j2w_version}"
 }
 
