@@ -140,6 +140,9 @@ public class WindowedApp {
     }
 
     public boolean getShouldClose(){
+        if(window==0)
+            return true;
+
         return glfwWindowShouldClose(window);
     }
 
@@ -160,6 +163,8 @@ public class WindowedApp {
     }
 
     public void closeWindow(){
+        if(window == 0)
+            return;
 
         // Free the window callbacks and destroy the window
         glfwFreeCallbacks(window);

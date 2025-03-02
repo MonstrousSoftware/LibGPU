@@ -40,19 +40,22 @@ public class Application {
         LibGPU.graphics.setSize(config.width, config.height);
 
         winApp = new WindowedApp();
-        winApp.openWindow(this, config);
+        if(!config.noWindow)
+            winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());
 
         while(listener != null) {
 
             //System.out.println("Creating application listener");
             listener.create();
-            resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
+
+            if(!config.noWindow)
+                resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
 
 
             // Run the rendering loop until the user has attempted to close
             // the window or the application has called Application.exit().
-            while (!mustExitRenderLoop && !winApp.getShouldClose()) {
+            while ( !mustExitRenderLoop && !winApp.getShouldClose()) {
 
                 // skip rendering if window is minimized to size zero
                 // note: also means render() is not called
@@ -97,7 +100,6 @@ public class Application {
             returnToPreviousListener = false;
             mustExitRenderLoop = false;
         }
-        System.out.println("Close Window");
         winApp.closeWindow();
         exitWebGPU();
     }
@@ -128,7 +130,7 @@ public class Application {
             }
             listener.resize(width, height);
 
-            if(configuration.numSamples > 1) {
+            if(configuration.numSamples > 1 ) {
                 if(multiSamplingTexture != null)
                     multiSamplingTexture.dispose();
                 multiSamplingTexture = new Texture(width, height, false, true, LibGPU.surfaceFormat, configuration.numSamples);
@@ -156,8 +158,10 @@ public class Application {
         LibGPU.instance = webGPU.wgpuCreateInstance(null);
 
         // get window surface
-        LibGPU.surface = JavaWebGPU.getUtils().glfwGetWGPUSurface(LibGPU.instance, windowHandle);
-        System.out.println("surface = "+LibGPU.surface);
+        if(windowHandle != 0) {
+            LibGPU.surface = JavaWebGPU.getUtils().glfwGetWGPUSurface(LibGPU.instance, windowHandle);
+            System.out.println("surface = " + LibGPU.surface);
+        }
 
         LibGPU.device = initDevice();
 
@@ -282,18 +286,21 @@ public class Application {
 //        };
 //        wgpu.QueueOnSubmittedWorkDone(LibGPU.queue, queueCallback, null);
 
-
-
-        WGPUSurfaceCapabilities caps = WGPUSurfaceCapabilities.createDirect();
-        webGPU.wgpuSurfaceGetCapabilities(LibGPU.surface, adapter, caps);
         //System.out.println("Surface Capabilities: formatCount: "+caps.getFormatCount());
-        Pointer formats = caps.getFormats();
-        int format = formats.getInt(0);
-        LibGPU.surfaceFormat = WGPUTextureFormat.values()[format];
+        if(LibGPU.surface != null) {
+            WGPUSurfaceCapabilities caps = WGPUSurfaceCapabilities.createDirect();
+            webGPU.wgpuSurfaceGetCapabilities(LibGPU.surface, adapter, caps);
+            Pointer formats = caps.getFormats();
+            int format = formats.getInt(0);
+            LibGPU.surfaceFormat = WGPUTextureFormat.values()[format];
 
-        // Deprecated:
-        //LibGPU.surfaceFormat = wgpu.SurfaceGetPreferredFormat(LibGPU.surface, adapter);
-        System.out.println("Using format: " + LibGPU.surfaceFormat);
+            // Deprecated:
+            //LibGPU.surfaceFormat = wgpu.SurfaceGetPreferredFormat(LibGPU.surface, adapter);
+            System.out.println("Using format: " + LibGPU.surfaceFormat);
+        } else {
+            System.out.println("No render surface.");
+        }
+
 
         webGPU.wgpuAdapterRelease(adapter);       // we can release our adapter as soon as we have a device
         return device;
