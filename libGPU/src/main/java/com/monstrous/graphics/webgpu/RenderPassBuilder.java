@@ -7,6 +7,7 @@ import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.utils.viewports.Viewport;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
+import org.jetbrains.annotations.Nullable;
 
 import static com.monstrous.LibGPU.webGPU;
 
@@ -20,7 +21,6 @@ public class RenderPassBuilder {
 
     private static Pointer encoder;
     private static final Color defaultClearColor = new Color(Color.BLACK);
-    private static boolean mustClear = true;
     private static Texture outputTexture;
     private static Texture outputDepthTexture;
     private static Viewport viewport = null;
@@ -59,11 +59,11 @@ public class RenderPassBuilder {
 
         renderPassColorAttachment.setDepthSlice(-1L);
 
-        renderPassColorAttachment.setLoadOp((clearColor != null || mustClear) ? WGPULoadOp.Clear : WGPULoadOp.Load);
+        renderPassColorAttachment.setLoadOp((clearColor != null) ? WGPULoadOp.Clear : WGPULoadOp.Load);
 
-        if(clearColor == null && mustClear){
-            clearColor = defaultClearColor;
-        }
+//        if(clearColor == null && mustClear){
+//            clearColor = defaultClearColor;
+//        }
 
         if(clearColor != null) {
             renderPassColorAttachment.getClearValue().setR(clearColor.r);
@@ -138,19 +138,19 @@ public class RenderPassBuilder {
     }
 
     // color null to not clear screen
-    public static void setClearColor(Color color) {
-        if(color == null){
-            mustClear = false;
-        }
-        else {
-            defaultClearColor.set(color);
-            mustClear = true;
-        }
-    }
+//    public static void setClearColor(Color color) {
+//        if(color == null){
+//            mustClear = false;
+//        }
+//        else {
+//            defaultClearColor.set(color);
+//            mustClear = true;
+//        }
+//    }
 
-    public static void setClearColor(float r, float g, float b, float a) {
-        defaultClearColor.set(r, g, b, a);
-    }
+//    public static void setClearColor(float r, float g, float b, float a) {
+//        defaultClearColor.set(r, g, b, a);
+//    }
 
     // set viewport on future render passes created, set to null to not apply a viewport.
     public static void setViewport(Viewport vp){

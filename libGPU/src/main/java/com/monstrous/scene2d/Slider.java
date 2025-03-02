@@ -37,7 +37,7 @@ public class Slider extends Widget implements Disposable {
         batch.setColor(color);
         batch.draw( textureSliderBg, x+parentCell.x, y+parentCell.y, w, h);
         int sliderX = (int) ((w-textureKnob.getWidth()) * (controlledValue.value - min)/(max-min));
-        batch.draw( textureKnob, x+parentCell.x + sliderX, y+parentCell.y+textureKnob.getHeight()/2f, textureKnob.getWidth(), textureKnob.getHeight());
+        batch.draw( textureKnob, x+parentCell.x + sliderX, y+parentCell.y, textureKnob.getWidth(), textureKnob.getHeight());
     }
 
 

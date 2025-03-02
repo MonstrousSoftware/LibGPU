@@ -54,7 +54,7 @@ public class Stage implements Disposable, InputProcessor {
         table.pack();   // can we avoid doing this for every draw call?
         table.setPosition();
 
-        batch.begin();
+        batch.begin(null);
         table.draw(batch);
         batch.end();
 
