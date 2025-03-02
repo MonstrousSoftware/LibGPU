@@ -6,6 +6,11 @@ import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
+/**
+ * Demonstration of using a compute shader.
+ * Follows example from https://eliemichel.github.io/LearnWebGPU/basic-compute/compute-pipeline.html#
+ * Uses pure webGPU calls to invoke the compute shader.
+ */
 
 public class TestCompute extends ApplicationAdapter {
 
