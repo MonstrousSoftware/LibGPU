@@ -151,8 +151,10 @@ Date
 
 
 Warning: GetPreferredFormat is deprecated, use GetCapabilities().format[0] instead as the preferred format.
+=> This has been fixed.
 
 Note: since MSVC is installed this seems to be the preferred compiler by the Gradle plugin for cpp-application instead of MingW.
+=> Beware a long in MSVC is only 32 bits and unsuitable to hold a WebGPU handle.
 
 
 Get dawn.dll, dawn.lib and webgpu.h from here: https://github.com/jspanchu/webgpu-dawn-binaries

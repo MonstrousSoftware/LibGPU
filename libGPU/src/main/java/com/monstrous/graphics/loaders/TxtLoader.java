@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 // loader of ad hoc txt format from Learn WebGPU for C++
 
+@Deprecated
 public class TxtLoader {
 
 

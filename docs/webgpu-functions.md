@@ -3,9 +3,8 @@
 The framework hides the details of WebGPU.  However, it is possible to call WebGPU functions directly if so desired.
 
 ## Functions
-The WebGPU functions are defined in the interface `WebGPU` and are a direct Java counterpart of the functions from the C header file `webgpu.h`.
-For example: the C function `wgpuDeviceCreateBuffer()` is available as Java method `DeviceCreateBuffer` in the `WebGPU` interface.
-Most but not all functions have been translated.
+The WebGPU functions are defined in the interface `WebGPU_JNI` and are a direct Java counterpart of the functions from the C header file `webgpu.h`.
+For example: the C function `wgpuDeviceCreateBuffer()` is available as Java method `wgpuDeviceCreateBuffer()` in the `WebGPU_JNI` interface.
 
 ## Calling WebGPU functions
 The functions can be called via `LibGPU.webGPU` which provides an interface to the native WebGPU library.  There are two native implementations available. 

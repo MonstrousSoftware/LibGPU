@@ -13,7 +13,7 @@ public class Launcher {
         config.title = "My WebGPU application";
         config.vsyncEnabled = false;
         config.backend = WGPUBackendType.Undefined;
-        config.numSamples = 4;      // MSAA samples: can be 1 (no MSAA) or 4 (multi-sampling)
+        config.numSamples = 1;      // MSAA samples: can be 1 (no MSAA) or 4 (multi-sampling)
 
 
         //config.noWindow = true;   // use this to run a program without a window
@@ -21,7 +21,7 @@ public class Launcher {
         // don't use. will cause crash
         //config.enableGPUtiming = true;
 
-        new Application(new TestCompute(), config);
+        new Application(new Menu(), config);
 
     }
 }
