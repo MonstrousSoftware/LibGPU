@@ -18,6 +18,7 @@ package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.loaders.MaterialData;
+import com.monstrous.graphics.webgpu.BindGroupLayout;
 import com.monstrous.graphics.webgpu.RenderPass;
 import com.monstrous.graphics.webgpu.UniformBuffer;
 import com.monstrous.utils.Disposable;
@@ -42,7 +43,7 @@ public class Material implements Disposable {
     private static Texture whitePixel;  // fallback texture
     private static Texture blackPixel;  // fallback texture
 
-    private static Pointer materialBindGroupLayout;
+    private static BindGroupLayout materialBindGroupLayout;
     private UniformBuffer materialUniformBuffer;
     private Pointer materialBindGroup;
 
@@ -172,74 +173,85 @@ public class Material implements Disposable {
 
 
 
-    public static Pointer getBindGroupLayout(){
+    public static BindGroupLayout getBindGroupLayout(){
         // make a bind group layout (shared by all materials)
         if(materialBindGroupLayout == null)
             materialBindGroupLayout = createMaterialBindGroupLayout();
         return materialBindGroupLayout;
     }
 
-    private static Pointer createMaterialBindGroupLayout(){
+    private static BindGroupLayout createMaterialBindGroupLayout(){
         int location = 0;
+        BindGroupLayout layout = new BindGroupLayout("ModelBatch Bind Group Layout (Material)");
+        layout.begin();
+        layout.addBuffer(location++, WGPUShaderStage.Fragment, WGPUBufferBindingType.Uniform, MATERIAL_UB_SIZE, false);
+        layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);
+        layout.addSampler(location++, WGPUShaderStage.Fragment,WGPUSamplerBindingType.Filtering);
+        layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);// emissive texture
+        layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);// normal texture
+        layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);// metallic roughness texture
 
-        // Define binding layout
-        WGPUBindGroupLayoutEntry uniformBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(uniformBindingLayout);
-        uniformBindingLayout.setBinding(location++);
-        uniformBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        uniformBindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
-        uniformBindingLayout.getBuffer().setMinBindingSize(MATERIAL_UB_SIZE);
-        uniformBindingLayout.getBuffer().setHasDynamicOffset(0L);
+        layout.end();
+        return layout;
 
-        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(texBindingLayout);
-        texBindingLayout.setBinding(location++);
-        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(samplerBindingLayout);
-        samplerBindingLayout.setBinding(location++);
-        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
-
-        // emissive texture binding is included even if it is not used
-        WGPUBindGroupLayoutEntry emissiveTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(emissiveTexBindingLayout);
-        emissiveTexBindingLayout.setBinding(location++);
-        emissiveTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        emissiveTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        emissiveTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        // normal texture binding is included even if it is not used
-        WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(normalTexBindingLayout);
-        normalTexBindingLayout.setBinding(location++);
-        normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        // metallic roughness texture binding is included even if it is not used
-        WGPUBindGroupLayoutEntry mrTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(mrTexBindingLayout);
-        mrTexBindingLayout.setBinding(location++);
-        mrTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        mrTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        mrTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        // Create a bind group layout
-        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
-        bindGroupLayoutDesc.setNextInChain();
-        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Material)");
-        bindGroupLayoutDesc.setEntryCount(location);
-
-        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, emissiveTexBindingLayout, normalTexBindingLayout, mrTexBindingLayout );
-        return webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+//        // Define binding layout
+//        WGPUBindGroupLayoutEntry uniformBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(uniformBindingLayout);
+//        uniformBindingLayout.setBinding(location++);
+//        uniformBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+//        uniformBindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
+//        uniformBindingLayout.getBuffer().setMinBindingSize(MATERIAL_UB_SIZE);
+//        uniformBindingLayout.getBuffer().setHasDynamicOffset(0L);
+//
+//        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(texBindingLayout);
+//        texBindingLayout.setBinding(location++);
+//        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+//        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+//        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+//
+//        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(samplerBindingLayout);
+//        samplerBindingLayout.setBinding(location++);
+//        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+//        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
+//
+//        // emissive texture binding is included even if it is not used
+//        WGPUBindGroupLayoutEntry emissiveTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(emissiveTexBindingLayout);
+//        emissiveTexBindingLayout.setBinding(location++);
+//        emissiveTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+//        emissiveTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+//        emissiveTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+//
+//        // normal texture binding is included even if it is not used
+//        WGPUBindGroupLayoutEntry normalTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(normalTexBindingLayout);
+//        normalTexBindingLayout.setBinding(location++);
+//        normalTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+//        normalTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+//        normalTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+//
+//        // metallic roughness texture binding is included even if it is not used
+//        WGPUBindGroupLayoutEntry mrTexBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
+//        setDefault(mrTexBindingLayout);
+//        mrTexBindingLayout.setBinding(location++);
+//        mrTexBindingLayout.setVisibility(WGPUShaderStage.Fragment);
+//        mrTexBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
+//        mrTexBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
+//
+//        // Create a bind group layout
+//        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
+//        bindGroupLayoutDesc.setNextInChain();
+//        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Material)");
+//        bindGroupLayoutDesc.setEntryCount(location);
+//
+//        bindGroupLayoutDesc.setEntries(uniformBindingLayout, texBindingLayout, samplerBindingLayout, emissiveTexBindingLayout, normalTexBindingLayout, mrTexBindingLayout );
+//        return webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
     // per material bind group
-    private Pointer createMaterialBindGroup(Material material, Pointer bindGroupLayout, Pointer materialUniformBuffer) {
+    private Pointer createMaterialBindGroup(Material material, BindGroupLayout bindGroupLayout, Pointer materialUniformBuffer) {
         // Create a binding
         WGPUBindGroupEntry uniformBinding = WGPUBindGroupEntry.createDirect();
         uniformBinding.setNextInChain();
@@ -254,7 +266,7 @@ public class Material implements Disposable {
         // A bind group contains one or multiple bindings
         WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
         bindGroupDesc.setNextInChain();
-        bindGroupDesc.setLayout(bindGroupLayout);
+        bindGroupDesc.setLayout(bindGroupLayout.getHandle());
 
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(6);

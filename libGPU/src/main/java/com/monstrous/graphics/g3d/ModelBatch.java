@@ -27,7 +27,6 @@ import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
-import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
@@ -49,11 +48,12 @@ public class ModelBatch implements Disposable {
     private RenderPass pass;
 
     private UniformBuffer frameUniformBuffer;
-    private Pointer frameBindGroupLayout;
-    private Pointer instancingBindGroupLayout;
-    private Pointer pipelineLayout;
-    private Pointer frameBindGroup;
-    private Pointer instancingBindGroup;
+    private final BindGroupLayout frameBindGroupLayout;
+    private final BindGroupLayout instancingBindGroupLayout;
+    private PipelineLayout pipelineLayout;
+    private Pointer sampler;
+    private BindGroup frameBindGroup;
+    private BindGroup instancingBindGroup;
     private Material prevMaterial;
     private Camera camera;
 
@@ -83,18 +83,22 @@ public class ModelBatch implements Disposable {
         pool = new RenderablePool(1000);
         pipelineSpec = new PipelineSpecification();
 
+
         defaultDirectionalLight = new DirectionalLight(new Color(1,0,0,1), new Vector3(0, -1, 0));
 
         frameUniformBuffer = new UniformBuffer(FRAME_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
 
         frameBindGroupLayout = createFrameBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
+        pipelineLayout = new PipelineLayout("ModelBatch Pipeline Layout", frameBindGroupLayout, Material.getBindGroupLayout(),instancingBindGroupLayout);
 
         dummyShadowMap =  new Texture(1, 1, false, true, WGPUTextureFormat.Depth32Float, 1);
         dummyCubemap = new Texture(1,1, 6);
 
         int instanceSize = 16*Float.BYTES;      // data size per instance
         instanceBuffer = new UniformBuffer(instanceSize*MAX_INSTANCES, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage);
+
+        sampler = makeShadowSampler();
     }
 
     // todo allow hot-loading of shaders
@@ -119,7 +123,7 @@ public class ModelBatch implements Disposable {
         this.camera = camera;
         this.environment = environment;
 
-        pipelineLayout = makePipelineLayout(frameBindGroupLayout, Material.getBindGroupLayout(), instancingBindGroupLayout);
+
 
         // create a new render pass
         pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture, LibGPU.app.configuration.numSamples);
@@ -129,11 +133,11 @@ public class ModelBatch implements Disposable {
         numPipelineSwitches = 0;
 
         writeFrameUniforms(frameUniformBuffer, camera, environment);
-        frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, frameUniformBuffer.getHandle());
-        pass.setBindGroup(0, frameBindGroup);
+        frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, sampler, frameUniformBuffer.getBuffer());
+        pass.setBindGroup(0, frameBindGroup.getHandle());
 
-        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer.getHandle(), 16*Float.BYTES*MAX_INSTANCES);
-        pass.setBindGroup(2, instancingBindGroup);
+        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer.getBuffer());
+        pass.setBindGroup(2, instancingBindGroup.getHandle());
     }
 
     public void render(ArrayList<ModelInstance> instances) {
@@ -158,8 +162,8 @@ public class ModelBatch implements Disposable {
     public void end(){
         flush();
 
-        webGPU.wgpuBindGroupRelease(frameBindGroup);
-        webGPU.wgpuBindGroupRelease(instancingBindGroup);
+        frameBindGroup.dispose();
+        instancingBindGroup.dispose();
 
         if(environment.skybox != null)
             environment.skybox.render(camera, pass);
@@ -228,13 +232,13 @@ public class ModelBatch implements Disposable {
     private void emitMeshPart(MeshPart meshPart, int instanceCount, int renderablesCount) {
         if(meshPart == null)
             return;
-        Pointer vertexBuffer = meshPart.mesh.getVertexBuffer();
+        Pointer vertexBuffer = meshPart.mesh.getVertexBuffer().getHandle();
         pass.setVertexBuffer(0, vertexBuffer, 0, webGPU.wgpuBufferGetSize(vertexBuffer));
 
         setPipeline(pass, meshPart.mesh.vertexAttributes, environment);
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
-            Pointer indexBuffer = meshPart.mesh.getIndexBuffer();
+            Pointer indexBuffer = meshPart.mesh.getIndexBuffer().getHandle();
             pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.wgpuBufferGetSize(indexBuffer));
             pass.drawIndexed( meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
         }
@@ -265,7 +269,7 @@ public class ModelBatch implements Disposable {
         pipelineSpec.depthFormat = pass.getDepthFormat();
         pipelineSpec.numSamples = pass.getSampleCount();
 
-        Pipeline pipeline = pipelines.getPipeline(pipelineLayout, pipelineSpec);
+        Pipeline pipeline = pipelines.getPipeline(pipelineLayout.getHandle(), pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             pass.setPipeline(pipeline.getPipeline());
             prevPipeline = pipeline;
@@ -277,87 +281,36 @@ public class ModelBatch implements Disposable {
     @Override
     public void dispose() {
         pipelines.dispose();
-        webGPU.wgpuBindGroupLayoutRelease(frameBindGroupLayout);
-        webGPU.wgpuBindGroupLayoutRelease(instancingBindGroupLayout);
+        pipelineLayout.dispose();
+
+        frameBindGroupLayout.dispose();
+        instancingBindGroupLayout.dispose();
 
         frameUniformBuffer.dispose();
         instanceBuffer.dispose();
-        // todo
+
+        LibGPU.webGPU.wgpuSamplerRelease(sampler);
+        // todo check everything is cleaned up
     }
 
 
     // Bind Group Layout:
     //  uniforms
 
-    private Pointer createFrameBindGroupLayout(){
-
-        // Define binding layout
-        int location = 0;
-
-        WGPUBindGroupLayoutEntry uniformBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(uniformBindingLayout);
-        uniformBindingLayout.setBinding(location++);
-        uniformBindingLayout.setVisibility(WGPUShaderStage.Vertex | WGPUShaderStage.Fragment);
-        uniformBindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
-        uniformBindingLayout.getBuffer().setMinBindingSize(FRAME_UB_SIZE);
-        uniformBindingLayout.getBuffer().setHasDynamicOffset(0L);
-
-        // shadow map
-        WGPUBindGroupLayoutEntry shadowMapBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(shadowMapBindingLayout);
-        shadowMapBindingLayout.setBinding(location++);
-        shadowMapBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        shadowMapBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Depth);
-        shadowMapBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-        // shadow map sampler
-        WGPUBindGroupLayoutEntry shadowSamplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(shadowSamplerBindingLayout);
-        shadowSamplerBindingLayout.setBinding(location++);
-        shadowSamplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        shadowSamplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Comparison);
-
-        // cube map texture
-        WGPUBindGroupLayoutEntry cubeMapBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(cubeMapBindingLayout);
-        cubeMapBindingLayout.setBinding(location++);
-        cubeMapBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        cubeMapBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-        cubeMapBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Cube);
-
-        // cube map sampler
-        WGPUBindGroupLayoutEntry cubeMapSamplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(cubeMapSamplerBindingLayout);
-        cubeMapSamplerBindingLayout.setBinding(location++);
-        cubeMapSamplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-        cubeMapSamplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
-
-        // Create a bind group layout
-        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
-        bindGroupLayoutDesc.setNextInChain();
-        bindGroupLayoutDesc.setLabel("ModelBatch Bind Group Layout (Frame)");
-        bindGroupLayoutDesc.setEntryCount(5);
-        bindGroupLayoutDesc.setEntries(uniformBindingLayout, shadowMapBindingLayout, shadowSamplerBindingLayout, cubeMapBindingLayout, cubeMapSamplerBindingLayout);
-        return webGPU.wgpuDeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
-
+    private BindGroupLayout createFrameBindGroupLayout(){
+        BindGroupLayout layout = new BindGroupLayout("ModelBatch Bind Group Layout (Frame)");
+        layout.begin();
+        int binding = 0;
+        layout.addBuffer(binding++, WGPUShaderStage.Vertex | WGPUShaderStage.Fragment, WGPUBufferBindingType.Uniform, FRAME_UB_SIZE, false);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Depth, WGPUTextureViewDimension._2D, false);
+        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Comparison);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
+        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
+        layout.end();
+        return layout;
     }
 
-    // per frame bind group
-    private Pointer makeFrameBindGroup(Pointer frameBindGroupLayout, Pointer uniformBuffer) {
-        // Create a binding
-        WGPUBindGroupEntry uniformBinding = WGPUBindGroupEntry.createDirect();
-        uniformBinding.setNextInChain();
-        uniformBinding.setBinding(0);  // binding index
-        uniformBinding.setBuffer(uniformBuffer);
-        uniformBinding.setOffset(0);
-        uniformBinding.setSize(FRAME_UB_SIZE);
-
-        // A bind group contains one or multiple bindings
-        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
-        bindGroupDesc.setNextInChain();
-        bindGroupDesc.setLayout(frameBindGroupLayout);
-        // There must be as many bindings as declared in the layout!
-
+    private Pointer makeShadowSampler(){
         // Create a sampler
         WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
         samplerDesc.setAddressModeU(WGPUAddressMode.ClampToEdge);
@@ -371,42 +324,26 @@ public class ModelBatch implements Disposable {
         samplerDesc.setLodMaxClamp(1);
         samplerDesc.setCompare(WGPUCompareFunction.Less);
         samplerDesc.setMaxAnisotropy(1);
-        Pointer sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
+        return LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
+    }
 
-        WGPUBindGroupEntry samplerBinding = null;
-        samplerBinding = WGPUBindGroupEntry.createDirect();
-        samplerBinding.setNextInChain();
-        samplerBinding.setBinding(2);  // binding index
-        samplerBinding.setSampler(sampler);
 
+    // per frame bind group
+    private BindGroup makeFrameBindGroup(BindGroupLayout frameBindGroupLayout, Pointer sampler, Buffer uniformBuffer) {
 
         Texture shadowMap = (environment != null && environment.renderShadows)? environment.shadowMap : dummyShadowMap;
         Texture cubeMap = (environment != null && environment.cubeMap != null) ? environment.cubeMap :  dummyCubemap;
 
-        bindGroupDesc.setEntryCount(5);
-        bindGroupDesc.setEntries(uniformBinding, shadowMap.getBinding(1), samplerBinding, cubeMap.getBinding(3), cubeMap.getSamplerBinding(4));
+        BindGroup bindGroup = new BindGroup(frameBindGroupLayout);
+        bindGroup.begin();
+        bindGroup.addBuffer(0, uniformBuffer, 0, FRAME_UB_SIZE);
+        bindGroup.addTexture(1, shadowMap.getTextureView());
+        bindGroup.addSampler(2, sampler);
+        bindGroup.addTexture(3, cubeMap.getTextureView());
+        bindGroup.addSampler(4, cubeMap.getSampler());
 
-        return webGPU.wgpuDeviceCreateBindGroup(device, bindGroupDesc);
-    }
-
-
-    // max bind groups is commonly = 4
-    private Pointer makePipelineLayout(Pointer frameBindGroupLayout, Pointer materialBindGroupLayout, Pointer instancingBindGroupLayout) {
-
-        long[] layouts = new long[3];
-        layouts[0] = frameBindGroupLayout.address();
-        layouts[1] = materialBindGroupLayout.address();
-        layouts[2] = instancingBindGroupLayout.address();
-
-        Pointer layoutPtr = JavaWebGPU.createLongArrayPointer(layouts);
-
-        // Create the pipeline layout to define the bind groups needed
-        WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
-        layoutDesc.setNextInChain();
-        layoutDesc.setLabel("ModelBatch Pipeline Layout");
-        layoutDesc.setBindGroupLayoutCount(3);
-        layoutDesc.setBindGroupLayouts(layoutPtr);
-        return LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
+        bindGroup.end();
+        return bindGroup;
     }
 
 
@@ -492,65 +429,20 @@ public class ModelBatch implements Disposable {
 
 
 
-    private Pointer createInstancingBindGroupLayout(){
-
-        // Define binding layout
-        WGPUBindGroupLayoutEntry instancingBindGroupLayout = WGPUBindGroupLayoutEntry.createDirect();
-        setDefault(instancingBindGroupLayout);
-        instancingBindGroupLayout.setBinding(0);
-        instancingBindGroupLayout.setVisibility(WGPUShaderStage.Vertex );
-        instancingBindGroupLayout.getBuffer().setType(WGPUBufferBindingType.ReadOnlyStorage);       // must be read-only
-        instancingBindGroupLayout.getBuffer().setMinBindingSize(16*Float.BYTES);
-        instancingBindGroupLayout.getBuffer().setHasDynamicOffset(0L);
-
-        // Create a bind group layout
-        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
-        bindGroupLayoutDesc.setNextInChain();
-        bindGroupLayoutDesc.setLabel("ModelBatch Binding Group Layout (Instance)");
-        bindGroupLayoutDesc.setEntryCount(1);
-
-        bindGroupLayoutDesc.setEntries(instancingBindGroupLayout);
-        return webGPU.wgpuDeviceCreateBindGroupLayout(device, bindGroupLayoutDesc);
+    private BindGroupLayout createInstancingBindGroupLayout(){
+        BindGroupLayout layout = new BindGroupLayout("ModelBatch Binding Group Layout (Instance)");
+        layout.begin();
+        layout.addBuffer(0, WGPUShaderStage.Vertex , WGPUBufferBindingType.ReadOnlyStorage, 16*Float.BYTES, false);
+        layout.end();
+        return layout;
     }
 
-    private Pointer createInstancingBindGroup(Pointer instanceBindGroupLayout, Pointer instanceBuffer, int bufferSize) {
-        // Create a binding
-        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
-        binding.setNextInChain();
-        binding.setBinding(0);  // binding index
-        binding.setBuffer(instanceBuffer);
-        binding.setOffset(0);
-        binding.setSize(bufferSize);
-
-        // A bind group contains one or multiple bindings
-        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
-        bindGroupDesc.setNextInChain();
-        bindGroupDesc.setLayout(instanceBindGroupLayout);
-        // There must be as many bindings as declared in the layout!
-        bindGroupDesc.setEntryCount(1);
-        bindGroupDesc.setEntries(binding);
-        return webGPU.wgpuDeviceCreateBindGroup(device, bindGroupDesc);
-    }
-
-
-    private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
-
-        bindingLayout.getBuffer().setNextInChain();
-        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-        bindingLayout.getBuffer().setHasDynamicOffset(0L);
-
-        bindingLayout.getSampler().setNextInChain();
-        bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);
-
-        bindingLayout.getStorageTexture().setNextInChain();
-        bindingLayout.getStorageTexture().setAccess(WGPUStorageTextureAccess.Undefined);
-        bindingLayout.getStorageTexture().setFormat(WGPUTextureFormat.Undefined);
-        bindingLayout.getStorageTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
-
-        bindingLayout.getTexture().setNextInChain();
-        bindingLayout.getTexture().setMultisampled(0L);
-        bindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Undefined);
-        bindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
+    private BindGroup createInstancingBindGroup(BindGroupLayout instanceBindGroupLayout, Buffer instanceBuffer) {
+        BindGroup bindGroup = new BindGroup(instanceBindGroupLayout);
+        bindGroup.begin();
+        bindGroup.addBuffer(0, instanceBuffer);
+        bindGroup.end();
+        return bindGroup;
     }
 
 }

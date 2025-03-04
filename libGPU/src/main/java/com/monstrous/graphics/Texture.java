@@ -179,6 +179,8 @@ public class Texture {
         return textureView;
     }
 
+    public Pointer getSampler() { return sampler; }
+
     public WGPUTextureFormat getFormat(){
         return format;
     }

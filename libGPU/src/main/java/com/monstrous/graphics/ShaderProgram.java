@@ -82,7 +82,7 @@ public class ShaderProgram {
         //System.out.println(name+": "+processed);
     }
 
-    public Pointer getShaderModule(){
+    public Pointer getHandle(){
         return shaderModule;
     }
 

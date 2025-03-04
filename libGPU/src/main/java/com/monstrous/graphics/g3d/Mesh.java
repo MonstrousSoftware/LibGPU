@@ -19,8 +19,8 @@ package com.monstrous.graphics.g3d;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.loaders.MeshData;
+import com.monstrous.graphics.webgpu.Buffer;
 import com.monstrous.utils.JavaWebGPU;
-import com.monstrous.webgpu.WGPUBufferDescriptor;
 import com.monstrous.webgpu.WGPUBufferUsage;
 import com.monstrous.webgpu.WGPUIndexFormat;
 import jnr.ffi.Pointer;
@@ -29,28 +29,12 @@ import java.util.ArrayList;
 
 public class Mesh {
 
-    private Pointer vertexBuffer;
-    private Pointer indexBuffer;
+    private Buffer vertexBuffer;
+    private Buffer indexBuffer;
     private int vertexCount;
     private int indexCount;     // can be zero if the vertices are not indexed
     public VertexAttributes vertexAttributes;
     public WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
-
-
-//    public Mesh(String name) {
-//        load(name);
-//    }
-
-
-//    private void loadTxt(String fileName) {
-//        MeshData data = TxtLoader.load(fileName);
-//        storeMesh(data);
-//    }
-//    private void load(String fileName) {
-//        this(ObjLoader.load(fileName));
-//
-//        System.out.println("Loaded "+data.objectName);
-//    }
 
     public Mesh(){
 
@@ -74,17 +58,12 @@ public class Mesh {
 
     public void setVertices(float[] vertexData) {
         // Create vertex buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-            bufferDesc.setLabel("Vertex buffer");
-            bufferDesc.setUsage(WGPUBufferUsage.CopyDst |WGPUBufferUsage.Vertex );
-            bufferDesc.setSize((long)vertexData.length *Float.BYTES);
-            System.out.println("VB "+(long)vertexData.length *Float.BYTES);
-            bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer =LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device,bufferDesc);
+        int size = vertexData.length *Float.BYTES;
+        vertexBuffer = new Buffer("Vertex buffer", WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex, size);
 
         Pointer dataBuf = JavaWebGPU.createFloatArrayPointer(vertexData);
         // Upload geometry data to the buffer
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue,vertexBuffer,0,dataBuf,(int)bufferDesc.getSize());
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue,vertexBuffer.getHandle(),0,dataBuf, size);
     }
 
 
@@ -126,30 +105,23 @@ public class Mesh {
     }
 
     public void setIndices(Pointer idata, int indexBufferSize) {
-        // Create index buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-
-        // Create index buffer
-        bufferDesc.setLabel("Index buffer");
-        bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index);
-        bufferDesc.setSize(indexBufferSize);
-        bufferDesc.setMappedAtCreation(0L);
-        indexBuffer = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        indexBuffer = new Buffer("Index buffer", WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexBufferSize);
 
         // Upload data to the buffer
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer, 0, idata, indexBufferSize);
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer.getHandle(), 0, idata, indexBufferSize);
     }
 
     public void dispose(){
-        LibGPU.webGPU.wgpuBufferRelease(indexBuffer);
-        LibGPU.webGPU.wgpuBufferRelease(vertexBuffer);
+        indexBuffer.dispose();
+        vertexBuffer.dispose();
+
     }
 
-    public Pointer getVertexBuffer(){
+    public Buffer getVertexBuffer(){
         return vertexBuffer;
     }
 
-    public Pointer getIndexBuffer(){
+    public Buffer getIndexBuffer(){
         return indexBuffer;
     }
 

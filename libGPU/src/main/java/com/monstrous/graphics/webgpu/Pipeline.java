@@ -43,7 +43,7 @@ public class Pipeline implements Disposable {
         }
 
         //spec.shader = shader;
-        Pointer shaderModule = spec.shader.getShaderModule();
+        Pointer shaderModule = spec.shader.getHandle();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes != null ? spec.vertexAttributes.getVertexBufferLayout() : null;
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();

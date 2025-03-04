@@ -22,7 +22,6 @@ import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
 import com.monstrous.utils.JavaWebGPU;
-import com.monstrous.webgpu.WGPUBufferDescriptor;
 import jnr.ffi.Pointer;
 
 // todo auto padding between elements
@@ -30,16 +29,11 @@ import jnr.ffi.Pointer;
 
 public class UniformBuffer implements Disposable {
 
-
     private int contentSize;
-    private long usage;
-    private int maxSlices;
-    private Pointer handle;
     private Pointer floatData;
     private int offset;
-    private int dynamicOffset;
-
-
+    private final int dynamicOffset;
+    private Buffer buffer;
 
     public UniformBuffer(int contentSize, long usage){
         this(contentSize, usage, 1);
@@ -47,8 +41,6 @@ public class UniformBuffer implements Disposable {
 
     public UniformBuffer(int contentSize, long usage, int maxSlices){
         this.contentSize = contentSize;
-        this.usage = usage;
-        this.maxSlices = maxSlices;
         dynamicOffset = 0;
 
         // round up buffer size to 16 byte alignment
@@ -61,13 +53,15 @@ public class UniformBuffer implements Disposable {
             bufferSize += uniformStride * (maxSlices - 1);
         }
 
-        // Create uniform buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Uniform object buffer");
-        bufferDesc.setUsage( usage ); //WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-        bufferDesc.setSize( bufferSize );
-        bufferDesc.setMappedAtCreation(0L);
-        this.handle = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        buffer = new Buffer("uniform buffer", usage, bufferSize);
+
+//        // Create uniform buffer
+//        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
+//        bufferDesc.setLabel("Uniform object buffer");
+//        bufferDesc.setUsage( usage ); //WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
+//        bufferDesc.setSize( bufferSize );
+//        bufferDesc.setMappedAtCreation(0L);
+//        this.handle = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // working buffer in native memory to use as input to WriteBuffer
         float[] floats = new float[contentSize/Float.BYTES];
@@ -143,16 +137,20 @@ public class UniformBuffer implements Disposable {
     public void endFill(int writeOffset){
         if(offset > contentSize)
             throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, handle, dynamicOffset+writeOffset, floatData, offset);
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, buffer.getHandle(), dynamicOffset+writeOffset, floatData, offset);
     }
 
     public Pointer getHandle(){
-        return handle;
+        return buffer.getHandle();
+    }
+
+    public Buffer getBuffer(){
+        return buffer;
     }
 
     @Override
     public void dispose() {
-        LibGPU.webGPU.wgpuBufferRelease(handle);
-        handle = null;
+        LibGPU.webGPU.wgpuBufferRelease(buffer.getHandle());
+        buffer = null;
     }
 }
