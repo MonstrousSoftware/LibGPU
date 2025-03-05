@@ -18,29 +18,16 @@ package com.monstrous.graphics;
 
 import com.monstrous.FileHandle;
 import com.monstrous.LibGPU;
+import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.WGPUSType;
 import com.monstrous.webgpu.WGPUShaderModuleDescriptor;
 import com.monstrous.webgpu.WGPUShaderModuleWGSLDescriptor;
 import jnr.ffi.Pointer;
 
-public class ShaderProgram {
-
+public class ShaderProgram implements Disposable {
 
     private String name;
-    private String shaderSource;
-    private String processed;
     private Pointer shaderModule;
-    private static Preprocessor preprocessor = new Preprocessor();
-
-//    public ShaderProgram(String filePath) {
-//        String source = null;
-//        try {
-//            source = Files.readString(Paths.get(filePath));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        compile(filePath, source);
-//    }
 
     public ShaderProgram(FileHandle fileHandle) {
         this(fileHandle, "");
@@ -59,10 +46,8 @@ public class ShaderProgram {
 
     private void compile(String name, String shaderSource){
         this.name = name;
-        this.shaderSource = shaderSource;
 
-        //Preprocessor preprocessor = new Preprocessor();
-        processed = preprocessor.process(shaderSource);
+        String processedSource = Preprocessor.process(shaderSource);
 
         // Create Shader Module
         WGPUShaderModuleDescriptor shaderDesc = WGPUShaderModuleDescriptor.createDirect();
@@ -71,7 +56,7 @@ public class ShaderProgram {
         WGPUShaderModuleWGSLDescriptor shaderCodeDesc = WGPUShaderModuleWGSLDescriptor.createDirect();
             shaderCodeDesc.getChain().setNext();
             shaderCodeDesc.getChain().setSType(WGPUSType.ShaderModuleWGSLDescriptor);
-            shaderCodeDesc.setCode(processed);
+            shaderCodeDesc.setCode(processedSource);
 
             shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
@@ -79,7 +64,7 @@ public class ShaderProgram {
         if(shaderModule == null)
             throw new RuntimeException("ShaderModule: compile failed "+name);
 
-        //System.out.println(name+": "+processed);
+        //System.out.println(name+": "+processedSource);
     }
 
     public Pointer getHandle(){
@@ -94,6 +79,7 @@ public class ShaderProgram {
 //        return shaderSource;
 //    }
 
+    @Override
     public void dispose(){
         LibGPU.webGPU.wgpuShaderModuleRelease(shaderModule);
         shaderModule = null;

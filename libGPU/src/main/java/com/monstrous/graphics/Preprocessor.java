@@ -21,15 +21,15 @@ import java.util.Map;
 
 public class Preprocessor {
 
-    private Map<String,String> defineMap = new HashMap<>();
+    private static final Map<String,String> defineMap = new HashMap<>();
 
-    public String process(String input){
+    public static String process(String input){
         defineMap.clear();
         StringBuffer output = new StringBuffer();
         int nestDepth = 0;
         int ignoreLevel = 0;
 
-        String lines[] = input.split("\n");
+        String[] lines = input.split("\n");
         for(String line : lines){
             String trimmed = line.trim();
 
@@ -77,7 +77,7 @@ public class Preprocessor {
     }
 
     // b may be null, e.g. #define DEBUG
-    private void define(String a, String b){
+    private static void define(String a, String b){
         defineMap.put(a, b);
         //System.out.print("#define "+a);
         if(b != null)
@@ -85,14 +85,11 @@ public class Preprocessor {
         System.out.println();
     }
 
-    private boolean defined(String name){
+    private static boolean defined(String name){
         return defineMap.containsKey(name);
     }
 
-    private boolean evaluate(String expr){
-        if(expr.contentEquals("true"))
-            return true;
-        else
-            return false;
+    private static boolean evaluate(String expr){
+        return expr.contentEquals("true");      // placeholder implementation
     }
 }

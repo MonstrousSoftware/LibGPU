@@ -185,21 +185,21 @@ public class Texture {
         return format;
     }
 
-    public WGPUBindGroupEntry getBinding(int index) {
-        WGPUBindGroupEntry texBinding = WGPUBindGroupEntry.createDirect();
-        texBinding.setNextInChain();
-        texBinding.setBinding(index);  // binding index
-        texBinding.setTextureView(textureView);
-        return texBinding;
-    }
-
-    public WGPUBindGroupEntry getSamplerBinding(int index) {
-        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
-        binding.setNextInChain();
-        binding.setBinding(index);  // binding index
-        binding.setSampler(sampler);
-        return binding;
-    }
+//    public WGPUBindGroupEntry getBinding(int index) {
+//        WGPUBindGroupEntry texBinding = WGPUBindGroupEntry.createDirect();
+//        texBinding.setNextInChain();
+//        texBinding.setBinding(index);  // binding index
+//        texBinding.setTextureView(textureView);
+//        return texBinding;
+//    }
+//
+//    public WGPUBindGroupEntry getSamplerBinding(int index) {
+//        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
+//        binding.setNextInChain();
+//        binding.setBinding(index);  // binding index
+//        binding.setSampler(sampler);
+//        return binding;
+//    }
 
     private int bitWidth(int value) {
         if (value == 0)
