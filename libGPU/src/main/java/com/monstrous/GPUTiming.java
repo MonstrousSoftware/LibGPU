@@ -29,6 +29,7 @@ public class GPUTiming implements Disposable {
     private Pointer timeStampResolveBuffer;
     private Pointer timeStampMapBuffer;
     private boolean timeStampMapOngoing = false;
+    private WGPURenderPassTimestampWrites query = null;
 
     public GPUTiming(Pointer device, boolean enabled) {
         this.timingEnabled = enabled;
@@ -40,7 +41,7 @@ public class GPUTiming implements Disposable {
         querySetDescriptor.setNextInChain();
         querySetDescriptor.setLabel("Timestamp Query Set");
         querySetDescriptor.setType(WGPUQueryType.Timestamp);
-        querySetDescriptor.setCount(2); // start and end
+        querySetDescriptor.setCount(2); // start and end time
 
         timestampQuerySet = webGPU.wgpuDeviceCreateQuerySet(device, querySetDescriptor);
 
@@ -48,27 +49,27 @@ public class GPUTiming implements Disposable {
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
         bufferDesc.setLabel("timestamp resolve buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopySrc | WGPUBufferUsage.QueryResolve );
-        bufferDesc.setSize(32);
+        bufferDesc.setSize(16);     // space for 2 uint64's
         bufferDesc.setMappedAtCreation(0L);
         timeStampResolveBuffer = webGPU.wgpuDeviceCreateBuffer(device, bufferDesc);
 
         bufferDesc.setLabel("timestamp map buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
-        bufferDesc.setSize(32);
+        bufferDesc.setSize(16);
         timeStampMapBuffer = webGPU.wgpuDeviceCreateBuffer(device, bufferDesc);
+
+        query = WGPURenderPassTimestampWrites.createDirect();
+        query.setBeginningOfPassWriteIndex(0);
+        query.setEndOfPassWriteIndex(1);
+        query.setQuerySet(timestampQuerySet);
     }
 
     // call this before configuration of render pass
     public void configureRenderPassDescriptor(WGPURenderPassDescriptor renderPassDescriptor){
         if(timingEnabled) {
-            WGPURenderPassTimestampWrites start = WGPURenderPassTimestampWrites.createDirect();
-            start.setBeginningOfPassWriteIndex(0);
-            start.setEndOfPassWriteIndex(1);
-            start.setQuerySet(timestampQuerySet);
-
-            renderPassDescriptor.setTimestampWrites(start);
+            renderPassDescriptor.setTimestampWrites(query);
         } else {
-            renderPassDescriptor.setTimestampWrites();
+            renderPassDescriptor.setTimestampWrites();  // no timestamp writes
         }
     }
 
@@ -80,40 +81,44 @@ public class GPUTiming implements Disposable {
         webGPU.wgpuCommandEncoderResolveQuerySet(encoder, timestampQuerySet, 0, 2, timeStampResolveBuffer, 0);
 
         // Copy to the map buffer
-        webGPU.wgpuCommandEncoderCopyBufferToBuffer(encoder, timeStampResolveBuffer, 0,  timeStampMapBuffer, 0,32);
+        webGPU.wgpuCommandEncoderCopyBufferToBuffer(encoder, timeStampResolveBuffer, 0,  timeStampMapBuffer, 0,16);
     }
 
+
+
+    WGPUBufferMapCallback onTimestampBufferMapped = (WGPUBufferMapAsyncStatus status, Pointer userData) -> {
+        if(status != WGPUBufferMapAsyncStatus.Success)
+            System.out.println("*** ERROR: Timestamp buffer mapped with status: " + status);
+        else {
+            Pointer ram =  webGPU.wgpuBufferGetConstMappedRange(timeStampMapBuffer, 0, 16);
+            long start = ram.getLong(0);
+            long end = ram.getLong(Long.BYTES);
+            webGPU.wgpuBufferUnmap(timeStampMapBuffer);
+            long ns = end - start;
+            addTimeSample(ns);
+        }
+        timeStampMapOngoing = false;
+    };
 
     public void fetchTimestamps(){
         if(!timingEnabled || timeStampMapOngoing)
             return;
 
         // use a lambda expression to define a callback function
-        WGPUBufferMapCallback onTimestampBufferMapped = (WGPUBufferMapAsyncStatus status, Pointer userData) -> {
-            if(status != WGPUBufferMapAsyncStatus.Success)
-                System.out.println("*** ERROR: Timestamp buffer mapped with status: " + status);
-            else {
-                Pointer ram =  webGPU.wgpuBufferGetConstMappedRange(timeStampMapBuffer, 0, 32);
-                long start = ram.getLong(0);
-                long end = ram.getLong(Long.BYTES);
-                webGPU.wgpuBufferUnmap(timeStampMapBuffer);
-                long ns = end - start;
-                int microseconds = (int)(0.001 * ns);
-                addTimeSample(microseconds);
-//                System.out.println("us :"+microseconds);
-            }
-            timeStampMapOngoing = false;
-        };
+
 
         timeStampMapOngoing = true;
-        webGPU.wgpuBufferMapAsync(timeStampMapBuffer, WGPUMapMode.Read, 0, 32, onTimestampBufferMapped, null);
+        webGPU.wgpuBufferMapAsync(timeStampMapBuffer, WGPUMapMode.Read, 0, 16, onTimestampBufferMapped, null);
     }
 
     @Override
     public void dispose() {
        if(!timingEnabled)
             return;
-        //  timestampQuerySet release
+
+        webGPU.wgpuQuerySetRelease(timestampQuerySet);
+        webGPU.wgpuQuerySetDestroy(timestampQuerySet);
+
         webGPU.wgpuBufferDestroy(timeStampMapBuffer);
         webGPU.wgpuBufferRelease(timeStampMapBuffer);
         webGPU.wgpuBufferDestroy(timeStampResolveBuffer);
@@ -123,7 +128,7 @@ public class GPUTiming implements Disposable {
     private long cumulative = 0;
     private int numSamples = 0;
 
-    private void addTimeSample(int us){
+    private void addTimeSample(long us){
         numSamples++;
         cumulative += us;
     }
@@ -134,7 +139,8 @@ public class GPUTiming implements Disposable {
 //            throw new RuntimeException("To use getAverageGPUtime() enable GPU timing in the ApplicationConfiguration.");
         if(numSamples == 0)
             return 0;
-        float avg = (float) cumulative / (float)numSamples;
+        float avg = 0.001f * (float) cumulative / (float)numSamples;
+        //avg = cumulative;
         resetGPUsamples();
         return avg;
     }

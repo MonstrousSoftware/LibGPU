@@ -18,10 +18,9 @@ public class Launcher {
 
         //config.noWindow = true;   // use this to run a program without a window
 
-        // don't use. will cause crash
-        //config.enableGPUtiming = true;
+        config.enableGPUtiming = true;
 
-        new Application(new Menu(), config);
+        new Application(new TestSpriteBatchPerformance(), config);
 
     }
 }

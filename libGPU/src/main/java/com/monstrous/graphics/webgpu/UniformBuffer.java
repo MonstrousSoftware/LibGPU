@@ -26,6 +26,7 @@ import jnr.ffi.Pointer;
 
 // todo auto padding between elements
 // todo test dynamic offsets
+// todo combine with Buffer class, perhaps separate out buffer writing
 
 public class UniformBuffer implements Disposable {
 
@@ -54,14 +55,6 @@ public class UniformBuffer implements Disposable {
         }
 
         buffer = new Buffer("uniform buffer", usage, bufferSize);
-
-//        // Create uniform buffer
-//        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-//        bufferDesc.setLabel("Uniform object buffer");
-//        bufferDesc.setUsage( usage ); //WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform );
-//        bufferDesc.setSize( bufferSize );
-//        bufferDesc.setMappedAtCreation(0L);
-//        this.handle = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
 
         // working buffer in native memory to use as input to WriteBuffer
         float[] floats = new float[contentSize/Float.BYTES];

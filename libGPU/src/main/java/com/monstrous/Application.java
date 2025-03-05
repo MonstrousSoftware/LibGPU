@@ -268,6 +268,7 @@ public class Application {
         deviceDescriptor.setRequiredFeatureCount(0);
         deviceDescriptor.setRequiredFeatures(null);
 
+        // required feature to do timestamp queries
         if(configuration.enableGPUtiming){
             int[] featureValues = new int[1];
             featureValues[0] = WGPUFeatureName.TimestampQuery;
@@ -293,6 +294,12 @@ public class Application {
         System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
         System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
         System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
+
+
+        if (configuration.enableGPUtiming && !webGPU.wgpuDeviceHasFeature(device, WGPUFeatureName.TimestampQuery)) {
+            System.out.println("** Requested timestamp queries are not supported!");
+        }
+
 
         LibGPU.queue = webGPU.wgpuDeviceGetQueue(device);
 
@@ -465,56 +472,6 @@ public class Application {
 
         return webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDescriptor);
     }
-
-//    private Pointer prepareRenderPass(Pointer encoder){
-//
-//        WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
-//        renderPassColorAttachment.setNextInChain();
-//        renderPassColorAttachment.setView(LibGPU.app.targetView);
-//        renderPassColorAttachment.setResolveTarget(WgpuJava.createNullPointer());
-//        renderPassColorAttachment.setLoadOp(WGPULoadOp.Clear);
-//        renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
-//
-//        renderPassColorAttachment.getClearValue().setR(clearColor.r);
-//        renderPassColorAttachment.getClearValue().setG(clearColor.g);
-//        renderPassColorAttachment.getClearValue().setB(clearColor.b);
-//        renderPassColorAttachment.getClearValue().setA(clearColor.a);
-//
-//        renderPassColorAttachment.setDepthSlice(wgpu.WGPU_DEPTH_SLICE_UNDEFINED);
-//
-//
-//        WGPURenderPassDepthStencilAttachment depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
-//        depthStencilAttachment.setView( LibGPU.app.depthTextureView );
-//        depthStencilAttachment.setDepthClearValue(1.0f);
-//        depthStencilAttachment.setDepthLoadOp(WGPULoadOp.Clear);
-//        depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
-//        depthStencilAttachment.setDepthReadOnly(0L);
-//        depthStencilAttachment.setStencilClearValue(0);
-//        depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
-//        depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
-//        depthStencilAttachment.setStencilReadOnly(1L);
-//
-//
-//
-//        WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
-//        renderPassDescriptor.setNextInChain();
-//
-//        renderPassDescriptor.setLabel("Main Render Pass");
-//
-//        renderPassDescriptor.setColorAttachmentCount(1);
-//        renderPassDescriptor.setColorAttachments( renderPassColorAttachment );
-//        renderPassDescriptor.setOcclusionQuerySet(WgpuJava.createNullPointer());
-//        renderPassDescriptor.setDepthStencilAttachment( depthStencilAttachment );
-//
-//        gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
-//
-//        return wgpu.CommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
-//    }
-
-//    private void finalizeRenderPass(Pointer renderPass) {
-//        wgpu.RenderPassEncoderEnd(renderPass);
-//        wgpu.RenderPassEncoderRelease(renderPass);
-//    }
 
     private void finishEncoder(Pointer encoder){
         gpuTiming.resolveTimeStamps(encoder);

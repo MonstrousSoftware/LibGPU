@@ -47,7 +47,7 @@ public class TestSpriteBatchPerformance extends ApplicationAdapter {
         if (System.nanoTime() - startTime > 1000000000) {
             System.out.println("SpriteBatch maxSpritesInBatch: " + batch.maxSpritesInBatch + " renderCalls: "+batch.renderCalls  );
 
-            System.out.println("SpriteBatch : fps: " + frames  );
+            System.out.println("SpriteBatch : fps: " + frames + " GPU: "+LibGPU.app.getAverageGPUtime()+" microseconds"  );
             frames = 0;
             startTime = System.nanoTime();
         }
