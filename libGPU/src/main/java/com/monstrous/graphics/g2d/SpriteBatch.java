@@ -28,8 +28,8 @@ public class SpriteBatch implements Disposable {
     private final Pointer vertexDataPtr;      // Pointer wrapped around the byte buffer
     private int numRects;
     private final Color tint;
-    private Pointer vertexBuffer;
-    private Pointer indexBuffer;
+    private Buffer vertexBuffer;
+    private Buffer indexBuffer;
     private UniformBuffer uniformBuffer;
     private final BindGroupLayout bindGroupLayout;
     private VertexAttributes vertexAttributes;
@@ -115,7 +115,7 @@ public class SpriteBatch implements Disposable {
         }
         indexData.flip();
         Pointer indexDataPtr = Pointer.wrap(JavaWebGPU.getRuntime(), bb);
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer, 0, indexDataPtr, (long) maxSprites *6*Short.BYTES);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer.getHandle(), 0, indexDataPtr, (long) maxSprites *6*Short.BYTES);
     }
 
 
@@ -203,23 +203,23 @@ public class SpriteBatch implements Disposable {
         int numBytes = numRects * 4 * vertexSize;
 
         // append new vertex data to GPU vertex buffer
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, vertexDataPtr, numBytes);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer.getHandle(), vbOffset, vertexDataPtr, numBytes);
 
         // bind texture
-        BindGroup texBG = makeBindGroup(bindGroupLayout, uniformBuffer.getBuffer(), texture);
+        BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer.getBuffer(), texture);
 
         // Set vertex buffer while encoding the render pass
         // use an offset to set the vertex buffer for this batch
-        renderPass.setVertexBuffer( 0, vertexBuffer, vbOffset, numBytes);
-        renderPass.setIndexBuffer( indexBuffer, WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
+        renderPass.setVertexBuffer( 0, vertexBuffer.getHandle(), vbOffset, numBytes);
+        renderPass.setIndexBuffer( indexBuffer.getHandle(), WGPUIndexFormat.Uint16, 0, (long)numRects*6*Short.BYTES);
 
-        renderPass.setBindGroup( 0, texBG.getHandle(), 0, JavaWebGPU.createNullPointer());
+        renderPass.setBindGroup( 0, bg.getHandle(), 0, JavaWebGPU.createNullPointer());
 
         //renderPass.setScissorRect( 20, 20, 500, 500);
 
         renderPass.drawIndexed( numRects*6, 1, 0, 0, 0);
 
-        texBG.dispose();
+        bg.dispose();
 
         vbOffset += numBytes;
 
@@ -385,26 +385,16 @@ public class SpriteBatch implements Disposable {
     }
 
     private void createBuffers() {
-        // Create vertex buffer
-        WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
-        bufferDesc.setLabel("Vertex buffer");
-        bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex);
-        bufferDesc.setSize((long) maxSprites * 4 * vertexSize );
-        bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
 
-        // Create index buffer
-        bufferDesc.setLabel("Index buffer");
-        bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index);
-        long sz = (long) maxSprites * 6 * Short.BYTES;
-        sz = (sz + 3) & ~3; // round up to the next multiple of 4
-        bufferDesc.setSize(sz);
-        bufferDesc.setMappedAtCreation(0L);
-        indexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        long indexSize = (long) maxSprites * 6 * Short.BYTES;
+        indexSize = (indexSize + 3) & ~3; // round up to the next multiple of 4
+
+        // Create vertex buffer and index buffer
+        vertexBuffer = new Buffer("Vertex buffer", WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex, (long) maxSprites * 4 * vertexSize);
+        indexBuffer = new Buffer("Index buffer", WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexSize);
 
         // Create uniform buffer
         uniformBufferSize = 16 * Float.BYTES;
-
         uniformBuffer = new UniformBuffer(uniformBufferSize,WGPUBufferUsage.CopyDst |WGPUBufferUsage.Uniform  );
     }
 
@@ -423,36 +413,6 @@ public class SpriteBatch implements Disposable {
 
         layout.end();
         return layout;
-
-//        // Define binding layout
-//        WGPUBindGroupLayoutEntry bindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-//        setDefault(bindingLayout);
-//        bindingLayout.setBinding(0);
-//        bindingLayout.setVisibility(WGPUShaderStage.Vertex );
-//        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Uniform);
-//        bindingLayout.getBuffer().setMinBindingSize(uniformBufferSize);
-//        bindingLayout.getBuffer().setHasDynamicOffset(0L);
-
-//        WGPUBindGroupLayoutEntry texBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-//        setDefault(texBindingLayout);
-//        texBindingLayout.setBinding(1);
-//        texBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-//        texBindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Float);
-//        texBindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension._2D);
-
-//        WGPUBindGroupLayoutEntry samplerBindingLayout = WGPUBindGroupLayoutEntry.createDirect();
-//        setDefault(samplerBindingLayout);
-//        samplerBindingLayout.setBinding(2);
-//        samplerBindingLayout.setVisibility(WGPUShaderStage.Fragment);
-//        samplerBindingLayout.getSampler().setType(WGPUSamplerBindingType.Filtering);
-
-//        // Create a bind group layout
-//        WGPUBindGroupLayoutDescriptor bindGroupLayoutDesc = WGPUBindGroupLayoutDescriptor.createDirect();
-//        bindGroupLayoutDesc.setNextInChain();
-//        bindGroupLayoutDesc.setLabel("SpriteBatch texture binding group layout");
-//        bindGroupLayoutDesc.setEntryCount(3);
-//        bindGroupLayoutDesc.setEntries(bindingLayout, texBindingLayout, samplerBindingLayout);
-//        return LibGPU.webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
     }
 
 
@@ -464,65 +424,14 @@ public class SpriteBatch implements Disposable {
         bg.addSampler(2, texture.getSampler());
         bg.end();
         return bg;
-
-//        // Create a binding
-//        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
-//        binding.setNextInChain();
-//        binding.setBinding(0);  // binding index
-//        binding.setBuffer(uniformBuffer.getHandle());
-//        binding.setOffset(0);
-//        binding.setSize(uniformBufferSize);
-//
-//        // A bind group contains one or multiple bindings
-//        WGPUBindGroupDescriptor bindGroupDesc = WGPUBindGroupDescriptor.createDirect();
-//        bindGroupDesc.setNextInChain();
-//        bindGroupDesc.setLayout(bindGroupLayout);
-//        // There must be as many bindings as declared in the layout!
-//        bindGroupDesc.setEntryCount(3);
-//        bindGroupDesc.setEntries(binding, texture.getBinding(1), texture.getSamplerBinding(2));
-//        return LibGPU.webGPU.wgpuDeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
     }
 
-//    private Pointer makePipelineLayout(Pointer bindGroupLayout) {
-//        long[] layouts = new long[1];
-//        layouts[0] = bindGroupLayout.address();
-//        Pointer layoutPtr = JavaWebGPU.createLongArrayPointer(layouts);
-//
-//        // Create the pipeline layout to define the bind groups needed : 3 bind group
-//        WGPUPipelineLayoutDescriptor layoutDesc = WGPUPipelineLayoutDescriptor.createDirect();
-//        layoutDesc.setNextInChain();
-//        layoutDesc.setLabel("SpriteBatch Pipeline Layout");
-//        layoutDesc.setBindGroupLayoutCount(1);
-//        layoutDesc.setBindGroupLayouts(layoutPtr);
-//        return LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
-//    }
-
-//    private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {
-//
-//        bindingLayout.getBuffer().setNextInChain();
-//        bindingLayout.getBuffer().setType(WGPUBufferBindingType.Undefined);
-//        bindingLayout.getBuffer().setHasDynamicOffset(0L);
-//
-//        bindingLayout.getSampler().setNextInChain();
-//        bindingLayout.getSampler().setType(WGPUSamplerBindingType.Undefined);
-//
-//        bindingLayout.getStorageTexture().setNextInChain();
-//        bindingLayout.getStorageTexture().setAccess(WGPUStorageTextureAccess.Undefined);
-//        bindingLayout.getStorageTexture().setFormat(WGPUTextureFormat.Undefined);
-//        bindingLayout.getStorageTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
-//
-//        bindingLayout.getTexture().setNextInChain();
-//        bindingLayout.getTexture().setMultisampled(0L);
-//        bindingLayout.getTexture().setSampleType(WGPUTextureSampleType.Undefined);
-//        bindingLayout.getTexture().setViewDimension(WGPUTextureViewDimension.Undefined);
-//
-//    }
 
     @Override
     public void dispose(){
         pipelines.dispose();
-        webGPU.wgpuBufferRelease(vertexBuffer);
-        webGPU.wgpuBufferRelease(indexBuffer);
+        vertexBuffer.dispose();
+        indexBuffer.dispose();
         uniformBuffer.dispose();
         bindGroupLayout.dispose();
         pipelineLayout.dispose();
