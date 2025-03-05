@@ -49,9 +49,10 @@ public class TestCompute extends ApplicationAdapter {
         Buffer outputBuffer = new Buffer("Output storage buffer", WGPUBufferUsage.CopySrc | WGPUBufferUsage.Storage, BUFFER_SIZE );
 
         // Create an intermediary buffer to which we copy the output and that can be
-        // used for reading into the CPU memory.
+        // used for reading into the CPU memory (because Storage is incompatible with MapRead).
         Buffer mapBuffer = new Buffer("Map buffer", BUFFER_SIZE,WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
 
+        // make a pipeline
         BindGroupLayout bindGroupLayout = makeBindGroupLayout();
         BindGroup bindGroup = makeBindGroup(bindGroupLayout, inputBuffer, outputBuffer);
         ShaderProgram shader = new ShaderProgram(Files.internal("shaders/compute.wgsl")); // from assets folder
@@ -60,6 +61,7 @@ public class TestCompute extends ApplicationAdapter {
 
         compute(bindGroup, inputBuffer, outputBuffer, mapBuffer);
 
+        // cleanup
         webGPU.wgpuComputePipelineRelease(pipeline);
         pipelineLayout.dispose();
         shader.dispose();
@@ -72,7 +74,6 @@ public class TestCompute extends ApplicationAdapter {
 
 
     private BindGroupLayout makeBindGroupLayout(){
-
         BindGroupLayout layout = new BindGroupLayout();
         layout.begin();
         layout.addBuffer(0, WGPUShaderStage.Compute, WGPUBufferBindingType.ReadOnlyStorage, BUFFER_SIZE, false);// input buffer
@@ -170,7 +171,8 @@ public class TestCompute extends ApplicationAdapter {
 
 
 
-        // note: there is a newer function for this and using this one will raise a warning
+        // note: there is a newer function for this and using this one will raise a warning,
+        // but it requires a struct containing a pointer to a callback function...
         webGPU.wgpuBufferMapAsync(mapBuffer.getHandle(), WGPUMapMode.Read, 0, BUFFER_SIZE, callback, null);
 
         while(!done[0]) {
@@ -181,7 +183,7 @@ public class TestCompute extends ApplicationAdapter {
         System.out.println("output: ");
         for(int i = 0; i < 5; i++)
             System.out.print(" "+outputData[i]);
-        System.out.println("");
+        System.out.println();
 
         webGPU.wgpuCommandBufferRelease(commandBuffer);
         webGPU.wgpuCommandEncoderRelease(encoder);
