@@ -28,7 +28,7 @@ public class TestHDR extends ApplicationAdapter {
             return;
         }
 
-        ScreenUtils.clear(Color.WHITE);
+        ScreenUtils.clear(Color.BLUE);
 
         batch.begin();
         batch.setShader(shader);

@@ -10,6 +10,7 @@ public class Color {
     public static final Color GRAY         = new Color(0.5f,0.5f,0.5f,1);
     public static final Color GREEN_YELLOW   = new Color(173, 255, 47);
     public static final Color TEAL           = new Color(0, 128, 128);
+    public static final Color ORANGE         = new Color(255, 165, 0);
 
     public float r;
     public float g;

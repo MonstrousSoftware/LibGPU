@@ -12,7 +12,6 @@ import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
-import com.monstrous.scene2d.*;
 
 import java.util.ArrayList;
 
@@ -90,7 +89,7 @@ public class TestDuckField extends ApplicationAdapter {
 
     private ArrayList<Matrix4> makeTransforms(){
         ArrayList<Matrix4> transforms = new ArrayList<>();
-        float N = 20;
+        float N = 60;
         float x = -N;
 
         for(int i = 0; i < N; i++, x += 2f) {

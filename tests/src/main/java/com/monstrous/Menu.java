@@ -97,7 +97,7 @@ public class Menu extends ApplicationAdapter {
 
     @Override
     public void render( ){
-        ScreenUtils.clear(Color.WHITE); // todo broken
+        ScreenUtils.clear(Color.TEAL);
         stage.draw();
     }
 

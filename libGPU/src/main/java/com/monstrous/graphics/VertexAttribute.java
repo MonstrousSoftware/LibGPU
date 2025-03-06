@@ -27,6 +27,7 @@ public class VertexAttribute {
         static public final long NORMAL= 8;
         static public final long TANGENT = 16;
         static public final long BITANGENT = 32;
+        static public final long GENERIC = 64;
     }
 
 

@@ -88,7 +88,7 @@ public class Texture {
 
             create( "name", mipMapping, renderAttachment, format, 1, 1);
             if(nativeFormat == 12)  // HDR image
-                loadHDR(pixelPtr);
+                fillHDR(Color.RED); //loadHDR(pixelPtr);
             else
                 load(pixelPtr, 0);
 
@@ -96,30 +96,31 @@ public class Texture {
             throw new RuntimeException("Texture file not found: "+fileName);
         }
     }
+
     public Texture(byte[] byteArray, boolean mipMapping) {
         this(byteArray, "texture", mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
     }
 
     public Texture(byte[] byteArray, String name, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
 
-        Pointer data = JavaWebGPU.createByteArrayPointer(byteArray);
-        image = JavaWebGPU.getUtils().gdx2d_load(data, byteArray.length);        // use native function to parse image file
-
-        PixmapInfo info = PixmapInfo.createAt(image);
-        this.width = info.width.intValue();
-        this.height = info.height.intValue();
-        this.nativeFormat = info.format.intValue();
-        Pointer pixelPtr = info.pixels.get();
-
-        if(nativeFormat == 12) { // HDR image
-            format = WGPUTextureFormat.RGBA16Float;
-            System.out.println("Reading HDR image: "+name);
-        }
-        create( name, mipMapping, renderAttachment, format, 1, 1);
-        if(nativeFormat == 12)  // HDR image
-            loadHDR(pixelPtr);
-        else
-            load(pixelPtr, 0);
+//        Pointer data = JavaWebGPU.createByteArrayPointer(byteArray);
+//        image = JavaWebGPU.getUtils().gdx2d_load(data, byteArray.length);        // use native function to parse image file
+//
+//        PixmapInfo info = PixmapInfo.createAt(image);
+//        this.width = info.width.intValue();
+//        this.height = info.height.intValue();
+//        this.nativeFormat = info.format.intValue();
+//        Pointer pixelPtr = info.pixels.get();
+//
+//        if(nativeFormat == 12) { // HDR image
+//            format = WGPUTextureFormat.RGBA16Float;
+//            System.out.println("Reading HDR image: "+name);
+//        }
+//        create( name, mipMapping, renderAttachment, format, 1, 1);
+//        if(nativeFormat == 12)  // HDR image
+//            loadHDR(pixelPtr);
+//        else
+//            load(pixelPtr, 0);
     }
 
     // for a multi-layer texture, e.g. a cube map
@@ -321,6 +322,52 @@ public class Texture {
         // N.B. using textureDesc.getSize() for param won't work!
         LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
    }
+
+    public void fillHDR(Color color) {
+        // Arguments telling which part of the texture we upload to
+        // (together with the last argument of writeTexture)
+        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+        destination.setTexture(texture);
+        destination.setMipLevel(0);
+        destination.getOrigin().setX(0);
+        destination.getOrigin().setY(0);
+        destination.getOrigin().setZ(0);
+        destination.setAspect(WGPUTextureAspect.All);   // not relevant
+
+        // Arguments telling how the C++ side pixel memory is laid out
+        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+        source.setOffset(0);
+        source.setBytesPerRow(16 * width);
+        source.setRowsPerImage(height);
+
+        float[] pixels = new float[4 * width * height];
+//        byte r = (byte) (color.r * 255);
+//        byte g = (byte) (color.g * 255);
+//        byte b = (byte) (color.b * 255);
+//        byte a = (byte) (color.a * 255);
+
+        int offset = 0;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                pixels[offset++] = 0; //color.r;
+                pixels[offset++] = 0; //color.g;
+                pixels[offset++] = 0; //color.b;
+                pixels[offset++] = 0; //color.a;
+            }
+        }
+
+        Pointer pixelPtr = JavaWebGPU.createFloatArrayPointer(pixels);
+
+        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+        ext.setWidth(width);
+        ext.setHeight(height);
+        ext.setDepthOrArrayLayers(1);
+
+        destination.setMipLevel(0);
+
+        // N.B. using textureDesc.getSize() for param won't work!
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, (long) width * height * 4*4, source, ext);
+    }
 
    // layer : which layer to load for a 3d texture, otherwise 0
    private void load(Pointer pixelPtr, int layer) {
