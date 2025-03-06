@@ -17,7 +17,7 @@ import java.nio.ShortBuffer;
 
 
 
-public class RRBatch implements Disposable {
+public class RoundedRectangleBatch implements Disposable {
     private WebGPU_JNI webGPU;
     private ShaderProgram specificShader;
     private int maxSprites;
@@ -47,15 +47,15 @@ public class RRBatch implements Disposable {
     public int renderCalls;
 
 
-    public RRBatch() {
+    public RoundedRectangleBatch() {
         this(1000); // default nr
     }
 
-    public RRBatch(int maxSprites) {
+    public RoundedRectangleBatch(int maxSprites) {
         this(maxSprites, null);
     }
 
-    public RRBatch(int maxSprites, ShaderProgram specificShader) {
+    public RoundedRectangleBatch(int maxSprites, ShaderProgram specificShader) {
         this.maxSprites = maxSprites;
         this.specificShader = specificShader;
 
@@ -251,10 +251,13 @@ public class RRBatch implements Disposable {
 
 
     private void addRect(Color color, float x, float y, float w, float h, float radius) {
-        addVertex(x, y, color, x+w/2, y-h/2, w, h, radius);
-        addVertex(x, y+h, color, x+w/2, y-h/2, w, h, radius);
-        addVertex(x+w, y+h, color, x+w/2, y-h/2, w, h, radius);
-        addVertex(x+w, y, color, x+w/2, y-h/2, w, h, radius);
+        float cx = x + w/2;
+        float cy = LibGPU.graphics.getHeight() - (y+h/2);
+
+        addVertex(x, y, color, cx, cy, w, h, radius);
+        addVertex(x, y+h, color, cx, cy, w, h, radius);
+        addVertex(x+w, y+h, color, cx, cy, w, h, radius);
+        addVertex(x+w, y, color, cx, cy, w, h, radius);
     }
 
     private void addVertex(float x, float y, Color tint, float cx, float cy, float w, float h, float radius) {

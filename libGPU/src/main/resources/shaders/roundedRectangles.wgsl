@@ -30,7 +30,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
    var out: VertexOutput;
 
    out.position =  uniforms.projectionMatrix * vec4f(in.position, 0.0, 1.0);
-   out.center = in.center;
+   out.center = in.center; //uniforms.projectionMatrix * vec4f(in.center, 0.0, 1.0);
    out.size = in.size;
    out.radius = in.radius;
    out.color = in.color;
@@ -48,15 +48,22 @@ fn rectSDF( vectorFromCentre:vec2f, halfSize:vec2f, radius:f32 ) -> f32 {
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let r = in.radius.x;
     let edgeSoftness = 0.002;
+    let shadowSoftness = 0.02;
 
-    var rectHalfSize = in.size/2.0 - vec2f(r+10.0);
-    //rectHalfSize.y *= -1;
-
+    var rectHalfSize = in.size/2.0 - vec2f(20+r);
     let distance = rectSDF(in.position.xy - in.center.xy, rectHalfSize, r);
 
-    let alpha = 1.0 - smoothstep(-edgeSoftness, edgeSoftness, distance/in.size.x);
+    var alpha = 1.0 - smoothstep(0, edgeSoftness, distance/length(in.size));
 
-    var color = in.color;
-    color.a = alpha;
+    // add a drop shadow
+    let shadowOffset:vec2f = vec2f(-5,-10);
+    let shadowDistance = rectSDF(shadowOffset + in.position.xy - in.center.xy, rectHalfSize, r);
+    var shadowAlpha = 1.0 - smoothstep(-shadowSoftness, shadowSoftness, shadowDistance/length(in.size));
+    let shadowColor:vec4f = vec4f(vec3f(0.5), 1.0);
+
+    var color = vec4f(in.color.rgb, alpha);
+    color = mix(color, shadowColor, shadowAlpha-alpha);
+    color.a = alpha+0.5*shadowAlpha;
+
     return vec4f(color);
 }

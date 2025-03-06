@@ -54,7 +54,7 @@ public class TestSpriteBatch extends ApplicationAdapter {
         batch.disableBlending();
 
         batch.setColor(Color.WHITE);
-        batch.draw(texture, 100, 100, 100, 100);        // normal texture
+        batch.draw(texture, 100, 600, 100, 100);        // normal texture
         batch.setColor(Color.RED);
         batch.draw(texture, 400, 100, 100, 100);        // red tint
         batch.setColor(Color.WHITE);

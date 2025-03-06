@@ -4,7 +4,7 @@ import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.Texture;
-import com.monstrous.graphics.g2d.RRBatch;
+import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 
 
 // Demonstrate rounded rectangles using an SDF shader
@@ -15,7 +15,7 @@ public class TestRoundedRectangleSDF extends ApplicationAdapter {
 
     private final float[] SCALES = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
-    private RRBatch batch;
+    private RoundedRectangleBatch batch;
     private BitmapFont font;
     private Texture texture;
     private ShaderProgram sdfShader;
@@ -33,7 +33,7 @@ public class TestRoundedRectangleSDF extends ApplicationAdapter {
         font = new BitmapFont("lsans32-sdf.fnt");
         sdfShader = new ShaderProgram(Files.classpath("shaders/sprite-distanceField.wgsl"));
 
-        batch = new RRBatch();
+        batch = new RoundedRectangleBatch();
     }
 
     @Override
@@ -44,16 +44,16 @@ public class TestRoundedRectangleSDF extends ApplicationAdapter {
         }
 
         float x = LibGPU.input.getX();
-        float y = LibGPU.input.getY();
-        System.out.println("y = "+y);
+        float y = LibGPU.graphics.getHeight() - LibGPU.input.getY();
 
         //
-        batch.begin(Color.WHITE);
-        batch.setColor(Color.ORANGE);
-        batch.draw(x,y, 800, 400, 30);
+        batch.begin(Color.GREEN_YELLOW);
 
         batch.setColor(Color.TEAL);
         batch.draw(100, 100, 400, 400, 30);
+
+        batch.setColor(Color.ORANGE);
+        batch.draw(x,y, 800, 400, 30);
 
         batch.end();
 
