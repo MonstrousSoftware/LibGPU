@@ -15,7 +15,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
-
+// todo handle small rectangles e.g. 10x10
 
 public class RoundedRectangleBatch implements Disposable {
     private WebGPU_JNI webGPU;

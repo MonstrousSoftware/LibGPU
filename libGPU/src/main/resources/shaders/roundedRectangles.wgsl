@@ -50,20 +50,22 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let edgeSoftness = 0.002;
     let shadowSoftness = 0.02;
 
-    var rectHalfSize = in.size/2.0 - vec2f(20+r);
+    var rectHalfSize = in.size/2.0 - vec2f(r);
     let distance = rectSDF(in.position.xy - in.center.xy, rectHalfSize, r);
 
     var alpha = 1.0 - smoothstep(0, edgeSoftness, distance/length(in.size));
 
-    // add a drop shadow
-    let shadowOffset:vec2f = vec2f(-5,-10);
-    let shadowDistance = rectSDF(shadowOffset + in.position.xy - in.center.xy, rectHalfSize, r);
-    var shadowAlpha = 1.0 - smoothstep(-shadowSoftness, shadowSoftness, shadowDistance/length(in.size));
-    let shadowColor:vec4f = vec4f(vec3f(0.5), 1.0);
+//    // add a drop shadow
+//    let shadowOffset:vec2f = vec2f(-5,-10);
+//    let shadowDistance = rectSDF(shadowOffset + in.position.xy - in.center.xy, rectHalfSize, r);
+//    var shadowAlpha = 1.0 - smoothstep(-shadowSoftness, shadowSoftness, shadowDistance/length(in.size));
+//    let shadowColor:vec4f = vec4f(vec3f(0.5), 1.0);
+//
+//    var color = vec4f(in.color.rgb, alpha);
+//    color = mix(color, shadowColor, shadowAlpha-alpha);
+//    color.a = alpha+0.5*shadowAlpha;
 
-    var color = vec4f(in.color.rgb, alpha);
-    color = mix(color, shadowColor, shadowAlpha-alpha);
-    color.a = alpha+0.5*shadowAlpha;
-
+    var color = in.color;
+    color.a *= alpha;
     return vec4f(color);
 }

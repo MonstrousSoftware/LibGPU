@@ -1,7 +1,6 @@
 package com.monstrous;
 
-import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
-import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class Input {
 
@@ -131,9 +130,15 @@ public class Input {
 
     }
 
+    static public class Buttons{
+        public static final int     LEFT = 0,
+                                    RIGHT = 1,
+                                    MIDDLE = 2;
+    }
 
     private InputProcessor processor;
-    private final boolean[] keyPressed = new boolean[Input.Keys.LAST+1];
+    private final boolean[] isKeyPressed = new boolean[Input.Keys.LAST+1];
+    private final boolean[] isMouseButtonPressed = new boolean[GLFW_MOUSE_BUTTON_LAST+1];
     private int pressedKeyCount;
     private float mouseX, mouseY;
     private int mousePressed;
@@ -145,10 +150,15 @@ public class Input {
     public InputProcessor getInputProcessor() {
         return processor;
     }
+
     public boolean isKeyPressed(int keyCode){
         if(keyCode == Keys.ANY_KEY)
             return pressedKeyCount > 0;
-        return keyPressed[keyCode];
+        return isKeyPressed[keyCode];
+    }
+
+    public boolean isButtonPressed(int buttonCode){
+        return isMouseButtonPressed[buttonCode];
     }
 
     public float getX(){
@@ -173,16 +183,20 @@ public class Input {
     public void processMouseEvent(int x, int y, int button, int action){
         mouseX = x;
         mouseY = y;
-        if(LibGPU.input.processor != null) {
-            if (action == GLFW_PRESS) {
-                mousePressed++;
+
+        if (action == GLFW_PRESS) {
+            mousePressed++;
+            isMouseButtonPressed[button] = true;
+            if(LibGPU.input.processor != null)
                 LibGPU.input.processor.touchDown(x, y, 0, button);
-            }
-            else if (action == GLFW_RELEASE) {
-                mousePressed = Math.max(0, mousePressed-1);
-                LibGPU.input.processor.touchUp(x, y, 0, button);
-            }
         }
+        else if (action == GLFW_RELEASE) {
+            mousePressed = Math.max(0, mousePressed-1);
+            isMouseButtonPressed[button] = false;
+            if(LibGPU.input.processor != null)
+                LibGPU.input.processor.touchUp(x, y, 0, button);
+        }
+
     }
 
     public void processScroll(float x, float y){
@@ -194,7 +208,7 @@ public class Input {
         int key = convertFromGLFW(glfwKey);
         if(action == GLFW_PRESS){
             pressedKeyCount++;
-            keyPressed[key] = true;
+            isKeyPressed[key] = true;
             if(processor != null) {
                 processor.keyDown(key);
                 char character = characterForKeyCode(key);
@@ -204,7 +218,7 @@ public class Input {
         }
         else if(action == GLFW_RELEASE) {
             pressedKeyCount--;
-            keyPressed[key] = false;
+            isKeyPressed[key] = false;
             if(processor != null)
                 processor.keyUp(key);
         }
