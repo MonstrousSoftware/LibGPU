@@ -3,28 +3,31 @@ package com.monstrous.jlay;
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
 import com.monstrous.jlay.utils.Align;
+import com.monstrous.jlay.utils.Vector2;
 
 import java.util.ArrayList;
 
 /**
  * Group - widget container (horizontal)
- * todo vertical
  * note: alignment is defined by the container. Perhaps for the vertical it should be set per child?
  */
 public class Group extends Box {
 
     protected ArrayList<Widget> children;
     protected boolean fit;          // fit group size to the content
-    protected float padding;
+    protected float padding;        // padding from container edges (same on all sides)
     protected float gap;            // gap between children
-    protected int alignment;
+    protected Vector2 alignment;
+    protected int mainAxis;         // 0 for horizontal, 1 for vertical
+    protected int crossAxis;        // opposite of mainAxis
 
     public Group() {
         children = new ArrayList<>();
         fit = false;
         padding = 0;
         gap = 0;
-        alignment = Align.CENTER;
+        alignment = new Vector2();
+        setHorizontal();
     }
 
     /**
@@ -32,12 +35,13 @@ public class Group extends Box {
      */
     @Override
     public void fitSizing(){
-        for(Widget child: children)
+        for(Widget child: children) // work bottom up
             child.fitSizing();
-        if(width == Widget.FIT)
-            width = calcContentWidth();
-        if(height == Widget.FIT)
-            height = calcContentHeight();
+
+        if(size.get(mainAxis) == Widget.FIT)
+            size.set(mainAxis, calcContentAlongMainAxis());          // sum of children + padding and gaps
+        if(size.get(crossAxis) == Widget.FIT)
+            size.set(crossAxis, calcContentAcrossMainAxis());         // max of children + padding
     };
 
     /**
@@ -45,22 +49,22 @@ public class Group extends Box {
      */
     @Override
     public void growAndShrinkSizing(){
-        float w = calcContentWidth();
+        float w = calcContentAcrossMainAxis();
 
-        float remainder = width - w;
+        float remainder = size.get(mainAxis) - w;
 
         // grow
         while(remainder > 0) {
 
             float smallest = Float.MAX_VALUE;
             // count number of children than can grow
-            // and find the smallest size
+            // and also find the smallest size
             int numGrow = 0;
             for (Widget child : children) {
-                if (child.widthCanGrow) {
+                if (child.canGrow.get(mainAxis)) {
                     numGrow++;
-                    if (child.width < smallest)
-                        smallest = child.width;
+                    if (child.size.get(mainAxis) < smallest)
+                        smallest = child.size.get(mainAxis);
                 }
             }
 
@@ -70,8 +74,8 @@ public class Group extends Box {
             // allocate remainder between growing children of the smallest size
             float extra = remainder / numGrow;
             for (Widget child : children) {
-                if (child.widthCanGrow && child.width == smallest) {
-                    child.width += extra;
+                if (child.canGrow.get(mainAxis) && child.size.get(mainAxis) == smallest) {
+                    child.size.set(mainAxis, extra + child.size.get(mainAxis));
                     remainder -= extra;
                 }
             }
@@ -85,10 +89,10 @@ public class Group extends Box {
             // and find the largest size
             int numShrink = 0;
             for (Widget child : children) {
-                if (child.widthCanGrow) {
+                if (child.canGrow.get(mainAxis)) {
                     numShrink++;
-                    if (child.width > largest)
-                        largest = child.width;
+                    if (child.size.get(mainAxis) > largest)
+                        largest = child.size.get(mainAxis);
                 }
             }
 
@@ -98,63 +102,71 @@ public class Group extends Box {
             // allocate remainder between growing children of the smallest size
             float extra = remainder / numShrink;    // negative!
             for (Widget child : children) {
-                if (child.widthCanGrow && child.width == largest) {
-                    child.width += extra;
+                if (child.canGrow.get(mainAxis) && child.size.get(mainAxis) == largest) {
+                    child.size.set(mainAxis, extra + child.size.get(mainAxis));
                     remainder -= extra;
                 }
             }
         }
 
+        // expand children that can grow in the cross axis to the container size minus padding
         for(Widget child: children){
-            if(child.heightCanGrow)
-                child.height = height - 2 * padding;
+            if(child.canGrow.get(crossAxis))
+                child.size.set(crossAxis, size.get(crossAxis) - 2*padding);
         }
 
+        // top-down traversal
         for(Widget child: children)
             child.growAndShrinkSizing();
     };
 
-    private float calcContentWidth(){
-        float w = 0;
+    private float calcContentAlongMainAxis(){
+        float total = 0;
         for (Widget child : children) {
-            w += child.width;
+            total += child.size.get(mainAxis);
         }
-        w += gap * (children.size() - 1);
-        w += padding + padding;
-        return w;
+        total += gap * (children.size() - 1);   // number of gaps between children
+        total += padding + padding;
+        return total;
     }
 
-    private float calcContentHeight() {
-        float height = 0;
+    private float calcContentAcrossMainAxis() {
+        float max = 0;
         for (Widget child : children) {
-            if (child.height > height)
-                height = child.height;
+            float sz = child.size.get(crossAxis);
+            if (sz > max)
+                max = sz;
         }
-        height += padding + padding;
-        return height;
+        return max + 2*padding;
     }
 
+    /**
+     * Place children in their proper position (relative to container) now that
+     * child sizes are known. Takes care of alignment constraints.
+     */
     @Override
     public void place(){
-        float remaining = width - calcContentWidth();
-        float childX = padding + remaining/2;    // centre
-        if((alignment & Align.RIGHT ) !=0)
-            childX = padding + remaining;
-        else if ((alignment & Align.LEFT ) != 0)
+        float remaining = size.get(mainAxis) - calcContentAlongMainAxis();
+        float childX = padding + remaining/2;    // MIDDLE: centre
+        if(alignment.get(mainAxis) < 0)          // START: left or top
             childX = padding;
+        else if (alignment.get(mainAxis) > 0)   // END: right or bottom
+            childX = padding + remaining;
 
         for(Widget child: children) {
-            child.position.setX( childX );
-            childX += child.width + gap;
+            child.position.set( mainAxis, childX );
+            childX += child.size.get(mainAxis) + gap;
 
-            remaining = (height - 2*padding) - child.height;
+            // alignment on cross axis
+            remaining = (size.get(crossAxis) - 2*padding) - child.size.get(crossAxis);
             float y = padding + remaining/2;    // centre height
-            if((alignment & Align.TOP ) != 0)
+            if(alignment.get(crossAxis) < 0)
                 y = padding + remaining;
-            else if ((alignment & Align.BOTTOM ) != 0)
+            else if (alignment.get(crossAxis) > 0)
                 y = padding;
-            child.position.setY( y );
+            child.position.set( crossAxis, y );
         }
+        // top-down traversal
         for(Widget child: children)
             child.place();
     }
@@ -192,12 +204,18 @@ public class Group extends Box {
         children.add(widget);
     }
 
-//    public void sizeToFit( boolean fit ){
-//        this.fit = fit;
-//    }
+    public void setVertical(){
+        mainAxis = 1;
+        crossAxis = 0;
+    }
 
-    public void setAlignment( int alignment ){
-        this.alignment = alignment;
+    public void setHorizontal(){
+        mainAxis = 0;
+        crossAxis = 1;
+    }
+
+    public void setAlignment( float horizontal, float vertical ){
+        alignment.set(horizontal, vertical);
     }
 
     public float getPadding() {

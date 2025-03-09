@@ -3,6 +3,7 @@ package com.monstrous.jlay;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
+import com.monstrous.jlay.utils.Boolean2;
 import com.monstrous.jlay.utils.Vector2;
 
 public abstract class Widget {
@@ -11,16 +12,15 @@ public abstract class Widget {
 
     protected Vector2 position;
     protected Vector2 absolute;
-    protected float width, height;
+    protected Vector2 size;
     protected Color color;
-    protected boolean widthCanGrow;
-    protected boolean heightCanGrow;
+    protected Boolean2 canGrow;
 
     public Widget() {
         position = new Vector2();
         absolute = new Vector2();
-        widthCanGrow = false;
-        heightCanGrow = false;
+        size = new Vector2();
+        canGrow = new Boolean2( false,false);
     }
 
     public void fitSizing(){};
@@ -53,11 +53,9 @@ public abstract class Widget {
      *  use GROW for a widget to grow to the available space
      */
     public void setSize(float width, float height){
-        widthCanGrow = (width == GROW);
-        heightCanGrow = (height == GROW);
-
-        this.width =  width;
-        this.height = height;
+        canGrow.setX(width == GROW);
+        canGrow.setY(height == GROW);
+        size.set(width, height);
     }
 
     public Color getColor() {
@@ -74,6 +72,6 @@ public abstract class Widget {
         float xb = absolute.getX();
         float yb = absolute.getY();
 
-        sr.box(xb, yb, xb+width, yb+height);
+        sr.box(xb, yb, xb+size.getX(),  yb+size.getY());
     }
 }

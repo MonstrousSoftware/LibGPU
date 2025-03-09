@@ -12,7 +12,8 @@ struct VertexInput {
     @location(1) color: vec4f,
     @location(2) center: vec2f,
     @location(3) size: vec2f,
-    @location(4) radius: vec2f,
+    @location(4) radius: vec2f, // only uses x component
+    @location(5) dropShadow: vec2f,
 
 };
 
@@ -22,6 +23,7 @@ struct VertexOutput {
     @location(2) center: vec2f,
     @location(3) size: vec2f,
     @location(4) radius: vec2f,
+    @location(5) dropShadow: vec2f,
 };
 
 
@@ -34,6 +36,7 @@ fn vs_main(in: VertexInput) -> VertexOutput {
    out.size = in.size;
    out.radius = in.radius;
    out.color = in.color;
+   out.dropShadow = in.dropShadow;
 
    return out;
 }
@@ -50,20 +53,23 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let edgeSoftness = 0.002;
     let shadowSoftness = 0.02;
 
-    var rectHalfSize = in.size/2.0 - vec2f(r);
-    let distance = rectSDF(in.position.xy - in.center.xy, rectHalfSize, r);
+    var rectHalfSize = (in.size-in.dropShadow)/2.0 - vec2f(r);
+    let offset:vec2f = in.dropShadow;
+    let distance = rectSDF( in.position.xy - in.center.xy, rectHalfSize, r);
 
     var alpha = 1.0 - smoothstep(0, edgeSoftness, distance/length(in.size));
 
-//    // add a drop shadow
-//    let shadowOffset:vec2f = vec2f(-5,-10);
+// todo add optional drop shadow while maintaining control over the sizing of the rectangle
+
+    // add a drop shadow
+//    let shadowOffset:vec2f = vec2f(0); //-in.dropShadow/2.0;
 //    let shadowDistance = rectSDF(shadowOffset + in.position.xy - in.center.xy, rectHalfSize, r);
 //    var shadowAlpha = 1.0 - smoothstep(-shadowSoftness, shadowSoftness, shadowDistance/length(in.size));
 //    let shadowColor:vec4f = vec4f(vec3f(0.5), 1.0);
 //
 //    var color = vec4f(in.color.rgb, alpha);
 //    color = mix(color, shadowColor, shadowAlpha-alpha);
-//    color.a = alpha+0.5*shadowAlpha;
+//    color.a = alpha+0.9*shadowAlpha;
 
     var color = in.color;
     color.a *= alpha;

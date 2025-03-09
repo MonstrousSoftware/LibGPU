@@ -5,6 +5,7 @@ import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
+import com.monstrous.math.Vector2;
 import com.monstrous.utils.Disposable;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
@@ -27,6 +28,7 @@ public class RoundedRectangleBatch implements Disposable {
     private final Pointer vertexDataPtr;      // Pointer wrapped around the byte buffer
     private int numRects;
     private final Color tint;
+    private final Vector2 dropShadow;
     private Buffer vertexBuffer;
     private Buffer indexBuffer;
     private UniformBuffer uniformBuffer;
@@ -59,15 +61,17 @@ public class RoundedRectangleBatch implements Disposable {
         this.maxSprites = maxSprites;
         this.specificShader = specificShader;
 
+        dropShadow = new Vector2();
         begun = false;
         webGPU = LibGPU.webGPU;
 
         vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",        WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add(VertexAttribute.Usage.COLOR,   "color",               WGPUVertexFormat.Float32x4, 1 );
-        vertexAttributes.add(VertexAttribute.Usage.GENERIC, "center",    WGPUVertexFormat.Float32x2, 2 );
-        vertexAttributes.add(VertexAttribute.Usage.GENERIC, "size",    WGPUVertexFormat.Float32x2, 3 );
-        vertexAttributes.add(VertexAttribute.Usage.GENERIC, "radius",    WGPUVertexFormat.Float32x2, 4 );
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",    WGPUVertexFormat.Float32x2, 0 );
+        vertexAttributes.add(VertexAttribute.Usage.COLOR,   "color",        WGPUVertexFormat.Float32x4, 1 );
+        vertexAttributes.add(VertexAttribute.Usage.GENERIC, "center",       WGPUVertexFormat.Float32x2, 2 );
+        vertexAttributes.add(VertexAttribute.Usage.GENERIC, "size",         WGPUVertexFormat.Float32x2, 3 );
+        vertexAttributes.add(VertexAttribute.Usage.GENERIC, "radius",       WGPUVertexFormat.Float32x2, 4 );
+        vertexAttributes.add(VertexAttribute.Usage.GENERIC, "dropShadow",   WGPUVertexFormat.Float32x2, 5 );
 
         vertexAttributes.end();
         defaultVertexAttributes = vertexAttributes;
@@ -235,6 +239,9 @@ public class RoundedRectangleBatch implements Disposable {
         setUniforms();
     }
 
+    public void setDropShadow( float x, float y ){
+        dropShadow.set(x, y);
+    }
 
 
     public void draw ( float x, float y, float width, float height, float radius) {
@@ -254,13 +261,13 @@ public class RoundedRectangleBatch implements Disposable {
         float cx = x + w/2;
         float cy = LibGPU.graphics.getHeight() - (y+h/2);
 
-        addVertex(x, y, color, cx, cy, w, h, radius);
-        addVertex(x, y+h, color, cx, cy, w, h, radius);
-        addVertex(x+w, y+h, color, cx, cy, w, h, radius);
-        addVertex(x+w, y, color, cx, cy, w, h, radius);
+        addVertex(x, y, color, cx, cy, w, h, radius, dropShadow);
+        addVertex(x, y+h, color, cx, cy, w, h, radius, dropShadow);
+        addVertex(x+w, y+h, color, cx, cy, w, h, radius, dropShadow);
+        addVertex(x+w, y, color, cx, cy, w, h, radius, dropShadow);
     }
 
-    private void addVertex(float x, float y, Color tint, float cx, float cy, float w, float h, float radius) {
+    private void addVertex(float x, float y, Color tint, float cx, float cy, float w, float h, float radius, Vector2 dropShadow) {
         // vertex position
         vertexData.put(x);
         vertexData.put(y);
@@ -282,6 +289,10 @@ public class RoundedRectangleBatch implements Disposable {
         // radius
         vertexData.put(radius);
         vertexData.put(0f);
+
+        // drop shadow offset
+        vertexData.put(dropShadow.x);
+        vertexData.put(dropShadow.y);
     }
 
     private void setUniformMatrix(Pointer data, int offset, Matrix4 mat) {

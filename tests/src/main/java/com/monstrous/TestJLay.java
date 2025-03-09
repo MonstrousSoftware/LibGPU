@@ -36,16 +36,16 @@ public class TestJLay extends ApplicationAdapter {
         group.setColor(Color.TEAL);
         group.setPadding(20);
         group.setGap(10);
-        //group.setAlignment( Align.BOTTOM_LEFT );
+        group.setAlignment( Align.MIDDLE, Align.START );
         stage.add(group);
 
         Group group2 = new Group();
+        group2.setVertical();
         group2.setColor(Color.BLUE);
-//        group2.sizeToFit(true);
-//        group2.setGrow(false, true);
         group2.setSize(Widget.FIT, Widget.GROW);
-        group2.setAlignment(Align.TOP);
-        group2.setPadding(50);
+        group2.setAlignment(Align.MIDDLE, Align.START);
+        group2.setGap(5);
+        group2.setPadding(10);
 
         //group2.setSize(200,200);
         //group2.setPosition(10,10);
@@ -55,6 +55,12 @@ public class TestJLay extends ApplicationAdapter {
         box0.setSize(150,150);
         box0.setCornerRadius(5);
         group2.add(box0);
+
+        Box box1 = new Box();
+        box1.setColor(Color.ORANGE);
+        box1.setSize(80,80);
+        box1.setCornerRadius(5);
+        group2.add(box1);
 
 
         Box box2 = new Box();

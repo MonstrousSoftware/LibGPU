@@ -11,6 +11,7 @@ import java.util.ArrayList;
 // todo text
 // todo more widgets
 // fillScreen
+// y up or y down?
 
 
 public class JLay implements Disposable {
@@ -39,12 +40,13 @@ public class JLay implements Disposable {
     public void draw(){
 
         for(Widget widget : widgets) {
-            if(widget.widthCanGrow) {
-                widget.width = width;
+            // top level widgets: GROW means screen size
+            if(widget.canGrow.getX()) {
+                widget.size.setX(width);
                 widget.position.setX(0);
             }
-            if(widget.heightCanGrow) {
-                widget.height = height;
+            if(widget.canGrow.getY()) {
+                widget.size.setY(height);
                 widget.position.setY(0);
             }
         }
