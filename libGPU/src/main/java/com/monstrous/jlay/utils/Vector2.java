@@ -3,6 +3,15 @@ package com.monstrous.jlay.utils;
 public class Vector2 {
     float x, y;
 
+    public Vector2(){
+        this(0f, 0f);
+    }
+
+    public Vector2(float x, float y) {
+        this.x = x;
+        this.y = y;
+    }
+
     public void set(float x, float y){
         this.x = x;
         this.y = y;

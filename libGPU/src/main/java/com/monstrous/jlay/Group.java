@@ -38,10 +38,10 @@ public class Group extends Box {
         for(Widget child: children) // work bottom up
             child.fitSizing();
 
-        if(size.get(mainAxis) == Widget.FIT)
-            size.set(mainAxis, calcContentAlongMainAxis());          // sum of children + padding and gaps
-        if(size.get(crossAxis) == Widget.FIT)
-            size.set(crossAxis, calcContentAcrossMainAxis());         // max of children + padding
+        if(getSize().get(mainAxis) == Widget.FIT)
+            getSize().set(mainAxis, calcContentAlongMainAxis());          // sum of children + padding and gaps
+        if(getSize().get(crossAxis) == Widget.FIT)
+            getSize().set(crossAxis, calcContentAcrossMainAxis());         // max of children + padding
     };
 
     /**
@@ -49,9 +49,9 @@ public class Group extends Box {
      */
     @Override
     public void growAndShrinkSizing(){
-        float w = calcContentAcrossMainAxis();
+        float w = calcContentAlongMainAxis();
 
-        float remainder = size.get(mainAxis) - w;
+        float remainder = getSize().get(mainAxis) - w;
 
         // grow
         while(remainder > 0) {
@@ -61,10 +61,14 @@ public class Group extends Box {
             // and also find the smallest size
             int numGrow = 0;
             for (Widget child : children) {
+                if(child.preferredSize.get(mainAxis)> child.getSize().get(mainAxis))
+                    child.canGrow.set(mainAxis, true);
+                else
+                    child.canGrow.set(mainAxis, false);
                 if (child.canGrow.get(mainAxis)) {
                     numGrow++;
-                    if (child.size.get(mainAxis) < smallest)
-                        smallest = child.size.get(mainAxis);
+                    if (child.getSize().get(mainAxis) < smallest)
+                        smallest = child.getSize().get(mainAxis);
                 }
             }
 
@@ -74,8 +78,8 @@ public class Group extends Box {
             // allocate remainder between growing children of the smallest size
             float extra = remainder / numGrow;
             for (Widget child : children) {
-                if (child.canGrow.get(mainAxis) && child.size.get(mainAxis) == smallest) {
-                    child.size.set(mainAxis, extra + child.size.get(mainAxis));
+                if (child.canGrow.get(mainAxis) && child.getSize().get(mainAxis) == smallest) {
+                    child.setSize(mainAxis, extra + child.getSize().get(mainAxis));
                     remainder -= extra;
                 }
             }
@@ -89,10 +93,15 @@ public class Group extends Box {
             // and find the largest size
             int numShrink = 0;
             for (Widget child : children) {
-                if (child.canGrow.get(mainAxis)) {
+                if(child.getSize().get(mainAxis) > child.minimumSize.get(mainAxis))
+                    child.canShrink.set(mainAxis, true);
+                else
+                    child.canShrink.set(mainAxis, false);
+
+                if (child.canShrink.get(mainAxis)) {
                     numShrink++;
-                    if (child.size.get(mainAxis) > largest)
-                        largest = child.size.get(mainAxis);
+                    if (child.getSize().get(mainAxis) > largest)
+                        largest = child.getSize().get(mainAxis);
                 }
             }
 
@@ -102,8 +111,10 @@ public class Group extends Box {
             // allocate remainder between growing children of the smallest size
             float extra = remainder / numShrink;    // negative!
             for (Widget child : children) {
-                if (child.canGrow.get(mainAxis) && child.size.get(mainAxis) == largest) {
-                    child.size.set(mainAxis, extra + child.size.get(mainAxis));
+                if (child.canShrink.get(mainAxis) && child.getSize().get(mainAxis) == largest) {
+                    float newSize = child.getSize().get(mainAxis) + extra;
+                    child.setSize(mainAxis, newSize);           // todo !!!! mainAxis is confused with float width
+                    child.canShrink.set(mainAxis, (minimumSize.get(mainAxis) < newSize));
                     remainder -= extra;
                 }
             }
@@ -112,7 +123,7 @@ public class Group extends Box {
         // expand children that can grow in the cross axis to the container size minus padding
         for(Widget child: children){
             if(child.canGrow.get(crossAxis))
-                child.size.set(crossAxis, size.get(crossAxis) - (padStart.get(crossAxis)+padEnd.get(crossAxis)));
+                child.setSize(crossAxis, getSize().get(crossAxis) - (padStart.get(crossAxis)+padEnd.get(crossAxis)));
         }
 
         // top-down traversal
@@ -123,7 +134,7 @@ public class Group extends Box {
     private float calcContentAlongMainAxis(){
         float total = 0;
         for (Widget child : children) {
-            total += child.size.get(mainAxis);
+            total += child.getSize().get(mainAxis);
         }
         total += gap * (children.size() - 1);   // number of gaps between children
         total += padStart.get(mainAxis)+padEnd.get(mainAxis);
@@ -133,7 +144,7 @@ public class Group extends Box {
     private float calcContentAcrossMainAxis() {
         float max = 0;
         for (Widget child : children) {
-            float sz = child.size.get(crossAxis);
+            float sz = child.getSize().get(crossAxis);
             if (sz > max)
                 max = sz;
         }
@@ -146,7 +157,7 @@ public class Group extends Box {
      */
     @Override
     public void place(){
-        float remaining = size.get(mainAxis) - calcContentAlongMainAxis();
+        float remaining = getSize().get(mainAxis) - calcContentAlongMainAxis();
         float childX = padStart.get(mainAxis) + remaining/2;    // MIDDLE: centre
         if(alignment.get(mainAxis) < 0)          // START: left or top
             childX = padStart.get(mainAxis);
@@ -155,10 +166,10 @@ public class Group extends Box {
 
         for(Widget child: children) {
             child.position.set( mainAxis, childX );
-            childX += child.size.get(mainAxis) + gap;
+            childX += child.getSize().get(mainAxis) + gap;
 
             // alignment on cross axis
-            remaining = (size.get(crossAxis) - (padStart.get(crossAxis)+padEnd.get(crossAxis))) - child.size.get(crossAxis);
+            remaining = (getSize().get(crossAxis) - (padStart.get(crossAxis)+padEnd.get(crossAxis))) - child.getSize().get(crossAxis);
             float y = padStart.get(crossAxis) + remaining/2;    // centre height
             if(alignment.get(crossAxis) < 0)
                 y = padStart.get(crossAxis) + remaining;

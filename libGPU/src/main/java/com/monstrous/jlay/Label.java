@@ -5,10 +5,12 @@ import com.monstrous.graphics.Color;
 import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g2d.SpriteBatch;
 
+import java.util.ArrayList;
+
 public class Label extends Widget {
     private String text;
+    private ArrayList<String> lines;
     private final Style style;
-    private int ty;
     private float textWidth;
     private float lineHeight;
     private Texture texture;
@@ -26,8 +28,11 @@ public class Label extends Widget {
     public Label( String text ) {
         this(text, new Style(Color.BLACK, new BitmapFont()));
     }
+
     public Label( String text, Style style ) {
         this.style = style;
+        lines = new ArrayList<>();
+
         setText(text);
 
         // debug: add a bg color
@@ -39,18 +44,68 @@ public class Label extends Widget {
 
     public void setText(String text){
         this.text = text;
+        lines.clear();
+        lines.add(text);
 
         lineHeight = style.font.getLineHeight();
         textWidth =  style.font.width(text);
-        size.set(textWidth, lineHeight);
+        float minWidth = determineMinWidth(text, style.font);
+        setSize(textWidth, lineHeight);
+        setMinimumSize(minWidth, lineHeight);
+        setPreferredSize(textWidth, lineHeight);
     }
 
     @Override
     public void draw(SpriteBatch batch){
 //        batch.setColor(color);
 //        batch.draw(texture, absolute.getX(), absolute.getY(), textWidth, lineHeight);
+
         batch.setColor(style.fontColor);
-        style.font.draw(batch, text, absolute.getX(), absolute.getY()+lineHeight);
+        float y = absolute.getY() + lineHeight;
+        for(String line : lines) {
+            style.font.draw(batch, line, absolute.getX(), y);  // note for font.draw y is at the top of the text
+            y -= lineHeight;
+        }
+    }
+
+    @Override
+    public void setSize(float width, float height){
+        size.set(width, height);
+        float spaceWidth = style.font.width(" ");
+
+        lines.clear();
+        StringBuilder sb = new StringBuilder();
+        sb.setLength(0);
+
+        String[] words = text.split("[ ]");         // todo some caching
+        float totalWidth = 0;
+        for(String word : words ){
+            float wordWidth = style.font.width(word);
+            if(!sb.isEmpty())
+                totalWidth += spaceWidth;
+            totalWidth += wordWidth;
+            if(totalWidth > width){ // line too long, force word wrap
+                lines.add( sb.toString() );
+                sb.setLength(0);
+                totalWidth = wordWidth;
+            }
+            if(!sb.isEmpty())
+                sb.append(' ');
+            sb.append(word);
+        }
+        lines.add( sb.toString() );
+    }
+
+    /** minimum width of a text is width of it's longest word. */
+    private float determineMinWidth(String text, BitmapFont font){
+        String[] words = text.split("[ ]");
+        float maxWordWidth = 0;
+        for(String word : words){
+            float wordWidth = font.width(word);
+            if(wordWidth > maxWordWidth)
+                maxWordWidth = wordWidth;
+        }
+        return maxWordWidth;
     }
 
 

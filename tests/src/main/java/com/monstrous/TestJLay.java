@@ -8,7 +8,7 @@ import com.monstrous.jlay.utils.Align;
 import com.monstrous.utils.ScreenUtils;
 
 
-// Test of UI
+// Test of UI dynamic layout library
 
 public class TestJLay extends ApplicationAdapter {
 
@@ -26,7 +26,7 @@ public class TestJLay extends ApplicationAdapter {
         stage.setDebug(true);
 
         group = new Group();
-        group.setSize(800, 600);
+        group.setSize(400, 600);
 
         group.setPosition(100, 100);
         group.setColor(Color.TEAL);
@@ -43,30 +43,30 @@ public class TestJLay extends ApplicationAdapter {
 
         group.add(label);
 
-        Group group2 = new Group();
-        group2.setVertical();
-        group2.setColor(Color.BLUE);
-        group2.setSize(Widget.FIT, Widget.GROW);
-        group2.setAlignment(Align.MIDDLE, Align.START);
-        group2.setGap(5);
-        group2.setPadding(10);
-
-        //group2.setSize(200,200);
-        //group2.setPosition(10,10);
-
-        Box box0 = new Box();
-        box0.setColor(Color.ORANGE);
-        box0.setSize(150,150);
-        box0.setCornerRadius(5);
-        group2.add(box0);
-
-        Box box1 = new Box();
-        box1.setColor(Color.ORANGE);
-        box1.setSize(40,40);
-        box1.setCornerRadius(20);
-        group2.add(box1);
-
-
+//        Group group2 = new Group();
+//        group2.setVertical();
+//        group2.setColor(Color.BLUE);
+//        group2.setSize(Widget.FIT, Widget.GROW);
+//        group2.setAlignment(Align.MIDDLE, Align.START);
+//        group2.setGap(5);
+//        group2.setPadding(10);
+//
+//        //group2.setSize(200,200);
+//        //group2.setPosition(10,10);
+//
+//        Box box0 = new Box();
+//        box0.setColor(Color.ORANGE);
+//        box0.setSize(150,150);
+//        box0.setCornerRadius(5);
+//        group2.add(box0);
+//
+//        Box box1 = new Box();
+//        box1.setColor(Color.ORANGE);
+//        box1.setSize(40,40);
+//        box1.setCornerRadius(20);
+//        group2.add(box1);
+//
+//
         Box box2 = new Box();
         box2.setColor(Color.ORANGE);
         box2.setSize(100,100);
@@ -78,10 +78,10 @@ public class TestJLay extends ApplicationAdapter {
         box3.setSize(100,100);
         //box3.setGrow(true, true);
         box3.setCornerRadius(16);
-
-        //group2.add(box2);
-
-        group.add(group2);
+//
+//        //group2.add(box2);
+//
+//        group.add(group2);
         group.add(box2);
         group.add(box3);
 

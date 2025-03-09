@@ -48,11 +48,11 @@ public class JLay implements Disposable {
         for(Widget widget : widgets) {
             // top level widgets: GROW means screen size
             if(widget.canGrow.getX()) {
-                widget.size.setX(width);
+                widget.getSize().setX(width);
                 widget.position.setX(0);
             }
             if(widget.canGrow.getY()) {
-                widget.size.setY(height);
+                widget.getSize().setY(height);
                 widget.position.setY(0);
             }
         }

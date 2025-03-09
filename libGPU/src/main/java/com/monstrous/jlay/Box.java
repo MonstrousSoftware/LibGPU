@@ -1,6 +1,5 @@
 package com.monstrous.jlay;
 
-import com.monstrous.graphics.Color;
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 
 public class Box extends Widget {
@@ -14,7 +13,7 @@ public class Box extends Widget {
 //        rrBatch.draw(absolute.getX()+5, absolute.getY()-10, width, height, radius);
 //        rrBatch.setDropShadow(dropX, dropY);
         rrBatch.setColor(color);
-        rrBatch.draw(absolute.getX(), absolute.getY()-dropY, size.getX()+dropX, size.getY()+dropY, radius);
+        rrBatch.draw(absolute.getX(), absolute.getY()-dropY, getSize().getX()+dropX, getSize().getY()+dropY, radius);
     }
 
     public void setCornerRadius(float radius){
