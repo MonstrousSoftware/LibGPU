@@ -84,9 +84,19 @@ public class ShapeRenderer implements Disposable {
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }
 
+    public Matrix4 getProjectionMatrix() {
+        return projectionMatrix;
+    }
+
+    public void setProjectionMatrix(Matrix4 projection) {
+        if(begun)
+            flush();
+        projectionMatrix.set(projection);
+        setUniforms();
+    }
+
     public void resize(int w, int h) {
         projectionMatrix.setToOrtho(0f, w, 0f, h, -1f, 1f);
-        setUniforms();
     }
 
     public void setColor(float r, float g, float b, float a){
@@ -132,6 +142,7 @@ public class ShapeRenderer implements Disposable {
         pipelineSpec.enableBlending();
         pipelineSpec.disableDepth();
         setPipeline();
+        setUniforms();
     }
 
     public void flush() {

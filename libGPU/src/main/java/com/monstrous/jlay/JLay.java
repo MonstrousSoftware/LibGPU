@@ -6,11 +6,10 @@ import com.monstrous.utils.Disposable;
 
 import java.util.ArrayList;
 
-// todo: vertical group
-// todo do we need table?
+// todo do we need grid / table?
 // todo text
 // todo more widgets
-//
+// todo react to inputs: mouseOver, clicks, etc.
 //
 
 // Note: UI coordinates have (0,0) at bottom left (y-up).
@@ -85,6 +84,7 @@ public class JLay implements Disposable {
         this.width = width;
         this.height = height;
         rrBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+        sr.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
     }
 
     public void setDebug(boolean debug){

@@ -26,7 +26,7 @@ public class TestJLay extends ApplicationAdapter {
         batch = new SpriteBatch();
 
         stage = new JLay();
-        stage.setDebug(false);
+        stage.setDebug(true);
 
         group = new Group();
         group.setSize(800, 600);
@@ -116,6 +116,7 @@ public class TestJLay extends ApplicationAdapter {
     @Override
     public void resize(int width, int height) {
         stage.resize(width, height);
+        batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
     }
 
 

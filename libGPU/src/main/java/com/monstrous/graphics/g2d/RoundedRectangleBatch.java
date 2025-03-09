@@ -38,7 +38,6 @@ public class RoundedRectangleBatch implements Disposable {
     private final PipelineLayout pipelineLayout;
     private PipelineSpecification pipelineSpec;
     private int uniformBufferSize;
-    private Texture texture;
     private final Matrix4 projectionMatrix;
     private RenderPass renderPass;
     private int vbOffset;
@@ -90,7 +89,6 @@ public class RoundedRectangleBatch implements Disposable {
 
         projectionMatrix = new Matrix4();
         projectionMatrix.setToOrtho(0f, LibGPU.graphics.getWidth(),  0, LibGPU.graphics.getHeight(), -1f, 1f);
-        setUniforms();
 
         tint = new Color(Color.WHITE);
 
@@ -179,7 +177,7 @@ public class RoundedRectangleBatch implements Disposable {
         // append new vertex data to GPU vertex buffer
         webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer.getHandle(), vbOffset, vertexDataPtr, numBytes);
 
-        // bind texture
+        // bind uniforms
         BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer.getBuffer());
 
         // Set vertex buffer while encoding the render pass
@@ -295,11 +293,11 @@ public class RoundedRectangleBatch implements Disposable {
         vertexData.put(dropShadow.y);
     }
 
-    private void setUniformMatrix(Pointer data, int offset, Matrix4 mat) {
-        for (int i = 0; i < 16; i++) {
-            data.putFloat(offset + i * Float.BYTES, mat.val[i]);
-        }
-    }
+//    private void setUniformMatrix(Pointer data, int offset, Matrix4 mat) {
+//        for (int i = 0; i < 16; i++) {
+//            data.putFloat(offset + i * Float.BYTES, mat.val[i]);
+//        }
+//    }
 
     private void createBuffers() {
 
