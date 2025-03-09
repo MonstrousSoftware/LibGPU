@@ -12,7 +12,7 @@ public class Box extends Widget {
     public void draw(RoundedRectangleBatch rrBatch) {
 //        rrBatch.setColor(0.5f, 0.5f, 0.5f, 0.1f);
 //        rrBatch.draw(absolute.getX()+5, absolute.getY()-10, width, height, radius);
-        rrBatch.setDropShadow(dropX, dropY);
+//        rrBatch.setDropShadow(dropX, dropY);
         rrBatch.setColor(color);
         rrBatch.draw(absolute.getX(), absolute.getY()-dropY, size.getX()+dropX, size.getY()+dropY, radius);
     }

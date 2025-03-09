@@ -3,6 +3,7 @@ package com.monstrous.jlay;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.jlay.utils.Boolean2;
 import com.monstrous.jlay.utils.Vector2;
 
@@ -39,8 +40,9 @@ public abstract class Widget {
     }
 
 
-    public abstract void draw(RoundedRectangleBatch rrBatch);
+    public void draw(RoundedRectangleBatch rrBatch) {};
 
+    public void draw(SpriteBatch batch) {};
 
 
     public void setPosition(float x, float y){

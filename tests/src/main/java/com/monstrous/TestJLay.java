@@ -3,10 +3,7 @@ package com.monstrous;
 import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.g2d.SpriteBatch;
-import com.monstrous.jlay.Box;
-import com.monstrous.jlay.Group;
-import com.monstrous.jlay.JLay;
-import com.monstrous.jlay.Widget;
+import com.monstrous.jlay.*;
 import com.monstrous.jlay.utils.Align;
 import com.monstrous.utils.ScreenUtils;
 
@@ -31,13 +28,20 @@ public class TestJLay extends ApplicationAdapter {
         group = new Group();
         group.setSize(800, 600);
 
-
         group.setPosition(100, 100);
         group.setColor(Color.TEAL);
         group.setPadding(20);
         group.setGap(10);
-        group.setAlignment( Align.MIDDLE, Align.START );
+        group.setAlignment( Align.LEFT, Align.BOTTOM );
         stage.add(group);
+
+        Label.Style style = new Label.Style(Color.WHITE, new BitmapFont());
+        Label label = new Label("Hello! What is this nonsense? Do we not have anything better to do?", style);
+        //label.setSize(200, 50);
+        label.setColor(Color.GREEN_YELLOW);
+        label.setPosition(100,100);
+
+        group.add(label);
 
         Group group2 = new Group();
         group2.setVertical();
@@ -58,8 +62,8 @@ public class TestJLay extends ApplicationAdapter {
 
         Box box1 = new Box();
         box1.setColor(Color.ORANGE);
-        box1.setSize(80,80);
-        box1.setCornerRadius(5);
+        box1.setSize(40,40);
+        box1.setCornerRadius(20);
         group2.add(box1);
 
 

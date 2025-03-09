@@ -2,6 +2,7 @@ package com.monstrous.jlay;
 
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.utils.Disposable;
 
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 // todo text
 // todo more widgets
 // todo react to inputs: mouseOver, clicks, etc.
-//
+// todo animation
 
 // Note: UI coordinates have (0,0) at bottom left (y-up).
 // UI elements are positioned from their bottom left corner.
@@ -18,15 +19,18 @@ import java.util.ArrayList;
 
 public class JLay implements Disposable {
 
-
-    private RoundedRectangleBatch rrBatch;
     private ArrayList<Widget> widgets;          // replace with one group?
-    private ShapeRenderer sr;
     private float width, height;
     private boolean debug = false;
 
+    private RoundedRectangleBatch rrBatch;
+    private SpriteBatch spriteBatch;
+    private ShapeRenderer sr;
+
+
     public JLay() {
         rrBatch = new RoundedRectangleBatch();
+        spriteBatch = new SpriteBatch();
         sr = new ShapeRenderer();
         widgets = new ArrayList<>();
     }
@@ -71,6 +75,12 @@ public class JLay implements Disposable {
         }
         rrBatch.end();
 
+        spriteBatch.begin();
+        for(Widget widget : widgets) {
+            widget.draw(spriteBatch);
+        }
+        spriteBatch.end();
+
         if(debug) {
             sr.begin();
             for (Widget widget : widgets) {
@@ -84,6 +94,7 @@ public class JLay implements Disposable {
         this.width = width;
         this.height = height;
         rrBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+        spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
         sr.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
     }
 
@@ -93,6 +104,8 @@ public class JLay implements Disposable {
 
     @Override
     public void dispose() {
-
+        rrBatch.dispose();
+        spriteBatch.dispose();
+        sr.dispose();
     }
 }

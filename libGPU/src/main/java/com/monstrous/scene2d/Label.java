@@ -4,9 +4,11 @@ import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.g2d.SpriteBatch;
 
-public class Label extends Widget  {
+public class Label extends Widget {
 
     private String text;
+    public float textWidth;
+    public int lineHeight;
     private final Style style;
     private int ty;
 
@@ -14,6 +16,8 @@ public class Label extends Widget  {
         public Color fontColor;
         public BitmapFont font;
     }
+
+
 
     public Label( String text, Style style ) {
         this.style = style;

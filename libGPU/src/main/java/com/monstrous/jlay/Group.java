@@ -2,6 +2,7 @@ package com.monstrous.jlay;
 
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.jlay.utils.Vector2;
 
 import java.util.ArrayList;
@@ -186,6 +187,12 @@ public class Group extends Box {
         super.draw(rrBatch);
         for(Widget child: children)
             child.draw(rrBatch);
+    }
+
+    @Override
+    public void draw(SpriteBatch batch) {
+        for(Widget child: children)
+            child.draw(batch);
     }
 
     @Override
