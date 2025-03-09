@@ -10,8 +10,11 @@ import java.util.ArrayList;
 // todo do we need table?
 // todo text
 // todo more widgets
-// fillScreen
-// y up or y down?
+//
+//
+
+// Note: UI coordinates have (0,0) at bottom left (y-up).
+// UI elements are positioned from their bottom left corner.
 
 
 public class JLay implements Disposable {

@@ -2,36 +2,35 @@ package com.monstrous.jlay;
 
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
-import com.monstrous.jlay.utils.Align;
 import com.monstrous.jlay.utils.Vector2;
 
 import java.util.ArrayList;
 
 /**
- * Group - widget container (horizontal)
- * note: alignment is defined by the container. Perhaps for the vertical it should be set per child?
+ * Group - widget container
+ * * note: alignment is defined by the container. Perhaps to be overruled by a child?
  */
 public class Group extends Box {
 
     protected ArrayList<Widget> children;
-    protected boolean fit;          // fit group size to the content
-    protected float padding;        // padding from container edges (same on all sides)
+    protected Vector2 padStart;     // padding from container edges
+    protected Vector2 padEnd;
     protected float gap;            // gap between children
     protected Vector2 alignment;
     protected int mainAxis;         // 0 for horizontal, 1 for vertical
-    protected int crossAxis;        // opposite of mainAxis
+    protected int crossAxis;        // always the opposite of mainAxis
 
     public Group() {
         children = new ArrayList<>();
-        fit = false;
-        padding = 0;
+        padStart = new Vector2();
+        padEnd = new Vector2();
         gap = 0;
         alignment = new Vector2();
         setHorizontal();
     }
 
     /**
-     * Fit container snugly around its content.
+     * Fit container snugly around its content if sizing is defined as "FIT".
      */
     @Override
     public void fitSizing(){
@@ -45,7 +44,7 @@ public class Group extends Box {
     };
 
     /**
-     * Grow/shrink children to match container size.
+     * Grow/shrink children to match container size (for children sized as "GROW")
      */
     @Override
     public void growAndShrinkSizing(){
@@ -112,7 +111,7 @@ public class Group extends Box {
         // expand children that can grow in the cross axis to the container size minus padding
         for(Widget child: children){
             if(child.canGrow.get(crossAxis))
-                child.size.set(crossAxis, size.get(crossAxis) - 2*padding);
+                child.size.set(crossAxis, size.get(crossAxis) - (padStart.get(crossAxis)+padEnd.get(crossAxis)));
         }
 
         // top-down traversal
@@ -126,7 +125,7 @@ public class Group extends Box {
             total += child.size.get(mainAxis);
         }
         total += gap * (children.size() - 1);   // number of gaps between children
-        total += padding + padding;
+        total += padStart.get(mainAxis)+padEnd.get(mainAxis);
         return total;
     }
 
@@ -137,7 +136,7 @@ public class Group extends Box {
             if (sz > max)
                 max = sz;
         }
-        return max + 2*padding;
+        return max + padStart.get(crossAxis)+padEnd.get(crossAxis);
     }
 
     /**
@@ -147,23 +146,23 @@ public class Group extends Box {
     @Override
     public void place(){
         float remaining = size.get(mainAxis) - calcContentAlongMainAxis();
-        float childX = padding + remaining/2;    // MIDDLE: centre
+        float childX = padStart.get(mainAxis) + remaining/2;    // MIDDLE: centre
         if(alignment.get(mainAxis) < 0)          // START: left or top
-            childX = padding;
+            childX = padStart.get(mainAxis);
         else if (alignment.get(mainAxis) > 0)   // END: right or bottom
-            childX = padding + remaining;
+            childX = padStart.get(mainAxis) + remaining;
 
         for(Widget child: children) {
             child.position.set( mainAxis, childX );
             childX += child.size.get(mainAxis) + gap;
 
             // alignment on cross axis
-            remaining = (size.get(crossAxis) - 2*padding) - child.size.get(crossAxis);
-            float y = padding + remaining/2;    // centre height
+            remaining = (size.get(crossAxis) - (padStart.get(crossAxis)+padEnd.get(crossAxis))) - child.size.get(crossAxis);
+            float y = padStart.get(crossAxis) + remaining/2;    // centre height
             if(alignment.get(crossAxis) < 0)
-                y = padding + remaining;
+                y = padStart.get(crossAxis) + remaining;
             else if (alignment.get(crossAxis) > 0)
-                y = padding;
+                y = padStart.get(crossAxis);
             child.position.set( crossAxis, y );
         }
         // top-down traversal
@@ -196,36 +195,45 @@ public class Group extends Box {
             widget.debugDraw(sr);
     }
 
+    /** Remove all children. */
     public void clear() {
         children.clear();
     }
 
+    /** Add a widget to the container group. */
     public void add(Widget widget){
         children.add(widget);
     }
 
+    /** Set the group to be a vertical group. Children are placed bottom to top. */
     public void setVertical(){
         mainAxis = 1;
         crossAxis = 0;
     }
 
+    /** Set the group to be a horizontal group. Children are placed left to right. */
     public void setHorizontal(){
         mainAxis = 0;
         crossAxis = 1;
     }
 
+    /** set alignment in horizontal and vertical direction. Use Align.START, Align.MIDDLE or Align.END. */
     public void setAlignment( float horizontal, float vertical ){
         alignment.set(horizontal, vertical);
     }
 
-    public float getPadding() {
-        return padding;
+    public void setPadding(float pad) {
+        setPadding(pad, pad, pad, pad);
     }
 
-    public void setPadding(float padding) {
-        this.padding = padding;
+    public void setPadding(float top, float left, float bottom, float right) {
+        padStart.setX(left);
+        padEnd.setX(right);
+        padStart.setY(bottom);
+        padEnd.setY(top);
     }
 
+    /** Spacing between children. */
     public void setGap(float gap){
         this.gap = gap;
     }
