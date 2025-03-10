@@ -8,7 +8,7 @@ public class Box extends Widget {
     public float dropY = 0;
 
     @Override
-    public void draw(RoundedRectangleBatch rrBatch) {
+    protected void draw(RoundedRectangleBatch rrBatch) {
 //        rrBatch.setColor(0.5f, 0.5f, 0.5f, 0.1f);
 //        rrBatch.draw(absolute.getX()+5, absolute.getY()-10, width, height, radius);
 //        rrBatch.setDropShadow(dropX, dropY);

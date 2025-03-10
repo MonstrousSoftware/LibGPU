@@ -31,17 +31,17 @@ public abstract class Widget {
         canShrink = new Boolean2( false,false);
     }
 
-    public void fitWidth(){};
+    protected void fitWidth(){};
 
-    public void fitHeight(){};
+    protected void fitHeight(){};
 
-    public void growAndShrinkWidth(){};
+    protected void growAndShrinkWidth(){};
 
-    public void growAndShrinkHeight(){};
+    protected void growAndShrinkHeight(){};
 
-    public void place(){}
+    protected void place(){}
 
-    public void fixScreenPosition(Widget parent) {
+    protected void fixScreenPosition(Widget parent) {
         // position is relative to parent's position
         // determine absolute position (parent absolute position was already done before)
         absolute.set(position);
@@ -51,9 +51,9 @@ public abstract class Widget {
     }
 
 
-    public void draw(RoundedRectangleBatch rrBatch) {};
+    void draw(RoundedRectangleBatch rrBatch) {};
 
-    public void draw(SpriteBatch batch) {};
+    void draw(SpriteBatch batch) {};
 
 
     public void setPosition(float x, float y){
@@ -81,7 +81,7 @@ public abstract class Widget {
         minimumSize.set(width, height);
     }
 
-    public void setSizeComponent(int axis, float value){
+    protected void setSizeComponent(int axis, float value){
         canGrow.set(axis, value == GROW);
         canShrink.set(axis, value == GROW);      // ?
         size.setComponent(axis, value);
@@ -109,7 +109,7 @@ public abstract class Widget {
         this.color = color;
     }
 
-    public void debugDraw(ShapeRenderer sr){
+    protected void debugDraw(ShapeRenderer sr){
         sr.setColor(Color.GREEN);
         sr.setLineWidth(1f);
         float xb = absolute.getX();

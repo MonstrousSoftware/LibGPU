@@ -21,6 +21,8 @@ public class TestJLay extends ApplicationAdapter {
     public void create() {
         font = new BitmapFont();
         batch = new SpriteBatch();
+        Label.Style style = new Label.Style(Color.WHITE, new BitmapFont(Files.internal("lsans32-sdf.fnt")));
+        Label.Style style2 = new Label.Style(Color.BLACK, new BitmapFont(Files.internal("lsans32-sdf.fnt")));
 
         stage = new JLay();
         stage.setDebug(true);
@@ -35,13 +37,42 @@ public class TestJLay extends ApplicationAdapter {
         group.setAlignment( Align.LEFT, Align.BOTTOM );
         stage.add(group);
 
-        Label.Style style = new Label.Style(Color.WHITE, new BitmapFont(Files.internal("lsans32-sdf.fnt")));
-        Label label = new Label("One Two Three Four Five Six", style);
-        //label.setSize(200, 50);
-        label.setColor(Color.GREEN_YELLOW);
+
+        Stack stack = new Stack();
+        stack.setSize(200,200);
+        stack.setColor(Color.GREEN);
+        stack.setPadding(20);
+        stack.setAlignment(Align.START, Align.START);
+        group.add(stack);
+
+        Box box5 = new Box();
+        box5.setColor(Color.ORANGE);
+        box5.setSize(Widget.GROW, Widget.GROW);
+        box5.setCornerRadius(16);
+        stack.add(box5);
+
+        Label label3 = new Label("Hello!?", style);
+        label3.setColor(Color.BLACK);
+
+        stack.add(label3);
+
+        Label label4 = new Label("How\ndo\nyou\ndo?", style2);
+        label4.setColor(Color.BLACK);
+
+        stack.add(label4);
 
 
-        group.add(label);
+
+
+
+//
+
+//        Label label = new Label("One Two Three Four Five Six", style);
+//        //label.setSize(200, 50);
+//        label.setColor(Color.GREEN_YELLOW);
+//
+//
+//        group.add(label);
 
 //        Group group2 = new Group();
 //        group2.setVertical();
@@ -96,8 +127,8 @@ public class TestJLay extends ApplicationAdapter {
 //
 //        group.add(group2);
 //        group.add(box2);
-        group.add(box3);
-        group.add(groupText);
+//        group.add(box3);
+//        group.add(groupText);
 
     }
 

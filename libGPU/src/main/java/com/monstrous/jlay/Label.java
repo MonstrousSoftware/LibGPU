@@ -7,6 +7,9 @@ import com.monstrous.graphics.g2d.SpriteBatch;
 
 import java.util.ArrayList;
 
+/**
+ * Widget to show text.  The text will be word wrapped if the available space is not wide enough.
+ */
 public class Label extends Widget {
     private String text;
     private ArrayList<String> lines;
@@ -82,7 +85,7 @@ public class Label extends Widget {
             return;
         }
         float width = value;
-        System.out.println("Label set width: "+width+" minimum = "+minimumSize.getX()+" pref: "+preferredSize.getX());
+        //System.out.println("Label set width: "+width+" minimum = "+minimumSize.getX()+" pref: "+preferredSize.getX());
         size.setX(width);
         float spaceWidth = style.font.width(" ");
 

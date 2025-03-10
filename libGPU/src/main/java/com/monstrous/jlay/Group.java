@@ -12,7 +12,7 @@ import java.util.ArrayList;
  * Group - widget container
  * * note: alignment is defined by the container. Perhaps to be overruled by a child?
  */
-public class Group extends Box {
+public class Group extends Box {        // extends Box for debug
 
     protected ArrayList<Widget> children;
     protected Vector2 padStart;     // padding from container edges
@@ -50,7 +50,7 @@ public class Group extends Box {
      * Fit container snugly around its content if sizing is defined as "FIT".
      */
     @Override
-    public void fitWidth(){
+    protected void fitWidth(){
         for(Widget child: children) // work bottom up
             child.fitWidth();
 
@@ -66,7 +66,7 @@ public class Group extends Box {
     };
 
     @Override
-    public void fitHeight(){
+    protected void fitHeight(){
         for(Widget child: children) // work bottom up
             child.fitHeight();
 
@@ -83,7 +83,7 @@ public class Group extends Box {
 
 
     @Override
-    public void growAndShrinkWidth(){
+    protected void growAndShrinkWidth(){
         if(mainAxis == 0)
             growAndShrinkAlongMainAxis();
         else
@@ -95,7 +95,7 @@ public class Group extends Box {
 
 
     @Override
-    public void growAndShrinkHeight(){
+    protected void growAndShrinkHeight(){
         if(mainAxis == 1)
             growAndShrinkAlongMainAxis();
         else
@@ -108,7 +108,7 @@ public class Group extends Box {
     /**
      * Grow/shrink children to match container size (for children sized as "GROW")
      */
-    private void growAndShrinkAlongMainAxis() {
+    protected void growAndShrinkAlongMainAxis() {
         float w = measureContentAlongMainAxis();
 
         float remainder = getSize().getComponent(mainAxis) - w;
@@ -187,7 +187,7 @@ public class Group extends Box {
         }
     }
 
-    private void growAndShrinkAcrossMainAxis() {
+    protected void growAndShrinkAcrossMainAxis() {
         // expand children that can grow in the cross axis to the container size minus padding
         for (Widget child : children) {
             if (child.canGrow.get(crossAxis))
@@ -197,7 +197,7 @@ public class Group extends Box {
 
 
 
-    private float measureContentAlongMainAxis(){
+    protected float measureContentAlongMainAxis(){
         float total = 0;
         for (Widget child : children) {
             total += child.size.getComponent(mainAxis);
@@ -208,7 +208,7 @@ public class Group extends Box {
         return total;
     }
 
-    private float measureMinimumContentAlongMainAxis(){
+    protected float measureMinimumContentAlongMainAxis(){
         float minTotal = 0;
         for (Widget child : children) {
             minTotal += child.minimumSize.getComponent(mainAxis);
@@ -219,7 +219,7 @@ public class Group extends Box {
         return minTotal;
     }
 
-    private float measureContentAcrossMainAxis() {
+    protected float measureContentAcrossMainAxis() {
         float max = 0;      // largest size of children
         for (Widget child : children) {
             float sz = child.size.getComponent(crossAxis);
@@ -230,7 +230,7 @@ public class Group extends Box {
         return max + spacing;
     }
 
-    private float measureMinimumContentAcrossMainAxis() {
+    protected float measureMinimumContentAcrossMainAxis() {
         float maxMin = 0;   // largest minimum size of children
         for (Widget child : children) {
             float min = child.minimumSize.getComponent(crossAxis);
@@ -246,7 +246,7 @@ public class Group extends Box {
      * child sizes are known. Takes care of alignment constraints.
      */
     @Override
-    public void place(){
+    protected void place(){
         float remaining = size.getComponent(mainAxis) - measureContentAlongMainAxis();
         float childX = padStart.getComponent(mainAxis) + remaining/2;    // MIDDLE: centre
         if(alignment.getComponent(mainAxis) < 0)          // START: left or top
@@ -277,27 +277,27 @@ public class Group extends Box {
      * Convert relative positions to (absolute) screen positions.
      */
     @Override
-    public void fixScreenPosition(Widget parent){
+    protected void fixScreenPosition(Widget parent){
         super.fixScreenPosition(parent);
         for(Widget child: children)
             child.fixScreenPosition(this);
     }
 
     @Override
-    public void draw(RoundedRectangleBatch rrBatch) {
+    protected void draw(RoundedRectangleBatch rrBatch) {
         super.draw(rrBatch);
         for(Widget child: children)
             child.draw(rrBatch);
     }
 
     @Override
-    public void draw(SpriteBatch batch) {
+    protected void draw(SpriteBatch batch) {
         for(Widget child: children)
             child.draw(batch);
     }
 
     @Override
-    public void debugDraw(ShapeRenderer sr) {
+    protected void debugDraw(ShapeRenderer sr) {
         super.debugDraw(sr);
         for(Widget widget : children)
             widget.debugDraw(sr);
