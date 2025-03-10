@@ -5,7 +5,10 @@ import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.jlay.utils.Boolean2;
+import com.monstrous.jlay.utils.EventListener;
 import com.monstrous.jlay.utils.Vector2;
+
+import java.util.ArrayList;
 
 
 public abstract class Widget {
@@ -20,6 +23,7 @@ public abstract class Widget {
     protected Color color;
     protected Boolean2 canGrow;
     protected Boolean2 canShrink;
+    protected ArrayList<EventListener> eventListeners;
 
     public Widget() {
         position = new Vector2();
@@ -29,6 +33,7 @@ public abstract class Widget {
         preferredSize = new Vector2();
         canGrow = new Boolean2( false,false);
         canShrink = new Boolean2( false,false);
+        eventListeners = new ArrayList<>(1);
     }
 
     protected void fitWidth(){};
@@ -107,6 +112,26 @@ public abstract class Widget {
 
     public void setColor(Color color) {
         this.color = color;
+    }
+
+
+    protected Widget hit(float mouseX, float mouseY){
+        if(mouseX < absolute.getX() || mouseY < absolute.getY() || mouseX > absolute.getX()+size.getX() || mouseY >  absolute.getY()+size.getY())
+            return null;
+        return this;
+    }
+
+    public void addListener( EventListener listener ){
+        eventListeners.add(listener);
+    }
+
+    public void removeListener( EventListener listener ){
+        eventListeners.remove(listener);
+    }
+
+    public void processEvent(int event){
+        for(EventListener listener : eventListeners)
+            listener.handle(event);
     }
 
     protected void debugDraw(ShapeRenderer sr){

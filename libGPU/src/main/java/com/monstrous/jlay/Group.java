@@ -273,6 +273,20 @@ public class Group extends Box {        // extends Box for debug
     }
 
 
+    @Override
+    protected Widget hit(float mx, float my){
+        if( super.hit(mx, my) == null ) // if we are not inside this group, return null
+            return null;
+        // test if we're over one of the child widgets
+        for(Widget child : children){
+            Widget found = child.hit(mx, my);
+            if(found != null)
+                return found;
+        }
+        // we're not over a child, but we are over this group
+        return this;
+    }
+
     /**
      * Convert relative positions to (absolute) screen positions.
      */

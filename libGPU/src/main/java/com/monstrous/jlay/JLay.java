@@ -1,16 +1,20 @@
 package com.monstrous.jlay;
 
 import com.monstrous.Files;
+import com.monstrous.InputProcessor;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
 import com.monstrous.graphics.g2d.SpriteBatch;
+import com.monstrous.jlay.utils.Event;
 import com.monstrous.utils.Disposable;
 
 import java.util.ArrayList;
 
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
+import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_RIGHT;
+
 // todo do we need grid / table?
-// todo text
 // todo more widgets
 // todo react to inputs: mouseOver, clicks, etc.
 // todo animation
@@ -19,7 +23,7 @@ import java.util.ArrayList;
 // UI elements are positioned from their bottom left corner.
 
 
-public class JLay implements Disposable {
+public class JLay implements Disposable , InputProcessor {
 
     private ArrayList<Widget> widgets;          // replace with one group?
     private float width, height;
@@ -28,6 +32,7 @@ public class JLay implements Disposable {
     private RoundedRectangleBatch rrBatch;
     private SpriteBatch spriteBatch;
     private ShapeRenderer sr;
+    private Widget widgetUnderMouse;
 
 
     public JLay() {
@@ -35,6 +40,7 @@ public class JLay implements Disposable {
         spriteBatch = new SpriteBatch(1000, new ShaderProgram(Files.classpath("shaders/sprite-distanceField.wgsl")));
         sr = new ShapeRenderer();
         widgets = new ArrayList<>();
+        widgetUnderMouse = null;
     }
 
     public void clear() {
@@ -108,6 +114,74 @@ public class JLay implements Disposable {
 
     public void setDebug(boolean debug){
         this.debug = debug;
+    }
+
+    @Override
+    public boolean keyDown(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyUp(int keycode) {
+        return false;
+    }
+
+    @Override
+    public boolean keyTyped(char character) {
+        return false;
+    }
+
+    @Override
+    public boolean mouseMoved(int x, int y) {
+        y = (int)height - y;
+
+        for(Widget widget : widgets) {
+            Widget found = widget.hit(x, y);
+            if ( found != widgetUnderMouse) {
+                if(widgetUnderMouse != null) {
+                    widgetUnderMouse.processEvent(Event.MOUSE_EXITS);
+                    widgetUnderMouse = null;
+                }
+            }
+            if (found != null && found != widgetUnderMouse) {
+
+                found.processEvent(Event.MOUSE_ENTERS);
+                widgetUnderMouse = found;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean touchDown(int x, int y, int pointer, int button) {
+        y = (int)height - y;
+
+        for(Widget widget : widgets) {
+            Widget found = widget.hit(x, y);
+            if (found != null) {
+                if (button == GLFW_MOUSE_BUTTON_LEFT)
+                    found.processEvent(Event.CLICKED);
+                else if (button == GLFW_MOUSE_BUTTON_RIGHT)
+                    found.processEvent(Event.CLICKED_RIGHT);
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean touchUp(int x, int y, int pointer, int button) {
+        return false;
+    }
+
+    @Override
+    public boolean touchDragged(int x, int y, int pointer) {
+        return false;
+    }
+
+    @Override
+    public boolean scrolled(float x, float y) {
+        return false;
     }
 
     @Override
