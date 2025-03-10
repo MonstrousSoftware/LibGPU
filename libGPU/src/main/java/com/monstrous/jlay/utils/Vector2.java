@@ -44,11 +44,11 @@ public class Vector2 {
     }
 
     /** index 0 returns x, index 1 returns y */
-    public float get(int index){
+    public float getComponent(int index){
         return index == 0 ? x : y;
     }
 
-    public void set(int index, float value){
+    public void setComponent(int index, float value){
         if(index == 0)
             this.x = value;
         else

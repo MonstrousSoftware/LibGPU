@@ -7,13 +7,14 @@ import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.jlay.utils.Boolean2;
 import com.monstrous.jlay.utils.Vector2;
 
+
 public abstract class Widget {
     public static float FIT = -1f;
     public static float GROW = -2f;
 
     protected Vector2 position;
     protected Vector2 absolute;
-    protected final Vector2 size;
+    protected Vector2 size;
     protected Vector2 minimumSize;
     protected Vector2 preferredSize;
     protected Color color;
@@ -68,6 +69,14 @@ public abstract class Widget {
         size.set(width, height);
         preferredSize.set(width, height);
         minimumSize.set(width, height);
+    }
+
+    public void setSizeComponent(int axis, float value){
+        canGrow.set(axis, value == GROW);
+        canShrink.set(axis, value == GROW);      // ?
+        size.setComponent(axis, value);
+        preferredSize.setComponent(axis, value);
+        minimumSize.setComponent(axis, value);
     }
 
     public Vector2 getSize(){

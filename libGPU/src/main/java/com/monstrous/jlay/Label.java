@@ -44,13 +44,11 @@ public class Label extends Widget {
 
     public void setText(String text){
         this.text = text;
-        lines.clear();
-        lines.add(text);
 
         lineHeight = style.font.getLineHeight();
         textWidth =  style.font.width(text);
         float minWidth = determineMinWidth(text, style.font);
-        setSize(textWidth, lineHeight);
+        setSize(textWidth, lineHeight);                                 // todo do we set size at this point?
         setMinimumSize(minWidth, lineHeight);
         setPreferredSize(textWidth, lineHeight);
     }
@@ -61,7 +59,7 @@ public class Label extends Widget {
 //        batch.draw(texture, absolute.getX(), absolute.getY(), textWidth, lineHeight);
 
         batch.setColor(style.fontColor);
-        float y = absolute.getY() + lineHeight;
+        float y = absolute.getY() + size.getY();
         for(String line : lines) {
             style.font.draw(batch, line, absolute.getX(), y);  // note for font.draw y is at the top of the text
             y -= lineHeight;
@@ -69,8 +67,14 @@ public class Label extends Widget {
     }
 
     @Override
-    public void setSize(float width, float height){
-        size.set(width, height);
+    public void setSizeComponent(int axis, float value){
+        if(axis == 1) {
+            size.setY(value);
+            return;
+        }
+        float width = value;
+        System.out.println("Label set width: "+width+" minimum = "+minimumSize.getX());
+        size.setX(width);
         float spaceWidth = style.font.width(" ");
 
         lines.clear();
@@ -94,6 +98,7 @@ public class Label extends Widget {
             sb.append(word);
         }
         lines.add( sb.toString() );
+        size.setY(lines.size() * lineHeight);
     }
 
     /** minimum width of a text is width of it's longest word. */
