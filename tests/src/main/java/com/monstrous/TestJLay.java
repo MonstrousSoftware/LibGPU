@@ -26,20 +26,20 @@ public class TestJLay extends ApplicationAdapter {
         stage.setDebug(true);
 
         group = new Group();
-        group.setSize(400, 600);
+        group.setSize(500, 600);
 
-        group.setPosition(100, 100);
+        group.setPosition(50, 100);
         group.setColor(Color.TEAL);
-        group.setPadding(20);
+        group.setPadding(5);
         group.setGap(10);
         group.setAlignment( Align.LEFT, Align.BOTTOM );
         stage.add(group);
 
-        Label.Style style = new Label.Style(Color.WHITE, new BitmapFont());
-        Label label = new Label("Hello! What is this nonsense? Do we not have anything better to do?", style);
+        Label.Style style = new Label.Style(Color.WHITE, new BitmapFont(Files.internal("lsans32-sdf.fnt")));
+        Label label = new Label("One Two Three Four Five Six", style);
         //label.setSize(200, 50);
         label.setColor(Color.GREEN_YELLOW);
-        label.setPosition(100,100);
+
 
         group.add(label);
 
@@ -78,12 +78,26 @@ public class TestJLay extends ApplicationAdapter {
         box3.setSize(100,100);
         //box3.setGrow(true, true);
         box3.setCornerRadius(16);
+
+
+
+        Label label2 = new Label("Hello! What is this nonsense? Do we not have anything better to do?", style);
+        label2.setColor(Color.GREEN_YELLOW);
+
+        Group groupText = new Group();
+        groupText.setSize(Widget.FIT, Widget.FIT);
+        groupText.setColor(Color.BLUE);
+        groupText.setPadding(20);
+        groupText.add(label2);
+
+
 //
 //        //group2.add(box2);
 //
 //        group.add(group2);
-        group.add(box2);
+//        group.add(box2);
         group.add(box3);
+        group.add(groupText);
 
     }
 
@@ -96,7 +110,8 @@ public class TestJLay extends ApplicationAdapter {
         if(LibGPU.input.isButtonPressed(Input.Buttons.LEFT)) {
             float mw = LibGPU.input.getX() - 100;
             float mh = (LibGPU.graphics.getHeight() - LibGPU.input.getY()) - 100;
-            group.setSize(mw, mh);
+            if(mw > 0 && mh > 0)
+                group.setSize(mw, mh);
         }
 
         ScreenUtils.clear(Color.WHITE);

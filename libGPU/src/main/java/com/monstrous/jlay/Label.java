@@ -66,6 +66,15 @@ public class Label extends Widget {
         }
     }
 
+
+    @Override
+    public void fitWidth(){
+        // when we are in the fitting width phase, revert to the ideal width, not the width from last frame (perhaps the container sized up)
+        size.set(preferredSize);
+        lines.clear();
+        lines.add(text);
+    }
+
     @Override
     public void setSizeComponent(int axis, float value){
         if(axis == 1) {
@@ -73,7 +82,7 @@ public class Label extends Widget {
             return;
         }
         float width = value;
-        System.out.println("Label set width: "+width+" minimum = "+minimumSize.getX());
+        System.out.println("Label set width: "+width+" minimum = "+minimumSize.getX()+" pref: "+preferredSize.getX());
         size.setX(width);
         float spaceWidth = style.font.width(" ");
 
@@ -101,7 +110,7 @@ public class Label extends Widget {
         size.setY(lines.size() * lineHeight);
     }
 
-    /** minimum width of a text is width of it's longest word. */
+    /** minimum width of a text is width of its longest word. */
     private float determineMinWidth(String text, BitmapFont font){
         String[] words = text.split("[ ]");
         float maxWordWidth = 0;

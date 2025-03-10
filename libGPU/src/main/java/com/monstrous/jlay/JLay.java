@@ -1,5 +1,7 @@
 package com.monstrous.jlay;
 
+import com.monstrous.Files;
+import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.g2d.RoundedRectangleBatch;
 import com.monstrous.graphics.g2d.ShapeRenderer;
 import com.monstrous.graphics.g2d.SpriteBatch;
@@ -30,7 +32,7 @@ public class JLay implements Disposable {
 
     public JLay() {
         rrBatch = new RoundedRectangleBatch();
-        spriteBatch = new SpriteBatch();
+        spriteBatch = new SpriteBatch(1000, new ShaderProgram(Files.classpath("shaders/sprite-distanceField.wgsl")));
         sr = new ShapeRenderer();
         widgets = new ArrayList<>();
     }
@@ -57,10 +59,16 @@ public class JLay implements Disposable {
             }
         }
         for(Widget widget : widgets) {
-            widget.fitSizing();
+            widget.fitWidth();
         }
         for(Widget widget : widgets) {
-            widget.growAndShrinkSizing();
+            widget.growAndShrinkWidth();
+        }
+        for(Widget widget : widgets) {
+            widget.fitHeight();
+        }
+        for(Widget widget : widgets) {
+            widget.growAndShrinkHeight();
         }
         for(Widget widget : widgets) {
             widget.place();

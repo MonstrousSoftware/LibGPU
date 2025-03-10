@@ -31,9 +31,13 @@ public abstract class Widget {
         canShrink = new Boolean2( false,false);
     }
 
-    public void fitSizing(){};
+    public void fitWidth(){};
 
-    public void growAndShrinkSizing(){};
+    public void fitHeight(){};
+
+    public void growAndShrinkWidth(){};
+
+    public void growAndShrinkHeight(){};
 
     public void place(){}
 
@@ -62,10 +66,16 @@ public abstract class Widget {
      *  use GROW for a widget to grow to the available space
      */
     public void setSize(float width, float height){
-        canGrow.setX(width == GROW);
-        canGrow.setY(height == GROW);
-        canShrink.setX(width == GROW);      // ?
-        canShrink.setY(height == GROW);
+        if(width == GROW){
+            canGrow.setX(true);
+            canShrink.setX(true);       // do we need both?
+            width = 0;
+        }
+        if(height == GROW){
+            canGrow.setY(true);
+            canShrink.setY(true);
+            height = 0;
+        }
         size.set(width, height);
         preferredSize.set(width, height);
         minimumSize.set(width, height);
@@ -75,8 +85,6 @@ public abstract class Widget {
         canGrow.set(axis, value == GROW);
         canShrink.set(axis, value == GROW);      // ?
         size.setComponent(axis, value);
-        preferredSize.setComponent(axis, value);
-        minimumSize.setComponent(axis, value);
     }
 
     public Vector2 getSize(){
