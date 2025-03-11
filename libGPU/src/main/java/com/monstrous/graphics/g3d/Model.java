@@ -16,6 +16,7 @@
 
 package com.monstrous.graphics.g3d;
 
+import com.monstrous.Files;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.Material;
 import com.monstrous.graphics.VertexAttribute;
@@ -27,9 +28,6 @@ import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -97,11 +95,12 @@ public class Model implements Disposable {
 
         GLTFImage image = gltf.images.get( gltf.textures.get(textureId).source );
         if(image.uri != null){
-            try {
-                bytes = Files.readAllBytes(Paths.get(image.uri));
-            } catch (IOException e) {
-                throw new RuntimeException("Texture file not found: "+image.uri);
-            }
+            bytes = Files.internal(image.uri).readAllBytes();
+//            try {
+//                bytes = Files.readAllBytes(Paths.get(image.uri));
+//            } catch (IOException e) {
+//                throw new RuntimeException("Texture file not found: "+image.uri);
+//            }
         } else {
             GLTFBufferView view = gltf.bufferViews.get(image.bufferView);
             if(view.buffer != 0)
@@ -118,8 +117,13 @@ public class Model implements Disposable {
     private void processGLTF(GLTF gltf){
 
         ArrayList<MaterialData> mtlData = new ArrayList<>();
+        int index = 0;
         for(GLTFMaterial gltfMat :  gltf.materials){
             MaterialData mat = new MaterialData();
+
+            mat.name = gltfMat.name != null ? gltfMat.name : "mat"+index;   // copy name or generate one as a debugging aid
+            index++;
+
             if(gltfMat.pbrMetallicRoughness.baseColorFactor != null)
                 mat.diffuse = gltfMat.pbrMetallicRoughness.baseColorFactor;
             if(gltfMat.pbrMetallicRoughness.roughnessFactor >= 0)

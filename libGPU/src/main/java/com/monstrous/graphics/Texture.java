@@ -16,14 +16,13 @@
 
 package com.monstrous.graphics;
 
+import com.monstrous.FileHandle;
+import com.monstrous.Files;
 import com.monstrous.LibGPU;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class Texture {
     private int width;
@@ -64,63 +63,71 @@ public class Texture {
     }
 
     public Texture(String fileName,boolean mipMapping) {
-        this(fileName, mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
+        this(Files.internal(fileName), mipMapping);
+    }
+
+
+    public Texture(FileHandle file, boolean mipMapping){
+        this(file, mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
     }
 
     public Texture(String fileName, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
-        byte[] fileData;
+        this(Files.internal(fileName), mipMapping, renderAttachment, format);
+    }
 
-        try {
-            fileData = Files.readAllBytes(Paths.get(fileName));
 
-            Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
-            image = JavaWebGPU.getUtils().gdx2d_load(data, fileData.length);        // use native function to parse image file
+    public Texture(FileHandle file, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
+        byte[] fileData = file.readAllBytes();
 
-            PixmapInfo info = PixmapInfo.createAt(image);
-            this.width = info.width.intValue();
-            this.height = info.height.intValue();
-            this.nativeFormat = info.format.intValue();
-            Pointer pixelPtr = info.pixels.get();
-            if(nativeFormat == 12) { // HDR image
-                format = WGPUTextureFormat.RGBA16Float;
-                System.out.println("Reading HDR image: "+fileName);
-            }
+        Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
+        image = JavaWebGPU.getUtils().gdx2d_load(data, fileData.length);        // use native function to parse image file
 
-            create( "name", mipMapping, renderAttachment, format, 1, 1);
-            if(nativeFormat == 12)  // HDR image
-                fillHDR(Color.RED); //loadHDR(pixelPtr);
-            else
-                load(pixelPtr, 0);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Texture file not found: "+fileName);
+        PixmapInfo info = PixmapInfo.createAt(image);
+        this.width = info.width.intValue();
+        this.height = info.height.intValue();
+        this.nativeFormat = info.format.intValue();
+        Pointer pixelPtr = info.pixels.get();
+        if(nativeFormat == 12) { // HDR image
+            format = WGPUTextureFormat.RGBA16Float;
+            System.out.println("Reading HDR image: "+file);
         }
+
+        create( "name", mipMapping, renderAttachment, format, 1, 1);
+        if(nativeFormat == 12)  // HDR image
+            fillHDR(Color.RED); //loadHDR(pixelPtr);            // todo HACK
+        else
+            load(pixelPtr, 0);
+
     }
 
     public Texture(byte[] byteArray, boolean mipMapping) {
         this(byteArray, "texture", mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
     }
 
+    public Texture(byte[] byteArray, String name, boolean mipMapping) {
+        this(byteArray, name, mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
+    }
+
     public Texture(byte[] byteArray, String name, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
 
-//        Pointer data = JavaWebGPU.createByteArrayPointer(byteArray);
-//        image = JavaWebGPU.getUtils().gdx2d_load(data, byteArray.length);        // use native function to parse image file
-//
-//        PixmapInfo info = PixmapInfo.createAt(image);
-//        this.width = info.width.intValue();
-//        this.height = info.height.intValue();
-//        this.nativeFormat = info.format.intValue();
-//        Pointer pixelPtr = info.pixels.get();
-//
-//        if(nativeFormat == 12) { // HDR image
-//            format = WGPUTextureFormat.RGBA16Float;
-//            System.out.println("Reading HDR image: "+name);
-//        }
-//        create( name, mipMapping, renderAttachment, format, 1, 1);
-//        if(nativeFormat == 12)  // HDR image
-//            loadHDR(pixelPtr);
-//        else
-//            load(pixelPtr, 0);
+        Pointer data = JavaWebGPU.createByteArrayPointer(byteArray);
+        image = JavaWebGPU.getUtils().gdx2d_load(data, byteArray.length);        // use native function to parse image file
+
+        PixmapInfo info = PixmapInfo.createAt(image);
+        this.width = info.width.intValue();
+        this.height = info.height.intValue();
+        this.nativeFormat = info.format.intValue();
+        Pointer pixelPtr = info.pixels.get();
+
+        if(nativeFormat == 12) { // HDR image
+            format = WGPUTextureFormat.RGBA16Float;
+            System.out.println("Reading HDR image: "+name);
+        }
+        create( name, mipMapping, renderAttachment, format, 1, 1);
+        if(nativeFormat == 12)  // HDR image
+            loadHDR(pixelPtr);
+        else
+            load(pixelPtr, 0);
     }
 
     // for a multi-layer texture, e.g. a cube map
@@ -131,8 +138,9 @@ public class Texture {
         for(int layer = 0; layer < numLayers; layer++) {
 
             byte[] fileData;
-            try {
-                fileData = Files.readAllBytes(Paths.get(fileNames[layer]));
+
+                FileHandle handle = Files.internal(fileNames[layer]);
+                fileData = handle.readAllBytes();
                 int len = fileData.length;
                 Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
 
@@ -153,11 +161,6 @@ public class Texture {
                 Pointer pixelPtr = info.pixels.get();
 
                 load(pixelPtr, layer);
-
-
-            } catch (IOException e) {
-                throw new RuntimeException("Texture file not found: " + fileNames[layer]);
-            }
         }
     }
 

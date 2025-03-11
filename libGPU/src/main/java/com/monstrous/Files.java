@@ -7,8 +7,6 @@ public class Files {
         Classpath
     }
 
-
-
     public static FileHandle internal( String path){
         return new FileHandle(path, FileType.Internal);
     }

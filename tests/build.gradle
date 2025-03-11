@@ -15,6 +15,23 @@ run {
     setIgnoreExitValue(true)
 }
 
+
+// ensure the assets folder is included in the fat jar
+sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
+
+// make fat jar, ie with all dependencies included
+jar {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+    manifest {
+        attributes(
+                'Main-Class':  'com.monstrous.Launcher'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 repositories {
     //mavenLocal();
     mavenCentral()

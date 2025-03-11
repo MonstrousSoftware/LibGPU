@@ -43,14 +43,16 @@ public class Material implements Disposable {
 
 
     public Material(MaterialData materialData) {
+        System.out.println("Loading material: "+materialData.name);
+
         baseColor = new Color(materialData.diffuse);
         if(materialData.diffuseMapData == null)
             this.diffuseTexture = getDefaultWhiteTexture();
         else
-            this.diffuseTexture = new Texture(materialData.diffuseMapData, true);
+            this.diffuseTexture = new Texture(materialData.diffuseMapData, materialData.name+".diffuse", true);
 
         if( materialData.normalMapData != null) {
-            this.normalTexture = new Texture(materialData.normalMapData, true);
+            this.normalTexture = new Texture(materialData.normalMapData, materialData.name+".normal", true);
             hasNormalMap = true;
         } else {
             this.normalTexture = getDefaultBlackTexture();  // will not be used anyway
@@ -58,7 +60,7 @@ public class Material implements Disposable {
         }
 
         if( materialData.emissiveMapData != null)
-            this.emissiveTexture = new Texture(materialData.emissiveMapData, true);
+            this.emissiveTexture = new Texture(materialData.emissiveMapData, materialData.name+".emissive", true);
         else
             this.emissiveTexture = getDefaultBlackTexture();    // no emissive colour
 
@@ -70,7 +72,7 @@ public class Material implements Disposable {
             metallicFactor = 1f; // default
 
         if( materialData.metallicRoughnessMapData != null)
-            this.metallicRoughnessTexture = new Texture(materialData.metallicRoughnessMapData, true);
+            this.metallicRoughnessTexture = new Texture(materialData.metallicRoughnessMapData, materialData.name+".MR", true);
         else
             this.metallicRoughnessTexture = getDefaultWhiteTexture();
 

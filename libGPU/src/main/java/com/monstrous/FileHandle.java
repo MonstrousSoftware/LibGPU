@@ -3,6 +3,7 @@ package com.monstrous;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -23,10 +24,13 @@ public class FileHandle {
 
 
     public InputStream read(){
-        if(type == Files.FileType.Classpath){
-            InputStream input = FileHandle.class.getResourceAsStream("/" + file.getPath().replace('\\', '/'));
+        //System.out.println("read("+file.getPath()+") type = "+type+ " file exists? "+file.exists());
+        if(type == Files.FileType.Classpath || (type == Files.FileType.Internal && !file.exists())){
+            String resourcePath = "/" + file.getPath().replace('\\', '/');
+            //System.out.println("resource path: "+resourcePath);
+            InputStream input = FileHandle.class.getResourceAsStream(resourcePath);
             if (input == null)
-                throw new RuntimeException("File not found: " + file + " (" + type + ")");
+                throw new RuntimeException("File resource not found: " + resourcePath + " (" + type + ")");
             return input;
 
         } else if(type == Files.FileType.Internal){
@@ -46,6 +50,17 @@ public class FileHandle {
         } catch( Exception ex) {
             throw new RuntimeException("Error reading file.", ex);
         }
+    }
+
+    public byte[] readAllBytes(){
+        byte[] allBytes;
+        InputStream inputStream = read();
+        try {
+            allBytes = inputStream.readAllBytes();
+        } catch (IOException ex) {
+            throw new RuntimeException("Error reading file.", ex);
+        }
+        return allBytes;
     }
 
 }

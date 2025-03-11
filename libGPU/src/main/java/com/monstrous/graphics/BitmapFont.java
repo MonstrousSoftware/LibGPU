@@ -139,7 +139,7 @@ public class BitmapFont implements Disposable {
             throw new RuntimeException("Font file not found: "+fileHandle.file.getPath());
 
         String filePath = fileHandle.file.getPath();
-        int slash = filePath.lastIndexOf('/');
+        int slash = filePath.lastIndexOf('\\');
         String path = filePath.substring(0, slash + 1);
 
         String[] lines = fileData.split("\n");
@@ -154,7 +154,8 @@ public class BitmapFont implements Disposable {
                 if(words.length < 2)
                     throw new RuntimeException("Invalid page line in fnt file "+path);
                 textureFilePath = words[1];
-                fontTexture = new Texture(path+textureFilePath, false);
+                FileHandle handle = Files.internal(path+textureFilePath);
+                fontTexture = new Texture(handle, false);
             } else if(trimmed.startsWith("chars count")){
                 // chars count=168
                 String[] words = trimmed.split("=");

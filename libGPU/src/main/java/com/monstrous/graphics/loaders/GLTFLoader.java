@@ -16,6 +16,8 @@
 
 package com.monstrous.graphics.loaders;
 
+import com.monstrous.FileHandle;
+import com.monstrous.Files;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.loaders.gltf.*;
 import com.monstrous.math.Matrix4;
@@ -24,10 +26,6 @@ import com.monstrous.math.Vector3;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 
 // JSON parser of the GLTF file format into a set of GLTF class objects
@@ -40,13 +38,9 @@ public class GLTFLoader {
         String name = filePath.substring(slash + 1);
         MaterialData materialData = null;
 
+        FileHandle handle = Files.internal(filePath);
+        String contents = handle.readString();
 
-        String contents;
-        try {
-            contents = Files.readString(Paths.get(filePath));
-        } catch (IOException e) {
-            throw new RuntimeException("Could not read GLTF file " + filePath);
-        }
         GLTF gltf = parseJSON(contents, path);
         gltf.rawBuffer = new GLTFRawBuffer(gltf.buffers.get(0).uri);           // read .bin file, assume 1 buffer
         return gltf;
