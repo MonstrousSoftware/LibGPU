@@ -144,12 +144,17 @@ public class Model implements Disposable {
             mtlData.add(mat);
         }
 
+        long startLoad = System.currentTimeMillis();
+
+
         for(MaterialData mtl: mtlData) {
             Material material = new Material(mtl);
             materials.add(material);
         }
+        long endLoad = System.currentTimeMillis();
+        System.out.println("Material generation time (ms): "+(endLoad - startLoad));
 
-
+        startLoad = System.currentTimeMillis();
         for(GLTFMesh gltfMesh : gltf.meshes){
             for(GLTFPrimitive primitive : gltfMesh.primitives){
                 Mesh m = loadMesh(gltf, gltf.rawBuffer, primitive );
@@ -157,6 +162,9 @@ public class Model implements Disposable {
                 meshMap.put(primitive, m);
             }
         }
+
+        endLoad = System.currentTimeMillis();
+        System.out.println("Mesh loading time (ms): "+(endLoad - startLoad));
 
 //        for(GLTFScene scene : gltf.scenes ){
 //

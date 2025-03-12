@@ -1,8 +1,10 @@
 package com.monstrous.graphics.g2d;
 
-import com.monstrous.Files;
 import com.monstrous.LibGPU;
-import com.monstrous.graphics.*;
+import com.monstrous.graphics.Color;
+import com.monstrous.graphics.ShaderProgram;
+import com.monstrous.graphics.VertexAttribute;
+import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector2;
@@ -97,7 +99,7 @@ public class RoundedRectangleBatch implements Disposable {
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.specificShader);
-        pipelineSpec.shaderSourceFile = Files.classpath("shaders/roundedRectangles.wgsl");
+        pipelineSpec.shaderFilePath = "shaders/roundedRectangles.wgsl"; //Files.classpath("shaders/roundedRectangles.wgsl");
     }
 
     // the index buffer is fixed and only has to be filled on start-up

@@ -12,7 +12,6 @@ import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
-import com.monstrous.utils.ScreenUtils;
 
 import java.util.ArrayList;
 
@@ -22,9 +21,8 @@ public class TestGLTF extends ApplicationAdapter {
     private Camera camera;
     private Environment environment;
     private Matrix4 modelMatrix;
-    private Model model, model2;
+    private Model model;
     private ModelInstance modelInstance1;
-    private ModelInstance modelInstance2;
     private ArrayList<ModelInstance> instances;
     private float currentTime;
     private long startTime;
@@ -38,33 +36,27 @@ public class TestGLTF extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
+
+
         instances = new ArrayList<>();
 
         //model = new Model("models/lantern/Lantern.gltf");
         //model = new Model("models/ToyCar/ToyCar.gltf");
         //model = new Model("models/Buggy/Buggy.gltf");
-        //model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
-        model = new Model("models/Sponza/Sponza.gltf");
-        //model = new Model("models/fourareen.obj");
+        model = new Model("models/DamagedHelmet/DamagedHelmet.gltf");
+        //model = new Model("models/fourareen.obj")
 
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);
         instances.add(modelInstance1);
 
-//        for(int x = -30; x < 30; x += 5){
-//            for(int z = -30; z < 30; z += 5){
-//                if(x != 0 && z != 0)
-//                    instances.add( new ModelInstance(model, x, 0, z));
-//            }
-//        }
 
-        //modelInstance2 = new ModelInstance(model2, 5,0,0);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
-        camera.position.set(6, 5f, -1.6f);
-        camera.direction.set(1,0f, 0f);
+        camera.position.set(0, 1f, -1.6f);
+        camera.direction.set(0,0f, 1f);
         camera.far = 200f;
         camera.near = 0.001f;
         camera.update();
@@ -102,25 +94,24 @@ public class TestGLTF extends ApplicationAdapter {
             LibGPU.app.exit();
         }
         currentTime += LibGPU.graphics.getDeltaTime();
-        ScreenUtils.clear(.7f, .7f, .7f, 1);
 
-        //updateModelMatrix(modelMatrix, currentTime);
+        updateModelMatrix(modelMatrix, currentTime);
         camController.update();
 
-        modelBatch.begin(camera, environment);
+        modelBatch.begin(camera, environment, Color.GRAY);
         modelBatch.render(instances);
         modelBatch.end();
+
 
         batch.begin();
         font.draw(batch, status, 10, 50);
         batch.end();
 
+
         // At the end of the frame
 
         if (System.nanoTime() - startTime > 1000000000) {
             status = "fps: " + frames + " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds";
-//            System.out.println("fps: " + frames +
-//                    " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds"  );
             frames = 0;
             startTime = System.nanoTime();
         }

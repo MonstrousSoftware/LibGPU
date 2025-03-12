@@ -16,7 +16,6 @@
 
 package com.monstrous.graphics.g3d;
 
-import com.monstrous.Files;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Camera;
 import com.monstrous.graphics.Texture;
@@ -63,7 +62,7 @@ public class SkyBox implements Disposable {
         pipelineSpec.vertexAttributes = null;
         pipelineSpec.environment = null;
         pipelineSpec.shader = null;
-        pipelineSpec.shaderSourceFile =  Files.classpath("shaders/skybox.wgsl");
+        pipelineSpec.shaderFilePath =  "shaders/skybox.wgsl"; //Files.classpath("shaders/skybox.wgsl");
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.colorFormat = LibGPU.surfaceFormat;
@@ -93,7 +92,6 @@ public class SkyBox implements Disposable {
         bindGroup.dispose();
         bindGroupLayout.dispose();
         uniformBuffer.dispose();
-        pipelineSpec.dispose();
     }
 
 

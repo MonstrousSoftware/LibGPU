@@ -17,7 +17,7 @@ Let the Pipeline constructor compile the shader if it was not already provided i
         // if the specification does not already have a shader, create one from the source file, customized to the vertex attributes.
         if(spec.shader == null){
             String prefix = ShaderPrefix.buildPrefix(spec.vertexAttributes);
-            spec.shader = new ShaderProgram(spec.shaderSourceFile, prefix);
+            spec.shader = new ShaderProgram(spec.shaderFilePath, prefix);
         }
 
 

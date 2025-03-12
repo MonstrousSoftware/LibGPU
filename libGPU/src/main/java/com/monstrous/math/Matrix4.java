@@ -350,7 +350,20 @@ public class Matrix4 {
 
     public Matrix4 setToPerspective(float focalLength, float near, float far, float aspectRatio) {
 
-        float divides = 1.0f/(focalLength*(far-near));
+        //float divides = 1.0f/(focalLength*(far-near));
+        idt();
+        val[M00] = focalLength;
+        val[M11] = focalLength * aspectRatio;
+        val[M22] = far/(far-near);
+        val[M23] = -far*near/(far-near);
+        val[M32] = 1.0f;
+        val[M33] = 0f;
+        return this;
+    }
+
+    public Matrix4 setToProjection (float near, float far, float fovy, float aspectRatio) {
+
+        float focalLength = (float)(1.0/Math.tan( 0.5f*fovy*(Math.PI/180f)));
         idt();
         val[M00] = focalLength;
         val[M11] = focalLength * aspectRatio;
@@ -369,7 +382,7 @@ public class Matrix4 {
      * @param fovy The field of view of the height in degrees
      * @param aspectRatio The "width over height" aspect ratio
      * @return This matrix for the purpose of chaining methods together. */
-    public Matrix4 setToProjection (float near, float far, float fovy, float aspectRatio) {
+    public Matrix4 setToProjectionOri (float near, float far, float fovy, float aspectRatio) {
         idt();
         float l_fd = (float)(1.0 / Math.tan((fovy * (Math.PI / 180)) / 2.0));
         float l_a1 = (far + near) / (near - far);

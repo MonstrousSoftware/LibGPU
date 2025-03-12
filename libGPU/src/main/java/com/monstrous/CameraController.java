@@ -1,6 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.Camera;
+import com.monstrous.math.Vector3;
 
 // Simple turn table camera controller
 
@@ -10,6 +11,7 @@ public class CameraController extends InputAdapter {
     public float anglex;    // 0 for camera on Z+ axis, PI/2 for camera on X+ axis
     public float angley;   // 0 for camera at ground level, PI/2 for camera directly above
     private float distance;
+    private Vector3 pivotPoint;
 
 
     public CameraController(Camera camera) {
@@ -18,6 +20,7 @@ public class CameraController extends InputAdapter {
         distance = camera.position.len();
         angley = (float)Math.asin(camera.position.y/distance);
         anglex = (float)Math.atan2(camera.position.x, camera.position.z);
+        pivotPoint = new Vector3();
     }
 
     @Override
@@ -31,6 +34,11 @@ public class CameraController extends InputAdapter {
         return true;
     }
 
+    /** Set 3d point around which the camera rotates. By default, it is (0,0,0) */
+    public void setPivotPoint(Vector3 pivotPoint){
+        this.pivotPoint.set(pivotPoint);
+    }
+
     public void update(){
         float sinx = (float)Math.sin(anglex);
         float cosx = (float)Math.cos(anglex);
@@ -40,7 +48,7 @@ public class CameraController extends InputAdapter {
         // camera direction is in the opposite direction of camera position
         camera.direction.set(-sinx*cosy, -siny, -cosx*cosy);
         //camera.up.set(siny, cosy, siny);
-        camera.position.set(camera.direction).scl(-distance);
+        camera.position.set(camera.direction).scl(-distance).add(pivotPoint);
         camera.update();
 
         // todo orthonormalize the up vector
@@ -53,7 +61,6 @@ public class CameraController extends InputAdapter {
             distance *= 1.1f;
         else if (y > 0 && distance > 0.0)
             distance *= 0.9f;
-        //update();
         return true;
     }
 }

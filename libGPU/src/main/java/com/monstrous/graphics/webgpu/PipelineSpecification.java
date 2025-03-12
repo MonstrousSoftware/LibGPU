@@ -16,12 +16,10 @@
 
 package com.monstrous.graphics.webgpu;
 
-import com.monstrous.FileHandle;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.lights.Environment;
-import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.WGPUBlendFactor;
 import com.monstrous.webgpu.WGPUBlendOperation;
 import com.monstrous.webgpu.WGPUCullMode;
@@ -29,13 +27,12 @@ import com.monstrous.webgpu.WGPUTextureFormat;
 
 import java.util.Objects;
 
-public class PipelineSpecification implements Disposable {
+public class PipelineSpecification  {
     public String name;
     public VertexAttributes vertexAttributes;
     public Environment environment;
-    public FileHandle shaderSourceFile;
+    public String shaderFilePath;
     public ShaderProgram shader;
-    public boolean ownsShader;
     public boolean hasDepth;
     public boolean isSkyBox;
     public int numSamples;
@@ -50,11 +47,11 @@ public class PipelineSpecification implements Disposable {
 
     public WGPUTextureFormat colorFormat;
     public WGPUTextureFormat depthFormat;
+    private int hash;
 
 
     public PipelineSpecification() {
         this.name = "pipeline";
-        ownsShader = false;
         enableDepth();
         enableBlending();
         setCullMode(WGPUCullMode.None);
@@ -62,24 +59,28 @@ public class PipelineSpecification implements Disposable {
         depthFormat = WGPUTextureFormat.Depth24Plus;       // todo get from adapter?
         numSamples = 1;
         isSkyBox = false;
+        recalcHash();
     }
 
-    public PipelineSpecification(VertexAttributes vertexAttributes, FileHandle shaderSourceFile) {
+    public PipelineSpecification(VertexAttributes vertexAttributes, String shaderFilePath) {
         this();
         this.vertexAttributes = vertexAttributes;
-        this.shaderSourceFile = shaderSourceFile;
+        this.shaderFilePath = shaderFilePath;
+        recalcHash();
     }
 
     public PipelineSpecification(VertexAttributes vertexAttributes, ShaderProgram shader) {
         this();
         this.vertexAttributes = vertexAttributes;
         this.shader = shader;
+        recalcHash();
     }
 
     public PipelineSpecification(PipelineSpecification spec) {
         this.name  = spec.name;
         this.vertexAttributes = spec.vertexAttributes;       // should be deep copy
-        this.shaderSourceFile = spec.shaderSourceFile;
+        this.environment = spec.environment;
+        this.shaderFilePath = spec.shaderFilePath;
         this.shader = spec.shader;
         this.hasDepth = spec.hasDepth;
         this.blendSrcColor = spec.blendSrcColor;
@@ -88,22 +89,28 @@ public class PipelineSpecification implements Disposable {
         this.blendSrcAlpha = spec.blendSrcAlpha;
         this.blendDstAlpha = spec.blendDstAlpha;
         this.blendOpAlpha = spec.blendOpAlpha;
+        this.cullMode = spec.cullMode;
+        this.isSkyBox = spec.isSkyBox;
 
         this.colorFormat = spec.colorFormat;
         this.depthFormat = spec.depthFormat;
         this.numSamples = spec.numSamples;
+        recalcHash();
     }
 
     public void enableDepth(){
         hasDepth = true;
+        recalcHash();
     }
 
     public void disableDepth(){
         hasDepth = false;
+        recalcHash();
     }
 
     public void setCullMode(WGPUCullMode cullMode){
         this.cullMode = cullMode;
+        recalcHash();
     }
 
     public void enableBlending(){
@@ -113,6 +120,7 @@ public class PipelineSpecification implements Disposable {
         blendSrcAlpha = WGPUBlendFactor.Zero;
         blendDstAlpha = WGPUBlendFactor.One;
         blendOpAlpha = WGPUBlendOperation.Add;
+        recalcHash();
     }
 
     public void disableBlending(){
@@ -122,6 +130,7 @@ public class PipelineSpecification implements Disposable {
         blendSrcAlpha = WGPUBlendFactor.One;
         blendDstAlpha = WGPUBlendFactor.Zero;
         blendOpAlpha = WGPUBlendOperation.Add;
+        recalcHash();
     }
 
     @Override
@@ -137,12 +146,15 @@ public class PipelineSpecification implements Disposable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(vertexAttributes.getUsageFlags(), shaderSourceFile, shader, hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples);
+        //recalcHash();
+        return hash;
     }
 
-    @Override
-    public void dispose() {
-        if(ownsShader)
-            shader.dispose();
+    /** to be called whenever relevant content changes (to avoid doing this in hashCode which is called a lot) */
+    public void recalcHash() {
+        hash = Objects.hash(vertexAttributes != null ? vertexAttributes.getUsageFlags() : 0,
+                shaderFilePath,
+                hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox);
     }
+
 }

@@ -119,7 +119,7 @@ public class Texture {
         this.nativeFormat = info.format.intValue();
         Pointer pixelPtr = info.pixels.get();
 
-        if(nativeFormat == 12) { // HDR image
+        if(nativeFormat == 12) { // HDR image  experimental!!!
             format = WGPUTextureFormat.RGBA16Float;
             System.out.println("Reading HDR image: "+name);
         }
@@ -189,21 +189,6 @@ public class Texture {
         return format;
     }
 
-//    public WGPUBindGroupEntry getBinding(int index) {
-//        WGPUBindGroupEntry texBinding = WGPUBindGroupEntry.createDirect();
-//        texBinding.setNextInChain();
-//        texBinding.setBinding(index);  // binding index
-//        texBinding.setTextureView(textureView);
-//        return texBinding;
-//    }
-//
-//    public WGPUBindGroupEntry getSamplerBinding(int index) {
-//        WGPUBindGroupEntry binding = WGPUBindGroupEntry.createDirect();
-//        binding.setNextInChain();
-//        binding.setBinding(index);  // binding index
-//        binding.setSampler(sampler);
-//        return binding;
-//    }
 
     private int bitWidth(int value) {
         if (value == 0)
@@ -404,48 +389,36 @@ public class Texture {
 
             byte[] pixels = new byte[4 * mipLevelWidth * mipLevelHeight];
 
-            int offset = 0;
-            for (int y = 0; y < mipLevelHeight; y++) {
-                for (int x = 0; x < mipLevelWidth; x++) {
-                    if(mipLevel == 0) {
-                        if(pixelPtr == null) {
-                            // generate test pattern
-//                                pixels[offset++] = (byte) x;
-//                                pixels[offset++] = (byte) x;
-//                                pixels[offset++] = (byte) x;
-                            pixels[offset++] = (byte) ((x / 16) % 2 == (y / 16) % 2 ? 255 : 0);
-                            pixels[offset++] = (byte) (((x - y) / 16) % 2 == 0 ? 255 : 0);
-                            pixels[offset++] = (byte) (((x + y) / 16) % 2 == 0 ? 255 : 0);
-                            pixels[offset++] = (byte) 255;
-                        }
-                        else {
-                            pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
-                            pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
-                            pixels[offset] = convert(pixelPtr.getByte(offset));  offset++;
-                            pixels[offset] = pixelPtr.getByte(offset);  offset++;
-                        }
+            if(mipLevel == 0){
+                // fast copy for most common case: mip level 0
+                pixelPtr.get(0, pixels, 0, 4 * mipLevelWidth * mipLevelHeight);
+            }
+            else {
+                // todo with compute shader
+                int offset = 0;
+                for (int y = 0; y < mipLevelHeight; y++) {
+                    for (int x = 0; x < mipLevelWidth; x++) {
 
-                    } else {
                         // Get the corresponding 4 pixels from the previous level
-                        int offset00 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+0));
-                        int offset01 =  4 * ((2*y+0) * (2*mipLevelWidth) + (2*x+1));
-                        int offset10 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+0));
-                        int offset11 =  4 * ((2*y+1) * (2*mipLevelWidth) + (2*x+1));
+                        int offset00 = 4 * ((2 * y + 0) * (2 * mipLevelWidth) + (2 * x + 0));
+                        int offset01 = 4 * ((2 * y + 0) * (2 * mipLevelWidth) + (2 * x + 1));
+                        int offset10 = 4 * ((2 * y + 1) * (2 * mipLevelWidth) + (2 * x + 0));
+                        int offset11 = 4 * ((2 * y + 1) * (2 * mipLevelWidth) + (2 * x + 1));
 
                         // Average r, g and b components
                         // beware that java bytes are signed. So we convert to integer first
-                        int r = toUnsignedInt(prevPixels[offset00])   + toUnsignedInt(prevPixels[offset01])   + toUnsignedInt(prevPixels[offset10])   + toUnsignedInt(prevPixels[offset11]);
-                        int g = toUnsignedInt(prevPixels[offset00+1]) + toUnsignedInt(prevPixels[offset01+1]) + toUnsignedInt(prevPixels[offset10+1]) + toUnsignedInt(prevPixels[offset11+1]);
-                        int b = toUnsignedInt(prevPixels[offset00+2]) + toUnsignedInt(prevPixels[offset01+2]) + toUnsignedInt(prevPixels[offset10+2]) + toUnsignedInt(prevPixels[offset11+2]);
-                        int a = toUnsignedInt(prevPixels[offset00+3]) + toUnsignedInt(prevPixels[offset01+3]) + toUnsignedInt(prevPixels[offset10+3]) + toUnsignedInt(prevPixels[offset11+3]);
-                        pixels[offset++] = (byte)(r>>2);    // divide by 4
-                        pixels[offset++] = (byte)(g>>2);
-                        pixels[offset++] = (byte)(b>>2);
-                        pixels[offset++] = (byte)(a>>2);  // alpha
+                        int r = toUnsignedInt(prevPixels[offset00]) + toUnsignedInt(prevPixels[offset01]) + toUnsignedInt(prevPixels[offset10]) + toUnsignedInt(prevPixels[offset11]);
+                        int g = toUnsignedInt(prevPixels[offset00 + 1]) + toUnsignedInt(prevPixels[offset01 + 1]) + toUnsignedInt(prevPixels[offset10 + 1]) + toUnsignedInt(prevPixels[offset11 + 1]);
+                        int b = toUnsignedInt(prevPixels[offset00 + 2]) + toUnsignedInt(prevPixels[offset01 + 2]) + toUnsignedInt(prevPixels[offset10 + 2]) + toUnsignedInt(prevPixels[offset11 + 2]);
+                        int a = toUnsignedInt(prevPixels[offset00 + 3]) + toUnsignedInt(prevPixels[offset01 + 3]) + toUnsignedInt(prevPixels[offset10 + 3]) + toUnsignedInt(prevPixels[offset11 + 3]);
+                        pixels[offset++] = (byte) (r >> 2);    // divide by 4
+                        pixels[offset++] = (byte) (g >> 2);
+                        pixels[offset++] = (byte) (b >> 2);
+                        pixels[offset++] = (byte) (a >> 2);  // alpha
                     }
-
                 }
             }
+
 
             destination.setMipLevel(mipLevel);
             destination.getOrigin().setZ(layer);
@@ -457,10 +430,15 @@ public class Texture {
             ext.setHeight(mipLevelHeight);
             ext.setDepthOrArrayLayers(1);
 
-            // wrap byte array in native pointer
-            Pointer pixelData = JavaWebGPU.createByteArrayPointer(pixels);
-            // N.B. using textureDesc.getSize() for param won't work!
-            LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
+            if(mipLevel == 0){
+                LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, mipLevelWidth * mipLevelHeight * 4, source, ext);
+            } else {
+
+                // wrap byte array in native pointer
+                Pointer pixelData = JavaWebGPU.createByteArrayPointer(pixels);
+                // N.B. using textureDesc.getSize() for param won't work!
+                LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
+            }
 
             mipLevelWidth /= 2;
             mipLevelHeight /= 2;
@@ -538,6 +516,7 @@ public class Texture {
             JavaWebGPU.getUtils().gdx2d_free(image);
         }
         System.out.println("Destroy texture "+label);
+        LibGPU.webGPU.wgpuSamplerRelease(sampler);
         LibGPU.webGPU.wgpuTextureViewRelease(textureView);
         LibGPU.webGPU.wgpuTextureDestroy(texture);
         LibGPU.webGPU.wgpuTextureRelease(texture);

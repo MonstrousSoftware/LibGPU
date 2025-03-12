@@ -16,7 +16,6 @@
 
 package com.monstrous.graphics.g3d;
 
-import com.monstrous.Files;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.lights.DirectionalLight;
@@ -62,8 +61,10 @@ public class ModelBatch implements Disposable {
     private PipelineSpecification pipelineSpec;
     private final List<Renderable> renderables;
     private final RenderablePool pool;
-    public int numPipelineSwitches;
+
     public Environment environment;
+    public int numPipelines;
+    public int numPipelineSwitches;
 
     private DirectionalLight defaultDirectionalLight;
     private UniformBuffer instanceBuffer;
@@ -170,6 +171,8 @@ public class ModelBatch implements Disposable {
         //System.out.println("materials: "+materialUniformIndex+"\t\tpipe switches: "+numPipelineSwitches);
         pass.end();
         pass = null;
+
+        numPipelines = pipelines.size();        // for statistics
     }
 
 
@@ -233,13 +236,14 @@ public class ModelBatch implements Disposable {
         if(meshPart == null)
             return;
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer().getHandle();
-        pass.setVertexBuffer(0, vertexBuffer, 0, webGPU.wgpuBufferGetSize(vertexBuffer));
+        pass.setVertexBuffer(0, vertexBuffer, 0, meshPart.mesh.getVertexBuffer().getSize());
 
         setPipeline(pass, meshPart.mesh.vertexAttributes, environment);
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer().getHandle();
-            pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.wgpuBufferGetSize(indexBuffer));
+            pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, meshPart.mesh.getIndexBuffer().getSize());
+            //pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.wgpuBufferGetSize(indexBuffer));
             pass.drawIndexed( meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
         }
         else
@@ -262,12 +266,13 @@ public class ModelBatch implements Disposable {
         pipelineSpec.vertexAttributes = vertexAttributes;
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
-        pipelineSpec.shaderSourceFile = Files.classpath(selectShaderSourceFile());
+        pipelineSpec.shaderFilePath = selectShaderSourceFile(); //Files.classpath(selectShaderSourceFile());
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
         pipelineSpec.depthFormat = pass.getDepthFormat();
         pipelineSpec.numSamples = pass.getSampleCount();
+        pipelineSpec.recalcHash();
 
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout.getHandle(), pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches

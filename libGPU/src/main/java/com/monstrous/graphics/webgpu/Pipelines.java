@@ -22,7 +22,9 @@ import jnr.ffi.Pointer;
 import java.util.ArrayList;
 
 
-// Cache for pipelines
+/** Cache for pipelines
+ *
+ */
 
 public class Pipelines implements Disposable {
     private ArrayList<Pipeline> pipelines;      // todo or use map?
@@ -45,6 +47,11 @@ public class Pipelines implements Disposable {
     public void clear(){
         dispose();
         pipelines.clear();
+    }
+
+    /** returns number of pipelines managed */
+    public int size() {
+        return pipelines.size();
     }
 
     @Override

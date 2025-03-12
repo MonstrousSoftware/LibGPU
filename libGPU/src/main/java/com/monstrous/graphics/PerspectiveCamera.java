@@ -20,7 +20,7 @@ public class PerspectiveCamera extends Camera {
     @Override
     public void update(){
         float aspectRatio = (float) viewportWidth/(float) viewportHeight;
-        projection.setToPerspective(focalLength, near, far, aspectRatio);
+        projection.setToProjection( near, far, fieldOfView, aspectRatio);
         view.setToLookAt(direction, up);
         view.translate(-position.x, -position.y, -position.z);
         combined.set(projection);

@@ -47,6 +47,7 @@ public class Application {
     }
 
     public Application(ApplicationListener applicationListener, ApplicationConfiguration config) {
+        System.out.println("LibGPU v0.1");
         LibGPU.app = this;
         this.listener = applicationListener;
         this.configuration = config;

@@ -16,6 +16,8 @@
 
 package com.monstrous.graphics.webgpu;
 
+import com.monstrous.FileHandle;
+import com.monstrous.Files;
 import com.monstrous.LibGPU;
 import com.monstrous.ShaderPrefix;
 import com.monstrous.graphics.ShaderProgram;
@@ -28,6 +30,8 @@ public class Pipeline implements Disposable {
     private Pointer pipelineLayout;
     private Pointer pipeline;
     public PipelineSpecification specification;
+    private ShaderProgram shader;
+    private boolean ownsShader;
 
     public Pipeline(Pointer pipelineLayout, PipelineSpecification spec) {
         this.specification = new PipelineSpecification(spec);
@@ -35,15 +39,18 @@ public class Pipeline implements Disposable {
         this.pipelineLayout = pipelineLayout;
 
         // if the specification does not already have a shader, create one from the source file, customized to the vertex attributes.
-        if(spec.shader == null){
+        if(spec.shader != null) {
+            shader = spec.shader;   // make use of the shader in the spec
+            ownsShader = false;     // we don't have to dispose it
+        } else {
             String prefix = ShaderPrefix.buildPrefix(spec.vertexAttributes, spec.environment);
+            FileHandle file = Files.classpath(spec.shaderFilePath);
             //System.out.println("Shader Source ["+spec.shaderSourceFile+"] Prefix: ["+prefix+"]");
-            spec.shader = new ShaderProgram(spec.shaderSourceFile, prefix);
-            spec.ownsShader = true;
+            shader = new ShaderProgram(file, prefix);
+            ownsShader = true;
         }
 
-        //spec.shader = shader;
-        Pointer shaderModule = spec.shader.getHandle();
+        Pointer shaderModule = shader.getHandle();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes != null ? spec.vertexAttributes.getVertexBufferLayout() : null;
 
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
@@ -124,6 +131,8 @@ public class Pipeline implements Disposable {
     }
 
     public boolean canRender(PipelineSpecification spec){    // perhaps we need more params
+
+
         // crude check, to be refined
         int h = spec.hashCode();
         int h2 = this.specification.hashCode();
@@ -144,6 +153,8 @@ public class Pipeline implements Disposable {
     public void dispose() {
         //LibGPU.webGPU.PipelineLayoutRelease(pipelineLayout);
         LibGPU.webGPU.wgpuRenderPipelineRelease(pipeline);
+        if(ownsShader)
+            shader.dispose();
     }
 
 

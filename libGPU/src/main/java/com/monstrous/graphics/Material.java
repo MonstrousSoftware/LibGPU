@@ -43,16 +43,17 @@ public class Material implements Disposable {
 
 
     public Material(MaterialData materialData) {
+        boolean useMipMapping = true;  // for performance testing
         System.out.println("Loading material: "+materialData.name);
 
         baseColor = new Color(materialData.diffuse);
         if(materialData.diffuseMapData == null)
             this.diffuseTexture = getDefaultWhiteTexture();
         else
-            this.diffuseTexture = new Texture(materialData.diffuseMapData, materialData.name+".diffuse", true);
+            this.diffuseTexture = new Texture(materialData.diffuseMapData, materialData.name+".diffuse", useMipMapping);
 
         if( materialData.normalMapData != null) {
-            this.normalTexture = new Texture(materialData.normalMapData, materialData.name+".normal", true);
+            this.normalTexture = new Texture(materialData.normalMapData, materialData.name+".normal", useMipMapping);
             hasNormalMap = true;
         } else {
             this.normalTexture = getDefaultBlackTexture();  // will not be used anyway
@@ -60,7 +61,7 @@ public class Material implements Disposable {
         }
 
         if( materialData.emissiveMapData != null)
-            this.emissiveTexture = new Texture(materialData.emissiveMapData, materialData.name+".emissive", true);
+            this.emissiveTexture = new Texture(materialData.emissiveMapData, materialData.name+".emissive", useMipMapping);
         else
             this.emissiveTexture = getDefaultBlackTexture();    // no emissive colour
 
@@ -72,7 +73,7 @@ public class Material implements Disposable {
             metallicFactor = 1f; // default
 
         if( materialData.metallicRoughnessMapData != null)
-            this.metallicRoughnessTexture = new Texture(materialData.metallicRoughnessMapData, materialData.name+".MR", true);
+            this.metallicRoughnessTexture = new Texture(materialData.metallicRoughnessMapData, materialData.name+".MR", useMipMapping);
         else
             this.metallicRoughnessTexture = getDefaultWhiteTexture();
 
