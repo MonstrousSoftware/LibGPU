@@ -3,6 +3,8 @@
 // NORMAL_MAP
 // SHADOWS
 // CUBEMAP
+// TEXTURE_COORDINATE
+// NORMAL
 
 
 const MAX_DIR_LIGHTS : i32 = 5;
@@ -81,8 +83,12 @@ struct ModelUniforms {
 
 struct VertexInput {
     @location(0) position: vec3f,
+#ifdef TEXTURE_COORDINATE
     @location(1) uv: vec2f,
+#endif
+#ifdef NORMAL
     @location(2) normal: vec3f,
+#endif
 #ifdef NORMAL_MAP
     @location(3) tangent: vec3f,
     @location(4) bitangent: vec3f,
@@ -107,7 +113,12 @@ struct VertexOutput {
 fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOutput {
    var out: VertexOutput;
 
+#ifdef NORMAL
    out.normal = (instances[instance].modelMatrix * vec4f(in.normal, 0.0)).xyz;
+#else
+   out.normal = vec3(0,1,0);
+#endif
+
 #ifdef NORMAL_MAP
    out.tangent = (instances[instance].modelMatrix * vec4f(in.tangent, 0.0)).xyz;
    out.bitangent = (instances[instance].modelMatrix * vec4f(in.bitangent, 0.0)).xyz;
@@ -119,7 +130,11 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    let cameraPosition = uFrame.cameraPosition.xyz;
 
    out.position = pos;
+#ifdef TEXTURE_COORDINATE
    out.uv = in.uv;
+#else
+   out.uv = vec2f(0,0);
+#endif
    out.viewDirection = cameraPosition.xyz - worldPosition.xyz;
    out.cameraPosition = cameraPosition.xyz;
    out.worldPosition = worldPosition.xyz;

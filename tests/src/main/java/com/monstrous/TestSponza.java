@@ -127,7 +127,9 @@ public class TestSponza extends ApplicationAdapter {
         // At the end of the frame
 
         if (System.nanoTime() - startTime > 1000000000) {
-            status = "fps: " + frames + " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds pipelines: "+modelBatch.numPipelines+" pipe switches: "+modelBatch.numPipelineSwitches;
+            status = "fps: " + frames + " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds pipelines: "+modelBatch.numPipelines+
+                    " pipe switches: "+modelBatch.numPipelineSwitches +
+                    "draw calls: "+modelBatch.drawCalls;
             frames = 0;
             startTime = System.nanoTime();
         }

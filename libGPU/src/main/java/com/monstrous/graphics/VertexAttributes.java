@@ -93,6 +93,26 @@ public class VertexAttributes implements Disposable {
         return vertexBufferLayout;
     }
 
+    /** find (first) vertex attribute corresponding to requested usage */
+    public VertexAttribute getAttributeByUsage( long usage ){
+        for(VertexAttribute va : attributes) {
+            if(va.usage == usage)
+                return va;
+        }
+        return null;
+    }
+
+    /** find offset in bytes for a particulate usage, e.g. POSITION. Returns -1 if not found */
+    public int getOffset( long usage ){
+        int offset = 0;
+        for(VertexAttribute va : attributes) {
+            if (va.usage == usage)
+                return offset;
+            offset += va.getSize();
+        }
+        return -1;
+    }
+
 
     @Override
     public void dispose() {

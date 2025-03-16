@@ -5,45 +5,134 @@ import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.Model;
 import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.g3d.ModelInstance;
-import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
+import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.WGPUVertexFormat;
+
+import java.util.ArrayList;
 
 /** Test building a model from scratch, rather than reading a file
  *
  */
 
-public class TestModelBuild extends ApplicationAdapter {
+public class TestFrustum extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
-    private Model model;
-    private ModelInstance modelInstance;
+    private PerspectiveCamera subCam;
+    private Matrix4 subCamMatrix;
+    private Model frustumModel;
+    private Model blockModel;
+    private ArrayList<ModelInstance> instances;
     private Environment environment;
     private CameraController camController;
+    private ArrayList<Matrix4> instanceTransforms;
+    private float time;
 
     public void create() {
-        model = buildModel();//
-        //model = new Model("models/ducky.obj");
-        modelInstance = new ModelInstance(model, 0,0,0);
+
+
+        subCam = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
+        subCam.position.set(0,0,0);
+        subCam.direction.set(0,0,1);
+        subCam.near = 2;
+        subCam.far = 10;
+        subCam.update();
+        time = 0;
+
+
+        frustumModel = buildFrustumModel(subCam);//
+        instances = new ArrayList<>();
+        subCamMatrix = new Matrix4();
+
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(6, 4, -6);
         camera.direction.set(camera.position).scl(-1).nor();
+        camera.far = 100f;
         camera.update();
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor(camController);
 
         environment = new Environment();
-        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+        //environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
+        environment.ambientLightLevel = 0.8f;
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
 
         modelBatch = new ModelBatch();
+
+        blockModel = buildModel();
+        instanceTransforms = new ArrayList<>();
+        //populate();
+
+    }
+
+    private void populate(){
+        instances.clear();
+
+        instances.add( new ModelInstance(frustumModel, subCamMatrix) );
+        instances.add( new ModelInstance(blockModel, 0,0,0) );
+
+        instanceTransforms.clear();
+        for(int x = -10; x <= 10; x+=1){
+            for(int z = -10; z <= 20; z += 2){
+                Matrix4 transform = new Matrix4().idt().setToTranslation(x, 0, z).scale(0.1f);
+                Vector3 point = new Vector3(x, 0, z);
+                if(subCam.frustum.isInside(point))
+                    instanceTransforms.add(transform);
+            }
+        }
+        for(int y = -10; y <= 10; y+=1){
+            for(int z = -10; z <= 20; z += 2){
+                Matrix4 transform = new Matrix4().idt().setToTranslation(0, y, z).scale(0.1f);
+                Vector3 point = new Vector3(0, y, z);
+                if(subCam.frustum.isInside(point))
+                    instanceTransforms.add(transform);
+            }
+        }
+        instances.add( new ModelInstance(blockModel, instanceTransforms));
+    }
+
+
+
+    private Model buildFrustumModel(PerspectiveCamera cam) {
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.end();
+
+
+        int stride = 4;
+        float[]  vertexData = new float[stride*8];
+        for(int i = 0; i < 8; i++){
+            vertexData[stride*i] = cam.frustum.corners[i].x;
+            vertexData[stride*i+1] = cam.frustum.corners[i].y;
+            vertexData[stride*i+2] = cam.frustum.corners[i].z;
+            vertexData[stride*i+3] = 1.0f;
+        }
+
+        // standard winding order is counter-clockwise
+        short indexData[] = {
+                0, 1, 2, 0, 2, 3,   // near face
+                4, 6, 5, 4, 7, 6,   // far face
+                1, 5, 6, 1, 6, 2,   // right face
+                0, 7, 4, 0, 3, 7,   // left face
+                3, 6, 7, 3, 2, 6,   // top face
+                0, 5, 1, 0, 4, 5    // bottom face
+        };
+
+        Mesh mesh = new Mesh();
+        mesh.setVertexAttributes(vertexAttributes);
+        mesh.setVertices(vertexData);
+        mesh.setIndices(indexData);
+
+        Material material = new Material( new Color(0,1,0,0.2f) );
+
+        return new Model(mesh, material);
     }
 
     private Model buildModel(){
@@ -102,9 +191,9 @@ public class TestModelBuild extends ApplicationAdapter {
         Mesh mesh = new Mesh();
         mesh.setVertexAttributes(vertexAttributes);
         mesh.setVertices(vertexData);
-        //mesh.setIndices(null);
 
-        Material material = new Material( Color.GREEN );
+
+        Material material = new Material( Color.BLUE );
 
         return new Model(mesh, material);
     }
@@ -113,18 +202,25 @@ public class TestModelBuild extends ApplicationAdapter {
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
             LibGPU.app.exit();
 
+        time += 10*LibGPU.graphics.getDeltaTime();
+        float angle = time*(float)Math.PI/180f;
+        subCam.direction.set((float)Math.sin(angle),0,(float)Math.cos(angle));
+        subCam.update();
+        subCamMatrix.setToYRotation(-angle);
+
         camController.update();
+        populate();
 
         ScreenUtils.clear(Color.TEAL);
 
         modelBatch.begin(camera, environment);
-        modelBatch.render(modelInstance);
+        modelBatch.render(instances);
         modelBatch.end();
     }
 
     public void dispose(){
         // cleanup
-        model.dispose();
+        frustumModel.dispose();
         modelBatch.dispose();
     }
 

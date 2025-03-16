@@ -43,6 +43,7 @@ public class VertexAttribute {
         this.shaderLocation = shaderLocation;
     }
 
+    /** get size in bytes */
     public int getSize(){
         switch(format){
 

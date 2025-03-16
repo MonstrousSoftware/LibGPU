@@ -152,7 +152,7 @@ public class Model implements Disposable {
             materials.add(material);
         }
         long endLoad = System.currentTimeMillis();
-        System.out.println("Material generation time (ms): "+(endLoad - startLoad));
+        System.out.println("Material loading/generation time (ms): "+(endLoad - startLoad));
 
         startLoad = System.currentTimeMillis();
         for(GLTFMesh gltfMesh : gltf.meshes){
@@ -239,6 +239,8 @@ public class Model implements Disposable {
             throw new RuntimeException("GLTF: Can only support short or integer index");
 
         rawBuffer.byteBuffer.position(offset);
+
+        // todo try to get meshParts to use a common mesh
 
         int max = -1;
         if(indexAccessor.componentType == GLTF.USHORT16){

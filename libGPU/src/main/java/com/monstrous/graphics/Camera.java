@@ -1,5 +1,6 @@
 package com.monstrous.graphics;
 
+import com.monstrous.math.Frustum;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
@@ -14,6 +15,7 @@ public abstract class Camera {
     public Matrix4 projection;
     public Matrix4 view;
     public Matrix4 combined;      // P x V
+    public Frustum frustum;
 
     public Camera() {
         projection = new Matrix4();
@@ -24,6 +26,7 @@ public abstract class Camera {
         up = new Vector3(0, 1, 0);
         near = 0.001f;
         far = 100;
+        frustum = new Frustum();
 
         //update();
     }

@@ -65,6 +65,7 @@ public class ModelBatch implements Disposable {
     public Environment environment;
     public int numPipelines;
     public int numPipelineSwitches;
+    public int drawCalls;
 
     private DirectionalLight defaultDirectionalLight;
     private UniformBuffer instanceBuffer;
@@ -132,6 +133,7 @@ public class ModelBatch implements Disposable {
         prevMaterial = null;
         prevPipeline = null;
         numPipelineSwitches = 0;
+        drawCalls = 0;
 
         writeFrameUniforms(frameUniformBuffer, camera, environment);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, sampler, frameUniformBuffer.getBuffer());
@@ -248,6 +250,8 @@ public class ModelBatch implements Disposable {
         }
         else
             pass.draw(meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
+
+        drawCalls++;
     }
 
     private String selectShaderSourceFile() {

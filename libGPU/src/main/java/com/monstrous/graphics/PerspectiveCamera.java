@@ -19,11 +19,13 @@ public class PerspectiveCamera extends Camera {
 
     @Override
     public void update(){
-        float aspectRatio = (float) viewportWidth/(float) viewportHeight;
+        float aspectRatio = viewportWidth/viewportHeight;
         projection.setToProjection( near, far, fieldOfView, aspectRatio);
         view.setToLookAt(direction, up);
         view.translate(-position.x, -position.y, -position.z);
         combined.set(projection);
         Matrix4.mul(combined.val, view.val);
+
+        frustum.update(this);
     }
 }
