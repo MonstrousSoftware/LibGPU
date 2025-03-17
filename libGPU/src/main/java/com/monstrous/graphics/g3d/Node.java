@@ -74,21 +74,18 @@ public class Node {
         }
     }
 
-    public void getRenderables(ArrayList<Renderable> renderables, ArrayList<Matrix4> instanceTransforms, RenderablePool pool ){
+    public void getRenderables(ArrayList<Renderable> renderables, Matrix4 instanceTransform, RenderablePool pool ){
         if(nodeParts != null) {
-            for(Matrix4 modelTransform : instanceTransforms) {
-                for (NodePart nodePart : nodeParts) {
-                    Renderable renderable = pool.obtain();
-                    renderable.set(nodePart.meshPart, nodePart.material, modelTransform);
-                    // combine globalTransform from node with modelTransform from model instance
-                    renderable.modelTransform.mul(globalTransform);
-                    //renderable.instanceTransforms = instanceTransforms;
-                    renderables.add(renderable);
-                }
+            for (NodePart nodePart : nodeParts) {
+                Renderable renderable = pool.obtain();
+                renderable.set(nodePart.meshPart, nodePart.material, instanceTransform);
+                // combine globalTransform from node with modelTransform from model instance
+                renderable.modelTransform.mul(globalTransform);
+                renderables.add(renderable);
             }
         }
         for(Node child : children)
-            child.getRenderables(renderables, instanceTransforms, pool);
+            child.getRenderables(renderables, instanceTransform, pool);
     }
 
 

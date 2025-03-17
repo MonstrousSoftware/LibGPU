@@ -38,8 +38,10 @@ public class TestInstancing extends ApplicationAdapter {
         modelInstances = new ArrayList<>();
 
         transforms = makeTransforms();
-        ModelInstance modelInstance = new ModelInstance(model, transforms);
-        modelInstances.add(modelInstance);
+        for(Matrix4 transform: transforms) {
+            ModelInstance modelInstance = new ModelInstance(model, transform);      // note: not using instancing within one ModelInstance, but seems equally performant
+            modelInstances.add(modelInstance);
+        }
 
 
         //modelInstances.add(new ModelInstance(new Model("models/pyramid.obj"), 0, 0,0));

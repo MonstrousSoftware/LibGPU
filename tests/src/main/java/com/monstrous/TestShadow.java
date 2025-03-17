@@ -55,11 +55,11 @@ public class TestShadow extends ApplicationAdapter {
         modelMatrix = new Matrix4();
         Matrix4 modelMatrix2 = new Matrix4();
         modelMatrix2.setToTranslation(5, 0, 0);
-        ArrayList<Matrix4> matrices = new ArrayList<>();
-        matrices.add(modelMatrix);
-        matrices.add(modelMatrix2);
-        modelInstance1 = new ModelInstance(model, matrices);
+
+        modelInstance1 = new ModelInstance(model, modelMatrix);
         instances.add(modelInstance1);
+        modelInstance2 = new ModelInstance(model, modelMatrix2);
+        instances.add(modelInstance2);
 
         model2 = new Model("models/groundplane.gltf");
         modelInstance2 = new ModelInstance(model2, 0,0,0);

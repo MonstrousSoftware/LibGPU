@@ -1,5 +1,6 @@
 package com.monstrous.graphics.g3d;
 
+import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
 import static java.lang.Float.max;
@@ -16,24 +17,59 @@ public class BoundingBox {
     }
 
     public BoundingBox(Vector3 min, Vector3 max){
-        this.min.set(min);
-        this.max.set(max);
+        this();
+        set(min, max);
+    }
+
+    public void set(Vector3 min, Vector3 max){
+        min.set(min);
+        max.set(max);
+    }
+
+    public void set(BoundingBox bbox){
+        min.set(bbox.min);
+        max.set(bbox.max);
     }
 
     public void clear(){
-        min.set(0,0,0);
-        max.set(0,0,0);
+        min.set(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+        max.set(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
     }
 
     /** extend bounding box with vertex, growing it if needed */
     public void ext(Vector3 v){
-        min.x = min(min.x, v.x);
-        min.y = min(min.y, v.y);
-        min.z = min(min.z, v.z);
+        ext(v.x, v.y, v.z);
+    }
 
-        max.x = max(max.x, v.x);
-        max.y = max(max.y, v.y);
-        max.z = max(max.z, v.z);
+    /** extend bounding box with vertex, growing it if needed */
+    public void ext(float x, float y, float z){
+        min.x = min(min.x, x);
+        min.y = min(min.y, y);
+        min.z = min(min.z, z);
+
+        max.x = max(max.x, x);
+        max.y = max(max.y, y);
+        max.z = max(max.z, z);
+    }
+
+    public void transform(Matrix4 transform){
+        Vector3 tmpMin = new Vector3(min);
+        Vector3 tmpMax = new Vector3(max);
+
+        tmpMin.mul(transform);
+        tmpMax.mul(transform);
+        // make a new AABB containing all 8 corners of the transformed AABB
+        // note that this new AABB may be larger that the original and may not
+        // be a snug fit for the original source data.
+        clear();
+        ext(tmpMin.x, tmpMin.y, tmpMin.z);
+        ext(tmpMax.x, tmpMin.y, tmpMin.z);
+        ext(tmpMin.x, tmpMax.y, tmpMin.z);
+        ext(tmpMax.x, tmpMax.y, tmpMin.z);
+        ext(tmpMin.x, tmpMin.y, tmpMax.z);
+        ext(tmpMax.x, tmpMin.y, tmpMax.z);
+        ext(tmpMin.x, tmpMax.y, tmpMax.z);
+        ext(tmpMax.x, tmpMax.y, tmpMax.z);
     }
 
 }

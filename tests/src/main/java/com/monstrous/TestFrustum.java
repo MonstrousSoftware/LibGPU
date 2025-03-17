@@ -1,6 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.Model;
 import com.monstrous.graphics.g3d.ModelBatch;
@@ -26,31 +27,38 @@ public class TestFrustum extends ApplicationAdapter {
     private Model frustumModel;
     private Model blockModel;
     private ArrayList<ModelInstance> instances;
+    private ArrayList<ModelInstance> visibleInstances;
     private Environment environment;
     private CameraController camController;
-    private ArrayList<Matrix4> instanceTransforms;
     private float time;
+    private SpriteBatch spriteBatch;
+    private BitmapFont font;
 
     public void create() {
 
+        Vector3 worldUp = new Vector3(0,1,0);
 
         subCam = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         subCam.position.set(0,0,0);
-        subCam.direction.set(0,0,1);
+        subCam.direction.set(0,1,1);
+        Vector3 tmpRight = new Vector3().set(subCam.direction).crs(worldUp);
+        subCam.up.set(tmpRight).crs(subCam.direction).nor();
         subCam.near = 2;
         subCam.far = 10;
         subCam.update();
         time = 0;
 
 
-        frustumModel = buildFrustumModel(subCam);//
+        frustumModel = buildFrustumModel(subCam);
         instances = new ArrayList<>();
+        visibleInstances = new ArrayList<>();
         subCamMatrix = new Matrix4();
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(6, 4, -6);
         camera.direction.set(camera.position).scl(-1).nor();
+
         camera.far = 100f;
         camera.update();
 
@@ -63,12 +71,16 @@ public class TestFrustum extends ApplicationAdapter {
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
+        camController.update();
 
         modelBatch = new ModelBatch();
 
         blockModel = buildModel();
-        instanceTransforms = new ArrayList<>();
-        //populate();
+
+        populate();
+
+        spriteBatch = new SpriteBatch();
+        font = new BitmapFont();
 
     }
 
@@ -78,25 +90,34 @@ public class TestFrustum extends ApplicationAdapter {
         instances.add( new ModelInstance(frustumModel, subCamMatrix) );
         instances.add( new ModelInstance(blockModel, 0,0,0) );
 
-        instanceTransforms.clear();
-        for(int x = -10; x <= 10; x+=1){
-            for(int z = -10; z <= 20; z += 2){
+        for(int x = -15; x <= 15; x+=1){
+            for(int z = -15; z <= 20; z += 2){
                 Matrix4 transform = new Matrix4().idt().setToTranslation(x, 0, z).scale(0.1f);
-                Vector3 point = new Vector3(x, 0, z);
-                if(subCam.frustum.isInside(point))
-                    instanceTransforms.add(transform);
+                ModelInstance instance = new ModelInstance(blockModel, transform);
+                instances.add( instance );
             }
         }
-        for(int y = -10; y <= 10; y+=1){
-            for(int z = -10; z <= 20; z += 2){
+        for(int y = -25; y <= 25; y+=1){
+            for(int z = -25; z <= 25; z += 1){
                 Matrix4 transform = new Matrix4().idt().setToTranslation(0, y, z).scale(0.1f);
-                Vector3 point = new Vector3(0, y, z);
-                if(subCam.frustum.isInside(point))
-                    instanceTransforms.add(transform);
+                instances.add( new ModelInstance(blockModel, transform));
             }
         }
-        instances.add( new ModelInstance(blockModel, instanceTransforms));
+
+
     }
+
+    private void cull(){
+        visibleInstances.clear();
+
+        for(ModelInstance instance : instances ){
+            if(!subCam.frustum.boundsInFrustum(instance.boundingBox))
+                visibleInstances.add(instance);
+        }
+        visibleInstances.add( new ModelInstance(frustumModel, subCamMatrix) );
+        visibleInstances.add( new ModelInstance(blockModel, 0,0,0) );
+    }
+
 
 
 
@@ -116,7 +137,7 @@ public class TestFrustum extends ApplicationAdapter {
         }
 
         // standard winding order is counter-clockwise
-        short indexData[] = {
+        short[] indexData = {
                 0, 1, 2, 0, 2, 3,   // near face
                 4, 6, 5, 4, 7, 6,   // far face
                 1, 5, 6, 1, 6, 2,   // right face
@@ -130,7 +151,7 @@ public class TestFrustum extends ApplicationAdapter {
         mesh.setVertices(vertexData);
         mesh.setIndices(indexData);
 
-        Material material = new Material( new Color(0,1,0,0.2f) );
+        Material material = new Material( new Color(0,1,0,0.1f) );
 
         return new Model(mesh, material);
     }
@@ -204,24 +225,31 @@ public class TestFrustum extends ApplicationAdapter {
 
         time += 10*LibGPU.graphics.getDeltaTime();
         float angle = time*(float)Math.PI/180f;
-        subCam.direction.set((float)Math.sin(angle),0,(float)Math.cos(angle));
+        float yangle = 45f*(float)Math.PI/180f;
+        subCam.direction.set((float)Math.sin(angle)*(float)Math.cos(yangle),(float)Math.sin(yangle),(float)Math.cos(angle)*(float)Math.cos(yangle));
         subCam.update();
         subCamMatrix.setToYRotation(-angle);
 
         camController.update();
-        populate();
+        cull();
 
         ScreenUtils.clear(Color.TEAL);
 
         modelBatch.begin(camera, environment);
-        modelBatch.render(instances);
+        modelBatch.render(visibleInstances);
         modelBatch.end();
+
+        spriteBatch.begin();
+        font.draw(spriteBatch, "visible/modelInstances: "+visibleInstances.size()+"/"+instances.size(), 10, 50);
+        spriteBatch.end();
     }
 
     public void dispose(){
         // cleanup
         frustumModel.dispose();
         modelBatch.dispose();
+        spriteBatch.dispose();
+        font.dispose();
     }
 
     @Override

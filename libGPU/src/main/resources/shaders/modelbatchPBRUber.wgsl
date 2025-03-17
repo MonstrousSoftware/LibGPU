@@ -125,7 +125,6 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
 #endif
 
    let worldPosition =  instances[instance].modelMatrix * vec4f(in.position, 1.0);
-   //let worldPosition =  instances[instance].modelMatrix * vec4f(in.position, 1.0);
    let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
    let cameraPosition = uFrame.cameraPosition.xyz;
 
@@ -233,7 +232,8 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let V = normalize(in.viewDirection);
 
-    let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgb * material.baseColorFactor.rgb;
+    let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgba * material.baseColorFactor.rgba;
+
 
 
 #ifdef NORMAL_MAP
@@ -270,7 +270,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         let L = -normalize(light.direction.xyz);       // L is vector towards light
         let irradiance = max(dot(L, N), 0.0)* light.intensity.x;
         if(irradiance > 0.0) {
-            radiance += BRDF(L, V, N, roughness, metallic, baseColor) * irradiance *  light.color.rgb;
+            radiance += BRDF(L, V, N, roughness, metallic, baseColor.rgb) * irradiance *  light.color.rgb;
         }
     }
 
@@ -284,11 +284,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
         let irradiance = attenuation * max(dot(L, N), 0.0);
         if(irradiance > 0.0) {
-            radiance += BRDF(L, V, N, roughness, metallic, baseColor) * irradiance *  light.color.rgb;
+            radiance += BRDF(L, V, N, roughness, metallic, baseColor.rgb) * irradiance *  light.color.rgb;
         }
     }
 
-    let ambient : vec3f = baseColor * uFrame.ambientLightLevel;
+    let ambient : vec3f = baseColor.rgb * uFrame.ambientLightLevel;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
 
 #ifdef SHADOWS
@@ -315,5 +315,5 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 #endif
 
 
-    return vec4f(color, 1.0);
+    return vec4f(color, baseColor.a);
 }

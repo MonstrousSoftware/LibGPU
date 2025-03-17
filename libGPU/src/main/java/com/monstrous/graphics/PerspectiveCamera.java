@@ -5,7 +5,6 @@ import com.monstrous.math.Matrix4;
 public class PerspectiveCamera extends Camera {
     /** the field of view of the height, in degrees **/
     public float fieldOfView = 67;
-    public float focalLength = 1.5f;
 
     public PerspectiveCamera(){
 

@@ -49,6 +49,9 @@ public class Mesh {
         setVertexAttributes(data.vertexAttributes);
 
         //vertexCount = data.vertFloats.size() * Float.BYTES / data.vertexAttributes.getVertexSizeInBytes();
+
+        // convert ArrayList<Float> to float[]
+        // todo use FloatBuffer in MeshData?
         float[] vertexData = new float[data.vertFloats.size()];
         for (int i = 0; i < data.vertFloats.size(); i++) {
             vertexData[i] = data.vertFloats.get(i);

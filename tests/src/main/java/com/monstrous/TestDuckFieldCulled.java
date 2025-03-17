@@ -15,22 +15,25 @@ import com.monstrous.math.Vector3;
 
 import java.util.ArrayList;
 
-// Test instancing
-// For comparison to DuckField demo but is lacking shadows, PBR shading,etc.
+/** Test frustum culling at ModelInstance level
+ *
+ * // todo up/down frustum plane seem to cull too aggressively
+ */
 
-public class TestDuckField extends ApplicationAdapter {
+
+public class TestDuckFieldCulled extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
     private CameraController camController;
     private Model model;
     private ArrayList<ModelInstance> modelInstances;
+    private ArrayList<ModelInstance> visibleInstances;
     private Environment environment;
     private ArrayList<Matrix4> transforms;
     private BitmapFont font;
     private SpriteBatch batch;
-    private String info;
-//    private Stage stage;
+    private String infoString;
     private int fps;
     private long startTime;
     private int frames;
@@ -42,13 +45,13 @@ public class TestDuckField extends ApplicationAdapter {
 
         model = new Model("models/Ducky/ducky.glb");
         modelInstances = new ArrayList<>();
+        visibleInstances = new ArrayList<>();
 
         transforms = makeTransforms();
         for(Matrix4 transform: transforms) {
-            ModelInstance modelInstance = new ModelInstance(model, transform);
+            ModelInstance modelInstance = new ModelInstance(model, transform);      // note: not using instancing within one ModelInstance, but seems equally performant
             modelInstances.add(modelInstance);
         }
-
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);
@@ -66,27 +69,10 @@ public class TestDuckField extends ApplicationAdapter {
 
         batch = new SpriteBatch();
         font = new BitmapFont();
-        info = "Number of instances: "+transforms.size();
-
-//        stage = new Stage();
-//        Table sliderTable = new Table();
-//        WrappedFloat side = new WrappedFloat(15);
-//        Slider slider = new Slider(side, 0, 360, 5f);
-//
-//        Label.Style style = new Label.Style();
-//        style.font = font;
-//        style.fontColor = Color.WHITE;
-//        FloatLabel value = new FloatLabel( side, "count:", style );
-//        sliderTable.add(slider);
-//        sliderTable.row();
-//        sliderTable.add(value);
-//        stage.add(sliderTable).setAlign(Align.topRight);
+        infoString = "Number of instances: "+transforms.size();
 
 
         camController = new CameraController(camera);
-//        InputMultiplexer im= new InputMultiplexer();
-//        im.addProcessor(stage);
-//        im.addProcessor(camController);
         LibGPU.input.setInputProcessor(camController);
     }
 
@@ -101,7 +87,6 @@ public class TestDuckField extends ApplicationAdapter {
                 transforms.add(new Matrix4().translate(x, 0, z).scale(new Vector3( 1f,1f+.3f*(float)Math.sin(x-z), 1f)).rotate(up, 30f * x + 20f * z));
             }
         }
-        System.out.println("Instances: "+transforms.size());
         return transforms;
     }
 
@@ -121,22 +106,27 @@ public class TestDuckField extends ApplicationAdapter {
 
         rotate(transforms, LibGPU.graphics.getDeltaTime());
 
-
+        // culling
+        visibleInstances.clear();
+        for(ModelInstance instance : modelInstances ){
+            instance.update();
+            if(camera.frustum.boundsInFrustum(instance.boundingBox))
+                visibleInstances.add(instance);
+        }
 
         modelBatch.begin(camera, environment, Color.GRAY);
-        modelBatch.render(modelInstances);
+        modelBatch.render(visibleInstances);
         modelBatch.end();
 
         batch.begin(null);
-        font.draw(batch, info, 10, 70);
+        font.draw(batch, infoString, 10, 70);
         font.draw(batch, "frames per second: "+fps, 10, 50);
         batch.end();
 
-//        stage.draw();
 
         // At the end of the frame
         if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch : fps: " + frames +" instances: "+ transforms.size() );
+            infoString = "Number of instances: "+transforms.size()+" visible instances: "+visibleInstances.size()+" draw calls: "+modelBatch.drawCalls;
             fps = frames;
             frames = 0;
             startTime = System.nanoTime();
@@ -150,7 +140,6 @@ public class TestDuckField extends ApplicationAdapter {
         modelBatch.dispose();
         batch.dispose();
         font.dispose();
-//        stage.dispose();
     }
 
     @Override
@@ -158,7 +147,6 @@ public class TestDuckField extends ApplicationAdapter {
         camera.viewportWidth = width;
         camera.viewportHeight = height;
         camera.update();
-        //stage.resize(width, height);
     }
 
 

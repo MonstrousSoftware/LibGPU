@@ -24,12 +24,12 @@ import java.util.ArrayList;
 
 public class ModelInstance {
     public Model model;
-    public final ArrayList<Matrix4> instanceTransforms;
+    public final Matrix4 transform;
+    public final BoundingBox boundingBox;
 
     public ModelInstance(Model model){
         this(model, new Matrix4());
     }
-
 
     public ModelInstance(Model model, float x, float y, float z) {
         this(model,new Matrix4().translate(x,y,z) );
@@ -39,20 +39,19 @@ public class ModelInstance {
         if(model == null)
             throw new RuntimeException("ModelInstance: model is null");
         this.model = model;
-        this.instanceTransforms = new ArrayList<>();
-        this.instanceTransforms.add(transform);         // need to copy transform?
+        this.transform = transform;        // note: not a copy, so that the caller can modify the transform
+        this.boundingBox = new BoundingBox();
+        update();
     }
 
-    // to create a ModelInstance with instancing
-    public ModelInstance(Model model, ArrayList<Matrix4> instanceTransforms) {
-        if(model == null)
-            throw new RuntimeException("ModelInstance: model is null");
-        this.model = model;
-        this.instanceTransforms = instanceTransforms;       // or should we copy?
+    /** update bounding boxes to match the instance transform. Call this after changing the transform. */
+    public void update(){
+        boundingBox.set(model.meshes.get(0).boundingBox);   // todo assumes only one mesh per model
+        boundingBox.transform(transform);
     }
 
     public void getRenderables(ArrayList<Renderable> renderables, RenderablePool pool ){
         for(Node rootNode : model.rootNodes)
-            rootNode.getRenderables(renderables, instanceTransforms, pool);
+            rootNode.getRenderables(renderables, transform, pool);
     }
 }

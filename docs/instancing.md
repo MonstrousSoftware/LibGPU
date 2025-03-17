@@ -9,21 +9,23 @@ A ModelInstance is defined by a Model and a transform.  A ModelInstance can be d
     ModelInstance instance2 = new ModelInstance(model, transform);
 
 
-It is also possible to define that a ModelInstance needs to be rendered as multiple instances using different transforms:
-For this, provide an ArrayList of Matrix4 transforms as parameter in the constructor. For example:
+Obsolete: The following is no longer supported as ModelBatch will recognize instances of the same model and apply instancing automatically:
 
-
-    ArrayList<Matrix4> transforms = new ArrayList<>();
-    transforms.add( new Matrix4().translate(0,2,0) );
-    transforms.add( new Matrix4().translate(0,3,0) );
-    transforms.add( new Matrix4().translate(0,4,0) );
-    ModelInstance instanceMulti = new ModelInstance(model, transforms);
-
-    modelBatch.begin(camera);
-    modelBatch.render(instanceMulti);       //  = 3 instances
-    modelBatch.end();
-
-ModelBatch will render these instances using a single draw call.
+            It is also possible to define that a ModelInstance needs to be rendered as multiple instances using different transforms:
+            For this, provide an ArrayList of Matrix4 transforms as parameter in the constructor. For example:
+            
+            
+                ArrayList<Matrix4> transforms = new ArrayList<>();
+                transforms.add( new Matrix4().translate(0,2,0) );
+                transforms.add( new Matrix4().translate(0,3,0) );
+                transforms.add( new Matrix4().translate(0,4,0) );
+                ModelInstance instanceMulti = new ModelInstance(model, transforms);
+            
+                modelBatch.begin(camera);
+                modelBatch.render(instanceMulti);       //  = 3 instances
+                modelBatch.end();
+            
+            ModelBatch will render these instances using a single draw call.
 
 When multiple ModelInstances based on the same Model are rendered via ModelBatch, 
 these will automatically be combined in a single draw call, even if the constructor with the ArrayList was not used.
@@ -49,3 +51,5 @@ reference to the provided matrix/matrices, it does not make a copy.  So the same
     ModelInstance instance2 = new ModelInstance(model, transform);
 
 On the other hand, changes in the transforms will automatically be reflected when the model instances are rendered.
+
+If you are making use of the bounding box of a ModelInstance, for example for visibility culling or for collisions, call update() after modifying a transform so that the bounding box is also updated.

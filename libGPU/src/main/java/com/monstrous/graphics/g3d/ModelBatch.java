@@ -221,6 +221,8 @@ public class ModelBatch implements Disposable {
             emitMeshPart(prevMeshPart, instanceCount, renderablesCount);
             instanceCount = 0;
             prevMeshPart = meshPart;
+        } else {
+            System.out.println("Instances ");
         }
         addInstance(renderablesCount, modelMatrix);
         renderablesCount++; // nr of renderables in buffer

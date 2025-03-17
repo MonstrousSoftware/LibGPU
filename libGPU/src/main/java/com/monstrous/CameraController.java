@@ -12,6 +12,8 @@ public class CameraController extends InputAdapter {
     public float angley;   // 0 for camera at ground level, PI/2 for camera directly above
     private float distance;
     private Vector3 pivotPoint;
+    private Vector3 tmpRight;
+    private final Vector3 worldUp;
 
 
     public CameraController(Camera camera) {
@@ -21,6 +23,8 @@ public class CameraController extends InputAdapter {
         angley = (float)Math.asin(camera.position.y/distance);
         anglex = (float)Math.atan2(camera.position.x, camera.position.z);
         pivotPoint = new Vector3();
+        tmpRight = new Vector3();
+        worldUp = new Vector3(0,1,0);
     }
 
     @Override
@@ -47,6 +51,8 @@ public class CameraController extends InputAdapter {
 
         // camera direction is in the opposite direction of camera position
         camera.direction.set(-sinx*cosy, -siny, -cosx*cosy);
+        tmpRight.set(camera.direction).crs(worldUp);
+        camera.up.set(tmpRight).crs(camera.direction).nor();
         //camera.up.set(siny, cosy, siny);
         camera.position.set(camera.direction).scl(-distance).add(pivotPoint);
         camera.update();

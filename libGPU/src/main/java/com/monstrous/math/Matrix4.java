@@ -361,12 +361,20 @@ public class Matrix4 {
         return this;
     }
 
+    /** Set to projection matrix.
+     *
+     * @param near
+     * @param far
+     * @param fovy  field of view in height (degrees)
+     * @param aspectRatio width over height
+     * @return
+     */
     public Matrix4 setToProjection (float near, float far, float fovy, float aspectRatio) {
 
         float focalLength = (float)(1.0/Math.tan( 0.5f*fovy*(Math.PI/180f)));
         idt();
-        val[M00] = focalLength;
-        val[M11] = focalLength * aspectRatio;
+        val[M00] = focalLength/aspectRatio;
+        val[M11] = focalLength;
         val[M22] = far/(far-near);
         val[M23] = -far*near/(far-near);
         val[M32] = 1.0f;

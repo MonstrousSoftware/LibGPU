@@ -98,7 +98,7 @@ public class TestSponza extends ApplicationAdapter {
             LibGPU.app.exit();
         }
 
-        camController.update();
+        //camController.update();
 
         // pass #1 : depth map
         environment.depthPass = true;
