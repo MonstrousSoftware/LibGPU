@@ -27,19 +27,22 @@ import static com.monstrous.utils.JavaWebGPU.createIntegerArrayPointer;
 
 public class Application {
     public ApplicationConfiguration configuration;
+    public Pointer depthTextureView;
+    public WGPUTextureFormat depthTextureFormat;
+    public Pointer depthTexture;
+    public Pointer targetView;
+    public GPUTiming gpuTiming;
+    public Texture multiSamplingTexture;
+
     private ApplicationListener listener;
     private ApplicationListener nextListener;
     private boolean returnToPreviousListener;
     private boolean mustExitRenderLoop = false;
     private WebGPU_JNI webGPU;
-    public Pointer depthTextureView;
-    public Pointer depthTexture;
-    public Pointer targetView;
     private boolean surfaceConfigured = false;
     private boolean isMinimized = false;
     private WindowedApp winApp;
-    public GPUTiming gpuTiming;
-    public Texture multiSamplingTexture;
+
 
 
     public Application(ApplicationListener listener) {
@@ -419,7 +422,7 @@ public class Application {
 
     private void initDepthBuffer(int width, int height){
 
-        WGPUTextureFormat depthTextureFormat = WGPUTextureFormat.Depth24Plus;
+        depthTextureFormat = WGPUTextureFormat.Depth24Plus;
 
         long[] formats = new long[1];
         formats[0] = depthTextureFormat.ordinal();

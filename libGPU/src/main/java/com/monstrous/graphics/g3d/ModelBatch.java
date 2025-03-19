@@ -65,7 +65,10 @@ public class ModelBatch implements Disposable {
     public Environment environment;
     public int numPipelines;
     public int numPipelineSwitches;
+    public int materialSwitches;
     public int drawCalls;
+    public int numEmitted;
+    public int instancingJoins; // number of renderables that could be combined by instancing
 
     private DirectionalLight defaultDirectionalLight;
     private UniformBuffer instanceBuffer;
@@ -122,18 +125,30 @@ public class ModelBatch implements Disposable {
     }
 
     public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture){
+        begin(camera, environment, clearColor, outputTexture, depthTexture, RenderPassType.COLOR_PASS);
+    }
+
+    public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture, RenderPassType passType){
         this.camera = camera;
         this.environment = environment;
 
 
-
         // create a new render pass
-        pass = RenderPassBuilder.create(clearColor, outputTexture,  depthTexture, LibGPU.app.configuration.numSamples);
+        int samples = LibGPU.app.configuration.numSamples;
+        if(passType == RenderPassType.SHADOW_PASS || passType == RenderPassType.DEPTH_PREPASS)
+            samples = 1;
+        if(depthTexture == null)
+            pass = RenderPassBuilder.create(passType.name(), clearColor, outputTexture, LibGPU.app.depthTextureFormat, LibGPU.app.depthTextureView, samples, passType );
+        else
+            pass = RenderPassBuilder.create(passType.name(), clearColor, outputTexture, depthTexture.getFormat(), depthTexture.getTextureView(), samples, passType );
 
         prevMaterial = null;
         prevPipeline = null;
         numPipelineSwitches = 0;
+        materialSwitches = 0;
         drawCalls = 0;
+        numEmitted = 0;
+        instancingJoins = 0;
 
         writeFrameUniforms(frameUniformBuffer, camera, environment);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, sampler, frameUniformBuffer.getBuffer());
@@ -162,6 +177,7 @@ public class ModelBatch implements Disposable {
     }
 
 
+
     public void end(){
         flush();
 
@@ -178,12 +194,13 @@ public class ModelBatch implements Disposable {
     }
 
 
-    // sort comparator to sort on material
+    // sort comparator to sort on material to reduce number of material switches.
     //
     private static class RenderableComparator implements Comparator<Renderable> {
         @Override
         public int compare(Renderable r1, Renderable r2) {
-            return r1.meshPart.hashCode() - r2.meshPart.hashCode();
+            //return r1.meshPart.hashCode() - r2.meshPart.hashCode();
+            return r1.material.sortCode() - r2.material.sortCode();
         }
     }
 
@@ -202,15 +219,27 @@ public class ModelBatch implements Disposable {
         renderablesCount = 0;
 
         for(Renderable renderable : renderables) {
-            emit(renderable);
+            if(isVisible(renderable))
+                emit(renderable);
             pool.free(renderable);
         }
         emitMeshPart(prevMeshPart, instanceCount, renderablesCount);
         renderables.clear();
     }
 
+    private BoundingBox bbox = new BoundingBox();
+
+    /** Frustum culling using a transformed mesh bounding box */
+    private boolean isVisible(Renderable renderable){
+        bbox.set(renderable.meshPart.mesh.boundingBox);
+        bbox.transform(renderable.modelTransform);
+        return camera.frustum.boundsInFrustum(bbox);
+    }
+
+
     // this will actually generate the draw calls for the renderable
     private void emit(Renderable renderable) {
+        numEmitted++;
         emit(renderable.meshPart, renderable.material, renderable.modelTransform);
     }
 
@@ -222,7 +251,7 @@ public class ModelBatch implements Disposable {
             instanceCount = 0;
             prevMeshPart = meshPart;
         } else {
-            System.out.println("Instances ");
+            instancingJoins++;
         }
         addInstance(renderablesCount, modelMatrix);
         renderablesCount++; // nr of renderables in buffer
@@ -232,6 +261,7 @@ public class ModelBatch implements Disposable {
         if(material != prevMaterial) {
             prevMaterial = material;
             material.bindGroup(pass, 1);    // group 1 is material bind group
+            materialSwitches++;
         }
     }
 
@@ -256,11 +286,12 @@ public class ModelBatch implements Disposable {
         drawCalls++;
     }
 
-    private String selectShaderSourceFile() {
+    private String selectShaderSourceFile(RenderPassType passType) {
 
-        if (environment != null && environment.depthPass) {
+        if(passType == RenderPassType.SHADOW_PASS)
             return "shaders/modelbatchDepth.wgsl";
-        }
+        else if (passType == RenderPassType.DEPTH_PREPASS)
+            return "shaders/modelbatchDepthPrepass.wgsl";
         return "shaders/modelbatchPBRUber.wgsl";
     }
 
@@ -272,12 +303,13 @@ public class ModelBatch implements Disposable {
         pipelineSpec.vertexAttributes = vertexAttributes;
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
-        pipelineSpec.shaderFilePath = selectShaderSourceFile(); //Files.classpath(selectShaderSourceFile());
+        pipelineSpec.shaderFilePath = selectShaderSourceFile(pass.type);
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
+        pipelineSpec.isDepthPass = environment.depthPass;
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
         pipelineSpec.depthFormat = pass.getDepthFormat();
-        pipelineSpec.numSamples = pass.getSampleCount();
+        pipelineSpec.numSamples = environment.depthPass? 1 : pass.getSampleCount();
         pipelineSpec.recalcHash();
 
         Pipeline pipeline = pipelines.getPipeline(pipelineLayout.getHandle(), pipelineSpec);

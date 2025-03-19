@@ -17,14 +17,21 @@ public class CameraController extends InputAdapter {
 
 
     public CameraController(Camera camera) {
+        this(camera, Vector3.Zero);
+    }
+
+    public CameraController(Camera camera, Vector3 pivotPoint) {
         this.camera = camera;
 
         distance = camera.position.len();
-        angley = (float)Math.asin(camera.position.y/distance);
-        anglex = (float)Math.atan2(camera.position.x, camera.position.z);
-        pivotPoint = new Vector3();
+        this.pivotPoint = new Vector3(pivotPoint);
+        camera.direction.set(pivotPoint).sub(camera.position).nor();
+        angley = (float)Math.asin(-camera.direction.y);
+        anglex = (float)Math.atan2(-camera.direction.x, -camera.direction.z);
+
         tmpRight = new Vector3();
         worldUp = new Vector3(0,1,0);
+        update();
     }
 
     @Override
@@ -50,14 +57,14 @@ public class CameraController extends InputAdapter {
         float cosy = (float)Math.cos(angley);
 
         // camera direction is in the opposite direction of camera position
-        camera.direction.set(-sinx*cosy, -siny, -cosx*cosy);
+        camera.direction.set(-sinx*cosy, -siny, -cosx*cosy).nor();
+
+        // orthonormalize the camera up vector
         tmpRight.set(camera.direction).crs(worldUp);
         camera.up.set(tmpRight).crs(camera.direction).nor();
-        //camera.up.set(siny, cosy, siny);
+
         camera.position.set(camera.direction).scl(-distance).add(pivotPoint);
         camera.update();
-
-        // todo orthonormalize the up vector
     }
 
     @Override

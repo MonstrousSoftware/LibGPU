@@ -25,14 +25,16 @@ import static com.monstrous.LibGPU.webGPU;
 public class RenderPass {
 
     private final Pointer renderPass;                   // handle used by WebGPU
+    public final RenderPassType type;
     private final WGPUTextureFormat textureFormat;
     private final WGPUTextureFormat depthFormat;
     public int targetWidth, targetHeight;
     private int sampleCount;
 
     // don't call this directly, use RenderPassBuilder.create()
-    RenderPass(Pointer renderPass, WGPUTextureFormat textureFormat, WGPUTextureFormat depthFormat, int sampleCount, int targetWidth, int targetHeight) {
+    RenderPass(Pointer renderPass, RenderPassType type, WGPUTextureFormat textureFormat, WGPUTextureFormat depthFormat, int sampleCount, int targetWidth, int targetHeight) {
         this.renderPass = renderPass;
+        this.type = type;
         this.textureFormat = textureFormat;
         this.depthFormat = depthFormat;
         this.sampleCount = sampleCount;

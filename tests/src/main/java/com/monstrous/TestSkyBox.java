@@ -89,7 +89,8 @@ public class TestSkyBox extends ApplicationAdapter {
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
 
         camera.position.set(0, 6, 0);
-        camera.direction.set(0, -1, 0.0001f);
+        //camera.direction.set(0, -1, 0.0001f);
+        camera.direction.set(0, 0, 1);
         camera.up.set(0,1,0);
 
         camera.far = 50f;

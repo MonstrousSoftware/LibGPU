@@ -70,32 +70,34 @@ public class Pipeline implements Disposable {
         pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
         pipelineDesc.getPrimitive().setCullMode(spec.cullMode);
 
-        WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
-        fragmentState.setNextInChain();
-        fragmentState.setModule(shaderModule);
-        fragmentState.setEntryPoint("fs_main");
-        fragmentState.setConstantCount(0);
-        fragmentState.setConstants();
+        if(spec.colorFormat != WGPUTextureFormat.Undefined) {
+        //if(!spec.isDepthPass) {
+            WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
+            fragmentState.setNextInChain();
+            fragmentState.setModule(shaderModule);
+            fragmentState.setEntryPoint("fs_main");
+            fragmentState.setConstantCount(0);
+            fragmentState.setConstants();
 
-        // blend
-        WGPUBlendState blendState = WGPUBlendState.createDirect();
-        blendState.getColor().setSrcFactor(spec.blendSrcColor);
-        blendState.getColor().setDstFactor(spec.blendDstColor);
-        blendState.getColor().setOperation(spec.blendOpColor);
-        blendState.getAlpha().setSrcFactor(spec.blendSrcAlpha);
-        blendState.getAlpha().setDstFactor(spec.blendDstAlpha);
-        blendState.getAlpha().setOperation(spec.blendOpAlpha);
+            // blend
+            WGPUBlendState blendState = WGPUBlendState.createDirect();
+            blendState.getColor().setSrcFactor(spec.blendSrcColor);
+            blendState.getColor().setDstFactor(spec.blendDstColor);
+            blendState.getColor().setOperation(spec.blendOpColor);
+            blendState.getAlpha().setSrcFactor(spec.blendSrcAlpha);
+            blendState.getAlpha().setDstFactor(spec.blendDstAlpha);
+            blendState.getAlpha().setOperation(spec.blendOpAlpha);
 
-        WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
+            WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
+            colorTarget.setFormat(spec.colorFormat);
+            colorTarget.setBlend(blendState);
+            colorTarget.setWriteMask(WGPUColorWriteMask.All);
 
-        colorTarget.setFormat(spec.colorFormat);
-        colorTarget.setBlend(blendState);
-        colorTarget.setWriteMask(WGPUColorWriteMask.All);
+            fragmentState.setTargetCount(1);
+            fragmentState.setTargets(colorTarget);
 
-        fragmentState.setTargetCount(1);
-        fragmentState.setTargets(colorTarget);
-
-        pipelineDesc.setFragment(fragmentState);
+            pipelineDesc.setFragment(fragmentState);
+        }
 
         WGPUDepthStencilState depthStencilState = WGPUDepthStencilState.createDirect();
         setDefault(depthStencilState);

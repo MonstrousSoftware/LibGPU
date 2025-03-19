@@ -160,7 +160,7 @@ public class SpriteBatch implements Disposable {
     }
 
     public void begin(Color clearColor) {
-        renderPass = RenderPassBuilder.create(clearColor, null, null, LibGPU.app.configuration.numSamples);
+        renderPass = RenderPassBuilder.create(clearColor,  LibGPU.app.configuration.numSamples);
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");

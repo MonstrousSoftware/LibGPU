@@ -7,6 +7,7 @@ import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.g3d.ModelInstance;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
+import com.monstrous.graphics.webgpu.RenderPassType;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.webgpu.WGPUTextureFormat;
@@ -14,6 +15,8 @@ import com.monstrous.webgpu.WGPUTextureFormat;
 import java.util.ArrayList;
 
 public class TestSponza extends ApplicationAdapter {
+
+    private static boolean WITH_SHADOWS = true;
 
     private static Color bgColor = new Color(178f/255f, 204f/255f, 1f, 1);
     private static int SHADOW_MAP_SIZE = 4096;      // size (in pixels) of depth map
@@ -35,6 +38,7 @@ public class TestSponza extends ApplicationAdapter {
     private CameraController camController;
     private OrthographicCamera shadowCam;
     private Texture colorMap, depthMap;
+    private boolean userControl = true;
 
     public void create() {
         startTime = System.nanoTime();
@@ -58,8 +62,8 @@ public class TestSponza extends ApplicationAdapter {
         camera.near = 0.1f;
         camera.far = 100f;
         camera.position.set(6.7f, 5, -1.6f);
-        //camera.lookAt(new Vector3(-10,5,0));
-        camera.direction.set(-0.99f,0f, 0.1f);
+
+        camera.direction.set(-0.99f,0f, 0.1f).nor();
         camera.update();
 
         DirectionalLight sun = new DirectionalLight(Color.WHITE, new Vector3(0,-1f,0));
@@ -82,9 +86,10 @@ public class TestSponza extends ApplicationAdapter {
         colorMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
         depthMap = new Texture(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE, false, true, WGPUTextureFormat.Depth32Float, 1);
 
-        camController = new CameraController(camera);
-        camController.setPivotPoint(new Vector3(0,5,0));
+        camController = new CameraController(camera, new Vector3(0,5,0));
+        //camController.setPivotPoint(new Vector3(0,0,0));
         LibGPU.input.setInputProcessor( camController );
+        userControl = true;
 
         modelBatch = new ModelBatch();
 
@@ -97,30 +102,51 @@ public class TestSponza extends ApplicationAdapter {
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
             LibGPU.app.exit();
         }
+        if(LibGPU.input.isKeyPressed(Input.Keys.NUM_1)){
+            userControl = false;
+            camera.position.set(6.7f, 5, -1.6f);
+            camera.direction.set(-0.99f,0f, 0.1f).nor();
+            camera.up.set(0,1,0);
+            camera.update();
+        } else  if(LibGPU.input.isKeyPressed(Input.Keys.NUM_2)){
+            userControl = true;
+        }
 
-        //camController.update();
+        if(userControl)
+            camController.update();
 
-        // pass #1 : depth map
-        environment.depthPass = true;
-        environment.renderShadows = false;
-        environment.setShadowMap(shadowCam, null);
+        if(WITH_SHADOWS) {
+            // pass #1 : depth map
+            environment.depthPass = true;
+            environment.renderShadows = false;
+            environment.setShadowMap(shadowCam, null);
 
-        modelBatch.begin(shadowCam, environment, Color.WHITE, colorMap, depthMap);
-        modelBatch.render(instances);
-        modelBatch.end();
+            modelBatch.begin(shadowCam, environment, Color.WHITE, colorMap, depthMap, RenderPassType.SHADOW_PASS);
+            modelBatch.render(instances);
+            modelBatch.end();
 
-        // pass #2 : render colours
-        environment.depthPass = false;
-        environment.renderShadows = true;
-        environment.setShadowMap(shadowCam, depthMap);
+            // pass #2a : depth pre-pass
+//            environment.depthPass = true;
+//            environment.renderShadows = false;
+//
+//            modelBatch.begin(camera, environment, null, null, null, RenderPassType.DEPTH_PREPASS);
+//            modelBatch.render(instances);
+//            modelBatch.end();
 
-        modelBatch.begin(camera, environment,bgColor);
+            // pass #2 : render colours
+            environment.depthPass = false;
+            environment.renderShadows = true;
+            environment.setShadowMap(shadowCam, depthMap);
+        }
+
+        modelBatch.begin(camera, environment, bgColor, null, null, RenderPassType.COLOR_PASS);
         modelBatch.render(instances);
         modelBatch.end();
 
         // text
         batch.begin();
         font.draw(batch, status, 10, 50);
+        //font.draw(batch, "cam at :"+camera.position.toString()+" dir:"+camera.direction.toString(), 10, 100);
         batch.end();
 
 
@@ -129,7 +155,9 @@ public class TestSponza extends ApplicationAdapter {
         if (System.nanoTime() - startTime > 1000000000) {
             status = "fps: " + frames + " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds pipelines: "+modelBatch.numPipelines+
                     " pipe switches: "+modelBatch.numPipelineSwitches +
-                    "draw calls: "+modelBatch.drawCalls;
+                    " material switches: "+modelBatch.materialSwitches +
+                    "draw calls: "+modelBatch.drawCalls +
+                    " emitted: "+modelBatch.numEmitted+" instance-joined: "+modelBatch.instancingJoins;
             frames = 0;
             startTime = System.nanoTime();
         }

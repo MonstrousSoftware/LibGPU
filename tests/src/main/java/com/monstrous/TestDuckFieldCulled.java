@@ -102,7 +102,7 @@ public class TestDuckFieldCulled extends ApplicationAdapter {
     public void render( ){
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
             LibGPU.app.exit();
-        camController.update();
+        //camController.update();
 
         rotate(transforms, LibGPU.graphics.getDeltaTime());
 
@@ -115,7 +115,7 @@ public class TestDuckFieldCulled extends ApplicationAdapter {
         }
 
         modelBatch.begin(camera, environment, Color.GRAY);
-        modelBatch.render(visibleInstances);
+        modelBatch.render(modelInstances);
         modelBatch.end();
 
         batch.begin(null);
@@ -126,7 +126,7 @@ public class TestDuckFieldCulled extends ApplicationAdapter {
 
         // At the end of the frame
         if (System.nanoTime() - startTime > 1000000000) {
-            infoString = "Number of instances: "+transforms.size()+" visible instances: "+visibleInstances.size()+" draw calls: "+modelBatch.drawCalls;
+            infoString = "Number of instances: "+transforms.size()+" visible instances: "+visibleInstances.size()+" draw calls: "+modelBatch.drawCalls+" emitted: "+modelBatch.numEmitted;
             fps = frames;
             frames = 0;
             startTime = System.nanoTime();
