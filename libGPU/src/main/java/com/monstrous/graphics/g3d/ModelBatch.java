@@ -334,7 +334,7 @@ public class ModelBatch implements Disposable {
         pipelineSpec.numSamples = environment.depthPass? 1 : pass.getSampleCount();
         pipelineSpec.recalcHash();
 
-        Pipeline pipeline = pipelines.getPipeline(pipelineLayout.getHandle(), pipelineSpec);
+        Pipeline pipeline = pipelines.findPipeline(pipelineLayout.getHandle(), pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             pass.setPipeline(pipeline.getPipeline());
             prevPipeline = pipeline;

@@ -158,7 +158,9 @@ public class PipelineSpecification  {
     /** to be called whenever relevant content changes (to avoid doing this in hashCode which is called a lot) */
     public void recalcHash() {
         hash = Objects.hash(vertexAttributes != null ? vertexAttributes.getUsageFlags() : 0,
-                shaderFilePath, isDepthPass, afterDepthPrepass,
+                shaderFilePath,
+                shader != null ? shader.getName(): "",
+                isDepthPass, afterDepthPrepass,
                 hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox, depthFormat, numSamples);
     }
 

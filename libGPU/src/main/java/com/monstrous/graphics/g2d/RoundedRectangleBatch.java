@@ -211,7 +211,7 @@ public class RoundedRectangleBatch implements Disposable {
 
     // create or reuse pipeline on demand to match the pipeline spec
     private void setPipeline() {
-        Pipeline pipeline = pipelines.getPipeline( pipelineLayout.getHandle(), pipelineSpec);
+        Pipeline pipeline = pipelines.findPipeline( pipelineLayout.getHandle(), pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             renderPass.setPipeline(pipeline.getPipeline());
             prevPipeline = pipeline;

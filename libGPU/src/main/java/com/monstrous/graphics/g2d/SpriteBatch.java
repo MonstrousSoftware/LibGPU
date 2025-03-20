@@ -93,7 +93,7 @@ public class SpriteBatch implements Disposable {
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.specificShader);
-        pipelineSpec.shaderFilePath = "shaders/sprite.wgsl"; //Files.classpath("shaders/sprite.wgsl");
+        pipelineSpec.shaderFilePath = "shaders/sprite.wgsl";
     }
 
     // the index buffer is fixed and only has to be filled on start-up
@@ -183,7 +183,7 @@ public class SpriteBatch implements Disposable {
         pipelineSpec.shader = specificShader;
         pipelineSpec.vertexAttributes = vertexAttributes;
         pipelineSpec.numSamples =  LibGPU.app.configuration.numSamples;
-        setPipeline();
+
         setUniforms();
 
         // for testing
@@ -196,6 +196,8 @@ public class SpriteBatch implements Disposable {
         if(numRects > maxSpritesInBatch)
             maxSpritesInBatch = numRects;
         renderCalls++;
+
+        setPipeline();
 
         // Add number of vertices to the GPU's vertex buffer
         //
@@ -237,7 +239,7 @@ public class SpriteBatch implements Disposable {
 
     // create or reuse pipeline on demand to match the pipeline spec
     private void setPipeline() {
-        Pipeline pipeline = pipelines.getPipeline( pipelineLayout.getHandle(), pipelineSpec);
+        Pipeline pipeline = pipelines.findPipeline( pipelineLayout.getHandle(), pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
             renderPass.setPipeline(pipeline.getPipeline());
             prevPipeline = pipeline;
@@ -376,12 +378,6 @@ public class SpriteBatch implements Disposable {
     }
 
 
-
-    private void setUniformMatrix(Pointer data, int offset, Matrix4 mat) {
-        for (int i = 0; i < 16; i++) {
-            data.putFloat(offset + i * Float.BYTES, mat.val[i]);
-        }
-    }
 
     private void createBuffers() {
 

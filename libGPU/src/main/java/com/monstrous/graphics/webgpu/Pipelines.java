@@ -33,7 +33,7 @@ public class Pipelines implements Disposable {
         pipelines = new ArrayList<>();
     }
 
-    public Pipeline getPipeline(Pointer bindGroupLayout, PipelineSpecification spec){
+    public Pipeline findPipeline(Pointer bindGroupLayout, PipelineSpecification spec){
         for(Pipeline pipeline : pipelines){
             if(pipeline.canRender(spec))
                 return pipeline;

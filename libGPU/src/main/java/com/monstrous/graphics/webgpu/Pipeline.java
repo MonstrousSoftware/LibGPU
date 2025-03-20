@@ -47,6 +47,8 @@ public class Pipeline implements Disposable {
             FileHandle file = Files.classpath(spec.shaderFilePath);
             //System.out.println("Shader Source ["+spec.shaderSourceFile+"] Prefix: ["+prefix+"]");
             shader = new ShaderProgram(file, prefix);
+            spec.shader = shader;
+            spec.recalcHash();
             ownsShader = true;
         }
 

@@ -20,7 +20,7 @@ public class Launcher {
 
         config.enableGPUtiming = true;
 
-        new Application(new TestSponza(), config);
+        new Application(new TestFontSDF(), config);
 
     }
 }
