@@ -53,7 +53,7 @@ public class Pipeline implements Disposable {
         Pointer shaderModule = shader.getHandle();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes != null ? spec.vertexAttributes.getVertexBufferLayout() : null;
 
-        WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();
+        WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();        // todo worth reusing these?
         pipelineDesc.setNextInChain();
         pipelineDesc.setLabel( spec.name );
 
@@ -70,8 +70,7 @@ public class Pipeline implements Disposable {
         pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
         pipelineDesc.getPrimitive().setCullMode(spec.cullMode);
 
-        if(spec.colorFormat != WGPUTextureFormat.Undefined) {
-        //if(!spec.isDepthPass) {
+        if(spec.colorFormat != WGPUTextureFormat.Undefined) {   // if there is a color attachment
             WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
             fragmentState.setNextInChain();
             fragmentState.setModule(shaderModule);
@@ -105,13 +104,20 @@ public class Pipeline implements Disposable {
         if (spec.isSkyBox) {
             depthStencilState.setDepthCompare(WGPUCompareFunction.LessEqual);// we are clearing to 1.0 and rendering at 1.0
             depthStencilState.setDepthWriteEnabled(1L);
-        } else if(spec.hasDepth) {
-            depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
-            depthStencilState.setDepthWriteEnabled(1L);
         } else {
-            // disable depth testing
-            depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
-            depthStencilState.setDepthWriteEnabled(0L);
+            if (!spec.hasDepth) {
+                // disable depth testing
+                depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
+                depthStencilState.setDepthWriteEnabled(0L);
+            } else {
+                if (spec.afterDepthPrepass) {   // rely on Z pre-pass
+                    depthStencilState.setDepthCompare(WGPUCompareFunction.Equal);
+                    depthStencilState.setDepthWriteEnabled(1L);
+                } else {
+                    depthStencilState.setDepthCompare(WGPUCompareFunction.Less);
+                    depthStencilState.setDepthWriteEnabled(1L);
+                }
+            }
         }
 
         //

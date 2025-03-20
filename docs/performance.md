@@ -43,6 +43,13 @@ By changing the renderable sorting to sort by material, there are only 25 materi
 1280 fps without shadows.
 
 ### Step 5
-Experimented with a Z pre-pass.  However, this is still causing visual artifacts.  Presumably this is due to z-fighting between the color pass
-and the depth buffer from the pre-pass.
+Using a Z pre-pass, also known as depth pre-pass. This does a pass from the camera point of view just filling the depth buffer and the color pass
+then uses this to not call the fragment shader on occluded fragments.
+
+For the scene in question, it turns out to be a net negative.  The extra pass is more costly than the savings in the fragment shader.  This may be different in
+a scene where there is more overdraw or where the fragment shader is more expensive.
+
+No shadows without Z pre-pass: 1280 fps, with Z pre-pass: 850 fps.
+With shadows without Z pre-pass: 820 fps, with Z pre-pass: 620 fps.
+
 

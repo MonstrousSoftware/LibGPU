@@ -125,7 +125,8 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
 #endif
 
    let worldPosition =  instances[instance].modelMatrix * vec4f(in.position, 1.0);
-   let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
+   let pos =  uFrame.combinedMatrix * worldPosition;
+   //let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
    let cameraPosition = uFrame.cameraPosition.xyz;
 
    out.position = pos;

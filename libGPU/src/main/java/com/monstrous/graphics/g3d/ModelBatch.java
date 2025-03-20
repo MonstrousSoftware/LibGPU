@@ -307,6 +307,7 @@ public class ModelBatch implements Disposable {
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.isDepthPass = environment.depthPass;
+        pipelineSpec.afterDepthPrepass = pass.type == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS;
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
         pipelineSpec.depthFormat = pass.getDepthFormat();
         pipelineSpec.numSamples = environment.depthPass? 1 : pass.getSampleCount();

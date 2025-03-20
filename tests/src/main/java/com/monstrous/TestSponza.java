@@ -17,6 +17,7 @@ import java.util.ArrayList;
 public class TestSponza extends ApplicationAdapter {
 
     private static boolean WITH_SHADOWS = true;
+    private static boolean WITH_Z_PREPASS = false;
 
     private static Color bgColor = new Color(178f/255f, 204f/255f, 1f, 1);
     private static int SHADOW_MAP_SIZE = 4096;      // size (in pixels) of depth map
@@ -114,6 +115,7 @@ public class TestSponza extends ApplicationAdapter {
 
         if(userControl)
             camController.update();
+        camera.update();
 
         if(WITH_SHADOWS) {
             // pass #1 : depth map
@@ -124,22 +126,28 @@ public class TestSponza extends ApplicationAdapter {
             modelBatch.begin(shadowCam, environment, Color.WHITE, colorMap, depthMap, RenderPassType.SHADOW_PASS);
             modelBatch.render(instances);
             modelBatch.end();
-
-            // pass #2a : depth pre-pass
-//            environment.depthPass = true;
-//            environment.renderShadows = false;
-//
-//            modelBatch.begin(camera, environment, null, null, null, RenderPassType.DEPTH_PREPASS);
-//            modelBatch.render(instances);
-//            modelBatch.end();
-
-            // pass #2 : render colours
-            environment.depthPass = false;
-            environment.renderShadows = true;
             environment.setShadowMap(shadowCam, depthMap);
         }
 
-        modelBatch.begin(camera, environment, bgColor, null, null, RenderPassType.COLOR_PASS);
+        if(WITH_Z_PREPASS) {
+            // pass #2a : depth pre-pass
+            environment.depthPass = true;
+            environment.renderShadows = false;
+
+            modelBatch.begin(camera, environment, null, null, null, RenderPassType.DEPTH_PREPASS);
+            modelBatch.render(instances);
+            modelBatch.end();
+        }
+
+
+        if(WITH_SHADOWS) {
+            // pass #2 : render colours
+            environment.renderShadows = true;
+        }
+
+        environment.depthPass = false;
+
+        modelBatch.begin(camera, environment, bgColor, null, null, WITH_Z_PREPASS? RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS: RenderPassType.COLOR_PASS);
         modelBatch.render(instances);
         modelBatch.end();
 

@@ -36,6 +36,7 @@ public class PipelineSpecification  {
     public boolean hasDepth;
     public boolean isSkyBox;
     public boolean isDepthPass;
+    public boolean afterDepthPrepass;
     public int numSamples;
 
     public WGPUBlendFactor blendSrcColor;
@@ -61,6 +62,7 @@ public class PipelineSpecification  {
         depthFormat = WGPUTextureFormat.Depth24Plus;       // todo get from adapter?
         numSamples = 1;
         isSkyBox = false;
+        afterDepthPrepass = false;
         recalcHash();
     }
 
@@ -94,6 +96,7 @@ public class PipelineSpecification  {
         this.blendOpAlpha = spec.blendOpAlpha;
         this.cullMode = spec.cullMode;
         this.isSkyBox = spec.isSkyBox;
+        this.afterDepthPrepass = spec.afterDepthPrepass;
 
         this.colorFormat = spec.colorFormat;
         this.depthFormat = spec.depthFormat;
@@ -155,7 +158,7 @@ public class PipelineSpecification  {
     /** to be called whenever relevant content changes (to avoid doing this in hashCode which is called a lot) */
     public void recalcHash() {
         hash = Objects.hash(vertexAttributes != null ? vertexAttributes.getUsageFlags() : 0,
-                shaderFilePath, isDepthPass,
+                shaderFilePath, isDepthPass, afterDepthPrepass,
                 hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox, depthFormat, numSamples);
     }
 
