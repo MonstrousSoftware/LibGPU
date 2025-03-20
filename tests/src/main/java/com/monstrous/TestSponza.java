@@ -40,6 +40,7 @@ public class TestSponza extends ApplicationAdapter {
     private OrthographicCamera shadowCam;
     private Texture colorMap, depthMap;
     private boolean userControl = true;
+    private int frame;
 
     public void create() {
         startTime = System.nanoTime();
@@ -97,6 +98,9 @@ public class TestSponza extends ApplicationAdapter {
         batch = new SpriteBatch();
         font = new BitmapFont();
         status = "...";
+
+        frame = 0;
+
     }
 
     public void render(){
@@ -147,7 +151,7 @@ public class TestSponza extends ApplicationAdapter {
 
         environment.depthPass = false;
 
-        modelBatch.begin(camera, environment, bgColor, null, null, WITH_Z_PREPASS? RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS: RenderPassType.COLOR_PASS);
+        modelBatch.begin(camera, environment, bgColor, null, null, WITH_Z_PREPASS ? RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS : RenderPassType.COLOR_PASS);
         modelBatch.render(instances);
         modelBatch.end();
 

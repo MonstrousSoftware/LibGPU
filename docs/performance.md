@@ -52,4 +52,15 @@ a scene where there is more overdraw or where the fragment shader is more expens
 No shadows without Z pre-pass: 1280 fps, with Z pre-pass: 850 fps.
 With shadows without Z pre-pass: 820 fps, with Z pre-pass: 620 fps.
 
+### Step 6
+From looking at the code it seems ModelBatch#render() is spending a lot of time to generate a list of renderables which are all thrown away at ModelBatch#end().
+The render method descends into the Node hierarchy to generate the renderables. With multiple passes per frame, it may seem valuable to save the renderables list between
+passes. In case of a static scene, the renderables list could even be saved between frames.
+
+Having experimented with that, it appears the savings are almost negligible.  A profile using visualvm shows that the time spent in render() is only 100 ms compared to 11000 ms spent in 
+emitting the renderables.  The downside is that it makes the API more complex, e.g. instead of ModelBatch.end() you would have different calls to finalize the list of renderables (sorting and culling),
+emit the renderables (draw calls) and clean up (release resources).
+So this idea is not pursued.
+
+
 

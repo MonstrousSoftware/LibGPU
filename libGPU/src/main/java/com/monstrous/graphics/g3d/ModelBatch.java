@@ -60,6 +60,7 @@ public class ModelBatch implements Disposable {
     private Pipeline prevPipeline;
     private PipelineSpecification pipelineSpec;
     private final List<Renderable> renderables;
+    private final List<Renderable> visibleRenderables;
     private final RenderablePool pool;
 
     public Environment environment;
@@ -85,6 +86,7 @@ public class ModelBatch implements Disposable {
 
         pipelines = new Pipelines();
         renderables = new ArrayList<>();
+        visibleRenderables = new ArrayList<>();
         pool = new RenderablePool(1000);
         pipelineSpec = new PipelineSpecification();
 
@@ -179,18 +181,9 @@ public class ModelBatch implements Disposable {
 
 
     public void end(){
-        flush();
-
-        frameBindGroup.dispose();
-        instancingBindGroup.dispose();
-
-        if(environment.skybox != null)
-            environment.skybox.render(camera, pass);
-        //System.out.println("materials: "+materialUniformIndex+"\t\tpipe switches: "+numPipelineSwitches);
-        pass.end();
-        pass = null;
-
-        numPipelines = pipelines.size();        // for statistics
+        finalizeRenderables();
+        emitRenderables();
+        close();
     }
 
 
@@ -210,21 +203,49 @@ public class ModelBatch implements Disposable {
     private int instanceCount;
     private int renderablesCount;
 
-    private void flush() {
+    /** sort the gathered renderables and perform frustum culling to populate visibleRenderables */
+    private void finalizeRenderables() {
         // sort renderables to minimize material switching, to do: depth sorting etc.
         renderables.sort(comparator);
 
+        // culling
+        visibleRenderables.clear();
+        for(Renderable renderable : renderables) {
+            if(isVisible(renderable))
+                visibleRenderables.add(renderable);
+            else
+                pool.free(renderable);
+        }
+        renderables.clear();
+    }
+
+    /** issue drraw calls for the visibleRenderables */
+    private void emitRenderables(){
         prevMeshPart = null;
         instanceCount = 0;
         renderablesCount = 0;
-
-        for(Renderable renderable : renderables) {
-            if(isVisible(renderable))
-                emit(renderable);
-            pool.free(renderable);
+        for(Renderable renderable : visibleRenderables) {
+            emit(renderable);
         }
         emitMeshPart(prevMeshPart, instanceCount, renderablesCount);
-        renderables.clear();
+    }
+
+    /** skybox rendering and clean-up */
+    private void close(){
+        for(Renderable renderable : visibleRenderables) {
+            pool.free(renderable);
+        }
+        visibleRenderables.clear();
+
+        frameBindGroup.dispose();
+        instancingBindGroup.dispose();
+
+        if(environment.skybox != null)
+            environment.skybox.render(camera, pass);
+        pass.end();
+        pass = null;
+
+        numPipelines = pipelines.size();        // for statistics
     }
 
     private BoundingBox bbox = new BoundingBox();
