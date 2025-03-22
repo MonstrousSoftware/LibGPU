@@ -5,7 +5,7 @@
 // CUBEMAP
 // TEXTURE_COORDINATE
 // NORMAL
-
+#define USE_IBL
 
 const MAX_DIR_LIGHTS : i32 = 5;
 const MAX_POINT_LIGHTS : i32 = 5;
@@ -264,6 +264,21 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     // todo some of this could go to vertex shader?
 
     var radiance = vec3f(0.0);
+
+#ifdef USE_IBL
+    let NdotV : f32 = clamp(dot(N, V), 0.0, 1.0);
+    let F :vec3f    = F_Schlick(NdotV, metallic, baseColor.rgb);
+    //let kS = F;
+    let kD = (vec3f(1.0) - F);
+    let irradiance:vec3f = textureSample(cubeMap, cubeMapSampler, N).rgb;
+    let diffuse:vec3f    = irradiance * baseColor.rgb;
+    let ambient:vec3f    = (kD * diffuse);
+
+#else
+    let ambient : vec3f = baseColor.rgb * uFrame.ambientLightLevel;
+#endif
+
+
     // for each directional light
     for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
         let light = uFrame.directionalLights[i];
@@ -289,7 +304,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         }
     }
 
-    let ambient : vec3f = baseColor.rgb * uFrame.ambientLightLevel;
     let emissiveColor = textureSample(emissiveTexture, textureSampler, in.uv).rgb;
 
 #ifdef SHADOWS
@@ -310,9 +324,12 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = normalize(in.normal);
 #ifdef CUBEMAP
 
-    let rdir:vec3f = reflect(V, N)*vec3f(1, -1, -1);
+//    let rdir:vec3f = reflect(V, N)*vec3f(1, -1, -1);
+//
+//    color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
 
-    color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
+
+//    let ambient:vec3f = textureSample(cubeMap, cubeMapSampler, N).rgb;
 #endif
 
 
