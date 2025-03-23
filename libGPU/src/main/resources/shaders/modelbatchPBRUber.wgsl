@@ -213,6 +213,27 @@ fn BRDF( L : vec3f, V:vec3f, N: vec3f, roughness:f32, metallic:f32, baseColor: v
     return Lo;
 }
 
+#ifdef USE_IBL
+fn ambientIBL( V:vec3f, N: vec3f, roughness:f32, metallic:f32, baseColor: vec3f) -> vec3f {
+
+    let NdotV : f32 = clamp(dot(N, V), 0.0, 1.0);
+    let F :vec3f    = F_Schlick(NdotV, metallic, baseColor.rgb);
+    // kS = F, kD = 1 - kS;
+    let kD = (vec3f(1.0) - F)*(1.0 - metallic);
+    let lightSample:vec3f = N * vec3f(1, 1, -1);
+    let irradiance:vec3f = textureSample(irradianceMap, iblSampler, lightSample).rgb;
+    let diffuse:vec3f    = irradiance * baseColor.rgb;
+
+    let MAX_REFLECTION_LOD = 8.0;
+    let R:vec3f = reflect(-V, N)*vec3f(1, 1, -1);
+    let prefilteredColor:vec3f = textureSampleLevel(radianceMap, iblSampler, R, roughness * MAX_REFLECTION_LOD).rgb;
+    let envBRDF = textureSample(brdfLUT, iblSampler, vec2(NdotV, roughness)).rg;
+    let specular: vec3f = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+    let ambient:vec3f    = (kD * diffuse + specular);
+    return ambient;
+}
+#endif
+
 #ifdef SHADOWS
 // returns value 0..1 for the amount of "sunlight"
 fn getShadowNess( shadowPos:vec3f ) -> f32 {
@@ -272,21 +293,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     var radiance = vec3f(0.0);
 
 #ifdef USE_IBL
-    let NdotV : f32 = clamp(dot(N, V), 0.0, 1.0);
-    let F :vec3f    = F_Schlick(NdotV, metallic, baseColor.rgb);
-    // kS = F, kD = 1 - kS;
-    let kD = (vec3f(1.0) - F)*(1.0 - metallic);
-    let lightSample:vec3f = N * vec3f(1, 1, -1);
-    let irradiance:vec3f = textureSample(irradianceMap, iblSampler, lightSample).rgb;
-    let diffuse:vec3f    = irradiance * baseColor.rgb;
-
-    let MAX_REFLECTION_LOD = 8.0;
-    let R:vec3f = reflect(-V, N)*vec3f(1, 1, -1);
-    let prefilteredColor:vec3f = textureSampleLevel(radianceMap, iblSampler, R, roughness * MAX_REFLECTION_LOD).rgb;
-    let envBRDF = textureSample(brdfLUT, iblSampler, vec2(NdotV, roughness)).rg;
-    let specular: vec3f = prefilteredColor * (F * envBRDF.x + envBRDF.y);
-    let ambient:vec3f    = (kD * diffuse + specular);
-
+    let ambient = ambientIBL(V, N, roughness, metallic, baseColor.rgb);
 #else
     let ambient : vec3f = baseColor.rgb * uFrame.ambientLightLevel;
 #endif
