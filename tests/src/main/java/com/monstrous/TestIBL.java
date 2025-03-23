@@ -39,7 +39,8 @@ public class TestIBL extends ApplicationAdapter {
 
         instances = new ArrayList<>();
 
-        model = new Model("models/sphere.gltf");
+        //model = new Model("models/sphere.gltf");
+        model = new Model("models/waterbottle/WaterBottle.gltf");
 
         ModelInstance modelInstance = new ModelInstance(model, 0,0,0);
         instances.add(modelInstance);

@@ -2,10 +2,11 @@
 // Shader source can be tuned by #defines of the following:
 // NORMAL_MAP
 // SHADOWS
-// CUBEMAP
+// CUBEMAP todo combine with USE_IBL
 // TEXTURE_COORDINATE
 // NORMAL
 // USE_IBL
+
 
 const MAX_DIR_LIGHTS : i32 = 5;
 const MAX_POINT_LIGHTS : i32 = 5;
@@ -58,12 +59,12 @@ struct ModelUniforms {
 // Frame
 @group(0) @binding(0) var<uniform> uFrame: FrameUniforms;
 #ifdef SHADOWS
-    @group(0) @binding(1) var shadowMap: texture_depth_2d;
-    @group(0) @binding(2) var shadowSampler: sampler_comparison;
+    @group(0) @binding(1) var shadowMap:        texture_depth_2d;
+    @group(0) @binding(2) var shadowSampler:    sampler_comparison;
 #endif
 #ifdef CUBEMAP
-    @group(0) @binding(3) var cubeMap: texture_cube<f32>;
-    @group(0) @binding(4) var cubeMapSampler: sampler;
+    @group(0) @binding(3) var cubeMap:          texture_cube<f32>;
+    @group(0) @binding(4) var cubeMapSampler:   sampler;
 #endif
 #ifdef USE_IBL
     @group(0) @binding(5) var irradianceMap:    texture_cube<f32>;
@@ -344,9 +345,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = normalize(in.normal);
 #ifdef CUBEMAP
 
-//    let rdir:vec3f = reflect(V, N)*vec3f(-1, -1, 1);
-//
-//    color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
+    let rdir:vec3f = reflect(V, N)*vec3f(-1, -1, 1);
+
+    color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
 #endif
 
 
