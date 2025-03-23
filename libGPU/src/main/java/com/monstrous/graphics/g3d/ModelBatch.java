@@ -75,6 +75,7 @@ public class ModelBatch implements Disposable {
     private UniformBuffer instanceBuffer;
     private Texture dummyCubemap;
     private Texture dummyShadowMap;
+    private Texture dummy2DTexture;
 
 
 
@@ -101,6 +102,7 @@ public class ModelBatch implements Disposable {
 
         dummyShadowMap =  new Texture(1, 1, false, true, WGPUTextureFormat.Depth32Float, 1);
         dummyCubemap = new Texture(1,1, 6);
+        dummy2DTexture = new Texture(1,1);
 
         int instanceSize = 16*Float.BYTES;      // data size per instance
         instanceBuffer = new UniformBuffer(instanceSize*MAX_INSTANCES, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage);
@@ -406,7 +408,7 @@ public class ModelBatch implements Disposable {
         Texture cubeMap = (environment != null && environment.cubeMap != null) ? environment.cubeMap :  dummyCubemap;
         Texture irradMap = (environment != null && environment.irradianceMap != null) ? environment.irradianceMap :  dummyCubemap;
         Texture radMap = (environment != null && environment.radianceMap != null) ? environment.radianceMap :  dummyCubemap;
-        Texture LUT = (environment != null && environment.brdfLUT != null) ? environment.brdfLUT :  dummyShadowMap;
+        Texture LUT = (environment != null && environment.brdfLUT != null) ? environment.brdfLUT :  dummy2DTexture;
 
 
         BindGroup bindGroup = new BindGroup(frameBindGroupLayout);
