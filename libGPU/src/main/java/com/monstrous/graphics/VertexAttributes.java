@@ -66,6 +66,7 @@ public class VertexAttributes implements Disposable {
         return vertexSize;
     }
 
+    /** create a vertex buffer layout object from the VertexAttributes */
     public WGPUVertexBufferLayout getVertexBufferLayout(){
         if(vertexBufferLayout != null)
             return vertexBufferLayout;

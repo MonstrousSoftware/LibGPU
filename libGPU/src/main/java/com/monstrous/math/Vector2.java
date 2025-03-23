@@ -10,6 +10,10 @@ public class Vector2 {
         this.set(x, y);
     }
 
+    public Vector2( Vector2 v2 ){
+        this.set(v2.x, v2.y);
+    }
+
     public Vector2 set(float x, float y){
         this.x = x;
         this.y = y;

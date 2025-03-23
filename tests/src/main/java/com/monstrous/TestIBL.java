@@ -6,9 +6,7 @@ import com.monstrous.graphics.g3d.Model;
 import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.g3d.ModelInstance;
 import com.monstrous.graphics.g3d.SkyBox;
-import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
-import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.WGPUTextureFormat;
@@ -39,8 +37,8 @@ public class TestIBL extends ApplicationAdapter {
 
         instances = new ArrayList<>();
 
-        //model = new Model("models/sphere.gltf");
-        model = new Model("models/waterbottle/WaterBottle.gltf");
+        model = new Model("models/sphere.gltf");
+        //model = new Model("models/waterbottle/WaterBottle.gltf");
 
         ModelInstance modelInstance = new ModelInstance(model, 0,0,0);
         instances.add(modelInstance);

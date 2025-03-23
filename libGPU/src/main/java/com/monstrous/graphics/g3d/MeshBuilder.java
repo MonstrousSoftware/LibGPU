@@ -106,6 +106,10 @@ public class MeshBuilder {
         this.textureCoord.set(u, v);
     }
 
+    public void setTextureCoordinate(Vector2 uv){
+        setTextureCoordinate(uv.x, uv.y);
+    }
+
     public int addVertex(Vector3 position){
         return addVertex(position.x, position.y, position.z);
     }
@@ -115,9 +119,9 @@ public class MeshBuilder {
            throw new RuntimeException("MeshBuilder: too many vertices.");
         VertexInfo vert = new VertexInfo();
         vert.position = new Vector3(x,y,z);
-        vert.normal = normal;
-        vert.uv = textureCoord;
-        vert.color = color;
+        vert.normal = new Vector3(normal);
+        vert.uv = new Vector2(textureCoord);
+        vert.color = new Color(color);
         vertices[numVertices++] = vert;
         return numVertices - 1;
     }
@@ -158,6 +162,25 @@ public class MeshBuilder {
         int i1 = addVertex(c10);
         int i2 = addVertex(c11);
         int i3 = addVertex(c01);
+        addIndex((short)i0);
+        addIndex((short)i3);
+        addIndex((short)i1);
+
+        addIndex((short)i3);
+        addIndex((short)i2);
+        addIndex((short)i1);
+    }
+
+    public void addRect(Vector3 c00, Vector3 c10, Vector3 c11, Vector3 c01, Vector2 uv00, Vector2 uv10, Vector2 uv11, Vector2 uv01){
+        setTextureCoordinate(uv00);
+        int i0 = addVertex(c00);
+        setTextureCoordinate(uv10);
+        int i1 = addVertex(c10);
+        setTextureCoordinate(uv11);
+        int i2 = addVertex(c11);
+        setTextureCoordinate(uv01);
+        int i3 = addVertex(c01);
+
         addIndex((short)i0);
         addIndex((short)i3);
         addIndex((short)i1);

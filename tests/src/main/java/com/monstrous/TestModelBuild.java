@@ -2,8 +2,10 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g3d.*;
+import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
+import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.WGPUVertexFormat;
@@ -20,10 +22,12 @@ public class TestModelBuild extends ApplicationAdapter {
     private ModelInstance modelInstance;
     private Environment environment;
     private CameraController camController;
+    private Texture texture;
 
     public void create() {
-        model = buildCube();//
-        //model = new Model("models/ducky.obj");
+        texture = new Texture("textures/jackRussel.png");
+        model = buildCube2();
+
         modelInstance = new ModelInstance(model, 0,0,0);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -36,6 +40,7 @@ public class TestModelBuild extends ApplicationAdapter {
 
         environment = new Environment();
         environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0.1f,-1,0)));
+        environment.ambientLightLevel = 0.5f;
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
@@ -102,7 +107,7 @@ public class TestModelBuild extends ApplicationAdapter {
         mesh.setVertices(vertexData);
         //mesh.setIndices(null);
 
-        Material material = new Material( Color.GREEN );
+        Material material = new Material( texture );
 
         return new Model(mesh, material);
     }
@@ -112,41 +117,54 @@ public class TestModelBuild extends ApplicationAdapter {
                 new Vector3(-1, 1, -1), new Vector3(1, 1, -1), new Vector3(1,-1,-1), new Vector3(-1, -1, -1),// front
                 new Vector3(-1, 1,  1), new Vector3(1, 1,  1), new Vector3(1,-1, 1), new Vector3(-1, -1,  1),// back
         };
+        Vector2[] texCoords = { new Vector2(0,0), new Vector2(1,0), new Vector2(1,1), new Vector2(0,1) };
 
         VertexAttributes vertexAttributes = new VertexAttributes();
         vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.COLOR, "color", WGPUVertexFormat.Float32x4, 1);
-        //vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 2);
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 1);
+        // beware: the shaderLocation values have to match the shader
+
+        // COLOR is not supported
+        //vertexAttributes.add(VertexAttribute.Usage.COLOR, "color", WGPUVertexFormat.Float32x4, 1);
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
         mb.begin(vertexAttributes, 6*4, 36);
 
         mb.setNormal(0,0,-1);
-        mb.addRect(corners[0], corners[3], corners[2], corners[1]); // front
+        mb.addRect(corners[0], corners[3], corners[2], corners[1], texCoords[0], texCoords[3], texCoords[2], texCoords[1]); // front
 
         mb.setNormal(0,0,1);
-        mb.addRect(corners[4], corners[5], corners[6], corners[7]); // back
+        mb.addRect(corners[4], corners[5], corners[6], corners[7], texCoords[0], texCoords[1], texCoords[2], texCoords[3]); // back
 
         mb.setNormal(0,1,0);
-        mb.addRect(corners[0], corners[1], corners[5], corners[4]); // top
+        mb.addRect(corners[0], corners[1], corners[5], corners[4], texCoords[0], texCoords[1], texCoords[2], texCoords[3]); // top
 
         mb.setNormal(0,-1,0);
-        mb.addRect(corners[3], corners[7], corners[6], corners[2]); // bottom
+        mb.addRect(corners[3], corners[7], corners[6], corners[2], texCoords[0], texCoords[1], texCoords[2], texCoords[3]); // bottom
 
         mb.setNormal(-1,0,0);
-        mb.addRect(corners[0], corners[4], corners[7], corners[3]); // left
+        mb.addRect(corners[0], corners[4], corners[7], corners[3], texCoords[0], texCoords[1], texCoords[2], texCoords[3]); // left
 
         mb.setNormal(1,0,0);
-        mb.addRect(corners[1], corners[2], corners[6], corners[5]); // right
+        mb.addRect(corners[1], corners[2], corners[6], corners[5], texCoords[0], texCoords[1], texCoords[2], texCoords[3]); // right
 
         Mesh mesh = mb.end();
 
 
-        Material material = new Material( Color.GREEN );
+        Material material = new Material( texture );
+
 
         return new Model(mesh, material);
     }
+
+    private Model buildCube2(){
+        Mesh mesh = BoxShapeBuilder.buildBox(2, 2, 2);
+        Material material = new Material( texture );
+
+        return new Model(mesh, material);
+    }
+
 
     public void render( ){
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
