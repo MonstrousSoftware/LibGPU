@@ -45,6 +45,9 @@ public class ShaderPrefix {
         if (environment != null && environment.cubeMap != null) {
             sb.append("#define CUBEMAP\n");
         }
+        if (environment != null && environment.useImageBasedLighting) {
+            sb.append("#define USE_IBL\n");
+        }
         return sb.toString();
     }
 }

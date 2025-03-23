@@ -14,6 +14,7 @@ public class CameraController extends InputAdapter {
     private Vector3 pivotPoint;
     private Vector3 tmpRight;
     private final Vector3 worldUp;
+    public float mouseSensitivity = 1.0f;
 
 
     public CameraController(Camera camera) {
@@ -37,10 +38,10 @@ public class CameraController extends InputAdapter {
     @Override
     public boolean mouseMoved(int x, int y) {
         // left of screen 2PI, right of screen 0
-        anglex = 2f * (float) Math.PI * (1f - (float)x / LibGPU.graphics.getWidth());
+        anglex = 2f * (float) Math.PI * (1f - (float)x / LibGPU.graphics.getWidth()) * mouseSensitivity;
 
         // mouse at top of the screen => angleY := PI/2, at bottom of the screen => angleY := -PI/2
-        angley = (float) Math.PI * (0.5f - (float)y / LibGPU.graphics.getHeight());
+        angley = (float) Math.PI * (0.5f - (float)y / LibGPU.graphics.getHeight()) * mouseSensitivity;
         //update();
         return true;
     }

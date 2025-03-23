@@ -28,6 +28,8 @@ public class TestIBL extends ApplicationAdapter {
     private BitmapFont font;
     private Texture cubeMap;
     private Texture irradianceCubeMap;
+    private Texture radianceCubeMap;
+    private Texture brdfLUT;
     private SkyBox skybox;
     private int fps;
 
@@ -66,6 +68,18 @@ public class TestIBL extends ApplicationAdapter {
 
         irradianceCubeMap = new Texture(fileNamesIrradiance, false, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
 
+        String[] fileNamesRadiance = {
+                // note: to be appended 0.png, 1.png, etc.
+                "environment/Studio-radiance_posx_",
+                "environment/Studio-radiance_negx_",
+                "environment/Studio-radiance_posy_",
+                "environment/Studio-radiance_negy_",
+                "environment/Studio-radiance_posz_",
+                "environment/Studio-radiance_negz_"
+        };
+        radianceCubeMap = new Texture(fileNamesRadiance, ".png", 9, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
+
+        brdfLUT = new Texture(Files.internal("environment/LUT.png"), false);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
 
@@ -82,16 +96,20 @@ public class TestIBL extends ApplicationAdapter {
 
 
         environment = new Environment();
-        DirectionalLight sun = new DirectionalLight( Color.WHITE, lightDirection);
-        sun.setIntensity(1f);
-        environment.add( sun );
-        environment.ambientLightLevel = 0.5f;
-        environment.setCubeMap(irradianceCubeMap);
+//        DirectionalLight sun = new DirectionalLight( Color.WHITE, lightDirection);
+//        sun.setIntensity(1f);
+//        environment.add( sun );
+        //environment.ambientLightLevel = 0.5f;
+        environment.useImageBasedLighting = true;
+        environment.setIrradianceMap(irradianceCubeMap);
+        environment.setRadianceMap(radianceCubeMap);
+        environment.setBRDFLookUpTable( brdfLUT );
 
         skybox = new SkyBox(cubeMap);
         environment.setSkybox(skybox);
 
         camController = new CameraController(camera);
+        camController.mouseSensitivity = 3f;
         LibGPU.input.setInputProcessor(camController);
 
 

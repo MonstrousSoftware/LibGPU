@@ -371,6 +371,12 @@ public class ModelBatch implements Disposable {
         layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Comparison);
         layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
         layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
+
+        // IBL textures
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
+        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);
         layout.end();
         return layout;
     }
@@ -398,6 +404,10 @@ public class ModelBatch implements Disposable {
 
         Texture shadowMap = (environment != null && environment.renderShadows)? environment.shadowMap : dummyShadowMap;
         Texture cubeMap = (environment != null && environment.cubeMap != null) ? environment.cubeMap :  dummyCubemap;
+        Texture irradMap = (environment != null && environment.irradianceMap != null) ? environment.irradianceMap :  dummyCubemap;
+        Texture radMap = (environment != null && environment.radianceMap != null) ? environment.radianceMap :  dummyCubemap;
+        Texture LUT = (environment != null && environment.brdfLUT != null) ? environment.brdfLUT :  dummyShadowMap;
+
 
         BindGroup bindGroup = new BindGroup(frameBindGroupLayout);
         bindGroup.begin();
@@ -406,6 +416,12 @@ public class ModelBatch implements Disposable {
         bindGroup.addSampler(2, sampler);
         bindGroup.addTexture(3, cubeMap.getTextureView());
         bindGroup.addSampler(4, cubeMap.getSampler());
+
+        bindGroup.addTexture(5, irradMap.getTextureView());
+        bindGroup.addSampler(6, radMap.getSampler());
+        bindGroup.addTexture(7, radMap.getTextureView());
+        bindGroup.addTexture(8, LUT.getTextureView());
+//        bindGroup.addSampler(8, radMap.getSampler());
 
         bindGroup.end();
         return bindGroup;
