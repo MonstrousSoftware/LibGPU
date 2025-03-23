@@ -3,6 +3,7 @@
 
 - generate mipmaps in a compute shader
 - generate IBL textures (env, irradiance, radians) from a single file
+- replace constant in shader for radiance LOD count by a uniform
 
 - support color per vertex as option in the standard shader
 - sphere builder
