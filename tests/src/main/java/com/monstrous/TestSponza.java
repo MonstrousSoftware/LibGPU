@@ -2,9 +2,8 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
-import com.monstrous.graphics.g3d.Model;
-import com.monstrous.graphics.g3d.ModelBatch;
-import com.monstrous.graphics.g3d.ModelInstance;
+import com.monstrous.graphics.g3d.*;
+import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.graphics.webgpu.RenderPassType;
@@ -31,6 +30,7 @@ public class TestSponza extends ApplicationAdapter {
     private Model model;
     private ModelInstance modelInstance1;
     private ArrayList<ModelInstance> instances;
+    private ArrayList<ModelInstance> boxes;
     private long startTime;
     private int frames;
     private SpriteBatch batch;
@@ -59,10 +59,12 @@ public class TestSponza extends ApplicationAdapter {
         modelInstance1 = new ModelInstance(model, modelMatrix);
         instances.add(modelInstance1);
 
+        buildBoxes();
+
 
         camera = new PerspectiveCamera(120, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.near = 0.1f;
-        camera.far = 100f;
+        camera.far = 800f;
         camera.position.set(6.7f, 5, -1.6f);
 
         camera.direction.set(-0.99f,0f, 0.1f).nor();
@@ -100,7 +102,6 @@ public class TestSponza extends ApplicationAdapter {
         status = "...";
 
         frame = 0;
-
     }
 
     public void render(){
@@ -153,6 +154,7 @@ public class TestSponza extends ApplicationAdapter {
 
         modelBatch.begin(camera, environment, bgColor, null, null, WITH_Z_PREPASS ? RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS : RenderPassType.COLOR_PASS);
         modelBatch.render(instances);
+        //modelBatch.render(boxes);
         modelBatch.end();
 
         // text
@@ -191,6 +193,22 @@ public class TestSponza extends ApplicationAdapter {
         camera.viewportHeight = height;
         camera.update();
         batch.getProjectionMatrix().setToOrtho2D(0,0,width, height);
+    }
+
+    private void buildBoxes(){
+        boxes = new ArrayList<>();
+
+        for(ModelInstance instance : instances){
+            Node rootNode = instance.model.rootNodes.get(0);
+            for(NodePart part : rootNode.nodeParts){
+
+                BoundingBox bb = new BoundingBox(part.meshPart.mesh.boundingBox);
+                bb.transform(rootNode.globalTransform);
+                Mesh mesh = BoxShapeBuilder.build(bb);
+                Model model = new Model(mesh, new Material(Color.GREEN));   // todo dispose
+                boxes.add(new ModelInstance(model, instance.transform));
+            }
+        }
     }
 
 

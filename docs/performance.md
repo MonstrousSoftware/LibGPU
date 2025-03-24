@@ -28,7 +28,8 @@ There are 2 pipelines, and 3 pipeline switches. There are 103 draw calls.
 An optimisation was made to perform frustum culling on the renderables in ModelBatch#flush().
 The frame rate increases to 1200 (no shadows) or 591 fps (with shadow) and draw calls drop to 97.
 
-Not many renderables are culled (too few? perhaps the bounding boxes are too large?) and not much gain in frame rate.
+Not many renderables are culled and not much gain in frame rate.  The culling seems correct though, 
+the model just has large overlapping submeshes (primitives) and the reference camera view shows almost all of them. 
 
 ### Step 3
 Can we speed up by doing the shadow pass only with a depth buffer? (currently we also have a color buffer to help in debugging).

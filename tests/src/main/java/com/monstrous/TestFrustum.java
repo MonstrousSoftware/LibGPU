@@ -30,6 +30,7 @@ public class TestFrustum extends ApplicationAdapter {
     private Model invisibleBlockModel;
     private Model visibleBlockModel;
     private Model bigBlockModel;
+    private Model bigBlockModel2;
     private ModelInstance frustum;
     private ModelInstance bigBlock;
     private ArrayList<ModelInstance> instances;
@@ -84,6 +85,7 @@ public class TestFrustum extends ApplicationAdapter {
         invisibleBlockModel = new Model(BoxShapeBuilder.build(0.1f, 0.1f, 0.1f), new Material(Color.BLUE));
         visibleBlockModel = new Model(BoxShapeBuilder.build(0.1f, 0.1f, 0.1f), new Material(Color.GREEN));
         bigBlockModel = new Model(BoxShapeBuilder.build(1f, 1f, 1f), new Material(Color.ORANGE));
+        bigBlockModel2 = new Model(BoxShapeBuilder.build(bigBlockModel.meshes.get(0).boundingBox), new Material(Color.RED));
 
         populate();
 
@@ -95,7 +97,7 @@ public class TestFrustum extends ApplicationAdapter {
     private void populate(){
         instances.clear();
         frustum = new ModelInstance(frustumModel, subCamMatrix);
-        bigBlock = new ModelInstance(bigBlockModel, subCamMatrix);
+        bigBlock = new ModelInstance(bigBlockModel2, subCamMatrix);
 
         for(int x = -20; x <= 20; x+=1){
             for(int z = -20; z <= 20; z += 1){

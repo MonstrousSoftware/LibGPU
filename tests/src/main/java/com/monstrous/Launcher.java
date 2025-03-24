@@ -19,7 +19,7 @@ public class Launcher {
 
         config.enableGPUtiming = true;
 
-        new Application(new TestLighting(), config);
+        new Application(new TestSponza(), config);
 
     }
 }

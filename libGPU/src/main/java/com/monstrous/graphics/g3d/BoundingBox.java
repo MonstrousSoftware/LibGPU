@@ -21,6 +21,12 @@ public class BoundingBox {
         set(min, max);
     }
 
+    public BoundingBox( BoundingBox bbox ) {
+        min = new Vector3();
+        max = new Vector3();
+        set(bbox);
+    }
+
     public void set(Vector3 min, Vector3 max){
         min.set(min);
         max.set(max);

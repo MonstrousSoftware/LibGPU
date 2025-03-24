@@ -2,6 +2,7 @@ package com.monstrous.graphics.g3d.shapeBuilder;
 
 import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
+import com.monstrous.graphics.g3d.BoundingBox;
 import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.MeshBuilder;
 import com.monstrous.math.Vector2;
@@ -23,6 +24,23 @@ public class BoxShapeBuilder {
                 new Vector3(-w, h, -d), new Vector3(w, h, -d), new Vector3(w, -h, -d), new Vector3(-w, -h, -d),// front
                 new Vector3(-w, h, d), new Vector3(w, h, d), new Vector3(w, -h, d), new Vector3(-w, -h, d),// back
         };
+        return buildFromCorners(corners, topology);
+    }
+
+    public static Mesh build(BoundingBox bbox) {
+        Vector3[] corners = new Vector3[8];
+        corners[0] = new Vector3(bbox.min.x, bbox.max.y, bbox.min.z);
+        corners[1] = new Vector3(bbox.max.x, bbox.max.y, bbox.min.z);
+        corners[2] = new Vector3(bbox.max.x, bbox.min.y, bbox.min.z);
+        corners[3] = new Vector3(bbox.min.x, bbox.min.y, bbox.min.z);
+        corners[4] = new Vector3(bbox.min.x, bbox.max.y, bbox.max.z);
+        corners[5] = new Vector3(bbox.max.x, bbox.max.y, bbox.max.z);
+        corners[6] = new Vector3(bbox.max.x, bbox.min.y, bbox.max.z);
+        corners[7] = new Vector3(bbox.min.x, bbox.min.y, bbox.max.z);
+        return buildFromCorners(corners, WGPUPrimitiveTopology.LineList);
+    }
+
+    private static Mesh buildFromCorners(Vector3[] corners, WGPUPrimitiveTopology topology) {
         Vector2[] texCoords = {new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1)};
 
         VertexAttributes vertexAttributes = new VertexAttributes();
@@ -66,4 +84,6 @@ public class BoxShapeBuilder {
 
         return mb.end();
     }
+
+
 }
