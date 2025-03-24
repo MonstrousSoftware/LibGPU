@@ -341,7 +341,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = encodedN;
     //color = N;
     //color = uFrame.pointLights[0].color.rgb;
-    //color = baseColor;
+    //color = baseColor.rgb;
     //color = normalize(in.normal);
 #ifdef CUBEMAP
 

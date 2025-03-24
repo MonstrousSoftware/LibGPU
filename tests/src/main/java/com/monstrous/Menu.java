@@ -12,7 +12,7 @@ import com.monstrous.utils.ScreenUtils;
 
 public class Menu extends ApplicationAdapter {
 
-    private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Simple Game", "Viewport", "GUI", "Build Model", "Instancing",
+    private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Simple Game", "Viewport", "GUI", "Build Model", "Instancing", "Frustum demo",
             "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)", "Image Based Lighting", "HDR (WIP)"  };
 
     private Stage stage;
@@ -74,6 +74,8 @@ public class Menu extends ApplicationAdapter {
             listener = new TestModelBuild();
         else if(name.contentEquals("Instancing"))
             listener = new TestDuckField();
+        else if(name.contentEquals("Frustum demo"))
+            listener = new TestFrustum();
         else if(name.contentEquals("Skybox"))
             listener = new TestSkyBox();
         else if(name.contentEquals("Viewport"))

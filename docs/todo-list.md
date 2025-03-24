@@ -7,7 +7,8 @@
 
 - support color per vertex as option in the standard shader
 - DONE sphere builder
-- other shapes, e.g. frustum
+- DONE frustum builder
+- other shapes
 - DONE better support for texture coordinates in mesh builder
 - DONE topology per mesh
 

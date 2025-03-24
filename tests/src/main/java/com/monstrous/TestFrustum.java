@@ -16,7 +16,8 @@ import com.monstrous.utils.ScreenUtils;
 import java.util.ArrayList;
 
 /** Visualizes frustum culling using bounding boxes per model instance.
- *
+ *  The demo shows a green wireframe camera view (a truncated pyramid) rotating around.
+ *  Boxes that fall within the view change to green, boxes out of view are shown in grey.
  */
 
 public class TestFrustum extends ApplicationAdapter {
@@ -115,6 +116,7 @@ public class TestFrustum extends ApplicationAdapter {
         visibleCount = 0;
 
         for(ModelInstance instance : instances ){
+            // swap out the model between a blue and a green block to show which are "visible"
             if(subCam.frustum.boundsInFrustum(instance.boundingBox)) {
                 instance.model = visibleBlockModel;
                 visibleCount++;
@@ -146,7 +148,7 @@ public class TestFrustum extends ApplicationAdapter {
 
         time += 10*LibGPU.graphics.getDeltaTime();
         float angle = time*(float)Math.PI/180f;
-        float yangle = 0;//-*(float)Math.PI/180f;
+        float yangle = 0;
         subCam.direction.set((float)Math.sin(angle)*(float)Math.cos(yangle),(float)Math.sin(yangle),(float)Math.cos(angle)*(float)Math.cos(yangle));
         subCam.update();
         subCamMatrix.setToYRotation(-angle);

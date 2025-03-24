@@ -77,26 +77,30 @@ public class Material implements Disposable {
         else
             this.metallicRoughnessTexture = getDefaultWhiteTexture();
 
-        createBindGroup();
+        createBindGroupLayout();
     }
 
     // todo merge constructors
     public Material(Texture texture) {
         this.baseColor = new Color(Color.WHITE);
         this.diffuseTexture = texture;
-        this.emissiveTexture = getDefaultBlackTexture();
         this.normalTexture = getDefaultBlackTexture();
-        this.metallicRoughnessTexture = getDefaultBlackTexture();
-        createBindGroup();
+        hasNormalMap = false;
+        this.emissiveTexture = getDefaultBlackTexture();
+        this.metallicRoughnessTexture = getDefaultWhiteTexture();
+        createBindGroupLayout();
     }
 
     public Material(Color baseColor) {
         this.baseColor = new Color(baseColor);
         this.diffuseTexture = getDefaultWhiteTexture();
-        this.emissiveTexture = getDefaultBlackTexture();
         this.normalTexture = getDefaultBlackTexture();
-        this.metallicRoughnessTexture = getDefaultBlackTexture();
-        createBindGroup();
+        hasNormalMap = false;
+        roughnessFactor = 1f;
+        metallicFactor = 1f; // default
+        this.emissiveTexture = getDefaultBlackTexture();
+        this.metallicRoughnessTexture = getDefaultWhiteTexture();
+        createBindGroupLayout();
     }
 
     // for sorting materials, put emphasis on having or not a normal map, because this implies a pipeline switch, not just a material switch
@@ -144,7 +148,7 @@ public class Material implements Disposable {
         return blackPixel;
     }
 
-    private void createBindGroup(){
+    private void createBindGroupLayout(){
         // make a bind group layout (shared by all materials)
         materialBindGroupLayout = getBindGroupLayout();
 
@@ -152,15 +156,22 @@ public class Material implements Disposable {
         materialUniformBuffer = new UniformBuffer( MATERIAL_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
         //materialUniformBuffer = createUniformBuffer( MATERIAL_UB_SIZE );
 
-        // fill the uniform buffer
-        writeMaterialUniforms(materialUniformBuffer);
-
-        // create a bind group
-        materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getBuffer());   // bind group for textures and uniforms
+//        // fill the uniform buffer
+//        writeMaterialUniforms(materialUniformBuffer);
+//
+//        // create a bind group
+//        materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getBuffer());   // bind group for textures and uniforms
     }
 
     // bind material to the render pass
     public void bindGroup(RenderPass renderPass, int groupId ){
+        if(materialBindGroup == null){  // lazy init, in case some material properties are set after the constructor
+            // fill the uniform buffer
+            writeMaterialUniforms(materialUniformBuffer);
+
+            // create a bind group
+            materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getBuffer());   // bind group for textures and uniforms
+        }
         renderPass.setBindGroup(groupId, materialBindGroup.getHandle(), 0, null);
     }
 

@@ -35,6 +35,11 @@ public class Color {
         this(color.r, color.g, color.b, color.a);
     }
 
+    /** use one integer value to set a color, typically provided as a hexadecimal RGB value e.g. 0xFFA0A0 */
+    public Color(int hex){
+        this((hex >> 16)&0xFF, (hex >> 8)&0xFF, hex&0xFF);
+    }
+
     public void set(Color color) {
         set(color.r, color.g, color.b, color.a);
     }
