@@ -10,8 +10,12 @@ import com.monstrous.webgpu.WGPUVertexFormat;
 public class SphereShapeBuilder {
 
 
+    public static Mesh build(float radius, int steps) {
+        return build(radius, steps, WGPUPrimitiveTopology.TriangleStrip);
+    }
+
     /** build a sphere mesh with given radius and number of subdivision steps to use. */
-    public static Mesh buildSphere(float radius, int steps) {
+    public static Mesh build(float radius, int steps, WGPUPrimitiveTopology topology) {
         if(steps < 2)
             throw new IllegalArgumentException("buildSphere: steps must be >= 2");
         final int x_steps = steps;
@@ -25,11 +29,21 @@ public class SphereShapeBuilder {
 
         vertexAttributes.end();
 
+        int numIndices;
+        switch(topology) {
+            case TriangleStrip:
+            case LineList:
+            case PointList:
+            case LineStrip:
+                                    numIndices = 2*(x_steps +1)* y_steps; break;
+            default:
+                throw new IllegalArgumentException("buildSphere: topology unsupported "+topology);
+        }
 
         // Algorithm based on Learn OpenGL chapter on PBR
 
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, WGPUPrimitiveTopology.TriangleStrip, (x_steps +1)*(y_steps +1), 2*(x_steps +1)* y_steps);
+        mb.begin(vertexAttributes,topology, (x_steps +1)*(y_steps +1), numIndices);
 
         double PI = Math.PI;
         for(int xstep = 0; xstep <= x_steps; xstep++){

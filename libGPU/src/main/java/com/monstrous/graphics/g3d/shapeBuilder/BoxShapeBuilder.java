@@ -11,8 +11,11 @@ import com.monstrous.webgpu.WGPUVertexFormat;
 
 public class BoxShapeBuilder {
 
+    public static Mesh build(float w, float h, float d) {
+        return build(w, h, d, WGPUPrimitiveTopology.TriangleList);
+    }
 
-    public static Mesh buildBox(float w, float h, float d) {
+    public static Mesh build(float w, float h, float d, WGPUPrimitiveTopology topology) {
         w /= 2f;
         h /= 2f;
         d /= 2f;
@@ -33,7 +36,15 @@ public class BoxShapeBuilder {
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, WGPUPrimitiveTopology.TriangleList, 6 * 4, 36);
+
+        int numIndices;
+        switch(topology) {
+            case TriangleList:    numIndices = 6 * 6; break;
+            case LineList:        numIndices = 8 * 6; break;
+            default:
+                throw new IllegalArgumentException("buildBox: topology unsupported "+topology);
+        }
+        mb.begin(vertexAttributes, topology, 6 * 4, numIndices);
 
         mb.setNormal(0, 0, -1);
         mb.addRect(corners[0], corners[3], corners[2], corners[1], texCoords[1], texCoords[2], texCoords[3], texCoords[0]); // front

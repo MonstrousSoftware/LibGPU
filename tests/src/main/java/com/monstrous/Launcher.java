@@ -4,7 +4,6 @@ import com.monstrous.webgpu.WGPUBackendType;
 
 public class Launcher {
 
-
     public static void main(String[] args) {
 
         ApplicationConfiguration config = new ApplicationConfiguration();
@@ -20,7 +19,7 @@ public class Launcher {
 
         config.enableGPUtiming = true;
 
-        new Application(new TestModelBuild(), config);
+        new Application(new TestFrustum(), config);
 
     }
 }

@@ -15,6 +15,10 @@ import com.monstrous.webgpu.WGPUVertexFormat;
 import java.util.ArrayList;
 
 /** Test building a model from scratch, rather than reading a file
+ * This shows some different approaches:
+ * - Pushing data straight into the vertex buffer,
+ * - Calling MeshBuilder directly.
+ * - Or calling BoxShapeBuilder/SphereShapeBuilder.
  *
  */
 
@@ -22,7 +26,7 @@ public class TestModelBuild extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
-    private Model modelBox, modelSphere;
+    private Model modelBox, modelSphere, modelBox2;
     private ArrayList<ModelInstance> modelInstances;
     private Environment environment;
     private CameraController camController;
@@ -37,6 +41,9 @@ public class TestModelBuild extends ApplicationAdapter {
 
         modelSphere = buildSphere();
         modelInstances.add( new ModelInstance(modelSphere, 0,2,0) );
+
+        modelBox2 = buildWireFrameCube();
+        modelInstances.add( new ModelInstance(modelBox2, 0,0,0) );
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(6, 4, -6);
@@ -113,7 +120,6 @@ public class TestModelBuild extends ApplicationAdapter {
         Mesh mesh = new Mesh();
         mesh.setVertexAttributes(vertexAttributes);
         mesh.setVertices(vertexData);
-        //mesh.setIndices(null);
 
         Material material = new Material( texture );
 
@@ -167,23 +173,32 @@ public class TestModelBuild extends ApplicationAdapter {
     }
 
     private Model buildCube2(){
-        Mesh mesh = BoxShapeBuilder.buildBox(2, 2, 2);
+        Mesh mesh = BoxShapeBuilder.build(2, 2, 2);
         Material material = new Material( texture );
 
         return new Model(mesh, material);
     }
 
     private Model buildSphere(){
-        Mesh mesh = SphereShapeBuilder.buildSphere(1, 64);
+        Mesh mesh = SphereShapeBuilder.build(1, 64);
         Material material = new Material( texture );
+
+        return new Model(mesh, material);
+    }
+
+    private Model buildWireFrameCube(){
+        Mesh mesh = BoxShapeBuilder.build(4, 4, 4, WGPUPrimitiveTopology.LineList);
+        Material material = new Material( Color.BLUE );
 
         return new Model(mesh, material);
     }
 
 
     public void render( ){
-        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
+        if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
             LibGPU.app.exit();
+            return;
+        }
 
         camController.update();
 
@@ -198,7 +213,9 @@ public class TestModelBuild extends ApplicationAdapter {
         // cleanup
         modelBox.dispose();
         modelSphere.dispose();
+        modelBox2.dispose();
         modelBatch.dispose();
+        texture.dispose();
     }
 
     @Override

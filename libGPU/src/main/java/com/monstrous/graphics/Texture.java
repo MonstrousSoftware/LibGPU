@@ -36,6 +36,7 @@ public class Texture {
     private WGPUTextureFormat format;
     private String label;
 
+
     public Texture() {
         this(256, 256);
     }
@@ -606,11 +607,15 @@ public class Texture {
         if(image != null) {
             //System.out.println("free: "+image);
             JavaWebGPU.getUtils().gdx2d_free(image);
+            image = null;
         }
-        System.out.println("Destroy texture "+label);
-        LibGPU.webGPU.wgpuSamplerRelease(sampler);
-        LibGPU.webGPU.wgpuTextureViewRelease(textureView);
-        LibGPU.webGPU.wgpuTextureDestroy(texture);
-        LibGPU.webGPU.wgpuTextureRelease(texture);
+        if(texture != null) {   // guard against double dispose
+            System.out.println("Destroy texture " + label);
+            LibGPU.webGPU.wgpuSamplerRelease(sampler);
+            LibGPU.webGPU.wgpuTextureViewRelease(textureView);
+            LibGPU.webGPU.wgpuTextureDestroy(texture);
+            LibGPU.webGPU.wgpuTextureRelease(texture);
+            texture = null;
+        }
     }
 }

@@ -6,8 +6,10 @@
 - replace constant in shader for radiance LOD count by a uniform
 
 - support color per vertex as option in the standard shader
-- sphere builder
-- better support for texture coordinates in mesh builder
+- DONE sphere builder
+- other shapes, e.g. frustum
+- DONE better support for texture coordinates in mesh builder
+- DONE topology per mesh
 
 - use a shared mesh for gltf models instead of a mesh per primitive
 

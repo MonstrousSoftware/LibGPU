@@ -30,6 +30,9 @@ public class MeshBuilder {
     private Color color;
     private Vector3 normal;
     private Vector2 textureCoord;
+
+
+
     private WGPUPrimitiveTopology topology;
 
     public void begin(VertexAttributes vertexAttributes, WGPUPrimitiveTopology topology ){
@@ -113,6 +116,9 @@ public class MeshBuilder {
     public void setTextureCoordinate(Vector2 uv){
         setTextureCoordinate(uv.x, uv.y);
     }
+    public WGPUPrimitiveTopology getTopology() {
+        return topology;
+    }
 
     public int addVertex(Vector3 position){
         return addVertex(position.x, position.y, position.z);
@@ -147,9 +153,18 @@ public class MeshBuilder {
         int i0 = addVertex(c0);
         int i1 = addVertex(c1);
         int i2 = addVertex(c2);
-        addIndex((short)i0);
-        addIndex((short)i1);
-        addIndex((short)i2);
+        if(topology == WGPUPrimitiveTopology.TriangleList) {
+            addIndex((short) i0);
+            addIndex((short) i1);
+            addIndex((short) i2);
+        } else if(topology == WGPUPrimitiveTopology.LineList) {
+            addIndex((short) i0);
+            addIndex((short) i1);
+            addIndex((short) i1);
+            addIndex((short) i2);
+            addIndex((short) i2);
+            addIndex((short) i0);
+        }
     }
 
     /**
@@ -162,19 +177,13 @@ public class MeshBuilder {
     //   c00 c01 c10
     //   c01 c11 c10
     public void addRect(Vector3 c00, Vector3 c10, Vector3 c11, Vector3 c01){
-        int i0 = addVertex(c00);
-        int i1 = addVertex(c10);
-        int i2 = addVertex(c11);
-        int i3 = addVertex(c01);
-        addIndex((short)i0);
-        addIndex((short)i3);
-        addIndex((short)i1);
-
-        addIndex((short)i3);
-        addIndex((short)i2);
-        addIndex((short)i1);
+        Vector2 uv = new Vector2(0.5f, 0.5f);
+        addRect(c00, c10, c11, c01, uv, uv, uv, uv);
     }
 
+    /**
+     * Add rectangle: provide corner positions in counter-clockwise order as seen from the front and texture coordinates in the same order.
+     */
     public void addRect(Vector3 c00, Vector3 c10, Vector3 c11, Vector3 c01, Vector2 uv00, Vector2 uv10, Vector2 uv11, Vector2 uv01){
         setTextureCoordinate(uv00);
         int i0 = addVertex(c00);
@@ -184,13 +193,19 @@ public class MeshBuilder {
         int i2 = addVertex(c11);
         setTextureCoordinate(uv01);
         int i3 = addVertex(c01);
+        if(topology == WGPUPrimitiveTopology.TriangleList) {
+            addIndex((short) i0);
+            addIndex((short) i3);
+            addIndex((short) i1);
 
-        addIndex((short)i0);
-        addIndex((short)i3);
-        addIndex((short)i1);
-
-        addIndex((short)i3);
-        addIndex((short)i2);
-        addIndex((short)i1);
+            addIndex((short) i3);
+            addIndex((short) i2);
+            addIndex((short) i1);
+        } else if(topology == WGPUPrimitiveTopology.LineList) {
+            addIndex((short) i0);            addIndex((short) i1);
+            addIndex((short) i1);            addIndex((short) i2);
+            addIndex((short) i2);            addIndex((short) i3);
+            addIndex((short) i3);            addIndex((short) i0);
+        }
     }
 }
