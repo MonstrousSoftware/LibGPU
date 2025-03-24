@@ -3,12 +3,16 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
+import com.monstrous.graphics.g3d.shapeBuilder.SphereShapeBuilder;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import com.monstrous.webgpu.WGPUVertexFormat;
+
+import java.util.ArrayList;
 
 /** Test building a model from scratch, rather than reading a file
  *
@@ -18,17 +22,21 @@ public class TestModelBuild extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
-    private Model model;
-    private ModelInstance modelInstance;
+    private Model modelBox, modelSphere;
+    private ArrayList<ModelInstance> modelInstances;
     private Environment environment;
     private CameraController camController;
     private Texture texture;
 
     public void create() {
-        texture = new Texture("textures/jackRussel.png");
-        model = buildCube2();
+        modelInstances = new ArrayList<>();
 
-        modelInstance = new ModelInstance(model, 0,0,0);
+        texture = new Texture("textures/jackRussel.png");
+        modelBox = buildCube2();
+        modelInstances.add( new ModelInstance(modelBox, 0,0,0) );
+
+        modelSphere = buildSphere();
+        modelInstances.add( new ModelInstance(modelSphere, 0,2,0) );
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(6, 4, -6);
@@ -129,7 +137,7 @@ public class TestModelBuild extends ApplicationAdapter {
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, 6*4, 36);
+        mb.begin(vertexAttributes, WGPUPrimitiveTopology.TriangleList, 6*4, 36);
 
         mb.setNormal(0,0,-1);
         mb.addRect(corners[0], corners[3], corners[2], corners[1], texCoords[0], texCoords[3], texCoords[2], texCoords[1]); // front
@@ -165,6 +173,13 @@ public class TestModelBuild extends ApplicationAdapter {
         return new Model(mesh, material);
     }
 
+    private Model buildSphere(){
+        Mesh mesh = SphereShapeBuilder.buildSphere(1, 64);
+        Material material = new Material( texture );
+
+        return new Model(mesh, material);
+    }
+
 
     public void render( ){
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE))
@@ -175,13 +190,14 @@ public class TestModelBuild extends ApplicationAdapter {
         ScreenUtils.clear(Color.TEAL);
 
         modelBatch.begin(camera, environment);
-        modelBatch.render(modelInstance);
+        modelBatch.render(modelInstances);
         modelBatch.end();
     }
 
     public void dispose(){
         // cleanup
-        model.dispose();
+        modelBox.dispose();
+        modelSphere.dispose();
         modelBatch.dispose();
     }
 

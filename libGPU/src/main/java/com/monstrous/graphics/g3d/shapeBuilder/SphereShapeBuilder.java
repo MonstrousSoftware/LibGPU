@@ -4,14 +4,18 @@ import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.MeshBuilder;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
 public class SphereShapeBuilder {
-    final static int X_STEPS = 64;
-    final static int Y_STEPS = 64;
 
 
-    public static Mesh buildSphere(float radius) {
+    /** build a sphere mesh with given radius and number of subdivision steps to use. */
+    public static Mesh buildSphere(float radius, int steps) {
+        if(steps < 2)
+            throw new IllegalArgumentException("buildSphere: steps must be >= 2");
+        final int x_steps = steps;
+        final int y_steps = steps;
 
         VertexAttributes vertexAttributes = new VertexAttributes();
         vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
@@ -21,14 +25,17 @@ public class SphereShapeBuilder {
 
         vertexAttributes.end();
 
+
+        // Algorithm based on Learn OpenGL chapter on PBR
+
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, X_STEPS*Y_STEPS, 36);
+        mb.begin(vertexAttributes, WGPUPrimitiveTopology.TriangleStrip, (x_steps +1)*(y_steps +1), 2*(x_steps +1)* y_steps);
 
         double PI = Math.PI;
-        for(int xstep = 0; xstep < X_STEPS; xstep++){
-            float rho = (float) xstep /X_STEPS;
-            for(int ystep = 0; ystep < Y_STEPS; ystep++){
-                float phi = (float) ystep / Y_STEPS;
+        for(int xstep = 0; xstep <= x_steps; xstep++){
+            float rho = (float) xstep / x_steps;
+            for(int ystep = 0; ystep <= y_steps; ystep++){
+                float phi = (float) ystep / y_steps;
 
                 float x = (float) (Math.cos(rho*2f*PI) * Math.sin(phi*PI));
                 float y = (float)  Math.cos(phi*PI);
@@ -36,12 +43,27 @@ public class SphereShapeBuilder {
 
                 mb.setNormal(x, y, z);
                 mb.setTextureCoordinate(rho, phi);
-                mb.addVertex(x, y, z);
+                mb.addVertex(x*radius, y*radius, z*radius);
             }
         }
 
-        // todo add indices for a triangle strip
+        // add indices for a triangle strip
 
+        boolean oddRow = false;
+        for(int ystep = 0; ystep < y_steps; ystep++){
+            if(!oddRow){
+                for(int xstep = 0; xstep <= x_steps; xstep++){
+                    mb.addIndex((short)(ystep * (x_steps +1) + xstep));
+                    mb.addIndex((short)((ystep+1) * (x_steps +1) + xstep));
+                }
+            } else {
+                for(int xstep = x_steps; xstep >= 0; xstep--) {
+                    mb.addIndex((short) ((ystep + 1) * (x_steps + 1) + xstep));
+                    mb.addIndex((short) (ystep * (x_steps + 1) + xstep));
+                }
+            }
+            oddRow = !oddRow;
+        }
         return mb.end();
     }
 }

@@ -295,7 +295,7 @@ public class ModelBatch implements Disposable {
         Pointer vertexBuffer = meshPart.mesh.getVertexBuffer().getHandle();
         pass.setVertexBuffer(0, vertexBuffer, 0, meshPart.mesh.getVertexBuffer().getSize());
 
-        setPipeline(pass, meshPart.mesh.vertexAttributes, environment);
+        setPipeline(pass,  meshPart.mesh, environment);
 
         if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
             Pointer indexBuffer = meshPart.mesh.getIndexBuffer().getHandle();
@@ -321,9 +321,9 @@ public class ModelBatch implements Disposable {
 
 
     // create or reuse pipeline on demand when we know the model
-    private void setPipeline(RenderPass pass, VertexAttributes vertexAttributes, Environment environment ) {
+    private void setPipeline(RenderPass pass, Mesh mesh, Environment environment ) {
 
-        pipelineSpec.vertexAttributes = vertexAttributes;
+        pipelineSpec.vertexAttributes = mesh.vertexAttributes;
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
         pipelineSpec.shaderFilePath = selectShaderSourceFile(pass.type);
@@ -334,6 +334,8 @@ public class ModelBatch implements Disposable {
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
         pipelineSpec.depthFormat = pass.getDepthFormat();
         pipelineSpec.numSamples = environment.depthPass? 1 : pass.getSampleCount();
+        pipelineSpec.topology = mesh.getTopology();
+        pipelineSpec.indexFormat = mesh.indexFormat;
         pipelineSpec.recalcHash();
 
         Pipeline pipeline = pipelines.findPipeline(pipelineLayout.getHandle(), pipelineSpec);

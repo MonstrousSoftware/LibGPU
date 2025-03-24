@@ -25,6 +25,7 @@ import com.monstrous.math.Vector3;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.WGPUBufferUsage;
 import com.monstrous.webgpu.WGPUIndexFormat;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import jnr.ffi.Pointer;
 
 import java.util.ArrayList;
@@ -38,10 +39,12 @@ public class Mesh {
     public VertexAttributes vertexAttributes;
     public WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
     public BoundingBox boundingBox;
+    private WGPUPrimitiveTopology topology;
 
     public Mesh(){
         boundingBox = new BoundingBox();
         indexCount = 0;
+        topology = WGPUPrimitiveTopology.TriangleList;
     }
 
     public Mesh(MeshData data) {
@@ -97,6 +100,7 @@ public class Mesh {
 
     public void setIndices(short[] indices){
         int indexSizeInBytes = 2;
+        indexFormat = WGPUIndexFormat.Uint16;
         indexCount = indices.length;
         int indexBufferSize = indexCount * indexSizeInBytes;
         indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
@@ -111,8 +115,9 @@ public class Mesh {
             indexCount = 0;
         else {
             int indexWidth = 2;
-            if (indexValues.size() > Short.MAX_VALUE)
+            if (indexValues.size() > Short.MAX_VALUE) {
                 indexWidth = 4;
+            }
             setIndices(indexValues, indexWidth);
         }
     }
@@ -148,6 +153,14 @@ public class Mesh {
 
         // Upload data to the buffer
         LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer.getHandle(), 0, idata, indexBufferSize);
+    }
+
+    public WGPUPrimitiveTopology getTopology() {
+        return topology;
+    }
+
+    public void setTopology(WGPUPrimitiveTopology topology) {
+        this.topology = topology;
     }
 
     public void dispose(){

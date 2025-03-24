@@ -6,6 +6,7 @@ import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.MeshBuilder;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
 public class BoxShapeBuilder {
@@ -32,7 +33,7 @@ public class BoxShapeBuilder {
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, 6 * 4, 36);
+        mb.begin(vertexAttributes, WGPUPrimitiveTopology.TriangleList, 6 * 4, 36);
 
         mb.setNormal(0, 0, -1);
         mb.addRect(corners[0], corners[3], corners[2], corners[1], texCoords[1], texCoords[2], texCoords[3], texCoords[0]); // front

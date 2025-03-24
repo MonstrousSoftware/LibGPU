@@ -5,6 +5,7 @@ import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 
 import static com.monstrous.graphics.VertexAttribute.Usage.*;
 
@@ -29,13 +30,15 @@ public class MeshBuilder {
     private Color color;
     private Vector3 normal;
     private Vector2 textureCoord;
+    private WGPUPrimitiveTopology topology;
 
-    public void begin(VertexAttributes vertexAttributes){
-        begin(vertexAttributes, 32000, 32000);
+    public void begin(VertexAttributes vertexAttributes, WGPUPrimitiveTopology topology ){
+        begin(vertexAttributes, topology, 32000, 32000);
     }
 
-    public void begin(VertexAttributes vertexAttributes, int maxVertices, int maxIndices){
+    public void begin(VertexAttributes vertexAttributes, WGPUPrimitiveTopology topology, int maxVertices, int maxIndices){
         this.vertexAttributes = vertexAttributes;
+        this.topology = topology;
         indices = new short[maxIndices];
         numIndices = 0;
         stride = vertexAttributes.getVertexSizeInBytes()/Float.BYTES;
@@ -50,6 +53,7 @@ public class MeshBuilder {
         Mesh mesh;
         mesh = new Mesh();
         mesh.setVertexAttributes(vertexAttributes);
+        mesh.setTopology(topology);
         float[] vertexData = new float[stride*vertices.length];
         int vindex = 0;
         for(int i = 0; i < numVertices; i++){

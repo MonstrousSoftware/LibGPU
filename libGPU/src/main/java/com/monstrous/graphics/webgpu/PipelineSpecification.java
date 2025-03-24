@@ -20,16 +20,15 @@ import com.monstrous.LibGPU;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.lights.Environment;
-import com.monstrous.webgpu.WGPUBlendFactor;
-import com.monstrous.webgpu.WGPUBlendOperation;
-import com.monstrous.webgpu.WGPUCullMode;
-import com.monstrous.webgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.*;
 
 import java.util.Objects;
 
 public class PipelineSpecification  {
     public String name;
     public VertexAttributes vertexAttributes;
+    public WGPUIndexFormat indexFormat;
+    public WGPUPrimitiveTopology topology;
     public Environment environment;
     public String shaderFilePath;
     public ShaderProgram shader;
@@ -57,6 +56,8 @@ public class PipelineSpecification  {
         enableDepth();
         disableBlending();
         setCullMode(WGPUCullMode.None);
+        indexFormat = WGPUIndexFormat.Uint16;
+        topology =  WGPUPrimitiveTopology.TriangleList;
         isDepthPass = false;
         colorFormat = LibGPU.surfaceFormat;
         depthFormat = WGPUTextureFormat.Depth24Plus;       // todo get from adapter?
@@ -95,6 +96,8 @@ public class PipelineSpecification  {
         this.blendDstAlpha = spec.blendDstAlpha;
         this.blendOpAlpha = spec.blendOpAlpha;
         this.cullMode = spec.cullMode;
+        this.topology = spec.topology;
+        this.indexFormat = spec.indexFormat;
         this.isSkyBox = spec.isSkyBox;
         this.afterDepthPrepass = spec.afterDepthPrepass;
 
@@ -139,6 +142,7 @@ public class PipelineSpecification  {
         recalcHash();
     }
 
+    // used?
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -161,6 +165,7 @@ public class PipelineSpecification  {
                 shaderFilePath,
                 shader != null ? shader.getName(): "",
                 isDepthPass, afterDepthPrepass,
+                topology, indexFormat,
                 hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox, depthFormat, numSamples);
     }
 

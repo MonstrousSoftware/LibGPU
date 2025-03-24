@@ -67,8 +67,8 @@ public class Pipeline implements Disposable {
         pipelineDesc.getVertex().setConstantCount(0);
         pipelineDesc.getVertex().setConstants();
 
-        pipelineDesc.getPrimitive().setTopology(WGPUPrimitiveTopology.TriangleList);
-        pipelineDesc.getPrimitive().setStripIndexFormat(WGPUIndexFormat.Undefined);
+        pipelineDesc.getPrimitive().setTopology(spec.topology);
+        pipelineDesc.getPrimitive().setStripIndexFormat(isStripTopology(spec.topology)? spec.indexFormat: WGPUIndexFormat.Undefined);
         pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
         pipelineDesc.getPrimitive().setCullMode(spec.cullMode);
 
@@ -138,6 +138,10 @@ public class Pipeline implements Disposable {
         pipeline = LibGPU.webGPU.wgpuDeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
         if(pipeline == null)
             throw new RuntimeException("Pipeline creation failed");
+    }
+
+    private boolean isStripTopology( WGPUPrimitiveTopology topology ){
+        return topology == WGPUPrimitiveTopology.TriangleStrip || topology == WGPUPrimitiveTopology.LineStrip;
     }
 
     public boolean canRender(PipelineSpecification spec){    // perhaps we need more params
