@@ -38,6 +38,7 @@ public class TestModelBuild extends ApplicationAdapter {
         texture = new Texture("textures/jackRussel.png");
 
         MeshBuilder mb = new MeshBuilder();
+        // vertex attributes are fixed per mesh
         VertexAttributes vertexAttributes = new VertexAttributes();
         vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
         vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
@@ -45,16 +46,18 @@ public class TestModelBuild extends ApplicationAdapter {
         // beware: the shaderLocation values have to match the shader
         vertexAttributes.end();
 
+        // note that the shapes we build will become meshParts of a common mesh
+        // this means we don't need to swap vertex buffer and index buffer between rendering these shapes.
+        //
+        // also note that topology is defined per mesh part, not per mesh.
+        //
         mb.begin(vertexAttributes, 16384, 16384);
-
-
 
         modelBox = buildCubeShape(mb);
         modelInstances.add( new ModelInstance(modelBox, 0,0,0) );
 
         modelSphere = buildSphere(mb);
         modelInstances.add( new ModelInstance(modelSphere, 0,2,0) );
-
 
         modelBox2 = buildWireFrameCube(mb);
         modelInstances.add( new ModelInstance(modelBox2, 0,0,0) );
@@ -78,6 +81,7 @@ public class TestModelBuild extends ApplicationAdapter {
         modelBatch = new ModelBatch();
     }
 
+    /** demonstration of building a mesh without mesh builder or shape builder */
     private Model buildRawModel(){
 
         // build a cube
@@ -138,9 +142,10 @@ public class TestModelBuild extends ApplicationAdapter {
 
         Material material = new Material( texture );
 
-        return new Model(mesh, material);
+        return new Model(mesh, material);   // defaults to triangle list
     }
 
+    /** demonstration of building a mesh without shape builder */
     private Model buildCube(){
         Vector3[] corners = {
                 new Vector3(-1, 1, -1), new Vector3(1, 1, -1), new Vector3(1,-1,-1), new Vector3(-1, -1, -1),// front
@@ -152,9 +157,6 @@ public class TestModelBuild extends ApplicationAdapter {
         vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
         vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 1);
         // beware: the shaderLocation values have to match the shader
-
-        // COLOR is not supported
-        //vertexAttributes.add(VertexAttribute.Usage.COLOR, "color", WGPUVertexFormat.Float32x4, 1);
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();

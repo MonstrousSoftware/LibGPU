@@ -296,7 +296,7 @@ public class ModelBatch implements Disposable {
             return;
 
         // switch mesh? bind vertex buffer and index buffer
-        //if(meshPart.getMesh() != currentMesh){
+        if(meshPart.getMesh() != currentMesh){
             currentMesh = meshPart.getMesh();
             Pointer vertexBuffer = currentMesh.getVertexBuffer().getHandle();
             pass.setVertexBuffer(0, vertexBuffer, 0, currentMesh.getVertexBuffer().getSize());
@@ -304,7 +304,7 @@ public class ModelBatch implements Disposable {
                 Pointer indexBuffer = currentMesh.getIndexBuffer().getHandle();
                 pass.setIndexBuffer(indexBuffer, meshPart.getMesh().indexFormat, 0, currentMesh.getIndexBuffer().getSize());
             }
-       // }
+        }
 
         setPipeline(pass,  meshPart, environment);
 
