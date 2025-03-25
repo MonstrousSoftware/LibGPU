@@ -25,7 +25,6 @@ import com.monstrous.math.Vector3;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.WGPUBufferUsage;
 import com.monstrous.webgpu.WGPUIndexFormat;
-import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import jnr.ffi.Pointer;
 
 import java.util.ArrayList;
@@ -39,12 +38,12 @@ public class Mesh {
     public VertexAttributes vertexAttributes;
     public WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
     public BoundingBox boundingBox;
-    private WGPUPrimitiveTopology topology;
+    //private WGPUPrimitiveTopology topology;
 
     public Mesh(){
         boundingBox = new BoundingBox();
         indexCount = 0;
-        topology = WGPUPrimitiveTopology.TriangleList;
+        //topology = WGPUPrimitiveTopology.TriangleList;
     }
 
     public Mesh(MeshData data) {
@@ -64,21 +63,7 @@ public class Mesh {
         setIndices(data.indexValues, data.indexSizeInBytes);
     }
 
-    private void calculateBoundingBox(float[] vertexData){
-        int stride = vertexAttributes.getVertexSizeInBytes()/Float.BYTES;   // stride in floats
-        int positionOffset = vertexAttributes.getOffset(VertexAttribute.Usage.POSITION);
-        if(positionOffset < 0)
-            throw new RuntimeException("Mesh has no POSITION information.");
-        boundingBox.clear();
-        Vector3 vertex = new Vector3();
-        for(int i = 0; i < vertexCount; i++){
-            int index = i*stride + positionOffset;
-            vertex.x = vertexData[index];
-            vertex.y = vertexData[index+1];
-            vertex.z = vertexData[index+2];
-            boundingBox.ext(vertex);
-        }
-    }
+
 
     public void setVertexAttributes(VertexAttributes vertexAttributes){
         this.vertexAttributes = vertexAttributes;
@@ -97,6 +82,21 @@ public class Mesh {
         calculateBoundingBox(vertexData);
     }
 
+    private void calculateBoundingBox(float[] vertexData){
+        int stride = vertexAttributes.getVertexSizeInBytes()/Float.BYTES;   // stride in floats
+        int positionOffset = vertexAttributes.getOffset(VertexAttribute.Usage.POSITION);
+        if(positionOffset < 0)
+            throw new RuntimeException("Mesh has no POSITION information.");
+        boundingBox.clear();
+        Vector3 vertex = new Vector3();
+        for(int i = 0; i < vertexCount; i++){
+            int index = i*stride + positionOffset;
+            vertex.x = vertexData[index];
+            vertex.y = vertexData[index+1];
+            vertex.z = vertexData[index+2];
+            boundingBox.ext(vertex);
+        }
+    }
 
     public void setIndices(short[] indices){
         int indexSizeInBytes = 2;
@@ -155,13 +155,13 @@ public class Mesh {
         LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer.getHandle(), 0, idata, indexBufferSize);
     }
 
-    public WGPUPrimitiveTopology getTopology() {
-        return topology;
-    }
-
-    public void setTopology(WGPUPrimitiveTopology topology) {
-        this.topology = topology;
-    }
+//    public WGPUPrimitiveTopology getTopology() {
+//        return topology;
+//    }
+//
+//    public void setTopology(WGPUPrimitiveTopology topology) {
+//        this.topology = topology;
+//    }
 
     public void dispose(){
         if(indexBuffer != null)

@@ -202,10 +202,10 @@ public class TestSponza extends ApplicationAdapter {
             Node rootNode = instance.model.rootNodes.get(0);
             for(NodePart part : rootNode.nodeParts){
 
-                BoundingBox bb = new BoundingBox(part.meshPart.mesh.boundingBox);
+                BoundingBox bb = new BoundingBox(part.meshPart.getMesh().boundingBox);
                 bb.transform(rootNode.globalTransform);
-                Mesh mesh = BoxShapeBuilder.build(bb);
-                Model model = new Model(mesh, new Material(Color.GREEN));   // todo dispose
+                MeshPart meshPart = BoxShapeBuilder.build(bb);
+                Model model = new Model(meshPart, new Material(Color.GREEN));   // todo dispose
                 boxes.add(new ModelInstance(model, instance.transform));
             }
         }

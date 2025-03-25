@@ -2,20 +2,20 @@ package com.monstrous.graphics.g3d.shapeBuilder;
 
 import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
-import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.MeshBuilder;
+import com.monstrous.graphics.g3d.MeshPart;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
 public class SphereShapeBuilder {
 
 
-    public static Mesh build(float radius, int steps) {
+    public static MeshPart build(float radius, int steps) {
         return build(radius, steps, WGPUPrimitiveTopology.TriangleStrip);
     }
 
     /** build a sphere mesh with given radius and number of subdivision steps to use. */
-    public static Mesh build(float radius, int steps, WGPUPrimitiveTopology topology) {
+    public static MeshPart build(float radius, int steps, WGPUPrimitiveTopology topology) {
         if(steps < 2)
             throw new IllegalArgumentException("buildSphere: steps must be >= 2");
         final int x_steps = steps;
@@ -43,7 +43,8 @@ public class SphereShapeBuilder {
         // Algorithm based on Learn OpenGL chapter on PBR
 
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes,topology, (x_steps +1)*(y_steps +1), numIndices);
+        mb.begin(vertexAttributes, (x_steps +1)*(y_steps +1), numIndices);
+        MeshPart part = mb.part("sphere", topology);
 
         double PI = Math.PI;
         for(int xstep = 0; xstep <= x_steps; xstep++){
@@ -78,6 +79,7 @@ public class SphereShapeBuilder {
             }
             oddRow = !oddRow;
         }
-        return mb.end();
+        mb.end();
+        return part;
     }
 }

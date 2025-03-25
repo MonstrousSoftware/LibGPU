@@ -254,7 +254,7 @@ public class ModelBatch implements Disposable {
 
     /** Frustum culling using a transformed mesh bounding box */
     private boolean isVisible(Renderable renderable){
-        bbox.set(renderable.meshPart.mesh.boundingBox);
+        bbox.set(renderable.meshPart.getMesh().boundingBox);
         bbox.transform(renderable.modelTransform);
         return camera.frustum.boundsInFrustum(bbox);
     }
@@ -292,19 +292,19 @@ public class ModelBatch implements Disposable {
     private void emitMeshPart(MeshPart meshPart, int instanceCount, int renderablesCount) {
         if(meshPart == null)
             return;
-        Pointer vertexBuffer = meshPart.mesh.getVertexBuffer().getHandle();
-        pass.setVertexBuffer(0, vertexBuffer, 0, meshPart.mesh.getVertexBuffer().getSize());
+        Pointer vertexBuffer = meshPart.getMesh().getVertexBuffer().getHandle();
+        pass.setVertexBuffer(0, vertexBuffer, 0, meshPart.getMesh().getVertexBuffer().getSize());
 
-        setPipeline(pass,  meshPart.mesh, environment);
+        setPipeline(pass,  meshPart, environment);
 
-        if (meshPart.mesh.getIndexCount() > 0) { // indexed mesh?
-            Pointer indexBuffer = meshPart.mesh.getIndexBuffer().getHandle();
-            pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, meshPart.mesh.getIndexBuffer().getSize());
+        if (meshPart.getMesh().getIndexCount() > 0) { // indexed mesh?
+            Pointer indexBuffer = meshPart.getMesh().getIndexBuffer().getHandle();
+            pass.setIndexBuffer(indexBuffer, meshPart.getMesh().indexFormat, 0, meshPart.getMesh().getIndexBuffer().getSize());
             //pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.wgpuBufferGetSize(indexBuffer));
-            pass.drawIndexed( meshPart.size, instanceCount, meshPart.offset, 0, renderablesCount-instanceCount);
+            pass.drawIndexed( meshPart.getSize(), instanceCount, meshPart.getOffset(), 0, renderablesCount-instanceCount);
         }
         else
-            pass.draw(meshPart.size, instanceCount, meshPart.offset, renderablesCount-instanceCount);
+            pass.draw(meshPart.getSize(), instanceCount, meshPart.getOffset(), renderablesCount-instanceCount);
 
         drawCalls++;
     }
@@ -321,9 +321,9 @@ public class ModelBatch implements Disposable {
 
 
     // create or reuse pipeline on demand when we know the model
-    private void setPipeline(RenderPass pass, Mesh mesh, Environment environment ) {
+    private void setPipeline(RenderPass pass, MeshPart meshPart, Environment environment ) {
 
-        pipelineSpec.vertexAttributes = mesh.vertexAttributes;
+        pipelineSpec.vertexAttributes = meshPart.getMesh().vertexAttributes;
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
         pipelineSpec.shaderFilePath = selectShaderSourceFile(pass.type);
@@ -334,8 +334,8 @@ public class ModelBatch implements Disposable {
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
         pipelineSpec.depthFormat = pass.getDepthFormat();
         pipelineSpec.numSamples = environment.depthPass? 1 : pass.getSampleCount();
-        pipelineSpec.topology = mesh.getTopology();
-        pipelineSpec.indexFormat = mesh.indexFormat;
+        pipelineSpec.topology = meshPart.getTopology();
+        pipelineSpec.indexFormat = meshPart.getMesh().indexFormat;
         pipelineSpec.recalcHash();
 
         Pipeline pipeline = pipelines.findPipeline(pipelineLayout.getHandle(), pipelineSpec);

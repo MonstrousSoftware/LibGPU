@@ -36,7 +36,7 @@ public class TestModelBuild extends ApplicationAdapter {
         modelInstances = new ArrayList<>();
 
         texture = new Texture("textures/jackRussel.png");
-        modelBox = buildCube2();
+        modelBox = buildCube();
         modelInstances.add( new ModelInstance(modelBox, 0,0,0) );
 
         modelSphere = buildSphere();
@@ -143,7 +143,8 @@ public class TestModelBuild extends ApplicationAdapter {
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, WGPUPrimitiveTopology.TriangleList, 6*4, 36);
+        mb.begin(vertexAttributes, 6*4, 8*6);
+        MeshPart part = mb.part("box", WGPUPrimitiveTopology.TriangleList);
 
         mb.setNormal(0,0,-1);
         mb.addRect(corners[0], corners[3], corners[2], corners[1], texCoords[0], texCoords[3], texCoords[2], texCoords[1]); // front
@@ -163,34 +164,32 @@ public class TestModelBuild extends ApplicationAdapter {
         mb.setNormal(1,0,0);
         mb.addRect(corners[1], corners[2], corners[6], corners[5], texCoords[0], texCoords[1], texCoords[2], texCoords[3]); // right
 
-        Mesh mesh = mb.end();
-
+        mb.end();
 
         Material material = new Material( texture );
 
-
-        return new Model(mesh, material);
+        return new Model(part, material);
     }
 
     private Model buildCube2(){
-        Mesh mesh = BoxShapeBuilder.build(2, 2, 2);
+        MeshPart meshPart = BoxShapeBuilder.build(2, 2, 2);
         Material material = new Material( texture );
 
-        return new Model(mesh, material);
+        return new Model(meshPart, material);
     }
 
     private Model buildSphere(){
-        Mesh mesh = SphereShapeBuilder.build(1, 64);
+        MeshPart meshPart = SphereShapeBuilder.build(1, 64);
         Material material = new Material( texture );
 
-        return new Model(mesh, material);
+        return new Model(meshPart, material);
     }
 
     private Model buildWireFrameCube(){
-        Mesh mesh = BoxShapeBuilder.build(4, 4, 4, WGPUPrimitiveTopology.LineList);
+        MeshPart meshPart = BoxShapeBuilder.build(4, 4, 4, WGPUPrimitiveTopology.LineList);
         Material material = new Material( Color.BLUE );
 
-        return new Model(mesh, material);
+        return new Model(meshPart, material);
     }
 
 

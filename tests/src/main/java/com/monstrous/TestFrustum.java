@@ -2,16 +2,14 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
-import com.monstrous.graphics.g3d.Mesh;
-import com.monstrous.graphics.g3d.Model;
-import com.monstrous.graphics.g3d.ModelBatch;
-import com.monstrous.graphics.g3d.ModelInstance;
+import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
 import com.monstrous.graphics.g3d.shapeBuilder.FrustumShapeBuilder;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 
 import java.util.ArrayList;
 
@@ -82,10 +80,11 @@ public class TestFrustum extends ApplicationAdapter {
 
         modelBatch = new ModelBatch();
 
+        WGPUPrimitiveTopology topology = WGPUPrimitiveTopology.TriangleList;
         invisibleBlockModel = new Model(BoxShapeBuilder.build(0.1f, 0.1f, 0.1f), new Material(Color.BLUE));
-        visibleBlockModel = new Model(BoxShapeBuilder.build(0.1f, 0.1f, 0.1f), new Material(Color.GREEN));
-        bigBlockModel = new Model(BoxShapeBuilder.build(1f, 1f, 1f), new Material(Color.ORANGE));
-        bigBlockModel2 = new Model(BoxShapeBuilder.build(bigBlockModel.meshes.get(0).boundingBox), new Material(Color.RED));
+        visibleBlockModel = new Model(BoxShapeBuilder.build(0.1f, 0.1f, 0.1f),  new Material(Color.GREEN));
+        bigBlockModel = new Model(BoxShapeBuilder.build(1f, 1f, 1f),  new Material(Color.ORANGE));
+        bigBlockModel2 = new Model(BoxShapeBuilder.build(bigBlockModel.meshes.get(0).boundingBox),  new Material(Color.RED));
 
         populate();
 
@@ -132,16 +131,16 @@ public class TestFrustum extends ApplicationAdapter {
 
 
     private Model buildFrustumModel(PerspectiveCamera cam) {
-        Mesh mesh = FrustumShapeBuilder.build(cam.frustum);
+        MeshPart meshPart = FrustumShapeBuilder.build(cam.frustum);
         Material material = new Material( Color.GREEN );
-        return new Model(mesh, material);
+        return new Model(meshPart,  material);
     }
 
 
     private Model buildModel(float size){
-        Mesh mesh = BoxShapeBuilder.build(size, size, size);
+        MeshPart meshPart = BoxShapeBuilder.build(size, size, size);
         Material material = new Material( Color.BLUE );
-        return new Model(mesh, material);
+        return new Model(meshPart,  material);
     }
 
     public void render( ){

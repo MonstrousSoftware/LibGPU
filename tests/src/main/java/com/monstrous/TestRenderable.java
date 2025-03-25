@@ -7,6 +7,7 @@ import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.graphics.loaders.ObjLoader;
 import com.monstrous.math.Matrix4;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 
 
 public class TestRenderable extends ApplicationAdapter {
@@ -35,9 +36,9 @@ public class TestRenderable extends ApplicationAdapter {
         mesh = new Mesh(meshData);
 
         if(mesh.getIndexCount() > 0)
-            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
+            meshPart = new MeshPart(mesh, "part", WGPUPrimitiveTopology.TriangleList, 0, mesh.getIndexCount());
         else
-            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
+            meshPart = new MeshPart(mesh, "part", WGPUPrimitiveTopology.TriangleList, 0, mesh.getVertexCount());
         texture = new Texture("textures/palette.png", false);
         texture2 = new Texture("textures/jackRussel.png", false);
 

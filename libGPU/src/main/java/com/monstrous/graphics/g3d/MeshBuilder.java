@@ -30,16 +30,20 @@ public class MeshBuilder {
     private Color color;
     private Vector3 normal;
     private Vector2 textureCoord;
-
-
-
+    private Mesh mesh;
+    private MeshPart part;
     private WGPUPrimitiveTopology topology;
 
-    public void begin(VertexAttributes vertexAttributes, WGPUPrimitiveTopology topology ){
-        begin(vertexAttributes, topology, 32000, 32000);
+    public void begin(VertexAttributes vertexAttributes ){
+        begin(vertexAttributes, 32000, 32000);
     }
 
-    public void begin(VertexAttributes vertexAttributes, WGPUPrimitiveTopology topology, int maxVertices, int maxIndices){
+    public void begin(VertexAttributes vertexAttributes, int maxVertices, int maxIndices){
+        begin(vertexAttributes, maxVertices, maxIndices, WGPUPrimitiveTopology.Undefined);
+    }
+
+    public void begin(VertexAttributes vertexAttributes, int maxVertices, int maxIndices, WGPUPrimitiveTopology topology){
+        if(mesh != null) throw new IllegalStateException("MeshBuilder: cannot nest begin(); call end() before another begin()");
         this.vertexAttributes = vertexAttributes;
         this.topology = topology;
         indices = new short[maxIndices];
@@ -50,13 +54,12 @@ public class MeshBuilder {
         color = new Color(Color.WHITE);
         normal = new Vector3(0,1,0);
         textureCoord = new Vector2(0,0);
+        mesh = new Mesh();
     }
 
     public Mesh end(){
-        Mesh mesh;
-        mesh = new Mesh();
         mesh.setVertexAttributes(vertexAttributes);
-        mesh.setTopology(topology);
+        //mesh.setTopology(topology);
         float[] vertexData = new float[stride*vertices.length];
         int vindex = 0;
         for(int i = 0; i < numVertices; i++){
@@ -90,9 +93,26 @@ public class MeshBuilder {
             if(vindex - start != stride)
                 throw new RuntimeException("MeshBuilder: missing attributes");
         }
+        endPart();
         mesh.setVertices(vertexData);
         mesh.setIndices(indices);
+
+
         return mesh;
+    }
+
+    public MeshPart part(String name, WGPUPrimitiveTopology topology){
+        endPart();
+        this.topology = topology;
+        part = new MeshPart(mesh, name, topology);
+        part.setOffset(numIndices);     // support for Mesh without indices?
+        return part;
+    }
+
+    private void endPart(){
+        if(part != null){
+            part.setSize(numIndices - part.getOffset());
+        }
     }
 
     /** note: color per vertex is not supported in standard shader */
@@ -115,9 +135,6 @@ public class MeshBuilder {
 
     public void setTextureCoordinate(Vector2 uv){
         setTextureCoordinate(uv.x, uv.y);
-    }
-    public WGPUPrimitiveTopology getTopology() {
-        return topology;
     }
 
     public int addVertex(Vector3 position){

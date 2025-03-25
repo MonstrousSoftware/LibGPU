@@ -26,6 +26,7 @@ import com.monstrous.graphics.loaders.gltf.*;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
@@ -59,6 +60,10 @@ public class Model implements Disposable {
     }
 
     public Model(Mesh mesh, Material material){
+        this(mesh, WGPUPrimitiveTopology.TriangleList, material);
+    }
+
+    public Model(Mesh mesh, WGPUPrimitiveTopology topology, Material material){
         meshes = new ArrayList<>();
         meshes.add(mesh);
 
@@ -68,9 +73,21 @@ public class Model implements Disposable {
         // create a meshPart to cover whole mesh
         MeshPart meshPart;
         if(mesh.getIndexCount() > 0)
-            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
+            meshPart = new MeshPart(mesh, "part", topology, 0, mesh.getIndexCount());
         else
-            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
+            meshPart = new MeshPart(mesh, "part", topology, 0, mesh.getVertexCount());
+        Node rootNode = new Node(new NodePart(meshPart, material ));
+        rootNodes = new ArrayList<>();
+        rootNodes.add(rootNode);
+    }
+
+    public Model( MeshPart meshPart, Material material){
+        meshes = new ArrayList<>();
+        meshes.add(meshPart.getMesh());
+
+        materials = new ArrayList<>();
+        materials.add(material);
+
         Node rootNode = new Node(new NodePart(meshPart, material ));
         rootNodes = new ArrayList<>();
         rootNodes.add(rootNode);
@@ -209,7 +226,7 @@ public class Model implements Disposable {
                     throw new RuntimeException("GLTF: Expect primitive.indices to refer to SCALAR accessor");
 
                 Mesh m = meshMap.get(primitive);
-                MeshPart meshPart = new MeshPart(m, 0, indexAccessor.count);
+                MeshPart meshPart = new MeshPart(m, "part", WGPUPrimitiveTopology.TriangleList,0, indexAccessor.count);
                 //MeshPart meshPart = new MeshPart(m, indexAccessor.byteOffset, indexAccessor.count);
                 node.nodeParts.add( new NodePart(meshPart, materials.get(primitive.material)) );
             }
@@ -527,9 +544,9 @@ public class Model implements Disposable {
         // create a meshPart to cover whole mesh (temp)
         MeshPart meshPart;
         if(mesh.getIndexCount() > 0)
-            meshPart = new MeshPart(mesh, 0, mesh.getIndexCount());
+            meshPart = new MeshPart(mesh, "part", WGPUPrimitiveTopology.TriangleList, 0, mesh.getIndexCount());
         else
-            meshPart = new MeshPart(mesh, 0, mesh.getVertexCount());
+            meshPart = new MeshPart(mesh, "part", WGPUPrimitiveTopology.TriangleList, 0, mesh.getVertexCount());
 
         for(MaterialData mtl: mtlData) {
             Material material = new Material(mtl);

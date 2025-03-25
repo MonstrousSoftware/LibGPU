@@ -3,20 +3,22 @@ package com.monstrous.graphics.g3d.shapeBuilder;
 import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.g3d.BoundingBox;
-import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.MeshBuilder;
+import com.monstrous.graphics.g3d.MeshPart;
 import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
+
+// todo This creates a new mesh per box
 public class BoxShapeBuilder {
 
-    public static Mesh build(float w, float h, float d) {
+    public static MeshPart build(float w, float h, float d) {
         return build(w, h, d, WGPUPrimitiveTopology.TriangleList);
     }
 
-    public static Mesh build(float w, float h, float d, WGPUPrimitiveTopology topology) {
+    public static MeshPart build(float w, float h, float d, WGPUPrimitiveTopology topology) {
         w /= 2f;
         h /= 2f;
         d /= 2f;
@@ -27,7 +29,7 @@ public class BoxShapeBuilder {
         return buildFromCorners(corners, topology);
     }
 
-    public static Mesh build(BoundingBox bbox) {
+    public static MeshPart build(BoundingBox bbox) {
         Vector3[] corners = new Vector3[8];
         corners[0] = new Vector3(bbox.min.x, bbox.max.y, bbox.min.z);
         corners[1] = new Vector3(bbox.max.x, bbox.max.y, bbox.min.z);
@@ -40,7 +42,7 @@ public class BoxShapeBuilder {
         return buildFromCorners(corners, WGPUPrimitiveTopology.LineList);
     }
 
-    private static Mesh buildFromCorners(Vector3[] corners, WGPUPrimitiveTopology topology) {
+    private static MeshPart buildFromCorners(Vector3[] corners, WGPUPrimitiveTopology topology) {
         Vector2[] texCoords = {new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1)};
 
         VertexAttributes vertexAttributes = new VertexAttributes();
@@ -62,7 +64,8 @@ public class BoxShapeBuilder {
             default:
                 throw new IllegalArgumentException("buildBox: topology unsupported "+topology);
         }
-        mb.begin(vertexAttributes, topology, 6 * 4, numIndices);
+        mb.begin(vertexAttributes, 6 * 4, numIndices);
+        MeshPart part = mb.part("box", topology);
 
         mb.setNormal(0, 0, -1);
         mb.addRect(corners[0], corners[3], corners[2], corners[1], texCoords[1], texCoords[2], texCoords[3], texCoords[0]); // front
@@ -82,7 +85,8 @@ public class BoxShapeBuilder {
         mb.setNormal(1, 0, 0);
         mb.addRect(corners[1], corners[2], corners[6], corners[5], texCoords[1], texCoords[2], texCoords[3], texCoords[0]); // right
 
-        return mb.end();
+        mb.end();
+        return part;
     }
 
 

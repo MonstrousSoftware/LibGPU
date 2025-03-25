@@ -2,8 +2,8 @@ package com.monstrous.graphics.g3d.shapeBuilder;
 
 import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
-import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.MeshBuilder;
+import com.monstrous.graphics.g3d.MeshPart;
 import com.monstrous.math.Frustum;
 import com.monstrous.math.Vector3;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
@@ -12,14 +12,15 @@ import com.monstrous.webgpu.WGPUVertexFormat;
 /** Build a wire frame frustum shape for the given Frustum object */
 public class FrustumShapeBuilder {
 
-    public static Mesh build(Frustum frustum) {
+    public static MeshPart build(Frustum frustum) {
 
         VertexAttributes vertexAttributes = new VertexAttributes();
         vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, WGPUPrimitiveTopology.LineList, 4*6, 8*6);
+        mb.begin(vertexAttributes, 4*6, 8*6 );
+        MeshPart part = mb.part("frustum", WGPUPrimitiveTopology.LineList);
 
         Vector3[] corners = frustum.corners;
 
@@ -30,7 +31,8 @@ public class FrustumShapeBuilder {
         mb.addRect(corners[0], corners[4], corners[7], corners[3]); // left
         mb.addRect(corners[1], corners[2], corners[6], corners[5]); // right
 
-        return mb.end();
+        mb.end();
+        return part;
     }
 
 }
