@@ -52,6 +52,7 @@ public class TestSponza extends ApplicationAdapter {
         long startLoad = System.currentTimeMillis();
 
         model = new Model("models/Sponza/Sponza.gltf");
+       // model = new Model("models/Ducky/ducky.gltf");
 
         long endLoad = System.currentTimeMillis();
         System.out.println("Model loading time (ms): "+(endLoad - startLoad));
@@ -207,7 +208,7 @@ public class TestSponza extends ApplicationAdapter {
         // beware: the shaderLocation values have to match the shader
         vertexAttributes.end();
 
-        mb.begin(vertexAttributes, 256, 256);
+        mb.begin(vertexAttributes, 32000, 32000);
 
         for(ModelInstance instance : instances){
             Node rootNode = instance.model.rootNodes.get(0);

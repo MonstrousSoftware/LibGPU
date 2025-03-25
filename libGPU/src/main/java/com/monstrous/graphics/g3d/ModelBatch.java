@@ -308,11 +308,8 @@ public class ModelBatch implements Disposable {
 
         setPipeline(pass,  meshPart, environment);
 
-        if (meshPart.getMesh().getIndexCount() > 0) { // indexed mesh?
-
-            //pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.wgpuBufferGetSize(indexBuffer));
+        if (meshPart.getMesh().getIndexCount() > 0)  // indexed mesh?
             pass.drawIndexed( meshPart.getSize(), instanceCount, meshPart.getOffset(), 0, renderablesCount-instanceCount);
-        }
         else
             pass.draw(meshPart.getSize(), instanceCount, meshPart.getOffset(), renderablesCount-instanceCount);
 

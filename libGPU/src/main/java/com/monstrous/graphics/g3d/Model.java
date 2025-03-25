@@ -167,10 +167,11 @@ public class Model implements Disposable {
 
         startLoad = System.currentTimeMillis();
         for(GLTFMesh gltfMesh : gltf.meshes){
+            // build a mesh for each primitive
             for(GLTFPrimitive primitive : gltfMesh.primitives){
-                Mesh m = loadMesh(gltf, gltf.rawBuffer, primitive );
-                meshes.add(m);
-                meshMap.put(primitive, m);
+                Mesh mesh = buildMesh(gltf,  gltf.rawBuffer, primitive );
+                meshes.add(mesh);
+                meshMap.put(primitive, mesh);
             }
         }
 
@@ -210,7 +211,7 @@ public class Model implements Disposable {
         if(gltfNode.rotation != null)
             node.rotation.set(gltfNode.rotation);
 
-        if(gltfNode.mesh >= 0){
+        if(gltfNode.mesh >= 0){ // this node refers to a mesh
             node.nodeParts = new ArrayList<>();
             GLTFMesh gltfMesh = gltf.meshes.get(gltfNode.mesh);
             for( GLTFPrimitive primitive : gltfMesh.primitives) {
@@ -220,8 +221,7 @@ public class Model implements Disposable {
                     throw new RuntimeException("GLTF: Expect primitive.indices to refer to SCALAR accessor");
 
                 Mesh m = meshMap.get(primitive);
-                MeshPart meshPart = new MeshPart(m, "part", WGPUPrimitiveTopology.TriangleList,0, indexAccessor.count);
-                //MeshPart meshPart = new MeshPart(m, indexAccessor.byteOffset, indexAccessor.count);
+                MeshPart meshPart = new MeshPart(m, "part", WGPUPrimitiveTopology.TriangleList, 0, indexAccessor.count);
                 node.nodeParts.add( new NodePart(meshPart, materials.get(primitive.material)) );
             }
         }
@@ -235,10 +235,11 @@ public class Model implements Disposable {
     }
 
 
-    private Mesh loadMesh(GLTF gltf, GLTFRawBuffer rawBuffer, GLTFPrimitive primitive){
+    private Mesh buildMesh(GLTF gltf, GLTFRawBuffer rawBuffer, GLTFPrimitive primitive){
 
         int indexAccessorId = primitive.indices;
         GLTFAccessor indexAccessor = gltf.accessors.get(indexAccessorId);
+
         GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
         if(view.buffer != 0)
             throw new RuntimeException("GLTF: Can only support buffer 0");
@@ -246,18 +247,29 @@ public class Model implements Disposable {
         offset += indexAccessor.byteOffset;
 
         MeshData meshData = new MeshData();
+
+        // todo adjust this based on the file contents:
+        meshData.vertexAttributes = new VertexAttributes();
+        int location = 0;
+        meshData.vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x3, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, location++);
+//            if(hasNormalMap) {
+        meshData.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, location++);
+//            }
+        meshData.vertexAttributes.end();
+
         if(indexAccessor.componentType != GLTF.USHORT16 && indexAccessor.componentType != GLTF.UINT32 )
             throw new RuntimeException("GLTF: Can only support short or integer index");
 
         rawBuffer.byteBuffer.position(offset);
 
-        // todo try to get meshParts to use a common mesh
-
         int max = -1;
         if(indexAccessor.componentType == GLTF.USHORT16){
             meshData.indexSizeInBytes = 2; // 16 bit index
             for(int i = 0; i < indexAccessor.count; i++){
-                meshData.indexValues.add((int)rawBuffer.byteBuffer.getShort());
+                meshData.indexValues.add( (int)rawBuffer.byteBuffer.getShort());
             }
         } else {
             meshData.indexSizeInBytes = 4; // 32 bit index
@@ -265,12 +277,12 @@ public class Model implements Disposable {
                 int index = rawBuffer.byteBuffer.getInt();
                 if(index > max)
                     max = index;
-                meshData.indexValues.add(index);
+                meshData.indexValues.add( index);
             }
             //System.out.println("max index "+max); // TMP
         }
 
-        boolean hasNormalMap = materials.get(primitive.material).hasNormalMap;
+        boolean hasNormalMap = meshData.vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT);
 
         int positionAccessorId = -1;
         int normalAccessorId = -1;
@@ -427,19 +439,6 @@ public class Model implements Disposable {
                 meshData.vertFloats.add(bitangent.z);
             }
         }
-
-        // todo adjust this based on the file contents:
-        meshData.vertexAttributes = new VertexAttributes();
-        int location = 0;
-        meshData.vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x3, location++);
-        meshData.vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, location++);
-        meshData.vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, location++);
-        if(hasNormalMap) {
-            meshData.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, location++);
-            meshData.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, location++);
-        }
-        meshData.vertexAttributes.end();
-        //meshData.vertexAttributes.hasNormalMap = hasNormalMap;
 
         return new Mesh(meshData);
     }

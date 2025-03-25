@@ -44,8 +44,12 @@ struct ModelUniforms {
 
 struct VertexInput {
     @location(0) position: vec3f,
+#ifdef TEXTURE_COORDINATE
     @location(1) uv: vec2f,
+#endif
+#ifdef NORMAL
     @location(2) normal: vec3f,
+#endif
 };
 
 struct VertexOutput {
