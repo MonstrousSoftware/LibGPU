@@ -103,7 +103,6 @@ public class Model implements Disposable {
     private void readGLTF(String filePath) {
         meshMap.clear();
         GLTF gltf = GLTFLoader.load(filePath);      // TMP
-        //GLTFRawBuffer rawBuffer = gltf.rawBuffer; // new GLTFRawBuffer(gltf.buffers.get(0).uri);           // assume 1 buffer
         processGLTF(gltf);
     }
 
@@ -113,11 +112,6 @@ public class Model implements Disposable {
         GLTFImage image = gltf.images.get( gltf.textures.get(textureId).source );
         if(image.uri != null){
             bytes = Files.internal(image.uri).readAllBytes();
-//            try {
-//                bytes = Files.readAllBytes(Paths.get(image.uri));
-//            } catch (IOException e) {
-//                throw new RuntimeException("Texture file not found: "+image.uri);
-//            }
         } else {
             GLTFBufferView view = gltf.bufferViews.get(image.bufferView);
             if(view.buffer != 0)

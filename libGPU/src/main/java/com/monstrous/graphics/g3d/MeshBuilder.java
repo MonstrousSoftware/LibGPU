@@ -58,6 +58,7 @@ public class MeshBuilder {
     }
 
     public Mesh end(){
+        if(mesh == null) throw new IllegalStateException("MeshBuilder: must call begin() before end().");
         mesh.setVertexAttributes(vertexAttributes);
         //mesh.setTopology(topology);
         float[] vertexData = new float[stride*numVertices];
@@ -97,8 +98,9 @@ public class MeshBuilder {
         mesh.setVertices(vertexData);
         mesh.setIndices(indices, numIndices);
 
-
-        return mesh;
+        Mesh m = mesh;
+        mesh = null;
+        return m;
     }
 
     public MeshPart part(String name, WGPUPrimitiveTopology topology){
@@ -110,6 +112,7 @@ public class MeshBuilder {
         return part;
     }
 
+    // implied by end()
     public void endPart(){
         if(part != null){
             part.setSize(numIndices - part.getOffset());
