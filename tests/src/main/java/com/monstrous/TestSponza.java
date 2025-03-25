@@ -10,6 +10,7 @@ import com.monstrous.graphics.webgpu.RenderPassType;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.webgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
 
@@ -198,13 +199,23 @@ public class TestSponza extends ApplicationAdapter {
     private void buildBoxes(){
         boxes = new ArrayList<>();
 
+        MeshBuilder mb = new MeshBuilder();
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
+        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+        // beware: the shaderLocation values have to match the shader
+        vertexAttributes.end();
+
+        mb.begin(vertexAttributes, 256, 256);
+
         for(ModelInstance instance : instances){
             Node rootNode = instance.model.rootNodes.get(0);
             for(NodePart part : rootNode.nodeParts){
 
                 BoundingBox bb = new BoundingBox(part.meshPart.getMesh().boundingBox);
                 bb.transform(rootNode.globalTransform);
-                MeshPart meshPart = BoxShapeBuilder.build(bb);
+                MeshPart meshPart = BoxShapeBuilder.build(mb, bb);
                 Model model = new Model(meshPart, new Material(Color.GREEN));   // todo dispose
                 boxes.add(new ModelInstance(model, instance.transform));
             }

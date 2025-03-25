@@ -36,14 +36,29 @@ public class TestModelBuild extends ApplicationAdapter {
         modelInstances = new ArrayList<>();
 
         texture = new Texture("textures/jackRussel.png");
-        modelBox = buildCube();
+
+        MeshBuilder mb = new MeshBuilder();
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
+        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+        // beware: the shaderLocation values have to match the shader
+        vertexAttributes.end();
+
+        mb.begin(vertexAttributes, 16384, 16384);
+
+
+
+        modelBox = buildCubeShape(mb);
         modelInstances.add( new ModelInstance(modelBox, 0,0,0) );
 
-        modelSphere = buildSphere();
+        modelSphere = buildSphere(mb);
         modelInstances.add( new ModelInstance(modelSphere, 0,2,0) );
 
-        modelBox2 = buildWireFrameCube();
+
+        modelBox2 = buildWireFrameCube(mb);
         modelInstances.add( new ModelInstance(modelBox2, 0,0,0) );
+        mb.end();
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(6, 4, -6);
@@ -63,7 +78,7 @@ public class TestModelBuild extends ApplicationAdapter {
         modelBatch = new ModelBatch();
     }
 
-    private Model buildModel(){
+    private Model buildRawModel(){
 
         // build a cube
         float[]  vertexData = {
@@ -171,22 +186,23 @@ public class TestModelBuild extends ApplicationAdapter {
         return new Model(part, material);
     }
 
-    private Model buildCube2(){
-        MeshPart meshPart = BoxShapeBuilder.build(2, 2, 2);
+    private Model buildCubeShape(MeshBuilder mb){
+
+        MeshPart meshPart = BoxShapeBuilder.build(mb, 2, 2, 2,  WGPUPrimitiveTopology.TriangleList);
         Material material = new Material( texture );
 
         return new Model(meshPart, material);
     }
 
-    private Model buildSphere(){
-        MeshPart meshPart = SphereShapeBuilder.build(1, 64);
+    private Model buildSphere(MeshBuilder mb){
+        MeshPart meshPart = SphereShapeBuilder.build(mb, 1, 16,  WGPUPrimitiveTopology.TriangleStrip);
         Material material = new Material( texture );
 
         return new Model(meshPart, material);
     }
 
-    private Model buildWireFrameCube(){
-        MeshPart meshPart = BoxShapeBuilder.build(4, 4, 4, WGPUPrimitiveTopology.LineList);
+    private Model buildWireFrameCube(MeshBuilder mb){
+        MeshPart meshPart = BoxShapeBuilder.build(mb, 4, 4, 4, WGPUPrimitiveTopology.LineList);
         Material material = new Material( Color.BLUE );
 
         return new Model(meshPart, material);

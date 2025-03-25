@@ -98,10 +98,10 @@ public class Mesh {
         }
     }
 
-    public void setIndices(short[] indices){
+    public void setIndices(short[] indices, int indexCount){
         int indexSizeInBytes = 2;
+        this.indexCount = indexCount;
         indexFormat = WGPUIndexFormat.Uint16;
-        indexCount = indices.length;
         int indexBufferSize = indexCount * indexSizeInBytes;
         indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
 

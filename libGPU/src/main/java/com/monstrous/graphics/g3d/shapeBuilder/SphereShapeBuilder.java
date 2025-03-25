@@ -1,33 +1,22 @@
 package com.monstrous.graphics.g3d.shapeBuilder;
 
-import com.monstrous.graphics.VertexAttribute;
-import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.g3d.MeshBuilder;
 import com.monstrous.graphics.g3d.MeshPart;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
-import com.monstrous.webgpu.WGPUVertexFormat;
 
 public class SphereShapeBuilder {
 
 
-    public static MeshPart build(float radius, int steps) {
-        return build(radius, steps, WGPUPrimitiveTopology.TriangleStrip);
+    public static MeshPart build(MeshBuilder mb, float radius, int steps) {
+        return build(mb, radius, steps, WGPUPrimitiveTopology.TriangleStrip);
     }
 
     /** build a sphere mesh with given radius and number of subdivision steps to use. */
-    public static MeshPart build(float radius, int steps, WGPUPrimitiveTopology topology) {
+    public static MeshPart build(MeshBuilder mb, float radius, int steps, WGPUPrimitiveTopology topology) {
         if(steps < 2)
             throw new IllegalArgumentException("buildSphere: steps must be >= 2");
         final int x_steps = steps;
         final int y_steps = steps;
-
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
-        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-        // beware: the shaderLocation values have to match the shader
-
-        vertexAttributes.end();
 
         int numIndices;
         switch(topology) {
@@ -42,9 +31,10 @@ public class SphereShapeBuilder {
 
         // Algorithm based on Learn OpenGL chapter on PBR
 
-        MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, (x_steps +1)*(y_steps +1), numIndices);
+        //MeshBuilder mb = new MeshBuilder();
+        //mb.begin(vertexAttributes, (x_steps +1)*(y_steps +1), numIndices);
         MeshPart part = mb.part("sphere", topology);
+        short firstIndex = (short)mb.getVertexCount();  // get current offset in vertex buffer
 
         double PI = Math.PI;
         for(int xstep = 0; xstep <= x_steps; xstep++){
@@ -68,18 +58,18 @@ public class SphereShapeBuilder {
         for(int ystep = 0; ystep < y_steps; ystep++){
             if(!oddRow){
                 for(int xstep = 0; xstep <= x_steps; xstep++){
-                    mb.addIndex((short)(ystep * (x_steps +1) + xstep));
-                    mb.addIndex((short)((ystep+1) * (x_steps +1) + xstep));
+                    mb.addIndex( (short)(firstIndex + ystep * (x_steps +1) + xstep));
+                    mb.addIndex((short)(firstIndex + (ystep+1) * (x_steps +1) + xstep));
                 }
             } else {
                 for(int xstep = x_steps; xstep >= 0; xstep--) {
-                    mb.addIndex((short) ((ystep + 1) * (x_steps + 1) + xstep));
-                    mb.addIndex((short) (ystep * (x_steps + 1) + xstep));
+                    mb.addIndex((short) (firstIndex + (ystep + 1) * (x_steps + 1) + xstep));
+                    mb.addIndex((short) (firstIndex + ystep * (x_steps + 1) + xstep));
                 }
             }
             oddRow = !oddRow;
         }
-        mb.end();
+        mb.endPart();
         return part;
     }
 }

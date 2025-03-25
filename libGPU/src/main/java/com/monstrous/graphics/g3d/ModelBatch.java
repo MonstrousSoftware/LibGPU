@@ -54,6 +54,7 @@ public class ModelBatch implements Disposable {
     private BindGroup frameBindGroup;
     private BindGroup instancingBindGroup;
     private Material prevMaterial;
+    private Mesh currentMesh;
     private Camera camera;
 
     private final Pipelines pipelines;
@@ -226,6 +227,7 @@ public class ModelBatch implements Disposable {
         prevMeshPart = null;
         instanceCount = 0;
         renderablesCount = 0;
+        currentMesh = null;
         for(Renderable renderable : visibleRenderables) {
             emit(renderable);
         }
@@ -292,14 +294,22 @@ public class ModelBatch implements Disposable {
     private void emitMeshPart(MeshPart meshPart, int instanceCount, int renderablesCount) {
         if(meshPart == null)
             return;
-        Pointer vertexBuffer = meshPart.getMesh().getVertexBuffer().getHandle();
-        pass.setVertexBuffer(0, vertexBuffer, 0, meshPart.getMesh().getVertexBuffer().getSize());
+
+        // switch mesh? bind vertex buffer and index buffer
+        //if(meshPart.getMesh() != currentMesh){
+            currentMesh = meshPart.getMesh();
+            Pointer vertexBuffer = currentMesh.getVertexBuffer().getHandle();
+            pass.setVertexBuffer(0, vertexBuffer, 0, currentMesh.getVertexBuffer().getSize());
+            if (currentMesh.getIndexCount() > 0) { // indexed mesh?
+                Pointer indexBuffer = currentMesh.getIndexBuffer().getHandle();
+                pass.setIndexBuffer(indexBuffer, meshPart.getMesh().indexFormat, 0, currentMesh.getIndexBuffer().getSize());
+            }
+       // }
 
         setPipeline(pass,  meshPart, environment);
 
         if (meshPart.getMesh().getIndexCount() > 0) { // indexed mesh?
-            Pointer indexBuffer = meshPart.getMesh().getIndexBuffer().getHandle();
-            pass.setIndexBuffer(indexBuffer, meshPart.getMesh().indexFormat, 0, meshPart.getMesh().getIndexBuffer().getSize());
+
             //pass.setIndexBuffer(indexBuffer, meshPart.mesh.indexFormat, 0, webGPU.wgpuBufferGetSize(indexBuffer));
             pass.drawIndexed( meshPart.getSize(), instanceCount, meshPart.getOffset(), 0, renderablesCount-instanceCount);
         }

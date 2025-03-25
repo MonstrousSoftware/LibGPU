@@ -60,7 +60,7 @@ public class MeshBuilder {
     public Mesh end(){
         mesh.setVertexAttributes(vertexAttributes);
         //mesh.setTopology(topology);
-        float[] vertexData = new float[stride*vertices.length];
+        float[] vertexData = new float[stride*numVertices];
         int vindex = 0;
         for(int i = 0; i < numVertices; i++){
             VertexInfo vi = vertices[i];
@@ -95,7 +95,7 @@ public class MeshBuilder {
         }
         endPart();
         mesh.setVertices(vertexData);
-        mesh.setIndices(indices);
+        mesh.setIndices(indices, numIndices);
 
 
         return mesh;
@@ -106,13 +106,19 @@ public class MeshBuilder {
         this.topology = topology;
         part = new MeshPart(mesh, name, topology);
         part.setOffset(numIndices);     // support for Mesh without indices?
+        System.out.println("Offset for "+name+" : "+numIndices);
         return part;
     }
 
-    private void endPart(){
+    public void endPart(){
         if(part != null){
             part.setSize(numIndices - part.getOffset());
+            part = null;
         }
+    }
+
+    public int getVertexCount(){
+        return numVertices;
     }
 
     /** note: color per vertex is not supported in standard shader */

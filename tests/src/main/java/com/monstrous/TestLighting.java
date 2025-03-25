@@ -1,9 +1,7 @@
 package com.monstrous;
 
-import com.monstrous.graphics.Camera;
-import com.monstrous.graphics.Color;
-import com.monstrous.graphics.Material;
-import com.monstrous.graphics.PerspectiveCamera;
+import com.monstrous.graphics.*;
+import com.monstrous.graphics.g3d.MeshBuilder;
 import com.monstrous.graphics.g3d.Model;
 import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.g3d.ModelInstance;
@@ -14,6 +12,7 @@ import com.monstrous.graphics.lights.Environment;
 import com.monstrous.graphics.lights.PointLight;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
 
@@ -37,7 +36,17 @@ public class TestLighting extends ApplicationAdapter {
 
         disposables = new ArrayList<>();
         instances = new ArrayList<>();
-        Model modelGround = new Model(BoxShapeBuilder.build(20, 0.1f, 20), new Material(new Color(0x85E7A0)));
+        MeshBuilder mb = new MeshBuilder();
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
+        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+        // beware: the shaderLocation values have to match the shader
+        vertexAttributes.end();
+
+        mb.begin(vertexAttributes, 256, 256);
+
+        Model modelGround = new Model(BoxShapeBuilder.build(mb, 20, 0.1f, 20), new Material(new Color(0x85E7A0)));
         disposables.add(modelGround);
         ModelInstance instance = new ModelInstance(modelGround, 0,0.0f, 0);
         instances.add(instance);
@@ -46,7 +55,7 @@ public class TestLighting extends ApplicationAdapter {
         mat.metallicFactor = 0.5f;
         mat.roughnessFactor = 0.45f;
 
-        modelSphere = new Model(SphereShapeBuilder.build(.5f, 64),mat);
+        modelSphere = new Model(SphereShapeBuilder.build(mb, .5f, 64),mat);
         disposables.add(modelGround);
         ModelInstance instance3 = new ModelInstance(modelSphere, 0, 0.5f, 0);
         instances.add(instance3);
@@ -60,34 +69,34 @@ public class TestLighting extends ApplicationAdapter {
         DirectionalLight dir1 = new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0));
         dir1.setIntensity(2f);
         environment.add( dir1 );
-        Model lightD1 = new Model(SphereShapeBuilder.build(0.2f, 16), new Material(Color.WHITE));
+        Model lightD1 = new Model(SphereShapeBuilder.build(mb, 0.2f, 16), new Material(Color.WHITE));
         disposables.add(lightD1);
         instances.add(new ModelInstance(lightD1, -3, 7, 0));
 
         DirectionalLight dir2 = new DirectionalLight(new Color(1,1,1,1), new Vector3(-.3f,-.5f,.3f));
         dir2.setIntensity(1f);
         environment.add( dir2 );
-        Model lightD2 = new Model(SphereShapeBuilder.build(0.2f, 16), new Material(Color.WHITE));
+        Model lightD2 = new Model(SphereShapeBuilder.build(mb, 0.2f, 16), new Material(Color.WHITE));
         disposables.add(lightD2);
         instances.add(new ModelInstance(lightD2, 3, 5, -3));
 
         environment.add( new DirectionalLight(Color.BLUE, new Vector3(.7f,-.2f,0)));
-        Model lightD3 = new Model(SphereShapeBuilder.build(0.2f, 16), new Material(Color.BLUE));
+        Model lightD3 = new Model(SphereShapeBuilder.build(mb, 0.2f, 16), new Material(Color.BLUE));
         disposables.add(lightD3);
         instances.add(new ModelInstance(lightD3, -7, 2, 0));
 
         environment.add( new DirectionalLight(Color.RED, new Vector3(0f,-1f,0)));
-        Model lightD4 = new Model(SphereShapeBuilder.build(0.2f, 16), new Material(Color.RED));
+        Model lightD4 = new Model(SphereShapeBuilder.build(mb, 0.2f, 16), new Material(Color.RED));
         disposables.add(lightD4);
         instances.add(new ModelInstance(lightD4, 0, 10, 0));
 
         environment.add( new PointLight(Color.RED, new Vector3(3f,1f,3), 15f));
-        Model light = new Model(SphereShapeBuilder.build(0.2f, 16), new Material(Color.RED));
+        Model light = new Model(SphereShapeBuilder.build(mb, 0.2f, 16), new Material(Color.RED));
         disposables.add(light);
         instances.add(new ModelInstance(light, 3f, 1f, 3f));
 
         environment.add( new PointLight(new Color(1,0,1,1), new Vector3(-3f,1f,3), 5f));
-        Model light2 = new Model(SphereShapeBuilder.build(0.2f, 16), new Material(new Color(1, 0, 1, 1)));
+        Model light2 = new Model(SphereShapeBuilder.build(mb, 0.2f, 16), new Material(new Color(1, 0, 1, 1)));
         disposables.add(light2);
         instances.add(new ModelInstance(light2, -3f, 1f, 3f));
 

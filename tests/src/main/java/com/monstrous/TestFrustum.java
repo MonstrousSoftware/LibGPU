@@ -10,6 +10,7 @@ import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
 import java.util.ArrayList;
 
@@ -54,7 +55,7 @@ public class TestFrustum extends ApplicationAdapter {
         subCam.update();
         time = 0;
 
-        frustumModel = buildFrustumModel(subCam);
+
         instances = new ArrayList<>();
         subCamMatrix = new Matrix4();
 
@@ -80,11 +81,24 @@ public class TestFrustum extends ApplicationAdapter {
 
         modelBatch = new ModelBatch();
 
+        MeshBuilder mb = new MeshBuilder();
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
+        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+        // beware: the shaderLocation values have to match the shader
+        vertexAttributes.end();
+
+        mb.begin(vertexAttributes, 256, 256);
+
+        frustumModel = buildFrustumModel(mb, subCam);
+
         WGPUPrimitiveTopology topology = WGPUPrimitiveTopology.TriangleList;
-        invisibleBlockModel = new Model(BoxShapeBuilder.build(0.1f, 0.1f, 0.1f), new Material(Color.BLUE));
-        visibleBlockModel = new Model(BoxShapeBuilder.build(0.1f, 0.1f, 0.1f),  new Material(Color.GREEN));
-        bigBlockModel = new Model(BoxShapeBuilder.build(1f, 1f, 1f),  new Material(Color.ORANGE));
-        bigBlockModel2 = new Model(BoxShapeBuilder.build(bigBlockModel.meshes.get(0).boundingBox),  new Material(Color.RED));
+        invisibleBlockModel = new Model(BoxShapeBuilder.build(mb, 0.1f, 0.1f, 0.1f), new Material(Color.BLUE));
+        visibleBlockModel = new Model(BoxShapeBuilder.build(mb, 0.1f, 0.1f, 0.1f),  new Material(Color.GREEN));
+        bigBlockModel = new Model(BoxShapeBuilder.build(mb, 1f, 1f, 1f),  new Material(Color.ORANGE));
+        bigBlockModel2 = new Model(BoxShapeBuilder.build(mb, bigBlockModel.meshes.get(0).boundingBox),  new Material(Color.RED));
+        mb.end();
 
         populate();
 
@@ -130,15 +144,15 @@ public class TestFrustum extends ApplicationAdapter {
 
 
 
-    private Model buildFrustumModel(PerspectiveCamera cam) {
-        MeshPart meshPart = FrustumShapeBuilder.build(cam.frustum);
+    private Model buildFrustumModel(MeshBuilder mb, PerspectiveCamera cam) {
+        MeshPart meshPart = FrustumShapeBuilder.build(mb, cam.frustum);
         Material material = new Material( Color.GREEN );
         return new Model(meshPart,  material);
     }
 
 
-    private Model buildModel(float size){
-        MeshPart meshPart = BoxShapeBuilder.build(size, size, size);
+    private Model buildModel(MeshBuilder mb, float size){
+        MeshPart meshPart = BoxShapeBuilder.build(mb, size, size, size);
         Material material = new Material( Color.BLUE );
         return new Model(meshPart,  material);
     }
