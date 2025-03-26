@@ -1,5 +1,4 @@
-rootProject.name = 'CallingWebGPU'
-include 'triangle'
+rootProject.name = 'LibGPU'
 include 'libGPU'
 include 'tests'
 

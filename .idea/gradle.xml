@@ -11,7 +11,6 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/libGPU" />
             <option value="$PROJECT_DIR$/tests" />
-            <option value="$PROJECT_DIR$/triangle" />
           </set>
         </option>
       </GradleProjectSettings>

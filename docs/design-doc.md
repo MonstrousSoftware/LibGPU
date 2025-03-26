@@ -65,3 +65,25 @@ ModelBatch will create a render pass that does multi-sampling.  Pipelines will a
 
 
 
+## Using HWND
+There is some interaction between GLFW and WebGPU in order to get a surface corresponding to the window created by GLFW.
+Elie Michel the following function for the conversion.
+```/**
+ * Get a WGPUSurface from a GLFW window.
+ */
+WGPUSurface glfwGetWGPUSurface(WGPUInstance instance, GLFWwindow* window);
+```
+
+This didn't really work from the Java layer by regarding HWND as a pointer.  It is better to regard it as an integer, get the HWND
+for the GLFW Window at Java level and pass that to a C util function to get a surface.
+
+
+
+## GLTF support
+
+We can load and display GLTF models now.
+Not supported: skins, animation, camera.
+GLTF Separate and GLB formats are supported, not GTLF embedded.
+Normal maps and Emissive maps are supported.
+
+

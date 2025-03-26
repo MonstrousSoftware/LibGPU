@@ -1,6 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
 import com.monstrous.graphics.g3d.shapeBuilder.SphereShapeBuilder;
@@ -31,6 +32,8 @@ public class TestModelBuild extends ApplicationAdapter {
     private Environment environment;
     private CameraController camController;
     private Texture texture;
+    private SpriteBatch batch;
+    private BitmapFont font;
 
     public void create() {
         modelInstances = new ArrayList<>();
@@ -46,10 +49,10 @@ public class TestModelBuild extends ApplicationAdapter {
         // beware: the shaderLocation values have to match the shader
         vertexAttributes.end();
 
-        // note that the shapes we build will become meshParts of a common mesh
-        // this means we don't need to swap vertex buffer and index buffer between rendering these shapes.
+        // Note that the shapes we build will become meshParts of a single mesh.
+        // This means we don't need to swap vertex buffer and index buffer between rendering these shapes.
         //
-        // also note that topology is defined per mesh part, not per mesh.
+        // Also note that topology (triangles, lines) is defined per mesh part, not per mesh.
         //
         mb.begin(vertexAttributes, 16384, 16384);
 
@@ -79,6 +82,9 @@ public class TestModelBuild extends ApplicationAdapter {
         LibGPU.input.setInputProcessor( camController );
 
         modelBatch = new ModelBatch();
+
+        batch = new SpriteBatch();
+        font = new BitmapFont();
     }
 
     /** demonstration of building a mesh without mesh builder or shape builder */
@@ -224,6 +230,10 @@ public class TestModelBuild extends ApplicationAdapter {
         modelBatch.begin(camera, environment);
         modelBatch.render(modelInstances);
         modelBatch.end();
+
+        batch.begin();
+        font.draw(batch, "Demonstration of models built in code, e.g. using MeshBuilder rather than loaded from a file.", 10, 50);
+        batch.end();
     }
 
     public void dispose(){
@@ -233,6 +243,8 @@ public class TestModelBuild extends ApplicationAdapter {
         modelBox2.dispose();
         modelBatch.dispose();
         texture.dispose();
+        batch.dispose();
+        font.dispose();
     }
 
     @Override
@@ -240,6 +252,7 @@ public class TestModelBuild extends ApplicationAdapter {
         camera.viewportWidth = width;
         camera.viewportHeight = height;
         camera.update();
+        batch.getProjectionMatrix().setToOrtho2D(0,0,width, height);
     }
 
 

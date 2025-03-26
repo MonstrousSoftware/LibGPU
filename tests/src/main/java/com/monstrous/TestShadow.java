@@ -65,9 +65,9 @@ public class TestShadow extends ApplicationAdapter {
         modelInstance2 = new ModelInstance(model2, 0,0,0);
         instances.add(modelInstance2);
 
-        model3 = new Model("models/waterbottle/WaterBottle.gltf");
-        ModelInstance modelInstance3 = new ModelInstance(model3, 0,1,0);
-        instances.add(modelInstance3);
+//        model3 = new Model("models/waterbottle/WaterBottle.gltf");
+//        ModelInstance modelInstance3 = new ModelInstance(model3, 0,1,0);
+//        instances.add(modelInstance3);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
