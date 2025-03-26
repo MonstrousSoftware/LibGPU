@@ -10,6 +10,7 @@ import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
+import com.monstrous.webgpu.WGPUTextureFormat;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
 import java.io.IOException;
@@ -18,7 +19,9 @@ import java.io.IOException;
 public class TestHDR extends ApplicationAdapter {
 
     private SpriteBatch batch;
-    private Texture texture;
+    private Texture textureEquirectangular;
+    private Texture textureSide;
+    private Texture depthMap;
     private ShaderProgram shader;
     private Mesh mesh;
     private Model model;
@@ -27,6 +30,7 @@ public class TestHDR extends ApplicationAdapter {
     private PerspectiveCamera camera;
     CameraController camController;
     Environment environment;
+    PerspectiveCamera cam;
 
 
 
@@ -41,12 +45,12 @@ public class TestHDR extends ApplicationAdapter {
 
         try {
             ibl.loadHDR(file);
-            texture = ibl.getHDRTexture();
+            textureEquirectangular = ibl.getHDRTexture();
         } catch(IOException e) {
             System.out.println("Cannot load HDR file.");
         }
 
-        model = buildUnitCube(texture);
+        model = buildUnitCube(textureEquirectangular);
         instance = new ModelInstance(model, 0,0,0);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -66,6 +70,16 @@ public class TestHDR extends ApplicationAdapter {
 
         modelBatch = new ModelBatch();
 
+        textureSide = new Texture(128, 128, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
+        depthMap = new Texture(128, 128, false, true, WGPUTextureFormat.Depth32Float, 1);
+
+        cam = new PerspectiveCamera(90, 128, 128);
+        cam.position.set(0,0,0);
+        cam.direction.set(0,0,1);
+        cam.update();
+
+
+
     }
 
 
@@ -80,10 +94,16 @@ public class TestHDR extends ApplicationAdapter {
         camController.update();
 
         ScreenUtils.clear(Color.BLUE);
+        modelBatch.begin(cam, environment, Color.WHITE, textureSide, depthMap);
+        modelBatch.render(instance);
+        modelBatch.end();
+
+
 
         batch.begin();
         //batch.setShader(shader);
-        batch.draw(texture, 0,0);
+        //batch.draw(textureEquirectangular, 0,0);
+        batch.draw(textureSide, 0,0);
         batch.end();
 
         modelBatch.begin(camera, environment);
@@ -94,7 +114,7 @@ public class TestHDR extends ApplicationAdapter {
     @Override
     public void dispose(){
         // cleanup
-        texture.dispose();
+        textureEquirectangular.dispose();
         batch.dispose();
         mesh.dispose();
         model.dispose();
