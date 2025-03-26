@@ -178,10 +178,8 @@ public class Application {
         LibGPU.instance = webGPU.wgpuCreateInstance(null);
 
         // get window surface
-        if(windowHandle != 0) {
+        if(windowHandle != 0)
             LibGPU.surface = JavaWebGPU.getUtils().glfwGetWGPUSurface(LibGPU.instance, windowHandle);
-            System.out.println("surface = " + LibGPU.surface);
-        }
 
         LibGPU.device = initDevice();
 
@@ -200,38 +198,45 @@ public class Application {
         webGPU.wgpuInstanceRelease(LibGPU.instance);
     }
 
+    /** obtain Device, create Queue */
     private Pointer initDevice() {
 
-        System.out.println("define adapter options");
+
         WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
         options.setNextInChain();
         options.setCompatibleSurface(LibGPU.surface);
         options.setBackendType(LibGPU.app.configuration.backend);
         options.setPowerPreference(WGPUPowerPreference.HighPerformance);
 
-        System.out.println("defined adapter options");
+        if(LibGPU.app.configuration.backend == WGPUBackendType.Null)
+            throw new IllegalStateException("Request Adapter: Back end 'Null' only valid if config.noWindow is true");
 
         // Get Adapter
         Pointer adapter = getAdapterSync(LibGPU.instance, options);
-        System.out.println("adapter = " + adapter);
+        if(adapter == null){
+            System.out.println("Configured adapter back end ("+LibGPU.app.configuration.backend+") not available, requesting fallback");
+            options.setBackendType(WGPUBackendType.Undefined);
+            options.setPowerPreference(WGPUPowerPreference.HighPerformance);
+            adapter = getAdapterSync(LibGPU.instance, options);
+        }
 
-        LibGPU.supportedLimits = WGPUSupportedLimits.createDirect();
-        WGPUSupportedLimits supportedLimits = LibGPU.supportedLimits;
-        webGPU.wgpuAdapterGetLimits(adapter, supportedLimits);
-        System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
-        System.out.println("adapter maxBindGroups " + supportedLimits.getLimits().getMaxBindGroups());
 
-        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
-        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
-        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
-        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
+//        LibGPU.supportedLimits = WGPUSupportedLimits.createDirect();
+//        WGPUSupportedLimits supportedLimits = LibGPU.supportedLimits;
+//        webGPU.wgpuAdapterGetLimits(adapter, supportedLimits);
+//        System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
+//        System.out.println("adapter maxBindGroups " + supportedLimits.getLimits().getMaxBindGroups());
+//
+//        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
+//        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
+//        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
+//        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
 
 
         WGPUAdapterProperties adapterProperties = WGPUAdapterProperties.createDirect();
         adapterProperties.setNextInChain();
 
         webGPU.wgpuAdapterGetProperties(adapter, adapterProperties);
-
         System.out.println("VendorID: " + adapterProperties.getVendorID());
         System.out.println("Vendor name: " + adapterProperties.getVendorName());
         System.out.println("Device ID: " + adapterProperties.getDeviceID());
@@ -291,13 +296,13 @@ public class Application {
         };
         webGPU.wgpuDeviceSetUncapturedErrorCallback(device, deviceCallback, null);
 
-        webGPU.wgpuDeviceGetLimits(device, supportedLimits);
-        System.out.println("device maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
-
-        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
-        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
-        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
-        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
+//        webGPU.wgpuDeviceGetLimits(device, supportedLimits);
+//        System.out.println("device maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
+//
+//        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
+//        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
+//        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
+//        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
 
 
         if (configuration.enableGPUtiming && !webGPU.wgpuDeviceHasFeature(device, WGPUFeatureName.TimestampQuery)) {
@@ -337,6 +342,8 @@ public class Application {
     private Pointer getAdapterSync(Pointer instance, WGPURequestAdapterOptions options){
 
         Pointer userBuf = JavaWebGPU.createLongArrayPointer(new long[1]);
+        userBuf.putPointer(0, null);
+
         WGPURequestAdapterCallback callback = (WGPURequestAdapterStatus status, Pointer adapter, String message, Pointer userdata) -> {
             if(status == WGPURequestAdapterStatus.Success)
                 userdata.putPointer(0, adapter);

@@ -115,9 +115,6 @@ public class WindowedApp {
         glfwSetCharCallback(window, charCallback);
         glfwSetMouseButtonCallback(window, mouseCallback);
 
-
-
-        System.out.println("window from glfwCreateWindow = "+Long.toString(window, 16));
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 
@@ -125,7 +122,6 @@ public class WindowedApp {
         System.out.println("Window title: " + title);
 
         windowHandle = GLFWNativeWin32.glfwGetWin32Window(window);
-        System.out.println("Window HWND: " + Long.toString(windowHandle, 16));
 
 
         // Get the thread stack and push a new frame
