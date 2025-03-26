@@ -91,18 +91,18 @@ public class Texture {
         this.height = info.height.intValue();
         this.nativeFormat = info.format.intValue();
         Pointer pixelPtr = info.pixels.get();
-        if(nativeFormat == 12) { // HDR image
-            format = WGPUTextureFormat.RGBA16Float;
-            System.out.println("Reading HDR image: "+file);
-        }
+//        if(nativeFormat == 12) { // HDR image
+//            format = WGPUTextureFormat.RGBA16Float;
+//            System.out.println("Reading HDR image: "+file);
+//        }
 
         mipLevelCount = 1;
         if (mipMapping)
             mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));      // todo test for non-square, non POT etc.
         create( file.file.getName(),  mipLevelCount, renderAttachment, format, 1, 1);
-        if(nativeFormat == 12)  // HDR image
-            fillHDR(Color.RED); //loadHDR(pixelPtr);            // todo HACK
-        else
+//        if(nativeFormat == 12)  // HDR image
+//            fillHDR(Color.RED); //loadHDR(pixelPtr);            // todo HACK
+//        else
             load(pixelPtr, 0);
 
     }
