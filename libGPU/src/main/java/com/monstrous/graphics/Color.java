@@ -17,6 +17,10 @@ public class Color {
     public float b;
     public float a;
 
+    public Color(){
+        set(Color.WHITE);
+    }
+
     public Color(float r, float g, float b, float a) {
         this.r = r;
         this.g = g;
@@ -35,9 +39,9 @@ public class Color {
         this(color.r, color.g, color.b, color.a);
     }
 
-    /** use one integer value to set a color, typically provided as a hexadecimal RGB value e.g. 0xFFA0A0 */
+    /** use one integer value to set a color, typically provided as a hexadecimal RGBA value e.g. 0xA0A0A0FF */
     public Color(int hex){
-        this((hex >> 16)&0xFF, (hex >> 8)&0xFF, hex&0xFF);
+        this((hex>>24)&0xFF, (hex >> 16)&0xFF, (hex >> 8)&0xFF, hex&0xFF);
     }
 
     public void set(Color color) {

@@ -43,7 +43,7 @@ public class TestLighting extends ApplicationAdapter {
 
         mb.begin(vertexAttributes, 32000, 32000);
 
-        Model modelGround = new Model(BoxShapeBuilder.build(mb, 20, 0.1f, 20), new Material(new Color(0x85E7A0)));
+        Model modelGround = new Model(BoxShapeBuilder.build(mb, 20, 0.1f, 20), new Material(new Color(0x85E7A0FF)));
         disposables.add(modelGround);
         ModelInstance instance = new ModelInstance(modelGround, 0,0.0f, 0);
         instances.add(instance);

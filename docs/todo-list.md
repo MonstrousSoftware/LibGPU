@@ -5,7 +5,7 @@
 - generate IBL textures (env, irradiance, radians) from a single file
 - replace constant in shader for radiance LOD count by a uniform
 
-- support color per vertex as option in the standard shader
+- support (packed) color per vertex as option in the standard shader
 - DONE sphere builder
 - DONE frustum builder
 - other shapes

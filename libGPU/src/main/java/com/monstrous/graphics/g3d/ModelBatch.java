@@ -323,7 +323,8 @@ public class ModelBatch implements Disposable {
             return "shaders/modelbatchDepth.wgsl";
         else if (passType == RenderPassType.DEPTH_PREPASS)
             return "shaders/modelbatchDepthPrepass.wgsl";
-        return "shaders/modelbatchPBRUber.wgsl";
+        //return "shaders/modelbatchPBRUber.wgsl";
+        return "shaders/modelbatchEquilateral.wgsl";
     }
 
 

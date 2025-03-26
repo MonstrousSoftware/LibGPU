@@ -86,7 +86,7 @@ public class RenderPassBuilder {
         renderPassDescriptor.setOcclusionQuerySet(JavaWebGPU.createNullPointer());
 
 
-        if(  passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ||passType == RenderPassType.SHADOW_PASS ){
+        if(  passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ||passType == RenderPassType.SHADOW_PASS ){  // todo TEMP SHADOW FOR DEBUG
 
             renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
             renderPassColorAttachment.setNextInChain();

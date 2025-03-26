@@ -364,6 +364,40 @@ public class Texture {
         LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
    }
 
+    /** fill textures using bytes arranged as r, g, b, a, r, g, b, a, etc.
+     * Size of buffer must be 4*width*height
+     * */
+    public void fill(byte[] pixels) {
+        if(pixels.length != 4*width*height) throw new IllegalArgumentException("Texture.fill(): byte array is wrong size.");
+        // Arguments telling which part of the texture we upload to
+        // (together with the last argument of writeTexture)
+        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+        destination.setTexture(texture);
+        destination.setMipLevel(0);
+        destination.getOrigin().setX(0);
+        destination.getOrigin().setY(0);
+        destination.getOrigin().setZ(0);
+        destination.setAspect(WGPUTextureAspect.All);   // not relevant
+
+        // Arguments telling how the C++ side pixel memory is laid out
+        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+        source.setOffset(0);
+        source.setBytesPerRow(4 * width);
+        source.setRowsPerImage(height);
+
+        Pointer pixelPtr = JavaWebGPU.createByteArrayPointer(pixels);
+
+        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+        ext.setWidth(width);
+        ext.setHeight(height);
+        ext.setDepthOrArrayLayers(1);
+
+        destination.setMipLevel(0);
+
+        // N.B. using textureDesc.getSize() for param won't work!
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
+    }
+
     public void fillHDR(Color color) {
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
