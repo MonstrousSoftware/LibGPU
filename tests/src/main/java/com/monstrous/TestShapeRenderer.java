@@ -2,15 +2,10 @@ package com.monstrous;
 
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.g2d.ShapeRenderer;
-import com.monstrous.scene2d.Align;
-import com.monstrous.scene2d.Block;
-import com.monstrous.scene2d.Stage;
-import com.monstrous.scene2d.Table;
 import com.monstrous.utils.ScreenUtils;
 
 
 public class TestShapeRenderer extends ApplicationAdapter {
-
 
     private long startTime;
     private int frames;
@@ -21,7 +16,6 @@ public class TestShapeRenderer extends ApplicationAdapter {
         frames = 0;
 
         sr = new ShapeRenderer();
-
     }
 
     public void render(  ){
@@ -66,14 +60,12 @@ public class TestShapeRenderer extends ApplicationAdapter {
 
     public void dispose(){
         // cleanup
-        System.out.println("demo exit");
         sr.dispose();
     }
 
     @Override
     public void resize(int width, int height) {
-
-        System.out.println("demo got resize");
+        sr.getProjectionMatrix().setToOrtho2D(0,0, width, height);
     }
 
 

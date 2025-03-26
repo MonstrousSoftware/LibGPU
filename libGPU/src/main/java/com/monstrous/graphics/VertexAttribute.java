@@ -23,11 +23,12 @@ public class VertexAttribute {
     public static class Usage {
         static public final int POSITION = 1;
         static public final int COLOR = 2;
-        static public final int TEXTURE_COORDINATE = 4;
-        static public final int NORMAL= 8;
-        static public final int TANGENT = 16;
-        static public final int BITANGENT = 32;
-        static public final int GENERIC = 64;
+        static public final int COLOR_PACKED = 4;
+        static public final int TEXTURE_COORDINATE = 8;
+        static public final int NORMAL= 16;
+        static public final int TANGENT = 32;
+        static public final int BITANGENT = 64;
+        static public final int GENERIC = 128;
     }
 
 

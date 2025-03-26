@@ -19,7 +19,6 @@ import jnr.ffi.Pointer;
 
 public class ShapeRenderer implements Disposable {
     private WebGPU_JNI webGPU;
-    //private ShaderProgram shader;
     private int maxShapes;
     private boolean begun;
     private int vertexSize;
@@ -54,9 +53,11 @@ public class ShapeRenderer implements Disposable {
         begun = false;
         webGPU = LibGPU.webGPU;
 
-        // vertex: x, y, r, g, b, a
-        vertexSize = 6; // floats
-        //shader = new ShaderProgram("shaders/shape.wgsl");
+        vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",    WGPUVertexFormat.Float32x2, 0 );
+        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED, "color",       WGPUVertexFormat.Unorm8x4, 1 );
+        vertexAttributes.end();
+        vertexSize = vertexAttributes.getVertexSizeInBytes() / Float.BYTES;
 
         indexValues = new short[maxShapes * 6];    // 6 indices per rectangle
         vertFloats = new float[maxShapes * 4 * vertexSize]; // 4 points per rectangle
@@ -71,10 +72,7 @@ public class ShapeRenderer implements Disposable {
         bindGroupLayout = createBindGroupLayout();
         pipelineLayout = makePipelineLayout(bindGroupLayout);
 
-        vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",    WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add(VertexAttribute.Usage.COLOR, "color",       WGPUVertexFormat.Float32x4, 1 );
-        vertexAttributes.end();
+;
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, "shaders/shape.wgsl");
@@ -227,31 +225,19 @@ public class ShapeRenderer implements Disposable {
         int i = numRects * 4 * vertexSize;
         vertFloats[i++] = x1-N.x;
         vertFloats[i++] = y1+N.y;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();
 
         vertFloats[i++] = x2-N.x;
         vertFloats[i++] = y2+N.y;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();
 
         vertFloats[i++] = x2+N.x;
         vertFloats[i++] = y2-N.y;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();
 
         vertFloats[i++] = x1+N.x;
         vertFloats[i++] = y1-N.y;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();;
 
         int k = numRects * 6;
         short start = (short)(numRects * 4);
@@ -271,31 +257,19 @@ public class ShapeRenderer implements Disposable {
         int i = numRects * 4 * vertexSize;
         vertFloats[i++] = x;
         vertFloats[i++] = y;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();
 
         vertFloats[i++] = x;
         vertFloats[i++] = y + h;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();
 
         vertFloats[i++] = x + w;
         vertFloats[i++] = y + h;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();;
 
         vertFloats[i++] = x + w;
         vertFloats[i++] = y;
-        vertFloats[i++] = tint.r;
-        vertFloats[i++] = tint.g;
-        vertFloats[i++] = tint.b;
-        vertFloats[i++] = tint.a;
+        vertFloats[i++] = tint.toFloatBits();
 
         int k = numRects * 6;
         short start = (short)(numRects * 4);

@@ -1,5 +1,6 @@
 package com.monstrous;
 
+import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g2d.SpriteBatch;
@@ -40,24 +41,27 @@ public class TestSpriteBatchPerformance extends ApplicationAdapter {
 
             batch.draw(texture,  x, y, 32, 32);
         }
-        batch.end();
+
 
 
         // At the end of the frame
-        if (System.nanoTime() - startTime > 1000000000) {
-            System.out.println("SpriteBatch maxSpritesInBatch: " + batch.maxSpritesInBatch + " renderCalls: "+batch.renderCalls  );
+        if (System.nanoTime() - startTime > 100000000) {
+            String msg = "SpriteBatch maxSpritesInBatch: " + batch.maxSpritesInBatch + " renderCalls: "+batch.renderCalls;
+            String msg1 = "SpriteBatch : fps: " + frames + " GPU: "+LibGPU.app.getAverageGPUtime()+" microseconds";
+            System.out.println(msg1);
+            System.out.println(msg);
 
-            System.out.println("SpriteBatch : fps: " + frames + " GPU: "+LibGPU.app.getAverageGPUtime()+" microseconds"  );
             frames = 0;
             startTime = System.nanoTime();
         }
         frames++;
 
+        batch.end();
+
     }
 
     public void dispose(){
         // cleanup
-        System.out.println("demo exit");
         texture.dispose();
         batch.dispose();
     }

@@ -56,4 +56,12 @@ public class Color {
     public int toIntBits () {
         return ((int)(255 * a) << 24) | ((int)(255 * b) << 16) | ((int)(255 * g) << 8) | ((int)(255 * r));
     }
+
+    /** Encodes the ABGR int color as a float. The alpha is compressed to use only even numbers between 0-254 to avoid using bits
+     * in the NaN range (see {@link Float#intBitsToFloat(int)} javadocs). Rendering which uses colors encoded as floats should
+     * expand the 0-254 back to 0-255, else colors cannot be fully opaque. */
+    public float toFloatBits() {
+        int packed = ((int)(255 * a) << 24) | ((int)(255 * b) << 16) | ((int)(255 * g) << 8) | ((int)(255 * r));
+        return Float.intBitsToFloat(packed & 0xfeffffff);
+    }
 }

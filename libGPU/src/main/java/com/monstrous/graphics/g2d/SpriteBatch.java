@@ -65,11 +65,11 @@ public class SpriteBatch implements Disposable {
         vertexAttributes = new VertexAttributes();
         vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",        WGPUVertexFormat.Float32x2, 0 );
         vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv",    WGPUVertexFormat.Float32x2, 1 );
-        vertexAttributes.add(VertexAttribute.Usage.COLOR,"color",               WGPUVertexFormat.Float32x4, 2 );
+        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color",        WGPUVertexFormat.Unorm8x4, 2 );
         vertexAttributes.end();
         defaultVertexAttributes = vertexAttributes;
 
-        // vertex: x, y, u, v, r, g, b, a
+        // vertex: x, y, u, v, rgba
         vertexSize = vertexAttributes.getVertexSizeInBytes(); // bytes
 
         // allocate data buffers based on default vertex attributes which are assumed to be the worst case.
@@ -321,8 +321,9 @@ public class SpriteBatch implements Disposable {
 
 
     private void addRect(float x, float y, float w, float h, float u, float v, float u2, float v2) {
-        boolean hasColor = vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR);
+        boolean hasColor = vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR_PACKED);
         boolean hasUV = vertexAttributes.hasUsage(VertexAttribute.Usage.TEXTURE_COORDINATE);
+        float col = tint.toFloatBits();
 
         vertexData.put(x);
         vertexData.put(y);
@@ -331,10 +332,11 @@ public class SpriteBatch implements Disposable {
             vertexData.put(v);
         }
         if(hasColor) {
-            vertexData.put(tint.r);
-            vertexData.put(tint.g);
-            vertexData.put(tint.b);
-            vertexData.put(tint.a);
+            vertexData.put(col);
+//            vertexData.put(tint.r);
+//            vertexData.put(tint.g);
+//            vertexData.put(tint.b);
+//            vertexData.put(tint.a);
         }
 
         vertexData.put(x);
@@ -344,10 +346,7 @@ public class SpriteBatch implements Disposable {
             vertexData.put(v2);
         }
         if(hasColor) {
-            vertexData.put(tint.r);
-            vertexData.put(tint.g);
-            vertexData.put(tint.b);
-            vertexData.put(tint.a);
+            vertexData.put(col);
         }
 
         vertexData.put(x+w);
@@ -357,10 +356,7 @@ public class SpriteBatch implements Disposable {
             vertexData.put(v2);
         }
         if(hasColor) {
-            vertexData.put(tint.r);
-            vertexData.put(tint.g);
-            vertexData.put(tint.b);
-            vertexData.put(tint.a);
+            vertexData.put(col);
         }
 
         vertexData.put(x+w);
@@ -370,10 +366,7 @@ public class SpriteBatch implements Disposable {
             vertexData.put(v);
         }
         if(hasColor) {
-            vertexData.put(tint.r);
-            vertexData.put(tint.g);
-            vertexData.put(tint.b);
-            vertexData.put(tint.a);
+            vertexData.put(col);
         }
     }
 

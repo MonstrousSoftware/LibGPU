@@ -29,7 +29,7 @@ public class ShaderPrefix {
             if (vertexAttributes.hasUsage(VertexAttribute.Usage.TEXTURE_COORDINATE)) {
                 sb.append("#define TEXTURE_COORDINATE\n");
             }
-            if (vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR)) {
+            if (vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR) || vertexAttributes.hasUsage(VertexAttribute.Usage.COLOR_PACKED)) {
                 sb.append("#define COLOR\n");
             }
             if (vertexAttributes.hasUsage(VertexAttribute.Usage.NORMAL)) {
