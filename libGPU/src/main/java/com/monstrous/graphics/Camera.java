@@ -15,12 +15,15 @@ public abstract class Camera {
     public Matrix4 projection;
     public Matrix4 view;
     public Matrix4 combined;      // P x V
+    protected Matrix4 inverseProjectionView;
     public Frustum frustum;
+
 
     public Camera() {
         projection = new Matrix4();
         view = new Matrix4();
         combined = new Matrix4();
+        inverseProjectionView = new Matrix4();
         position = new Vector3(0f,0f,0f);
         direction = new Vector3(0,0,1);
         up = new Vector3(0, 1, 0);

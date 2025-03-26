@@ -5,7 +5,7 @@ import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.TextureRegion;
 
 public class Sprite extends TextureRegion {
-    final static int VERTEX_SIZE = 8;       // x, y, u, v, r, g, b, a
+    final static int VERTEX_SIZE = 5;       // x, y, u, v, col
     final static int SPRITE_SIZE = 4*VERTEX_SIZE;
 
     private float[] vertexData = new float[SPRITE_SIZE];
@@ -86,10 +86,7 @@ public class Sprite extends TextureRegion {
     public void setColor(Color color){
         this.color.set(color);
         for(int v = 0; v < 4; v++){
-            vertexData[4+v*VERTEX_SIZE] = color.r;
-            vertexData[5+v*VERTEX_SIZE] = color.g;
-            vertexData[6+v*VERTEX_SIZE] = color.b;
-            vertexData[7+v*VERTEX_SIZE] = color.a;
+            vertexData[4+v*VERTEX_SIZE] = color.toFloatBits();
         }
     }
 

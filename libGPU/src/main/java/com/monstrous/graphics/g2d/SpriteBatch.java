@@ -14,9 +14,9 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
-// todo support packed color to reduce vertex size
-// todo make use of UniformBuffer
-
+/**
+ * Class to render textured rectangles in batches.
+ */
 public class SpriteBatch implements Disposable {
     private WebGPU_JNI webGPU;
     private ShaderProgram specificShader;
@@ -300,9 +300,10 @@ public class SpriteBatch implements Disposable {
         numRects++;
     }
 
+    // used by Sprite class
     public void draw(Texture texture, float[] vertices){
-        if(vertices.length != 32)
-            throw new IllegalArgumentException("SpriteBatch.draw: vertices must have length 32");
+        if(vertices.length != 20)
+            throw new IllegalArgumentException("SpriteBatch.draw: vertices must have length 20");
         if (!begun)
             throw new RuntimeException("SpriteBatch: Must call begin() before draw().");
 

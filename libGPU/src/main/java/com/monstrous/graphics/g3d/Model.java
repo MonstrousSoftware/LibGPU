@@ -37,9 +37,11 @@ import java.util.Map;
 public class Model implements Disposable {
     public String filePath;
     public ArrayList<Mesh> meshes;
+    private boolean ownsMeshes = true;
     public ArrayList<Node> rootNodes;
     public ArrayList<Material> materials;
     private final Map<GLTFPrimitive, Mesh> meshMap = new HashMap<>();
+    private final Map<Integer, Boolean> hasNormalMap = new HashMap<>();
 
     public Model(String filePath) {
         this.filePath = filePath.toLowerCase();
@@ -66,6 +68,7 @@ public class Model implements Disposable {
     public Model(Mesh mesh, WGPUPrimitiveTopology topology, Material material){
         meshes = new ArrayList<>();
         meshes.add(mesh);
+        ownsMeshes = false;
 
         materials = new ArrayList<>();
         materials.add(material);
@@ -84,6 +87,7 @@ public class Model implements Disposable {
     public Model( MeshPart meshPart, Material material){
         meshes = new ArrayList<>();
         meshes.add(meshPart.getMesh());
+        ownsMeshes = false;
 
         materials = new ArrayList<>();
         materials.add(material);
@@ -146,7 +150,7 @@ public class Model implements Disposable {
             if(gltfMat.pbrMetallicRoughness.metallicRoughnessTexture >= 0)
                 mat.metallicRoughnessMapData = readImageData(gltf, gltfMat.pbrMetallicRoughness.metallicRoughnessTexture);
             if(gltfMat.normalTexture >= 0)
-                mat.normalMapData =  readImageData(gltf, gltfMat.normalTexture);
+                mat.normalMapData = readImageData(gltf, gltfMat.normalTexture);
             if(gltfMat.emissiveTexture >= 0)
                 mat.emissiveMapData =  readImageData(gltf, gltfMat.emissiveTexture);
             if(gltfMat.occlusionTexture >= 0)
@@ -246,6 +250,8 @@ public class Model implements Disposable {
         int offset = view.byteOffset;
         offset += indexAccessor.byteOffset;
 
+        boolean hasNormalMap = gltf.materials.get(primitive.material).normalTexture >= 0;
+
         MeshData meshData = new MeshData();
 
         // todo adjust this based on the file contents:
@@ -254,10 +260,10 @@ public class Model implements Disposable {
         meshData.vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x3, location++);
         meshData.vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, location++);
         meshData.vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, location++);
-//            if(hasNormalMap) {
-        meshData.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, location++);
-        meshData.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, location++);
-//            }
+        if(hasNormalMap) {
+            meshData.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, location++);
+            meshData.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, location++);
+        }
         meshData.vertexAttributes.end();
 
         if(indexAccessor.componentType != GLTF.USHORT16 && indexAccessor.componentType != GLTF.UINT32 )
@@ -282,7 +288,7 @@ public class Model implements Disposable {
             //System.out.println("max index "+max); // TMP
         }
 
-        boolean hasNormalMap = meshData.vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT);
+        //boolean hasNormalMap = meshData.vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT);
 
         int positionAccessorId = -1;
         int normalAccessorId = -1;
@@ -561,8 +567,9 @@ public class Model implements Disposable {
 
     @Override
     public void dispose() {
-        for(Mesh mesh: meshes)
-            mesh.dispose();
+        if(ownsMeshes)
+            for(Mesh mesh: meshes)
+                mesh.dispose();
         for(Material material: materials)
             material.dispose();
 //        for(Node node: rootNodes)

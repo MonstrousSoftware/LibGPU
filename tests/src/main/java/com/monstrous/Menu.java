@@ -12,8 +12,8 @@ import com.monstrous.utils.ScreenUtils;
 
 public class Menu extends ApplicationAdapter {
 
-    private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Simple Game", "Viewport", "GUI", "Build Model", "Instancing", "Frustum demo",
-            "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)", "Image Based Lighting", "HDR (WIP)"  };
+    private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Rounded Rectangle", "Simple Game", "Viewport", "GUI", "Build Model", "Instancing", "Frustum demo",
+            "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)", "GLTF (Sponza)", "Image Based Lighting", "HDR (WIP)"  };
 
     private Stage stage;
 
@@ -34,6 +34,8 @@ public class Menu extends ApplicationAdapter {
         TBstyle.fontColor = Color.BLUE;
         TBstyle.bgColor = Color.WHITE;
 
+        int index = 0;
+        int NUM_COLS = 2;
         for(String name : testNames )
         {
             TextButton textButton = new TextButton(name, TBstyle);
@@ -47,8 +49,10 @@ public class Menu extends ApplicationAdapter {
                     return false;
                 }
             });
+            index++;
             stage.add(textButton);
-            stage.row();
+            if(index % NUM_COLS == 0)
+                stage.row();
         }
 
     }
@@ -66,6 +70,8 @@ public class Menu extends ApplicationAdapter {
             listener = new TestPostProcessing();
         else if(name.contentEquals("ShapeRenderer"))
             listener = new TestShapeRenderer();
+        else if(name.contentEquals("Rounded Rectangle"))
+            listener = new TestRoundedRectangleSDF();
         else if(name.contentEquals("Simple Game"))
             listener = new TestSimpleGame();
         else if(name.contentEquals("Cube Map"))
@@ -84,6 +90,8 @@ public class Menu extends ApplicationAdapter {
             listener = new TestGLTF();
         else if(name.contentEquals("GLTF (GLB format)"))
             listener = new TestGLB();
+        else if(name.contentEquals("GLTF (Sponza)"))
+            listener = new TestSponza();
         else if(name.contentEquals("GUI"))
             listener = new TestGUI();
         else if(name.contentEquals("Lighting"))

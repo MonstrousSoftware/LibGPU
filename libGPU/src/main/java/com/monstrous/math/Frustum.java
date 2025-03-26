@@ -1,5 +1,6 @@
 package com.monstrous.math;
 
+import com.monstrous.graphics.OrthographicCamera;
 import com.monstrous.graphics.PerspectiveCamera;
 import com.monstrous.graphics.g3d.BoundingBox;
 
@@ -21,7 +22,7 @@ public class Frustum {
     }
 
 
-    // todo test this
+
     public void update(PerspectiveCamera camera){
         Vector3 dir = new Vector3();
         Vector3 point = new Vector3();
@@ -63,7 +64,20 @@ public class Frustum {
         for(int i = 0; i < 8; i++){
             corners[i].set(clipSpaceCorners[i]).prj(inverse);
         }
+    }
 
+    /** update frustum from the inverse projection-view (combined) matrix */
+    public void update(Matrix4 inverse){
+        //Matrix4 inverse = new Matrix4(camera.combined).inv();
+        for(int i = 0; i < 8; i++){
+            corners[i].set(clipSpaceCorners[i]).prj(inverse);
+        }
+        planes[0].set(corners[1], corners[0], corners[2]);
+        planes[1].set(corners[4], corners[5], corners[7]);
+        planes[2].set(corners[0], corners[4], corners[3]);
+        planes[3].set(corners[5], corners[1], corners[6]);
+        planes[4].set(corners[2], corners[3], corners[6]);
+        planes[5].set(corners[4], corners[0], corners[1]);
     }
 
     public boolean isInside( Vector3 point ){

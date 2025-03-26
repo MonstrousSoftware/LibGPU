@@ -79,7 +79,14 @@ public class RenderPassBuilder {
 
         WGPUTextureFormat colorFormat = WGPUTextureFormat.Undefined;
 
-        if(passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS) {
+        renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
+        renderPassDescriptor.setNextInChain();
+
+        renderPassDescriptor.setLabel(name);
+        renderPassDescriptor.setOcclusionQuerySet(JavaWebGPU.createNullPointer());
+
+
+        if(  passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ||passType == RenderPassType.SHADOW_PASS ){
 
             renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
             renderPassColorAttachment.setNextInChain();
@@ -113,8 +120,12 @@ public class RenderPassBuilder {
                 colorFormat = outTexture.getFormat();
                 sampleCount = 1;
             }
+
+            renderPassDescriptor.setColorAttachmentCount(1);
+            renderPassDescriptor.setColorAttachments(renderPassColorAttachment);
         } else {
             sampleCount = 1;
+            renderPassDescriptor.setColorAttachmentCount(0);
         }
 
 
@@ -131,20 +142,7 @@ public class RenderPassBuilder {
 
         depthStencilAttachment.setView(depthTextureView);
 
-
-        renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
-        renderPassDescriptor.setNextInChain();
-
-        renderPassDescriptor.setLabel(name);
-        renderPassDescriptor.setOcclusionQuerySet(JavaWebGPU.createNullPointer());
-
         renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
-        if(passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS) {
-            renderPassDescriptor.setColorAttachmentCount(1);
-            renderPassDescriptor.setColorAttachments(renderPassColorAttachment);
-        } else {
-            renderPassDescriptor.setColorAttachmentCount(0);
-        }
 
 
         LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);

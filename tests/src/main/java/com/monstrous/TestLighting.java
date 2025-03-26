@@ -64,9 +64,11 @@ public class TestLighting extends ApplicationAdapter {
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
-        camera.position.set(0, 0, -3);
+        camera.position.set(0, 3, -3);
         camera.direction.set(0,0f, 1f);
         camera.update();
+
+
 
         environment = new Environment();
         DirectionalLight dir1 = new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0));

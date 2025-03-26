@@ -256,6 +256,7 @@ public class ModelBatch implements Disposable {
 
     /** Frustum culling using a transformed mesh bounding box */
     private boolean isVisible(Renderable renderable){
+//        return true;
         bbox.set(renderable.meshPart.getMesh().boundingBox);
         bbox.transform(renderable.modelTransform);
         return camera.frustum.boundsInFrustum(bbox);
@@ -336,11 +337,11 @@ public class ModelBatch implements Disposable {
         pipelineSpec.shaderFilePath = selectShaderSourceFile(pass.type);
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
-        pipelineSpec.isDepthPass = environment.depthPass;
-        pipelineSpec.afterDepthPrepass = pass.type == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS;
+        pipelineSpec.isDepthPass = (pass.type == RenderPassType.SHADOW_PASS || pass.type == RenderPassType.DEPTH_PREPASS);
+        pipelineSpec.afterDepthPrepass = (pass.type == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS);
         pipelineSpec.colorFormat = pass.getColorFormat();    // pixel format of render pass output
         pipelineSpec.depthFormat = pass.getDepthFormat();
-        pipelineSpec.numSamples = environment.depthPass? 1 : pass.getSampleCount();
+        pipelineSpec.numSamples = pipelineSpec.isDepthPass ? 1 : pass.getSampleCount();
         pipelineSpec.topology = meshPart.getTopology();
         pipelineSpec.indexFormat = meshPart.getMesh().indexFormat;
         pipelineSpec.recalcHash();

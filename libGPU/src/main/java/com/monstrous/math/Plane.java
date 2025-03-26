@@ -24,6 +24,12 @@ public class Plane {
         this.distance = -this.normal.dot(point);
     }
 
+    /** Set a plane based on 3 points on the plane */
+    public void set (Vector3 point1, Vector3 point2, Vector3 point3) {
+        this.normal.set(point1).sub(point2).crs(point2.x - point3.x, point2.y - point3.y, point2.z - point3.z).nor();
+        this.distance = -point1.dot(normal);
+    }
+
     public float distanceTo(Vector3 point){
         return normal.dot(point) + distance;
     }

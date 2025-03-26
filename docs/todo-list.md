@@ -11,13 +11,13 @@
 - other shapes
 - DONE better support for texture coordinates in mesh builder
 - DONE topology per mesh
-
-- use a shared mesh for gltf models instead of a mesh per primitive
-
+- DONE packed color (one float) for sprite batch etc.
 
 
+- when textures, materials, meshes, etc. are shared, we need to track ownership to allow correct disposal (i.e. dispose exactly once)
 
 
 
 ## Bugs to fix
 - post shader demo is broken
+- - frustum issues in shadow demo

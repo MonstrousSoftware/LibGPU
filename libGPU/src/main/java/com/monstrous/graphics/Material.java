@@ -27,6 +27,7 @@ public class Material implements Disposable {
 
     public Color baseColor;
     public Texture diffuseTexture;
+    public boolean ownsDiffuseTexture = true;
     public Texture metallicRoughnessTexture;
     public Texture normalTexture;
     public Texture emissiveTexture;
@@ -84,6 +85,7 @@ public class Material implements Disposable {
     public Material(Texture texture) {
         this.baseColor = new Color(Color.WHITE);
         this.diffuseTexture = texture;
+        this.ownsDiffuseTexture = false;    // caller has to dispose of texture, because it may be reused
         this.normalTexture = getDefaultBlackTexture();
         hasNormalMap = false;
         this.emissiveTexture = getDefaultBlackTexture();
@@ -113,10 +115,17 @@ public class Material implements Disposable {
 
     @Override
     public void dispose() {
-        materialBindGroup.dispose();
-        materialUniformBuffer.dispose();
+        if(materialBindGroup != null) {
+            materialBindGroup.dispose();
+            materialBindGroup = null;           // ensure we don't dispose multiple time if the same material is reused.
+        }
+        if(materialUniformBuffer != null) {
+            materialUniformBuffer.dispose();
+            materialUniformBuffer = null;
+        }
 
-        disposeUnlessStatic(diffuseTexture);
+        if(ownsDiffuseTexture)
+            disposeUnlessStatic(diffuseTexture);
         disposeUnlessStatic(normalTexture);
         disposeUnlessStatic(emissiveTexture);
         disposeUnlessStatic(metallicRoughnessTexture);
@@ -149,23 +158,23 @@ public class Material implements Disposable {
     }
 
     private void createBindGroupLayout(){
-        // make a bind group layout (shared by all materials)
         materialBindGroupLayout = getBindGroupLayout();
 
         // create a uniform buffer
         materialUniformBuffer = new UniformBuffer( MATERIAL_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
-        //materialUniformBuffer = createUniformBuffer( MATERIAL_UB_SIZE );
+    }
 
-//        // fill the uniform buffer
-//        writeMaterialUniforms(materialUniformBuffer);
-//
-//        // create a bind group
-//        materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getBuffer());   // bind group for textures and uniforms
+    public static BindGroupLayout getBindGroupLayout(){
+        // make a bind group layout (static member shared by all materials)
+        // to do : this is never released
+        if(materialBindGroupLayout == null)
+            materialBindGroupLayout = createMaterialBindGroupLayout();
+        return materialBindGroupLayout;
     }
 
     // bind material to the render pass
     public void bindGroup(RenderPass renderPass, int groupId ){
-        if(materialBindGroup == null){  // lazy init, in case some material properties are set after the constructor
+        if(materialBindGroup == null){  // lazy init, in case some material properties are set after the Material constructor
             // fill the uniform buffer
             writeMaterialUniforms(materialUniformBuffer);
 
@@ -175,14 +184,6 @@ public class Material implements Disposable {
         renderPass.setBindGroup(groupId, materialBindGroup.getHandle(), 0, null);
     }
 
-
-
-    public static BindGroupLayout getBindGroupLayout(){
-        // make a bind group layout (shared by all materials)
-        if(materialBindGroupLayout == null)
-            materialBindGroupLayout = createMaterialBindGroupLayout();
-        return materialBindGroupLayout;
-    }
 
     private static BindGroupLayout createMaterialBindGroupLayout(){
         int location = 0;

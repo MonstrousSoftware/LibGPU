@@ -335,6 +335,12 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     var color  = radiance*visibility + ambient + emissiveColor;
 
+#ifdef CUBEMAP
+    let rdir:vec3f = reflect(V, N)*vec3f(-1, -1, 1);
+    color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
+#endif
+
+
     //color = vec3f(roughness);
     //color = Lo;
     //color = N*0.5 + 0.5;
@@ -343,12 +349,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = uFrame.pointLights[0].color.rgb;
     //color = baseColor.rgb;
     //color = normalize(in.normal);
-#ifdef CUBEMAP
-
-    let rdir:vec3f = reflect(V, N)*vec3f(-1, -1, 1);
-
-    color = textureSample(cubeMap, cubeMapSampler, rdir).rgb;
-#endif
 
 
     return vec4f(color, baseColor.a);

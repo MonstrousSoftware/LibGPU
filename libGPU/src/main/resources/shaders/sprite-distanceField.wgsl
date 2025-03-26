@@ -6,6 +6,7 @@ struct MyUniforms {
     projectionMatrix: mat4x4f,
 };
 
+// this should maybe be a uniform, but we want to stay compatible with sprite.wgsl
 const smoothing : f32 = 1/16.0;
 
 // The memory location of the uniform is given by a pair of a *bind group* and a *binding*

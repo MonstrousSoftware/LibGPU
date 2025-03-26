@@ -24,7 +24,8 @@ public class PerspectiveCamera extends Camera {
         view.translate(-position.x, -position.y, -position.z);
         combined.set(projection);
         Matrix4.mul(combined.val, view.val);
-
-        frustum.update(this);
+        inverseProjectionView.set(combined).inv();
+        frustum.update(inverseProjectionView);
+        //frustum.update(this);
     }
 }

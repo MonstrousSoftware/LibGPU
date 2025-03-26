@@ -28,6 +28,7 @@ public class TestModelBuild extends ApplicationAdapter {
     private ModelBatch modelBatch;
     private Camera camera;
     private Model modelBox, modelSphere, modelBox2;
+    private Mesh mesh;
     private ArrayList<ModelInstance> modelInstances;
     private Environment environment;
     private CameraController camController;
@@ -64,7 +65,7 @@ public class TestModelBuild extends ApplicationAdapter {
 
         modelBox2 = buildWireFrameCube(mb);
         modelInstances.add( new ModelInstance(modelBox2, 0,0,0) );
-        mb.end();
+        mesh = mb.end();
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(6, 4, -6);
@@ -242,6 +243,7 @@ public class TestModelBuild extends ApplicationAdapter {
         modelSphere.dispose();
         modelBox2.dispose();
         modelBatch.dispose();
+        mesh.dispose();
         texture.dispose();
         batch.dispose();
         font.dispose();
