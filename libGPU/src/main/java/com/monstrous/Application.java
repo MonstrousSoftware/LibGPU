@@ -90,6 +90,7 @@ public class Application {
                     RenderPassBuilder.setCommandEncoder(encoder);
 
                     LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
+                    LibGPU.graphics.passNumber = 0;
 
                     listener.render();
 
@@ -221,9 +222,9 @@ public class Application {
         }
 
 
-//        LibGPU.supportedLimits = WGPUSupportedLimits.createDirect();
-//        WGPUSupportedLimits supportedLimits = LibGPU.supportedLimits;
-//        webGPU.wgpuAdapterGetLimits(adapter, supportedLimits);
+        LibGPU.supportedLimits = WGPUSupportedLimits.createDirect();
+        WGPUSupportedLimits supportedLimits = LibGPU.supportedLimits;
+        webGPU.wgpuAdapterGetLimits(adapter, supportedLimits);
 //        System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
 //        System.out.println("adapter maxBindGroups " + supportedLimits.getLimits().getMaxBindGroups());
 //
@@ -296,7 +297,9 @@ public class Application {
         };
         webGPU.wgpuDeviceSetUncapturedErrorCallback(device, deviceCallback, null);
 
-//        webGPU.wgpuDeviceGetLimits(device, supportedLimits);
+        // Collect the device limits which may be more constrained than the adapter limits
+        // e.g. getMinUniformBufferOffsetAlignment maybe becomes 256 on the device instead of 64 on the adapter.
+        webGPU.wgpuDeviceGetLimits(device, LibGPU.supportedLimits);
 //        System.out.println("device maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
 //
 //        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());

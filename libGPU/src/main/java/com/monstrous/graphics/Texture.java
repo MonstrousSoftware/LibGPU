@@ -177,6 +177,21 @@ public class Texture {
         }
     }
 
+    /** Make a cube map from 6 textures */
+    public Texture(Texture[] sides) {
+        if(sides.length != 6) throw new IllegalArgumentException("Texture cube map requires array of 6 textures.");
+        int numLayers = 6;
+
+        this.width = sides[0].width;
+        this.height = sides[0].height;
+        create("cubemap", sides[0].mipLevelCount, false, sides[0].format, numLayers, 1);
+
+        for(int layer = 0; layer < numLayers; layer++) {
+
+            // ?
+        }
+    }
+
 
     /** Create a 3D Texture with LOD levels from image files
      *

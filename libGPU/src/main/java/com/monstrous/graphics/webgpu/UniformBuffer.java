@@ -31,9 +31,10 @@ import jnr.ffi.Pointer;
 public class UniformBuffer implements Disposable {
 
     private int contentSize;
+    private int uniformStride;
+    private int maxSlices;
     private Pointer floatData;
     private int offset;
-    private final int dynamicOffset;
     private Buffer buffer;
 
     public UniformBuffer(int contentSize, long usage){
@@ -42,15 +43,16 @@ public class UniformBuffer implements Disposable {
 
     public UniformBuffer(int contentSize, long usage, int maxSlices){
         this.contentSize = contentSize;
-        dynamicOffset = 0;
+        this.maxSlices = maxSlices;
 
         // round up buffer size to 16 byte alignment
-        long bufferSize = (long)ceilToNextMultiple(contentSize, 16);
+        long bufferSize = ceilToNextMultiple(contentSize, 16);
 
         // if we use dynamics offsets, there is a minimum stride to apply between "slices"
         if(maxSlices > 1) { // do we use dynamic offsets?
+
             int uniformAlignment = (int) LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
-            long uniformStride = ceilToNextMultiple(contentSize, uniformAlignment);
+            uniformStride = ceilToNextMultiple(contentSize, uniformAlignment);
             bufferSize += uniformStride * (maxSlices - 1);
         }
 
@@ -64,6 +66,10 @@ public class UniformBuffer implements Disposable {
     private int ceilToNextMultiple(int value, int step){
         int d = value / step + (value % step == 0 ? 0 : 1);
         return step * d;
+    }
+
+    public int getUniformStride(){
+        return uniformStride;
     }
 
     public void beginFill(){
@@ -122,15 +128,16 @@ public class UniformBuffer implements Disposable {
     }
 
 
+    /** Write buffer data to the GPU */
     public void endFill(){
         endFill(0);
     }
 
-
-    public void endFill(int writeOffset){
-        if(offset > contentSize)
-            throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, buffer.getHandle(), dynamicOffset+writeOffset, floatData, offset);
+    /** Fill the given slice of the uniform buffer. Writes data to the GPU. */
+    public void endFill(int sliceNumber){
+        if(offset > contentSize) throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
+        if(sliceNumber >= maxSlices) throw new IllegalArgumentException("UniformBuffer: slice number too large: "+sliceNumber);
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, buffer.getHandle(), sliceNumber * uniformStride, floatData, offset);
     }
 
     public Pointer getHandle(){

@@ -18,9 +18,11 @@ import java.io.IOException;
 
 public class TestHDR extends ApplicationAdapter {
 
+    private static final int SIZE = 128;
+
     private SpriteBatch batch;
     private Texture textureEquirectangular;
-    private Texture textureSide;
+    private Texture[] textureSides;
     private Texture depthMap;
     private ShaderProgram shader;
     private Mesh mesh;
@@ -30,8 +32,9 @@ public class TestHDR extends ApplicationAdapter {
     private PerspectiveCamera camera;
     CameraController camController;
     Environment environment;
-    PerspectiveCamera cam;
-
+    PerspectiveCamera snapCam;
+    boolean firstFrame;
+    Texture cubeMap;
 
 
     @Override
@@ -70,18 +73,22 @@ public class TestHDR extends ApplicationAdapter {
 
         modelBatch = new ModelBatch();
 
-        textureSide = new Texture(128, 128, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
-        depthMap = new Texture(128, 128, false, true, WGPUTextureFormat.Depth32Float, 1);
 
-        cam = new PerspectiveCamera(90, 128, 128);
-        cam.position.set(0,0,0);
-        cam.direction.set(0,0,1);
-        cam.update();
+        textureSides = new Texture[6];
 
 
+        depthMap = new Texture(SIZE, SIZE, false, true, WGPUTextureFormat.Depth32Float, 1);
 
+        snapCam = new PerspectiveCamera(90, SIZE, SIZE);
+        snapCam.position.set(0,0,-1);
+        snapCam.direction.set(0,0,1);
+        snapCam.update();
+
+        firstFrame = true;
     }
 
+    private final Vector3[] directions = { new Vector3(0,0,1), new Vector3(1, 0, 0), new Vector3(0, 0, -1), new Vector3(-1, 0, 0),
+        new Vector3(0, 1, 0), new Vector3(0, -1, 0) };
 
 
     @Override
@@ -93,17 +100,40 @@ public class TestHDR extends ApplicationAdapter {
 
         camController.update();
 
+        if(firstFrame) { // do this only once (but needs to be in the render loop)
+
+            for (int side = 0; side < 6; side++) {
+
+                snapCam.direction.set(directions[side]);
+                Vector3 pos = new Vector3(directions[side]).scl(-1);
+                snapCam.position.set(pos);
+                if(side < 4)
+                    snapCam.up.set(0,1,0);
+                else if (side == 4)
+                    snapCam.up.set(0,0,-1);
+                else // 5
+                    snapCam.up.set(0,0,1);
+                snapCam.update();
+
+                textureSides[side] = new Texture(SIZE, SIZE, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
+
+                modelBatch.begin(snapCam, environment, Color.GREEN, textureSides[side], depthMap);
+                modelBatch.render(instance);
+                modelBatch.end();
+            }
+            //cubeMap = new Texture()
+            firstFrame = false;
+        }
+
+
+
         ScreenUtils.clear(Color.BLUE);
-        modelBatch.begin(cam, environment, Color.WHITE, textureSide, depthMap);
-        modelBatch.render(instance);
-        modelBatch.end();
-
-
-
         batch.begin();
         //batch.setShader(shader);
-        //batch.draw(textureEquirectangular, 0,0);
-        batch.draw(textureSide, 0,0);
+        batch.draw(textureEquirectangular, 0,0);
+        for(int side = 0; side < 6; side++) {
+            batch.draw(textureSides[side], SIZE*side, LibGPU.graphics.getHeight() - SIZE);
+        }
         batch.end();
 
         modelBatch.begin(camera, environment);

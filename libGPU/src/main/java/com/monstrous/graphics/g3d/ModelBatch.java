@@ -26,6 +26,7 @@ import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
+import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
@@ -35,11 +36,12 @@ import java.util.List;
 
 public class ModelBatch implements Disposable {
 
+    private final int MAX_PASSES = 10;
     private final int MAX_DIR_LIGHTS = 5;
     private final int MAX_POINT_LIGHTS = 5;
     private final int MAX_INSTANCES = 4096;
 
-    private final int FRAME_UB_SIZE = 816;
+    private final int FRAME_UB_SIZE = 816;      // check...
 
     private final WebGPU_JNI webGPU;
     private final Pointer device;
@@ -85,17 +87,15 @@ public class ModelBatch implements Disposable {
         webGPU = LibGPU.webGPU;
         device = LibGPU.device;
 
-
         pipelines = new Pipelines();
         renderables = new ArrayList<>();
         visibleRenderables = new ArrayList<>();
         pool = new RenderablePool(1000);
         pipelineSpec = new PipelineSpecification();
 
-
         defaultDirectionalLight = new DirectionalLight(new Color(1,0,0,1), new Vector3(0, -1, 0));
 
-        frameUniformBuffer = new UniformBuffer(FRAME_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);
+        frameUniformBuffer = new UniformBuffer( FRAME_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform, MAX_PASSES);
 
         frameBindGroupLayout = createFrameBindGroupLayout();
         instancingBindGroupLayout = createInstancingBindGroupLayout();
@@ -106,12 +106,12 @@ public class ModelBatch implements Disposable {
         dummy2DTexture = new Texture(1,1);
 
         int instanceSize = 16*Float.BYTES;      // data size per instance
-        instanceBuffer = new UniformBuffer(instanceSize*MAX_INSTANCES, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage);
+        instanceBuffer = new UniformBuffer(instanceSize, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage, MAX_INSTANCES);
 
         sampler = makeShadowSampler();
     }
 
-    // todo allow hot-loading of shaders
+    /** Call this to hot-load shaders as they will all be recompiled. */
     public void invalidatePipelines(){
         pipelines.clear();
     }
@@ -137,7 +137,6 @@ public class ModelBatch implements Disposable {
         this.camera = camera;
         this.environment = environment;
 
-
         // create a new render pass
         int samples = LibGPU.app.configuration.numSamples;
         if(passType == RenderPassType.SHADOW_PASS || passType == RenderPassType.DEPTH_PREPASS)
@@ -155,9 +154,12 @@ public class ModelBatch implements Disposable {
         numEmitted = 0;
         instancingJoins = 0;
 
-        writeFrameUniforms(frameUniformBuffer, camera, environment);
+        writeFrameUniforms(frameUniformBuffer, camera, environment, LibGPU.graphics.passNumber);
         frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, sampler, frameUniformBuffer.getBuffer());
-        pass.setBindGroup(0, frameBindGroup.getHandle());
+
+        // use dynamic offset for the frame uniform buffer slice of this pass
+        pass.setBindGroup(0, frameBindGroup.getHandle(), LibGPU.graphics.passNumber * frameUniformBuffer.getUniformStride());
+        LibGPU.graphics.passNumber++;
 
         instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer.getBuffer());
         pass.setBindGroup(2, instancingBindGroup.getHandle());
@@ -187,6 +189,7 @@ public class ModelBatch implements Disposable {
         finalizeRenderables();
         emitRenderables();
         close();
+
     }
 
 
@@ -222,7 +225,7 @@ public class ModelBatch implements Disposable {
         renderables.clear();
     }
 
-    /** issue drraw calls for the visibleRenderables */
+    /** issue draw calls for the visibleRenderables */
     private void emitRenderables(){
         prevMeshPart = null;
         instanceCount = 0;
@@ -372,27 +375,6 @@ public class ModelBatch implements Disposable {
     }
 
 
-    // Bind Group Layout:
-    //  uniforms
-
-    private BindGroupLayout createFrameBindGroupLayout(){
-        BindGroupLayout layout = new BindGroupLayout("ModelBatch Bind Group Layout (Frame)");
-        layout.begin();
-        int binding = 0;
-        layout.addBuffer(binding++, WGPUShaderStage.Vertex | WGPUShaderStage.Fragment, WGPUBufferBindingType.Uniform, FRAME_UB_SIZE, false);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Depth, WGPUTextureViewDimension._2D, false);
-        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Comparison);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
-        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
-
-        // IBL textures
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
-        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);
-        layout.end();
-        return layout;
-    }
 
     private Pointer makeShadowSampler(){
         // Create a sampler
@@ -411,6 +393,27 @@ public class ModelBatch implements Disposable {
         return LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
     }
 
+    // Bind Group Layout:
+    //  uniforms
+
+    private BindGroupLayout createFrameBindGroupLayout(){
+        BindGroupLayout layout = new BindGroupLayout("ModelBatch Bind Group Layout (Frame)");
+        layout.begin();
+        int binding = 0;
+        layout.addBuffer(binding++, WGPUShaderStage.Vertex | WGPUShaderStage.Fragment, WGPUBufferBindingType.Uniform, FRAME_UB_SIZE, true);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Depth, WGPUTextureViewDimension._2D, false);
+        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Comparison);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
+        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
+
+        // IBL textures
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
+        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
+        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);
+        layout.end();
+        return layout;
+    }
 
     // per frame bind group
     private BindGroup makeFrameBindGroup(BindGroupLayout frameBindGroupLayout, Pointer sampler, Buffer uniformBuffer) {
@@ -420,7 +423,6 @@ public class ModelBatch implements Disposable {
         Texture irradMap = (environment != null && environment.irradianceMap != null) ? environment.irradianceMap :  dummyCubemap;
         Texture radMap = (environment != null && environment.radianceMap != null) ? environment.radianceMap :  dummyCubemap;
         Texture LUT = (environment != null && environment.brdfLUT != null) ? environment.brdfLUT :  dummy2DTexture;
-
 
         BindGroup bindGroup = new BindGroup(frameBindGroupLayout);
         bindGroup.begin();
@@ -441,7 +443,7 @@ public class ModelBatch implements Disposable {
     }
 
 
-    private void writeFrameUniforms( UniformBuffer uniformBuffer, Camera camera, Environment environment ){
+    private void writeFrameUniforms( UniformBuffer uniformBuffer, Camera camera, Environment environment, int passNumber ){
         uniformBuffer.beginFill();
         uniformBuffer.append(camera.projection);
         uniformBuffer.append(camera.view);
@@ -508,7 +510,8 @@ public class ModelBatch implements Disposable {
             uniformBuffer.append(environment.shadowCamera.position);
         }
 
-        uniformBuffer.endFill();   // write to GPU buffer
+        if(passNumber >= MAX_PASSES) throw new RuntimeException("ModelBatch: too many passes");
+        uniformBuffer.endFill(passNumber);   // write to GPU buffer
     }
 
     // add an instance to the instance buffer
@@ -518,7 +521,7 @@ public class ModelBatch implements Disposable {
 
         instanceBuffer.beginFill();
         instanceBuffer.append(modelTransform);
-        instanceBuffer.endFill(instanceIndex*16*Float.BYTES);   // write to GPU buffer at offset for this instance
+        instanceBuffer.endFill(instanceIndex);   // write to GPU buffer at offset for this instance
     }
 
 

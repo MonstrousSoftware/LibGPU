@@ -16,9 +16,13 @@
 
 package com.monstrous.graphics.webgpu;
 
+import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.WGPUIndexFormat;
 import com.monstrous.webgpu.WGPUTextureFormat;
 import jnr.ffi.Pointer;
+
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static com.monstrous.LibGPU.webGPU;
 
@@ -30,6 +34,7 @@ public class RenderPass {
     private final WGPUTextureFormat depthFormat;
     public int targetWidth, targetHeight;
     private int sampleCount;
+    private int[] dynamicOffsetBuffer;
 
     // don't call this directly, use RenderPassBuilder.create()
     RenderPass(Pointer renderPass, RenderPassType type, WGPUTextureFormat textureFormat, WGPUTextureFormat depthFormat, int sampleCount, int targetWidth, int targetHeight) {
@@ -40,6 +45,8 @@ public class RenderPass {
         this.sampleCount = sampleCount;
         this.targetWidth = targetWidth;
         this.targetHeight = targetHeight;
+
+        dynamicOffsetBuffer = new int[2];
     }
 
     public void end() {
@@ -75,9 +82,26 @@ public class RenderPass {
         setBindGroup(groupIndex, bindGroup, 0, null);
     }
 
+    /** set bind group with one dynamic offset */
+    public void setBindGroup(int groupIndex, Pointer bindGroup, int dynamicOffset) {
+        dynamicOffsetBuffer[0] = dynamicOffset;
+        Pointer dynamicOffsets = JavaWebGPU.createIntegerArrayPointer(dynamicOffsetBuffer); //todo we are creating a new pointer every call, can we reuse?
+        webGPU.wgpuRenderPassEncoderSetBindGroup(renderPass, groupIndex, bindGroup, 1, dynamicOffsets);
+    }
+
+    /** set bind group with two dynamic offsets */
+    public void setBindGroup(int groupIndex, Pointer bindGroup, int dynamicOffset1, int dynamicOffset2) {
+        dynamicOffsetBuffer[0] = dynamicOffset1;
+        dynamicOffsetBuffer[1] = dynamicOffset2;
+        Pointer dynamicOffsets = JavaWebGPU.createIntegerArrayPointer(dynamicOffsetBuffer);
+        webGPU.wgpuRenderPassEncoderSetBindGroup(renderPass, groupIndex, bindGroup, 2, dynamicOffsets);
+    }
+
+    /** set bind group with one dynamic offset */
     public void setBindGroup(int groupIndex, Pointer bindGroup, int dynamicOffsetCount, Pointer dynamicOffsets) {
         webGPU.wgpuRenderPassEncoderSetBindGroup(renderPass, groupIndex, bindGroup, dynamicOffsetCount, dynamicOffsets);
     }
+
 
     public void setVertexBuffer(int slot, Pointer vertexBuffer, long offset, long size) {
         webGPU.wgpuRenderPassEncoderSetVertexBuffer(renderPass,slot ,vertexBuffer, offset, size);
