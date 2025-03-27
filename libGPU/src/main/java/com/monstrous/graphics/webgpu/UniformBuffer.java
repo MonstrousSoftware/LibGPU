@@ -134,10 +134,10 @@ public class UniformBuffer implements Disposable {
     }
 
     /** Fill the given slice of the uniform buffer. Writes data to the GPU. */
-    public void endFill(int sliceNumber){
+    public void endFill(int destOffset){
         if(offset > contentSize) throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
-        if(sliceNumber >= maxSlices) throw new IllegalArgumentException("UniformBuffer: slice number too large: "+sliceNumber);
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, buffer.getHandle(), sliceNumber * uniformStride, floatData, offset);
+        //if(sliceNumber >= maxSlices) throw new IllegalArgumentException("UniformBuffer: slice number too large: "+sliceNumber);
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, buffer.getHandle(), destOffset, floatData, offset);
     }
 
     public Pointer getHandle(){

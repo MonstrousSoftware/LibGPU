@@ -259,10 +259,10 @@ public class ModelBatch implements Disposable {
 
     /** Frustum culling using a transformed mesh bounding box */
     private boolean isVisible(Renderable renderable){
-//        return true;
-        bbox.set(renderable.meshPart.getMesh().boundingBox);
-        bbox.transform(renderable.modelTransform);
-        return camera.frustum.boundsInFrustum(bbox);
+        return true;
+//        bbox.set(renderable.meshPart.getMesh().boundingBox);
+//        bbox.transform(renderable.modelTransform);
+//        return camera.frustum.boundsInFrustum(bbox);
     }
 
 
@@ -320,14 +320,16 @@ public class ModelBatch implements Disposable {
         drawCalls++;
     }
 
-    private String selectShaderSourceFile(RenderPassType passType) {
+    private String selectShaderSourceFile(RenderPassType passType, Environment environment) {
 
         if(passType == RenderPassType.SHADOW_PASS)
             return "shaders/modelbatchDepth.wgsl";
         else if (passType == RenderPassType.DEPTH_PREPASS)
             return "shaders/modelbatchDepthPrepass.wgsl";
-        //return "shaders/modelbatchPBRUber.wgsl";
-        return "shaders/modelbatchEquilateral.wgsl";            /// TODO TEMP!!
+        if(environment.shaderSourcePath != null)
+            return environment.shaderSourcePath;
+        return "shaders/modelbatchPBRUber.wgsl";
+        //return "shaders/modelbatchEquilateral.wgsl";            /// TODO TEMP!!
     }
 
 
@@ -338,7 +340,7 @@ public class ModelBatch implements Disposable {
         pipelineSpec.vertexAttributes = meshPart.getMesh().vertexAttributes;
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
-        pipelineSpec.shaderFilePath = selectShaderSourceFile(pass.type);
+        pipelineSpec.shaderFilePath = selectShaderSourceFile(pass.type, environment);
         pipelineSpec.enableDepth();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.isDepthPass = (pass.type == RenderPassType.SHADOW_PASS || pass.type == RenderPassType.DEPTH_PREPASS);
@@ -511,7 +513,7 @@ public class ModelBatch implements Disposable {
         }
 
         if(passNumber >= MAX_PASSES) throw new RuntimeException("ModelBatch: too many passes");
-        uniformBuffer.endFill(passNumber);   // write to GPU buffer
+        uniformBuffer.endFill(passNumber*uniformBuffer.getUniformStride());   // write to GPU buffer
     }
 
     // add an instance to the instance buffer
@@ -521,7 +523,7 @@ public class ModelBatch implements Disposable {
 
         instanceBuffer.beginFill();
         instanceBuffer.append(modelTransform);
-        instanceBuffer.endFill(instanceIndex);   // write to GPU buffer at offset for this instance
+        instanceBuffer.endFill(instanceIndex * 16*Float.BYTES);   // write to GPU buffer at offset for this instance
     }
 
 

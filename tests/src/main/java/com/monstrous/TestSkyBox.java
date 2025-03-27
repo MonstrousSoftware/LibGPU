@@ -69,18 +69,18 @@ public class TestSkyBox extends ApplicationAdapter {
 
         // the order of the layers is +X, -X, +Y, -Y, +Z, -Z
         String[] fileNames = {
-//                "textures/leadenhall/pos-x.jpg",
-//                "textures/leadenhall/neg-x.jpg",
-//                "textures/leadenhall/pos-y.jpg",
-//                "textures/leadenhall/neg-y.jpg",
-//                "textures/leadenhall/pos-z.jpg",
-//                "textures/leadenhall/neg-z.jpg",
-                "textures/daysky/environment_posx.jpg",
-                 "textures/daysky/environment_negx.jpg",
-                "textures/daysky/environment_posy.jpg",
-                "textures/daysky/environment_negy.jpg",
-                "textures/daysky/environment_posz.jpg",
-                "textures/daysky/environment_negz.jpg"
+                "textures/leadenhall/pos-x.jpg",
+                "textures/leadenhall/neg-x.jpg",
+                "textures/leadenhall/pos-y.jpg",
+                "textures/leadenhall/neg-y.jpg",
+                "textures/leadenhall/pos-z.jpg",
+                "textures/leadenhall/neg-z.jpg",
+//                "textures/daysky/environment_posx.jpg",
+//                 "textures/daysky/environment_negx.jpg",
+//                "textures/daysky/environment_posy.jpg",
+//                "textures/daysky/environment_negy.jpg",
+//                "textures/daysky/environment_posz.jpg",
+//                "textures/daysky/environment_negz.jpg"
         };
 
         cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....

@@ -261,6 +261,10 @@ public class Texture {
         return format;
     }
 
+    public Pointer getHandle(){
+        return texture;
+    }
+
 
     private int bitWidth(int value) {
         if (value == 0)
@@ -296,7 +300,7 @@ public class Texture {
         textureDesc.getSize().setHeight(height);
         textureDesc.getSize().setDepthOrArrayLayers(numLayers);
         if (renderAttachment)
-            textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst | WGPUTextureUsage.RenderAttachment);
+            textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst | WGPUTextureUsage.RenderAttachment | WGPUTextureUsage.CopySrc);    // todo COP|Y_SRC temp
         else
             textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
         textureDesc.setViewFormatCount(0);
@@ -561,9 +565,10 @@ public class Texture {
      * @param mipLevel
      */
     private void loadMipLevel(PixmapInfo info, int layer, int mipLevel) {
+        loadMipLevel(info.pixels.get(), info.width.intValue(), info.height.intValue(), layer, mipLevel);
+    }
 
-        int mipLevelWidth = info.width.intValue();
-        int mipLevelHeight = info.height.intValue();
+    private void loadMipLevel(Pointer data, int width, int height, int layer, int mipLevel) {
 
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -578,15 +583,15 @@ public class Texture {
         // Arguments telling how the C++ side pixel memory is laid out
         WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
         source.setOffset(0);
-        source.setBytesPerRow(4*mipLevelWidth);
-        source.setRowsPerImage(mipLevelHeight);
+        source.setBytesPerRow(4*width);
+        source.setRowsPerImage(height);
 
         WGPUExtent3D ext = WGPUExtent3D.createDirect();
-        ext.setWidth(mipLevelWidth);
-        ext.setHeight(mipLevelHeight);
+        ext.setWidth(width);
+        ext.setHeight(height);
         ext.setDepthOrArrayLayers(1);
 
-        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, info.pixels.get(), mipLevelWidth * mipLevelHeight * 4, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, data, 4L * width * height, source, ext);
     }
 
 

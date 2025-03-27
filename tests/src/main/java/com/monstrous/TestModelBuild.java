@@ -234,6 +234,7 @@ public class TestModelBuild extends ApplicationAdapter {
 
         batch.begin();
         font.draw(batch, "Demonstration of models built in code, e.g. using MeshBuilder rather than loaded from a file.", 10, 50);
+        font.draw(batch, "draw calls "+modelBatch.drawCalls+" emitted: "+modelBatch.numEmitted+" pipelines: "+modelBatch.numPipelines, 10, 20);
         batch.end();
     }
 

@@ -34,16 +34,11 @@ import static com.monstrous.LibGPU.webGPU;
  */
 public class RenderPassBuilder {
 
-
-    private static Pointer encoder;
     private static Viewport viewport = null;
     private static WGPURenderPassColorAttachment renderPassColorAttachment;
     private static WGPURenderPassDepthStencilAttachment depthStencilAttachment;
     private static WGPURenderPassDescriptor renderPassDescriptor;
 
-    public static void setCommandEncoder(Pointer commandEncoder) {
-        encoder = commandEncoder;
-    }
 
     public static RenderPass create() {
         return create(null);
@@ -68,13 +63,13 @@ public class RenderPassBuilder {
      *
      * @param clearColor    background color, null to not clear the screen, e.g. for a UI
      * @param outTexture    output texture, null to render to the screen
-     * @param outDepthTexture   output depth texture, can be null
+     * @param depthFormat/depthTextureView   output depth texture, can be null
      * @param sampleCount       samples per pixel: 1 or 4
      * @param passType
      * @return
      */
     public static RenderPass create(String name, Color clearColor, Texture outTexture,  WGPUTextureFormat depthFormat, Pointer depthTextureView, int sampleCount, RenderPassType passType) {
-        if(encoder == null)
+        if(LibGPU.commandEncoder == null)
             throw new RuntimeException("Encoder must be set before calling RenderPass.create()");
 
         WGPUTextureFormat colorFormat = WGPUTextureFormat.Undefined;
@@ -147,7 +142,7 @@ public class RenderPassBuilder {
 
         LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
 
-        Pointer renderPassPtr = webGPU.wgpuCommandEncoderBeginRenderPass(encoder, renderPassDescriptor);
+        Pointer renderPassPtr = webGPU.wgpuCommandEncoderBeginRenderPass(LibGPU.commandEncoder, renderPassDescriptor);
         RenderPass pass = new RenderPass(renderPassPtr, passType, colorFormat, depthFormat, sampleCount,
                 outTexture == null ? LibGPU.graphics.getWidth() : outTexture.getWidth(),
                 outTexture == null ? LibGPU.graphics.getHeight() : outTexture.getHeight());

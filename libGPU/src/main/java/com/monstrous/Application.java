@@ -86,15 +86,15 @@ public class Application {
                         return;
                     }
 
-                    Pointer encoder = prepareEncoder();
-                    RenderPassBuilder.setCommandEncoder(encoder);
+                    LibGPU.commandEncoder = prepareEncoder();
 
                     LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
                     LibGPU.graphics.passNumber = 0;
 
                     listener.render();
 
-                    finishEncoder(encoder);
+                    finishEncoder(LibGPU.commandEncoder);
+                    LibGPU.commandEncoder = null;
 
                     // At the end of the frame
                     webGPU.wgpuTextureViewRelease(targetView);
@@ -479,7 +479,7 @@ public class Application {
         depthTexture = null;
     }
 
-    private Pointer prepareEncoder() {
+    public Pointer prepareEncoder() {
         WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
         encoderDescriptor.setNextInChain();
         encoderDescriptor.setLabel("My Encoder");
@@ -487,7 +487,7 @@ public class Application {
         return webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDescriptor);
     }
 
-    private void finishEncoder(Pointer encoder){
+    public void finishEncoder(Pointer encoder){
         gpuTiming.resolveTimeStamps(encoder);
         WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
         bufferDescriptor.setNextInChain();

@@ -15,6 +15,7 @@ public class Environment {
     public Texture brdfLUT;                 // 2d BRDF lookup table
     public SkyBox skybox;
     public boolean useImageBasedLighting;
+    public String shaderSourcePath;         // force a shader for model instances
 
     public boolean depthPass = false;
     public boolean renderShadows = false;
