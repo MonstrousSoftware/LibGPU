@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class TestHDR extends ApplicationAdapter {
 
-    private static final int SIZE = 256;
+    private static final int SIZE = 2048;
 
     private SpriteBatch batch;
     private Texture textureEquirectangular;
@@ -118,9 +118,9 @@ public class TestHDR extends ApplicationAdapter {
         batch.begin();
         //batch.setShader(shader);
         //batch.draw(textureEquirectangular, 0,0);
-        for(int side = 0; side < 6; side++) {
-            batch.draw(textureSides[side], SIZE*side, LibGPU.graphics.getHeight() - SIZE);
-        }
+//        for(int side = 0; side < 6; side++) {
+//            batch.draw(textureSides[side], SIZE*side, LibGPU.graphics.getHeight() - SIZE);
+//        }
         batch.end();
 
 
