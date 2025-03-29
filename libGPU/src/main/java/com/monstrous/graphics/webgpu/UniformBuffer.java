@@ -25,49 +25,61 @@ import com.monstrous.utils.JavaWebGPU;
 import jnr.ffi.Pointer;
 
 // todo auto padding between elements
-// todo test dynamic offsets
-// todo combine with Buffer class, perhaps separate out buffer writing
 
-public class UniformBuffer implements Disposable {
+public class UniformBuffer extends Buffer {
 
-    private int contentSize;
-    private int uniformStride;
-    private int maxSlices;
-    private Pointer floatData;
+    private final int contentSize;
+    private final int uniformStride;
+    private final int maxSlices;
+    private final Pointer floatData;
     private int offset;
-    private Buffer buffer;
+
 
     public UniformBuffer(int contentSize, long usage){
         this(contentSize, usage, 1);
     }
 
+    /** Construct a Uniform Buffer. To use dynamic offsets, set maxSlices to the number of segments needed. */
     public UniformBuffer(int contentSize, long usage, int maxSlices){
+        super("uniform buffer", usage, calculateBufferSize(contentSize, maxSlices));
         this.contentSize = contentSize;
         this.maxSlices = maxSlices;
 
+        this.uniformStride = calculateStride(contentSize, maxSlices);
+
+        // working buffer in native memory to use as input to WriteBuffer
+        floatData = JavaWebGPU.createDirectPointer(contentSize);       // native memory buffer for one instance to aid write buffer
+    }
+
+
+
+    private static long calculateBufferSize(int contentSize, int maxSlices){
         // round up buffer size to 16 byte alignment
         long bufferSize = ceilToNextMultiple(contentSize, 16);
 
         // if we use dynamics offsets, there is a minimum stride to apply between "slices"
         if(maxSlices > 1) { // do we use dynamic offsets?
-
-            int uniformAlignment = (int) LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
-            uniformStride = ceilToNextMultiple(contentSize, uniformAlignment);
+            int uniformStride = calculateStride(contentSize, maxSlices);
             bufferSize += uniformStride * (maxSlices - 1);
         }
-
-        buffer = new Buffer("uniform buffer", usage, bufferSize);
-
-        // working buffer in native memory to use as input to WriteBuffer
-        float[] floats = new float[contentSize/Float.BYTES];
-        floatData = JavaWebGPU.createFloatArrayPointer(floats);       // native memory buffer for one instance to aid write buffer
+        return bufferSize;
     }
 
-    private int ceilToNextMultiple(int value, int step){
+    private static int calculateStride(int contentSize, int maxSlices){
+        int stride = 0;
+        if(maxSlices > 1) { // do we use dynamic offsets?
+            int uniformAlignment = (int) LibGPU.supportedLimits.getLimits().getMinUniformBufferOffsetAlignment();
+            stride = ceilToNextMultiple(contentSize, uniformAlignment);
+        }
+        return stride;
+    }
+
+    private static int ceilToNextMultiple(int value, int step){
         int d = value / step + (value % step == 0 ? 0 : 1);
         return step * d;
     }
 
+    /** When using dynamic offsets, they need to be a multiple of this value. */
     public int getUniformStride(){
         return uniformStride;
     }
@@ -127,30 +139,17 @@ public class UniformBuffer implements Disposable {
         offset += 4*Float.BYTES;
     }
 
-
     /** Write buffer data to the GPU */
     public void endFill(){
         endFill(0);
     }
 
-    /** Fill the given slice of the uniform buffer. Writes data to the GPU. */
+    /** Fill the given slice of the uniform buffer. Writes data to the GPU. destOffset should be a multiple of uniformStride. */
     public void endFill(int destOffset){
-        if(offset > contentSize) throw new RuntimeException("Overflow in UniformBuffer: offset ("+offset+") > size ("+contentSize+").");
-        //if(sliceNumber >= maxSlices) throw new IllegalArgumentException("UniformBuffer: slice number too large: "+sliceNumber);
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, buffer.getHandle(), destOffset, floatData, offset);
+        int dataSize = offset;
+        if(dataSize > contentSize) throw new RuntimeException("Overflow in UniformBuffer: content ("+dataSize+") > size ("+contentSize+").");
+        if(destOffset > getSize()-dataSize) throw new IllegalArgumentException("UniformBuffer: offset too large.");
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, getHandle(), destOffset, floatData, dataSize);
     }
 
-    public Pointer getHandle(){
-        return buffer.getHandle();
-    }
-
-    public Buffer getBuffer(){
-        return buffer;
-    }
-
-    @Override
-    public void dispose() {
-        LibGPU.webGPU.wgpuBufferRelease(buffer.getHandle());
-        buffer = null;
-    }
 }

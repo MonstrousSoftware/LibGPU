@@ -106,6 +106,7 @@ public class ModelBatch implements Disposable {
         dummy2DTexture = new Texture(1,1);
 
         int instanceSize = 16*Float.BYTES;      // data size per instance
+        // todo is this a uniform buffer or a storage buffer?
         instanceBuffer = new UniformBuffer(instanceSize, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage, MAX_INSTANCES);
 
         sampler = makeShadowSampler();
@@ -155,13 +156,13 @@ public class ModelBatch implements Disposable {
         instancingJoins = 0;
 
         writeFrameUniforms(frameUniformBuffer, camera, environment, LibGPU.graphics.passNumber);
-        frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, sampler, frameUniformBuffer.getBuffer());
+        frameBindGroup = makeFrameBindGroup(frameBindGroupLayout, sampler, frameUniformBuffer);
 
         // use dynamic offset for the frame uniform buffer slice of this pass
         pass.setBindGroup(0, frameBindGroup.getHandle(), LibGPU.graphics.passNumber * frameUniformBuffer.getUniformStride());
         LibGPU.graphics.passNumber++;
 
-        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer.getBuffer());
+        instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer);
         pass.setBindGroup(2, instancingBindGroup.getHandle());
     }
 

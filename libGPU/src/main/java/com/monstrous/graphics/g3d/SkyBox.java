@@ -72,7 +72,7 @@ public class SkyBox implements Disposable {
 
         pipeline = new Pipeline(pipelineLayout.getHandle(), pipelineSpec);
 
-        bindGroup = makeBindGroup(bindGroupLayout, uniformBuffer.getBuffer());  // move to constructor along with BG release?
+        bindGroup = makeBindGroup(bindGroupLayout, uniformBuffer);  // move to constructor along with BG release?
 
         invertedProjectionView = new Matrix4();
     }

@@ -179,7 +179,7 @@ public class Material implements Disposable {
             writeMaterialUniforms(materialUniformBuffer);
 
             // create a bind group
-            materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer.getBuffer());   // bind group for textures and uniforms
+            materialBindGroup = createMaterialBindGroup(this, materialBindGroupLayout, materialUniformBuffer);   // bind group for textures and uniforms
         }
         renderPass.setBindGroup(groupId, materialBindGroup.getHandle(), 0, null);
     }

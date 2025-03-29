@@ -207,7 +207,7 @@ public class SpriteBatch implements Disposable {
         webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer.getHandle(), vbOffset, vertexDataPtr, numBytes);
 
         // bind texture
-        BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer.getBuffer(), texture);
+        BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer, texture);
 
         // Set vertex buffer while encoding the render pass
         // use an offset to set the vertex buffer for this batch

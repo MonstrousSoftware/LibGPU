@@ -180,7 +180,7 @@ public class RoundedRectangleBatch implements Disposable {
         webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer.getHandle(), vbOffset, vertexDataPtr, numBytes);
 
         // bind uniforms
-        BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer.getBuffer());
+        BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer);
 
         // Set vertex buffer while encoding the render pass
         // use an offset to set the vertex buffer for this batch
