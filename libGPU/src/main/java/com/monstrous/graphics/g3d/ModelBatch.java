@@ -307,7 +307,7 @@ public class ModelBatch implements Disposable {
             pass.setVertexBuffer(0, vertexBuffer, 0, currentMesh.getVertexBuffer().getSize());
             if (currentMesh.getIndexCount() > 0) { // indexed mesh?
                 Pointer indexBuffer = currentMesh.getIndexBuffer().getHandle();
-                pass.setIndexBuffer(indexBuffer, meshPart.getMesh().indexFormat, 0, currentMesh.getIndexBuffer().getSize());
+                pass.setIndexBuffer(indexBuffer, meshPart.getMesh().getIndexBuffer().getFormat(), 0, currentMesh.getIndexBuffer().getSize());
             }
         }
 
@@ -350,7 +350,7 @@ public class ModelBatch implements Disposable {
         pipelineSpec.depthFormat = pass.getDepthFormat();
         pipelineSpec.numSamples = pipelineSpec.isDepthPass ? 1 : pass.getSampleCount();
         pipelineSpec.topology = meshPart.getTopology();
-        pipelineSpec.indexFormat = meshPart.getMesh().indexFormat;
+        pipelineSpec.indexFormat = meshPart.getMesh().getIndexBuffer().getFormat();
         pipelineSpec.recalcHash();
 
         Pipeline pipeline = pipelines.findPipeline(pipelineLayout.getHandle(), pipelineSpec);

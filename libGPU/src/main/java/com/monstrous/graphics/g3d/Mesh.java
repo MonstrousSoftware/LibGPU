@@ -22,6 +22,7 @@ import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.graphics.webgpu.Buffer;
 import com.monstrous.graphics.webgpu.IndexBuffer;
+import com.monstrous.graphics.webgpu.VertexBuffer;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.WGPUBufferUsage;
@@ -32,25 +33,21 @@ import java.util.ArrayList;
 
 public class Mesh {
 
-    private Buffer vertexBuffer;
-    private Buffer indexBuffer;
-    //private IndexBuffer indexBuffer;
+    private VertexBuffer vertexBuffer;
+    private IndexBuffer indexBuffer;
     private int vertexCount;
-    private int indexCount;     // can be zero if the vertices are not indexed
     public VertexAttributes vertexAttributes;
-    public WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
     public BoundingBox boundingBox;
 
     public Mesh(){
         boundingBox = new BoundingBox();
-        indexCount = 0;
     }
 
     public Mesh(MeshData data) {
         this();
         setVertexAttributes(data.vertexAttributes);
 
-        //vertexCount = data.vertFloats.size() * Float.BYTES / data.vertexAttributes.getVertexSizeInBytes();
+        vertexCount = data.vertFloats.size() * Float.BYTES / data.vertexAttributes.getVertexSizeInBytes();
 
         // convert ArrayList<Float> to float[]
         // todo use FloatBuffer in MeshData?
@@ -58,11 +55,12 @@ public class Mesh {
         for (int i = 0; i < data.vertFloats.size(); i++) {
             vertexData[i] = data.vertFloats.get(i);
         }
-        setVertices(vertexData);
+        vertexBuffer = new VertexBuffer(vertexData.length *Float.BYTES);
+        vertexBuffer.setVertices(vertexData);
+        calculateBoundingBox(vertexData);
 
-        setIndices(data.indexValues, data.indexSizeInBytes);
-//        if(data.indexValues.size() > 0)
-//            indexBuffer = new IndexBuffer(data.indexValues, data.indexSizeInBytes);
+        if(data.indexValues.size() > 0)
+            indexBuffer = new IndexBuffer(data.indexValues, data.indexSizeInBytes);
     }
 
 
@@ -72,17 +70,11 @@ public class Mesh {
     }
 
     public void setVertices(float[] vertexData) {
-        // Create vertex buffer
-        int size = vertexData.length *Float.BYTES;
-        vertexBuffer = new Buffer("Vertex buffer", WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex, size);
-        vertexCount = size / vertexAttributes.getVertexSizeInBytes();
-
-        Pointer dataBuf = JavaWebGPU.createFloatArrayPointer(vertexData);
-        // Upload geometry data to the buffer
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue,vertexBuffer.getHandle(),0,dataBuf, size);
-
-        calculateBoundingBox(vertexData);
+        if(vertexBuffer == null)
+            vertexBuffer = new VertexBuffer(vertexData.length *Float.BYTES);
+        vertexBuffer.setVertices(vertexData);
     }
+
 
     private void calculateBoundingBox(float[] vertexData){
         int stride = vertexAttributes.getVertexSizeInBytes()/Float.BYTES;   // stride in floats
@@ -101,74 +93,11 @@ public class Mesh {
     }
 
 
-//    public void setIndices(short[] indices, int indexCount){
-//        if(indexBuffer == null)
-//            indexBuffer = new IndexBuffer(indices, indexCount);
-//        else
-//            indexBuffer.setIndices(indices, indexCount);
-//    }
-
-
     public void setIndices(short[] indices, int indexCount){
-        int indexSizeInBytes = 2;
-        this.indexCount = indexCount;
-        indexFormat = WGPUIndexFormat.Uint16;
-        int indexBufferSize = indexCount * indexSizeInBytes;
-        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
-
-        Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
-        idata.put(0, indices, 0, indexCount);
-        setIndices(idata, indexBufferSize);
-    }
-
-    public void setIndices(ArrayList<Integer> indexValues){
-        if(indexValues == null)
-            indexCount = 0;
-        else {
-            int indexWidth = 2;
-            if (indexValues.size() > Short.MAX_VALUE) {
-                indexWidth = 4;
-            }
-            setIndices(indexValues, indexWidth);
-        }
-    }
-
-
-//    public void setIndices(ArrayList<Integer> indexValues, int indexSizeInBytes) {
-//        indexBuffer = new IndexBuffer(indexValues, indexSizeInBytes);
-//    }
-
-    public void setIndices(ArrayList<Integer> indexValues, int indexSizeInBytes) {
-
-        if(indexSizeInBytes == 2)
-            indexFormat = WGPUIndexFormat.Uint16;
-        else if(indexSizeInBytes == 4)
-            indexFormat = WGPUIndexFormat.Uint32;
+        if(indexBuffer == null)
+            indexBuffer = new IndexBuffer(indices, indexCount);
         else
-            throw new RuntimeException("setIndices: support only 16 bit or 32 bit indices.");
-
-        indexCount = indexValues.size();
-        int indexBufferSize = indexCount * indexSizeInBytes;
-        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
-
-        Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
-        if (indexSizeInBytes == 2) {
-            for (int i = 0; i < indexCount; i++) {
-                idata.putShort((long) i * indexSizeInBytes, (short) (int) indexValues.get(i));
-            }
-        } else if (indexSizeInBytes == 4) {
-             for (int i = 0; i < indexCount; i++) {
-                idata.putInt((long) i * indexSizeInBytes, indexValues.get(i));
-            }
-        }
-        setIndices(idata, indexBufferSize);
-    }
-
-    public void setIndices(Pointer idata, int indexBufferSize) {
-        indexBuffer = new Buffer("Index buffer", WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexBufferSize);
-
-        // Upload data to the buffer
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer.getHandle(), 0, idata, indexBufferSize);
+            indexBuffer.setIndices(indices, indexCount);
     }
 
     public void dispose(){
@@ -177,11 +106,11 @@ public class Mesh {
         vertexBuffer.dispose();
     }
 
-    public Buffer getVertexBuffer(){
+    public VertexBuffer getVertexBuffer(){
         return vertexBuffer;
     }
 
-    public Buffer getIndexBuffer(){
+    public IndexBuffer getIndexBuffer(){
         return indexBuffer;
     }
 
@@ -190,6 +119,6 @@ public class Mesh {
     }
 
     public int getIndexCount() {
-        return indexCount;
+        return indexBuffer == null ? 0 : indexBuffer.getIndexCount();
     }
 }

@@ -10,14 +10,12 @@ import java.util.ArrayList;
 
 public class IndexBuffer extends Buffer {
 
-    //private WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
     private int indexSizeInBytes;   // 2 or 4
-    public int indexCount;
+    private int indexCount;
 
     public IndexBuffer(long usage, long bufferSize, int indexSizeInBytes) {
         super("index buffer", usage, bufferSize);
         this.indexSizeInBytes = indexSizeInBytes;
-        //this.indexFormat = determineFormat(indexSizeInBytes);
     }
 
     public IndexBuffer(ArrayList<Integer> indexValues, int indexSizeInBytes) {
@@ -28,6 +26,14 @@ public class IndexBuffer extends Buffer {
     public IndexBuffer(short[] indexValues, int indexCount) {
         this(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexCount*2, 2);
         setIndices(indexValues, indexCount);
+    }
+
+    public int getIndexCount(){
+        return indexCount;
+    }
+
+    public WGPUIndexFormat getFormat(){
+        return determineFormat(indexSizeInBytes);
     }
 
     public static WGPUIndexFormat determineFormat(int indexSizeInBytes ){
@@ -62,18 +68,6 @@ public class IndexBuffer extends Buffer {
         idata.put(0, indices, 0, indexCount);
         setIndices(idata, indexBufferSize);
     }
-
-//    public void setIndices(ArrayList<Integer> indexValues){
-//        if(indexValues == null)
-//            indexCount = 0;
-//        else {
-//            int indexWidth = 2;
-//            if (indexValues.size() > Short.MAX_VALUE) {
-//                indexWidth = 4;
-//            }
-//            setIndices(indexValues, indexWidth);
-//        }
-//    }
 
     public void setIndices(ArrayList<Integer> indexValues) {
         if(indexValues == null) {
