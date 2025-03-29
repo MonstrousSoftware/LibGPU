@@ -13,19 +13,23 @@ public class IndexBuffer extends Buffer {
     private int indexSizeInBytes;   // 2 or 4
     private int indexCount;
 
-    public IndexBuffer(long usage, long bufferSize, int indexSizeInBytes) {
-        super("index buffer", usage, bufferSize);
+    public IndexBuffer(long usage, int bufferSize, int indexSizeInBytes) {
+        super("index buffer", usage, align(bufferSize));
         this.indexSizeInBytes = indexSizeInBytes;
     }
 
     public IndexBuffer(ArrayList<Integer> indexValues, int indexSizeInBytes) {
-        this(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexValues.size()*indexSizeInBytes,indexSizeInBytes);
+        this(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, align(indexValues.size()*indexSizeInBytes),indexSizeInBytes);
         setIndices(indexValues);
     }
 
     public IndexBuffer(short[] indexValues, int indexCount) {
-        this(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexCount*2, 2);
+        this(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, align(indexCount*2), 2);
         setIndices(indexValues, indexCount);
+    }
+
+    private static int align(int indexBufferSize ){
+        return (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
     }
 
     public int getIndexCount(){
@@ -48,9 +52,7 @@ public class IndexBuffer extends Buffer {
     public void setIndices(short[] indices, int indexCount){
         this.indexSizeInBytes = 2;
         this.indexCount = indexCount;
-        //indexFormat = WGPUIndexFormat.Uint16;
-        int indexBufferSize = indexCount * indexSizeInBytes;
-        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
+        int indexBufferSize = align(indexCount * indexSizeInBytes);
 
         Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
         idata.put(0, indices, 0, indexCount);
@@ -60,9 +62,7 @@ public class IndexBuffer extends Buffer {
     public void setIndices(int[] indices, int indexCount){
         this.indexSizeInBytes = 4;
         this.indexCount = indexCount;
-        //indexFormat = WGPUIndexFormat.Uint16;
-        int indexBufferSize = indexCount * indexSizeInBytes;
-        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
+        int indexBufferSize = align(indexCount * indexSizeInBytes);
 
         Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
         idata.put(0, indices, 0, indexCount);
@@ -75,8 +75,7 @@ public class IndexBuffer extends Buffer {
             return;
         }
         indexCount = indexValues.size();
-        int indexBufferSize = indexCount * indexSizeInBytes;
-        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
+        int indexBufferSize = align(indexCount * indexSizeInBytes);
 
         Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
         if (indexSizeInBytes == 2) {

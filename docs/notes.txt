@@ -325,3 +325,6 @@ can we pass multiple lights in the frame uniform buffer?
 yes: https://eliemichel.github.io/LearnWebGPU/basic-3d-rendering/some-interaction/lighting-control.html
 
 
+
+HDR map from Polyhaven:
+https://polyhaven.com/a/leadenhall_market
