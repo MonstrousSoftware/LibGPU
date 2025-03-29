@@ -1,0 +1,107 @@
+package com.monstrous.graphics.webgpu;
+
+import com.monstrous.LibGPU;
+import com.monstrous.utils.JavaWebGPU;
+import com.monstrous.webgpu.WGPUBufferUsage;
+import com.monstrous.webgpu.WGPUIndexFormat;
+import jnr.ffi.Pointer;
+
+import java.util.ArrayList;
+
+public class IndexBuffer extends Buffer {
+
+    //private WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
+    private int indexSizeInBytes;   // 2 or 4
+    public int indexCount;
+
+    public IndexBuffer(long usage, long bufferSize, int indexSizeInBytes) {
+        super("index buffer", usage, bufferSize);
+        this.indexSizeInBytes = indexSizeInBytes;
+        //this.indexFormat = determineFormat(indexSizeInBytes);
+    }
+
+    public IndexBuffer(ArrayList<Integer> indexValues, int indexSizeInBytes) {
+        this(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexValues.size()*indexSizeInBytes,indexSizeInBytes);
+        setIndices(indexValues);
+    }
+
+    public IndexBuffer(short[] indexValues, int indexCount) {
+        this(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Index, indexCount*2, 2);
+        setIndices(indexValues, indexCount);
+    }
+
+    public static WGPUIndexFormat determineFormat(int indexSizeInBytes ){
+        if(indexSizeInBytes == 2)
+            return WGPUIndexFormat.Uint16;
+        else if(indexSizeInBytes == 4)
+            return WGPUIndexFormat.Uint32;
+        else
+            throw new RuntimeException("setIndices: support only 16 bit or 32 bit indices.");
+    }
+
+    public void setIndices(short[] indices, int indexCount){
+        this.indexSizeInBytes = 2;
+        this.indexCount = indexCount;
+        //indexFormat = WGPUIndexFormat.Uint16;
+        int indexBufferSize = indexCount * indexSizeInBytes;
+        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
+
+        Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
+        idata.put(0, indices, 0, indexCount);
+        setIndices(idata, indexBufferSize);
+    }
+
+    public void setIndices(int[] indices, int indexCount){
+        this.indexSizeInBytes = 4;
+        this.indexCount = indexCount;
+        //indexFormat = WGPUIndexFormat.Uint16;
+        int indexBufferSize = indexCount * indexSizeInBytes;
+        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
+
+        Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
+        idata.put(0, indices, 0, indexCount);
+        setIndices(idata, indexBufferSize);
+    }
+
+//    public void setIndices(ArrayList<Integer> indexValues){
+//        if(indexValues == null)
+//            indexCount = 0;
+//        else {
+//            int indexWidth = 2;
+//            if (indexValues.size() > Short.MAX_VALUE) {
+//                indexWidth = 4;
+//            }
+//            setIndices(indexValues, indexWidth);
+//        }
+//    }
+
+    public void setIndices(ArrayList<Integer> indexValues) {
+        if(indexValues == null) {
+            indexCount = 0;
+            return;
+        }
+        indexCount = indexValues.size();
+        int indexBufferSize = indexCount * indexSizeInBytes;
+        indexBufferSize = (indexBufferSize + 3) & ~3; // round up to the next multiple of 4
+
+        Pointer idata = JavaWebGPU.createDirectPointer(indexBufferSize);
+        if (indexSizeInBytes == 2) {
+            for (int i = 0; i < indexCount; i++) {
+                idata.putShort((long) i * indexSizeInBytes, (short) (int) indexValues.get(i));
+            }
+        } else if (indexSizeInBytes == 4) {
+            for (int i = 0; i < indexCount; i++) {
+                idata.putInt((long) i * indexSizeInBytes, indexValues.get(i));
+            }
+        }
+        setIndices(idata, indexBufferSize);
+    }
+
+    /** fill index buffer with raw data. */
+    private void setIndices(Pointer idata, int indexBufferSize) {
+        if(indexBufferSize > getSize()) throw new IllegalArgumentException("IndexBuffer.setIndices: data too large.");
+
+        // Upload data to the buffer
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, getHandle(), 0, idata, indexBufferSize);
+    }
+}

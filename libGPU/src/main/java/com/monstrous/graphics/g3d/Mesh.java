@@ -21,6 +21,7 @@ import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.loaders.MeshData;
 import com.monstrous.graphics.webgpu.Buffer;
+import com.monstrous.graphics.webgpu.IndexBuffer;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.WGPUBufferUsage;
@@ -33,17 +34,16 @@ public class Mesh {
 
     private Buffer vertexBuffer;
     private Buffer indexBuffer;
+    //private IndexBuffer indexBuffer;
     private int vertexCount;
     private int indexCount;     // can be zero if the vertices are not indexed
     public VertexAttributes vertexAttributes;
     public WGPUIndexFormat indexFormat = WGPUIndexFormat.Uint16;
     public BoundingBox boundingBox;
-    //private WGPUPrimitiveTopology topology;
 
     public Mesh(){
         boundingBox = new BoundingBox();
         indexCount = 0;
-        //topology = WGPUPrimitiveTopology.TriangleList;
     }
 
     public Mesh(MeshData data) {
@@ -61,6 +61,8 @@ public class Mesh {
         setVertices(vertexData);
 
         setIndices(data.indexValues, data.indexSizeInBytes);
+//        if(data.indexValues.size() > 0)
+//            indexBuffer = new IndexBuffer(data.indexValues, data.indexSizeInBytes);
     }
 
 
@@ -98,6 +100,15 @@ public class Mesh {
         }
     }
 
+
+//    public void setIndices(short[] indices, int indexCount){
+//        if(indexBuffer == null)
+//            indexBuffer = new IndexBuffer(indices, indexCount);
+//        else
+//            indexBuffer.setIndices(indices, indexCount);
+//    }
+
+
     public void setIndices(short[] indices, int indexCount){
         int indexSizeInBytes = 2;
         this.indexCount = indexCount;
@@ -121,6 +132,11 @@ public class Mesh {
             setIndices(indexValues, indexWidth);
         }
     }
+
+
+//    public void setIndices(ArrayList<Integer> indexValues, int indexSizeInBytes) {
+//        indexBuffer = new IndexBuffer(indexValues, indexSizeInBytes);
+//    }
 
     public void setIndices(ArrayList<Integer> indexValues, int indexSizeInBytes) {
 
@@ -155,19 +171,10 @@ public class Mesh {
         LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer.getHandle(), 0, idata, indexBufferSize);
     }
 
-//    public WGPUPrimitiveTopology getTopology() {
-//        return topology;
-//    }
-//
-//    public void setTopology(WGPUPrimitiveTopology topology) {
-//        this.topology = topology;
-//    }
-
     public void dispose(){
         if(indexBuffer != null)
             indexBuffer.dispose();
         vertexBuffer.dispose();
-
     }
 
     public Buffer getVertexBuffer(){
