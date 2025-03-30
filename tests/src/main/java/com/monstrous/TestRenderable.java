@@ -5,7 +5,7 @@ import com.monstrous.graphics.g3d.Mesh;
 import com.monstrous.graphics.g3d.MeshPart;
 import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.loaders.MeshData;
-import com.monstrous.graphics.loaders.ObjLoader;
+import com.monstrous.graphics.loaders.ObjParser;
 import com.monstrous.math.Matrix4;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
 
@@ -32,7 +32,7 @@ public class TestRenderable extends ApplicationAdapter {
 
 
         //mesh = new Mesh("pyramidNoIndex.txt");
-        MeshData meshData = ObjLoader.load("models/ducky.obj");
+        MeshData meshData = ObjParser.load("models/ducky.obj");
         mesh = new Mesh(meshData);
 
         if(mesh.getIndexCount() > 0)

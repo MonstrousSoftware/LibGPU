@@ -1,367 +1,448 @@
-/*******************************************************************************
- * Copyright 2025 Monstrous Software.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
-
 package com.monstrous.graphics.loaders;
 
-import com.monstrous.FileHandle;
 import com.monstrous.Files;
-import com.monstrous.graphics.Color;
+import com.monstrous.graphics.Material;
+import com.monstrous.graphics.VertexAttribute;
+import com.monstrous.graphics.VertexAttributes;
+import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.loaders.gltf.*;
-import com.monstrous.math.Matrix4;
-import com.monstrous.math.Quaternion;
+import com.monstrous.math.Vector2;
 import com.monstrous.math.Vector3;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
+import com.monstrous.webgpu.WGPUPrimitiveTopology;
+import com.monstrous.webgpu.WGPUVertexFormat;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-// JSON parser of the GLTF file format into a set of GLTF class objects
+public class GLTFLoader implements ModelLoader {
 
-public class GLTFLoader {
+    private final Map<GLTFPrimitive, Mesh> meshMap = new HashMap<>();
+    private final ArrayList<Material> materials = new ArrayList<>();
+    //private final Map<Integer, Boolean> hasNormalMap = new HashMap<>();
 
-    public static GLTF load(String filePath) {
-        int slash = filePath.lastIndexOf('/');
-        String path = filePath.substring(0, slash + 1);
-        String name = filePath.substring(slash + 1);
-        MaterialData materialData = null;
+    @Override
+    public Model loadFromFile(Model model, String filePath) {
 
-        FileHandle handle = Files.internal(filePath);
-        String contents = handle.readString();
-
-        GLTF gltf = parseJSON(contents, path);
-        gltf.rawBuffer = new GLTFRawBuffer(gltf.buffers.get(0).uri);           // read .bin file, assume 1 buffer
-        return gltf;
+        GLTF gltf = GLTFParser.load(filePath);      // TMP
+        return load(model, gltf);
     }
 
-    public static GLTF parseJSON(String contents, String path) {
-        GLTF gltf = new GLTF();
-
-        JSONObject file = (JSONObject)JSONValue.parse(contents);
-
-        JSONArray ims = (JSONArray)file.get("images");
-        if(ims != null) {
-            //System.out.println("images: " + ims.size());
-            for (int i = 0; i < ims.size(); i++) {
-                GLTFImage im = new GLTFImage();
-
-                JSONObject image = (JSONObject) ims.get(i);
-                String imagepath = (String) image.get("uri");
-                if(imagepath != null) {
-                    // texture file
-                    im.uri = path + imagepath;
-                    //System.out.println("image path: " + imagepath);
-                }
-                else {
-                    // section in binary buffer
-                    im.mimeType = (String) image.get("mimeType");
-                    Long view = (Long) image.get("bufferView");
-                    im.bufferView = view.intValue();
-                    im.name = (String) image.get("name");
-                    //System.out.println("image : " + im.mimeType+" "+im.name);
-                }
-
-                gltf.images.add(im);
-            }
+    public Model load(Model model, GLTF gltf){
+        meshMap.clear();
+        materials.clear();
 
 
-            JSONArray sampls = (JSONArray) file.get("samplers");
-            if(sampls != null) {
-                //System.out.println("samplers: " + sampls.size());
-                for (int i = 0; i < sampls.size(); i++) {
-                    GLTFSampler sampler = new GLTFSampler();
+        long startLoad = System.currentTimeMillis();
+        int index = 0;
+        for(GLTFMaterial gltfMat :  gltf.materials){
+            MaterialData materialData = new MaterialData();
 
-                    JSONObject smpl = (JSONObject) sampls.get(i);
-                    sampler.name = (String) smpl.get("name");
-                    Long wrapS = (Long) smpl.get("wrapS");
-                    sampler.wrapS = wrapS == null ? 10497 : wrapS.intValue();
-                    Long wrapT = (Long) smpl.get("wrapS");
-                    sampler.wrapT = wrapT == null ? 10497 : wrapT.intValue();
+            materialData.name = gltfMat.name != null ? gltfMat.name : "mat"+index;   // copy name or generate one as a debugging aid
+            index++;
 
-                    gltf.samplers.add(sampler);
-                }
+            if(gltfMat.pbrMetallicRoughness.baseColorFactor != null)
+                materialData.diffuse = gltfMat.pbrMetallicRoughness.baseColorFactor;
+            if(gltfMat.pbrMetallicRoughness.roughnessFactor >= 0)
+                materialData.roughnessFactor = gltfMat.pbrMetallicRoughness.roughnessFactor;
+            if(gltfMat.pbrMetallicRoughness.metallicFactor >= 0)
+                materialData.metallicFactor = gltfMat.pbrMetallicRoughness.metallicFactor;
+            if(gltfMat.pbrMetallicRoughness.baseColorTexture >= 0)
+                materialData.diffuseMapData = readImageData(gltf, gltfMat.pbrMetallicRoughness.baseColorTexture);
+            if(gltfMat.pbrMetallicRoughness.metallicRoughnessTexture >= 0)
+                materialData.metallicRoughnessMapData = readImageData(gltf, gltfMat.pbrMetallicRoughness.metallicRoughnessTexture);
+            if(gltfMat.normalTexture >= 0)
+                materialData.normalMapData = readImageData(gltf, gltfMat.normalTexture);
+            if(gltfMat.emissiveTexture >= 0)
+                materialData.emissiveMapData =  readImageData(gltf, gltfMat.emissiveTexture);
+            if(gltfMat.occlusionTexture >= 0)
+                materialData.occlusionMapData =  readImageData(gltf, gltfMat.occlusionTexture);
+
+
+            Material material = new Material(materialData);
+            materials.add(material);
+            model.addMaterial(material);
+        }
+
+        long endLoad = System.currentTimeMillis();
+        System.out.println("Material loading/generation time (ms): "+(endLoad - startLoad));
+
+        startLoad = System.currentTimeMillis();
+        for(GLTFMesh gltfMesh : gltf.meshes){
+            // build a mesh for each primitive
+            for(GLTFPrimitive primitive : gltfMesh.primitives){
+                Mesh mesh = buildMesh(gltf,  gltf.rawBuffer, primitive );
+                model.addMesh(mesh);
+                meshMap.put(primitive, mesh);
             }
         }
 
-        JSONArray textures = (JSONArray)file.get("textures");
-        if (textures != null) {
-            //System.out.println("textures: " + textures.size());
-            for (int i = 0; i < textures.size(); i++) {
-                GLTFTexture texture = new GLTFTexture();
+        endLoad = System.currentTimeMillis();
+        System.out.println("Mesh loading time (ms): "+(endLoad - startLoad));
 
-                JSONObject tex = (JSONObject) textures.get(i);
-                texture.name = (String) tex.get("name");
-                texture.source = getInt(tex, "source", 0);
-                texture.sampler = getInt(tex, "sampler", 0);
+//        for(GLTFScene scene : gltf.scenes ){
+//
+//        }
 
-                gltf.textures.add(texture);
-            }
+
+        GLTFScene scene = gltf.scenes.get(gltf.scene);
+        for( int nodeId : scene.nodes ) {
+            GLTFNode gltfNode = gltf.nodes.get(nodeId);
+
+            Node rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
+            rootNode.updateMatrices(true);
+            model.addNode(rootNode);
         }
-
-        JSONArray mats = (JSONArray)file.get("materials");
-        if (mats != null) {
-
-
-            //System.out.println("materials: " + mats.size());
-            for (int i = 0; i < mats.size(); i++) {
-
-                GLTFMaterialPBR pbr = new GLTFMaterialPBR();
-                GLTFMaterial material = new GLTFMaterial();
-
-                JSONObject mat = (JSONObject) mats.get(i);
-                material.name = (String) mat.get("name");
-
-                JSONObject pbrMR = (JSONObject) mat.get("pbrMetallicRoughness");
-                JSONObject base = (JSONObject) pbrMR.get("baseColorTexture");
-                if(base != null)
-                    pbr.baseColorTexture = getInt(base, "index", 0);
-                JSONArray bc = (JSONArray)pbrMR.get("baseColorFactor");
-                if(bc != null){
-                    pbr.baseColorFactor = getColor(bc);
-                }
-
-                Number roughnessFactor = (Number) pbrMR.get("roughnessFactor");
-                if(roughnessFactor != null){
-                    pbr.roughnessFactor = roughnessFactor.floatValue();
-                }
-                Number metallicFactor = (Number) pbrMR.get("metallicFactor");
-                if(metallicFactor != null){
-                    pbr.metallicFactor = metallicFactor.floatValue();
-                }
-
-                JSONObject metal = (JSONObject) pbrMR.get("metallicRoughnessTexture");
-                if(metal != null) {
-                    long metalIndex = (Long) metal.get("index");
-                    pbr.metallicRoughnessTexture = (int) metalIndex;
-                }
-
-                JSONObject normalMap = (JSONObject) mat.get("normalTexture");
-                if(normalMap != null)
-                    material.normalTexture = getInt(normalMap, "index", -1);
-
-                JSONObject emissive = (JSONObject) mat.get("emissiveTexture");
-                if(emissive != null)
-                    material.emissiveTexture = getInt(emissive, "index", -1);
-
-                JSONObject occlusion = (JSONObject) mat.get("occlusionTexture");
-                if(occlusion != null)
-                    material.occlusionTexture = getInt(occlusion, "index", -1);
-
-
-                material.pbrMetallicRoughness = pbr;
-                gltf.materials.add(material);
-            }
-        }
-
-        JSONArray meshes = (JSONArray)file.get("meshes");
-        //System.out.println("meshes: "+meshes.size());
-        for(int i = 0; i < meshes.size(); i++){
-            GLTFMesh mesh = new GLTFMesh();
-
-            JSONObject m = (JSONObject)meshes.get(i);
-            mesh.name = (String)m.get("name");
-            JSONArray primitives = (JSONArray)m.get("primitives");
-            for(int j = 0; j < primitives.size(); j++){
-                GLTFPrimitive primitive = new GLTFPrimitive();
-
-                JSONObject p = (JSONObject)primitives.get(j);
-
-                Long mode = (Long) p.get("mode");
-                primitive.mode = (mode == null ? 4 : mode.intValue());
-                Long indices = (Long)p.get("indices");
-                primitive.indices = (indices == null ? 0 : indices.intValue());
-                Long material = (Long)p.get("material");
-                primitive.material = (material == null ? 0 : material.intValue());
-
-                JSONObject attribs = (JSONObject)p.get("attributes");
-                for(Object key : attribs.keySet()) {
-                    String attributeName = (String) key;
-                    Long attributeValue = (Long) attribs.get(key);
-                    GLTFAttribute attribute = new GLTFAttribute(attributeName, attributeValue.intValue());
-                    primitive.attributes.add(attribute);
-                }
-
-                mesh.primitives.add(primitive);
-            }
-            gltf.meshes.add(mesh);
-        }
-
-        JSONArray buffers = (JSONArray)file.get("buffers");
-        //System.out.println("buffers: "+buffers.size());
-        for(int i = 0; i < buffers.size(); i++){
-            GLTFBuffer buffer = new GLTFBuffer();
-
-            JSONObject buf = (JSONObject)buffers.get(i);
-            buffer.name = (String)buf.get("name");
-            buffer.uri = path + (String)buf.get("uri");
-            Long len = (Long)buf.get("byteLength");
-            buffer.byteLength = (len == null ? 0 : len.intValue());
-
-            gltf.buffers.add(buffer);
-        }
-
-        JSONArray bufferViews = (JSONArray)file.get("bufferViews");
-        //System.out.println("buffer views: "+bufferViews.size());
-        for(int i = 0; i < bufferViews.size(); i++){
-            GLTFBufferView bufferView = new GLTFBufferView();
-
-            JSONObject bufView = (JSONObject)bufferViews.get(i);
-            bufferView.name = (String)bufView.get("name");
-            Long buffer = (Long)bufView.get("buffer");
-            bufferView.buffer = (buffer == null ? 0 : buffer.intValue());
-            Long offset = (Long)bufView.get("byteOffset");
-            bufferView.byteOffset = (offset == null ? 0 : offset.intValue());
-            Long len = (Long)bufView.get("byteLength");
-            bufferView.byteLength = (len == null ? 0 : len.intValue());
-            Long stride = (Long)bufView.get("byteStride");
-            bufferView.byteStride = (stride == null ? 0 : stride.intValue());
-            Long target = (Long)bufView.get("target");
-            bufferView.target = (target == null ? 0 : target.intValue());
-
-            gltf.bufferViews.add(bufferView);
-        }
-
-        JSONArray accessors = (JSONArray)file.get("accessors");
-        //System.out.println("accessors: "+accessors.size());
-        for(int i = 0; i < accessors.size(); i++){
-            GLTFAccessor accessor = new GLTFAccessor();
-
-            JSONObject ac = (JSONObject)accessors.get(i);
-            accessor.name = (String)ac.get("name");
-            Long bufferView = (Long)ac.get("bufferView");
-            accessor.bufferView = (bufferView == null ? 0 : bufferView.intValue());
-            Long offset = (Long)ac.get("byteOffset");
-            accessor.byteOffset = (offset == null ? 0 : offset.intValue());
-            Long ct = (Long)ac.get("componentType");
-            accessor.componentType = (ct == null ? 0 : ct.intValue());
-            String n = (String)ac.get("normalized");
-            accessor.normalized = (n == null ? false : (n.contentEquals("true") ? true : false));
-            Long count = (Long)ac.get("count");
-            accessor.count = (count == null ? 0 : count.intValue());
-            accessor.type = (String)ac.get("type");
-
-
-            gltf.accessors.add(accessor);
-        }
-
-        JSONArray nodes = (JSONArray)file.get("nodes");
-        //System.out.println("nodes: "+accessors.size());
-        for(int i = 0; i < nodes.size(); i++){
-            GLTFNode node = new GLTFNode();
-
-            JSONObject nd = (JSONObject)nodes.get(i);
-            node.name = (String)nd.get("name");
-            node.camera = getInt(nd, "camera", -1);
-            node.skin = getInt(nd, "skin", -1);
-            node.mesh = getInt(nd, "mesh", -1);
-
-            JSONArray tr = (JSONArray)nd.get("translation");
-            if(tr != null){
-                node.translation = getVector3(tr);
-            }
-            JSONArray sc = (JSONArray)nd.get("scale");
-            if(sc != null){
-                node.scale = getVector3(sc);
-            }
-            JSONArray rot = (JSONArray)nd.get("rotation");
-            if(rot != null){
-                node.rotation = getRotation(rot);
-            }
-            JSONArray mat = (JSONArray)nd.get("matrix");
-            if(mat != null){
-                node.matrix = getMatrix4(mat);
-            }
-            JSONArray ch = (JSONArray)nd.get("children");
-            if(ch != null){
-                for(int j = 0; j < ch.size(); j++){
-                    Long id = (Long)ch.get(j);
-                    node.children.add(id.intValue());
-                }
-            }
-
-            gltf.nodes.add(node);
-        }
-
-        JSONArray scenes = (JSONArray)file.get("scenes");
-       //System.out.println("scenes: "+accessors.size());
-        for(int i = 0; i < scenes.size(); i++){
-            GLTFScene scene = new GLTFScene();
-
-            JSONObject sc = (JSONObject)scenes.get(i);
-            scene.name = (String)sc.get("name");
-            JSONArray nds = (JSONArray)sc.get("nodes");
-            for(int j= 0 ; j < nds.size(); j++){
-                Long nodeId = (Long)nds.get(j);
-                scene.nodes.add(nodeId.intValue());
-            }
-            gltf.scenes.add(scene);
-        }
-
-        gltf.scene = getInt(file, "scene", 0);
-        //System.out.println("scene: "+gltf.scene);
-
-        return gltf;
-    }
-
-    private static int getInt(JSONObject obj, String key, int fallback){
-        Long value = (Long)obj.get(key);
-        return (value == null ? fallback : value.intValue());
-    }
-
-    private static Vector3 getVector3(JSONArray obj) {
-        if (obj.size() != 3)
-            throw new RuntimeException("GLTF: Expected vector with 3 elements");
-        Number x = (Number) obj.get(0);
-        Number y = (Number) obj.get(1);
-        Number z = (Number) obj.get(2);
-        return  new Vector3(x.floatValue(), y.floatValue(), z.floatValue());
-    }
-
-    private static Color getColor(JSONArray obj) {
-        if (obj.size() != 4)
-            throw new RuntimeException("GLTF: Expected color with 4 elements");
-        Number r = (Number) obj.get(0);
-        Number g = (Number) obj.get(1);
-        Number b = (Number) obj.get(2);
-        Number a = (Number) obj.get(3);
-        return  new Color(r.floatValue(), g.floatValue(), b.floatValue(), a.floatValue());
+        //System.out.println("loaded "+filePath);
+        return model;
     }
 
 
-    private static Quaternion getRotation(JSONArray rot) {
-        if(rot.size() != 4)
-            throw new RuntimeException("GLTF: Expected node.rotation with 4 elements");
-        Number x = (Number)rot.get(0);
-        Number y = (Number)rot.get(1);
-        Number z = (Number)rot.get(2);
-        Number w = (Number)rot.get(3);
-        return new Quaternion(x.floatValue(), y.floatValue(), z.floatValue(), w.floatValue());
-    }
+    private byte[] readImageData( GLTF gltf, int textureId )  {
+        byte[] bytes;
 
-    private static Matrix4 getMatrix4(JSONArray mat) {
-        if(mat.size() != 16)
-            throw new RuntimeException("GLTF: Expected matrix with 16 elements");
-        float[] values = new float[16];
-        for(int i = 0; i < 16; i++) {
-            Number nr = (Number) mat.get(i);
-            values[i] = nr.floatValue();
+        GLTFImage image = gltf.images.get( gltf.textures.get(textureId).source );
+        if(image.uri != null){
+            bytes = Files.internal(image.uri).readAllBytes();
+        } else {
+            GLTFBufferView view = gltf.bufferViews.get(image.bufferView);
+            if(view.buffer != 0)
+                throw new RuntimeException("GLTF can only support buffer 0");
+
+            bytes = new byte[view.byteLength];
+
+            gltf.rawBuffer.byteBuffer.position(view.byteOffset);
+            gltf.rawBuffer.byteBuffer.get(bytes);
         }
-        return new Matrix4(values);
+        return bytes;
+    }
+
+    private Node addNode(GLTF gltf, GLTFNode gltfNode){
+        Node node = new Node();
+        node.name = gltfNode.name;
+
+        // optional transforms
+        if(gltfNode.matrix != null){
+            gltfNode.matrix.getTranslation(node.translation);
+            gltfNode.matrix.getScale(node.scale);
+            gltfNode.matrix.getRotation(node.rotation);
+        }
+        if(gltfNode.translation != null)
+            node.translation.set(gltfNode.translation);
+        if(gltfNode.scale != null)
+            node.scale.set(gltfNode.scale);
+        if(gltfNode.rotation != null)
+            node.rotation.set(gltfNode.rotation);
+
+        if(gltfNode.mesh >= 0){ // this node refers to a mesh
+            node.nodeParts = new ArrayList<>();
+            GLTFMesh gltfMesh = gltf.meshes.get(gltfNode.mesh);
+            for( GLTFPrimitive primitive : gltfMesh.primitives) {
+                GLTFAccessor indexAccessor = gltf.accessors.get(primitive.indices);
+                GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
+                if (!indexAccessor.type.contentEquals("SCALAR"))
+                    throw new RuntimeException("GLTF: Expect primitive.indices to refer to SCALAR accessor");
+
+                Mesh m = meshMap.get(primitive);
+                MeshPart meshPart = new MeshPart(m, "part", WGPUPrimitiveTopology.TriangleList, 0, indexAccessor.count);
+                node.nodeParts.add( new NodePart(meshPart, materials.get(primitive.material)) );
+            }
+        }
+        // now add any children
+        for(int j : gltfNode.children ){
+            GLTFNode gltfChild = gltf.nodes.get(j);
+            Node child = addNode(gltf, gltfChild);
+            node.addChild(child);
+        }
+        return node;
     }
 
 
+    private Mesh buildMesh(GLTF gltf, GLTFRawBuffer rawBuffer, GLTFPrimitive primitive){
+
+        int indexAccessorId = primitive.indices;
+        GLTFAccessor indexAccessor = gltf.accessors.get(indexAccessorId);
+
+        GLTFBufferView view = gltf.bufferViews.get(indexAccessor.bufferView);
+        if(view.buffer != 0)
+            throw new RuntimeException("GLTF: Can only support buffer 0");
+        int offset = view.byteOffset;
+        offset += indexAccessor.byteOffset;
+
+        boolean hasNormalMap = gltf.materials.get(primitive.material).normalTexture >= 0;
+
+        MeshData meshData = new MeshData();
+
+        // todo adjust this based on the file contents:
+        meshData.vertexAttributes = new VertexAttributes();
+        int location = 0;
+        meshData.vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x3, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, location++);
+        meshData.vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, location++);
+        if(hasNormalMap) {
+            meshData.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, location++);
+            meshData.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, location++);
+        }
+        meshData.vertexAttributes.end();
+
+        if(indexAccessor.componentType != GLTF.USHORT16 && indexAccessor.componentType != GLTF.UINT32 )
+            throw new RuntimeException("GLTF: Can only support short or integer index");
+
+        rawBuffer.byteBuffer.position(offset);
+
+        int max = -1;
+        if(indexAccessor.componentType == GLTF.USHORT16){
+            meshData.indexSizeInBytes = 2; // 16 bit index
+            for(int i = 0; i < indexAccessor.count; i++){
+                meshData.indexValues.add( (int)rawBuffer.byteBuffer.getShort());
+            }
+        } else {
+            meshData.indexSizeInBytes = 4; // 32 bit index
+            for(int i = 0; i < indexAccessor.count; i++){
+                int index = rawBuffer.byteBuffer.getInt();
+                if(index > max)
+                    max = index;
+                meshData.indexValues.add( index);
+            }
+            //System.out.println("max index "+max); // TMP
+        }
+
+        //boolean hasNormalMap = meshData.vertexAttributes.hasUsage(VertexAttribute.Usage.TANGENT);
+
+        int positionAccessorId = -1;
+        int normalAccessorId = -1;
+        int uvAccessorId = -1;
+        int tangentAccessorId = -1;
+        ArrayList<GLTFAttribute> attributes = primitive.attributes;
+        for(GLTFAttribute attribute : attributes){
+            if(attribute.name.contentEquals("POSITION")){
+                positionAccessorId = attribute.value;
+            } else if(attribute.name.contentEquals("NORMAL")){
+                normalAccessorId = attribute.value;
+            } else  if(attribute.name.contentEquals("TEXCOORD_0")){
+                uvAccessorId = attribute.value;
+            } else if(attribute.name.contentEquals("TANGENT")){
+                tangentAccessorId = attribute.value;
+            }
+        }
+        if(positionAccessorId < 0)
+            throw new RuntimeException("GLTF: need POSITION attribute");
+        GLTFAccessor positionAccessor = gltf.accessors.get(positionAccessorId);
+        view = gltf.bufferViews.get(positionAccessor.bufferView);
+        if(view.buffer != 0)
+            throw new RuntimeException("GLTF: Can only support buffer 0");
+        offset = view.byteOffset;
+        offset += positionAccessor.byteOffset;
+
+        //System.out.println("Position offset: "+offset);
+        //System.out.println("Position count: "+positionAccessor.count);
+
+        if(positionAccessor.componentType != GLTF.FLOAT32 || !positionAccessor.type.contentEquals("VEC3"))
+            throw new RuntimeException("GLTF: Can only support float positions as VEC3");
+
+        ArrayList<Vector3> positions = new ArrayList<>();
+        rawBuffer.byteBuffer.position(offset);
+        for(int i = 0; i < positionAccessor.count; i++){
+            // assuming float32
+            float f1 = rawBuffer.byteBuffer.getFloat();
+            float f2 = rawBuffer.byteBuffer.getFloat();
+            float f3 = rawBuffer.byteBuffer.getFloat();
+            //System.out.println("float  "+f1 + " "+ f2 + " "+f3);
+            positions.add(new Vector3(f1, f2, f3));
+        }
+
+        ArrayList<Vector3> normals = new ArrayList<>();
+        if(normalAccessorId >= 0) {
+            GLTFAccessor normalAccessor = gltf.accessors.get(normalAccessorId);
+            view = gltf.bufferViews.get(normalAccessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += normalAccessor.byteOffset;
+
+
+            if (normalAccessor.componentType != GLTF.FLOAT32 || !positionAccessor.type.contentEquals("VEC3"))
+                throw new RuntimeException("GLTF: Can only support float normals as VEC3");
+
+            rawBuffer.byteBuffer.position(offset);
+            for (int i = 0; i < normalAccessor.count; i++) {
+                // assuming float32
+                float f1 = rawBuffer.byteBuffer.getFloat();
+                float f2 = rawBuffer.byteBuffer.getFloat();
+                float f3 = rawBuffer.byteBuffer.getFloat();
+                //System.out.println("float  "+f1 + " "+ f2 + " "+f3);
+                normals.add(new Vector3(f1, f2, f3));
+            }
+        }
+
+        ArrayList<Vector3> tangents = new ArrayList<>();
+        if(tangentAccessorId >= 0) {
+            GLTFAccessor tangentAccessor = gltf.accessors.get(tangentAccessorId);
+            view = gltf.bufferViews.get(tangentAccessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += tangentAccessor.byteOffset;
+
+            if (tangentAccessor.componentType != GLTF.FLOAT32 || !positionAccessor.type.contentEquals("VEC3"))
+                throw new RuntimeException("GLTF: Can only support float tangents as VEC3");
+
+            rawBuffer.byteBuffer.position(offset);
+            for (int i = 0; i < tangentAccessor.count; i++) {
+                // assuming float32
+                float f1 = rawBuffer.byteBuffer.getFloat();
+                float f2 = rawBuffer.byteBuffer.getFloat();
+                float f3 = rawBuffer.byteBuffer.getFloat();
+                //System.out.println("float  "+f1 + " "+ f2 + " "+f3);
+                tangents.add(new Vector3(f1, f2, f3));
+            }
+        }
+
+        ArrayList<Vector2> textureCoordinates = new ArrayList<>();
+        if(uvAccessorId >= 0) {
+
+            GLTFAccessor uvAccessor = gltf.accessors.get(uvAccessorId);
+            view = gltf.bufferViews.get(uvAccessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += uvAccessor.byteOffset;
+
+            //System.out.println("UV offset: " + offset);
+
+            if (uvAccessor.componentType != GLTF.FLOAT32 || !uvAccessor.type.contentEquals("VEC2"))
+                throw new RuntimeException("GLTF: Can only support float positions as VEC2");
+
+
+            rawBuffer.byteBuffer.position(offset);
+            for (int i = 0; i < uvAccessor.count; i++) {
+                // assuming float32
+                float f1 = rawBuffer.byteBuffer.getFloat();
+                float f2 = rawBuffer.byteBuffer.getFloat();
+                //System.out.println("float  "+f1 + " "+ f2 );
+                textureCoordinates.add(new Vector2(f1, f2));
+            }
+        }
+
+
+        ArrayList<Vector3> bitangents = new ArrayList<>();
+        // if the material has a normal map and tangents are not provided we need to calculate them
+        if(hasNormalMap && (tangents.size() == 0  || bitangents.size() == 0))
+            addTBN(meshData, positions, textureCoordinates, normals, tangents, bitangents);
+
+        // x y z   u v   nx ny nz (tx ty tz   bx by bz)
+        meshData.objectName = gltf.nodes.get(0).name;
+        Vector3 normal = new Vector3(0, 1, 0);
+        Vector2 uv = new Vector2();
+        for(int i = 0; i < positions.size(); i++){
+            Vector3 pos = positions.get(i);
+            meshData.vertFloats.add(pos.x);
+            meshData.vertFloats.add(pos.y);
+            meshData.vertFloats.add(pos.z);
+
+            if(!textureCoordinates.isEmpty())
+                uv =  textureCoordinates.get(i);
+            meshData.vertFloats.add(uv.x);
+            meshData.vertFloats.add(uv.y);
+
+            if(!normals.isEmpty())
+                normal = normals.get(i);
+            meshData.vertFloats.add(normal.x);
+            meshData.vertFloats.add(normal.y);
+            meshData.vertFloats.add(normal.z);
+
+            if(hasNormalMap) {
+                Vector3 tangent = tangents.get(i);
+                meshData.vertFloats.add(tangent.x);
+                meshData.vertFloats.add(tangent.y);
+                meshData.vertFloats.add(tangent.z);
+
+                // calculate bitangent from normal x tangent
+                Vector3 bitangent = bitangents.get(i);
+                meshData.vertFloats.add(bitangent.x);
+                meshData.vertFloats.add(bitangent.y);
+                meshData.vertFloats.add(bitangent.z);
+            }
+        }
+
+        return new Mesh(meshData);
+    }
+
+    private static class Vertex {
+        Vector3 position;
+        Vector3 normal;
+        Vector2 uv;
+    }
+
+    private void addTBN( final MeshData meshData,
+                         final ArrayList<Vector3>positions, final ArrayList<Vector2>textureCoordinates,
+                         final ArrayList<Vector3>normals,
+                         ArrayList<Vector3>tangents,
+                         ArrayList<Vector3>bitangents){
+
+        // add tangent and bitangent to vertices of each triangle
+        Vector3 T = new Vector3();
+        Vector3 B = new Vector3();
+        Vertex[] corners = new Vertex[3];
+        for(int i= 0; i < 3; i++)
+            corners[i] = new Vertex();
+
+        for (int j = 0; j < meshData.indexValues.size(); j+= 3) {   // for each triangle
+            for(int i= 0; i < 3; i++) {                 // for each corner
+                int index = meshData.indexValues.get(i);        // assuming we use an indexed mesh
+
+                corners[i].position = positions.get(index);
+                corners[i].normal = normals.get(index);
+                corners[i].uv = textureCoordinates.get(index);
+            }
+
+            calculateBTN(corners, T, B);
+
+            for(int i= 0; i < 3; i++) {
+                tangents.add(T);
+                bitangents.add(B);
+            }
+        }
+    }
+
+    private static Vector3 Ntmp = new Vector3();
+    private static Vector3 N = new Vector3();
+
+    private static Vector3 edge1 = new Vector3();
+    private static Vector3 edge2 = new Vector3();
+    private static Vector2 eUV1 = new Vector2();
+    private static Vector2 eUV2 = new Vector2();
+
+
+
+    private static void calculateBTN(Vertex corners[], Vector3 T, Vector3 B) {
+        edge1.set(corners[1].position).sub(corners[0].position);
+        edge2.set(corners[2].position).sub(corners[0].position);
+
+        eUV1.set(corners[1].uv).sub(corners[0].uv);
+        eUV2.set(corners[2].uv).sub(corners[0].uv);
+
+        T.set(edge1.cpy().scl(eUV2.y).sub(edge2.cpy().scl(eUV1.y)));
+        B.set(edge2.cpy().scl(eUV1.x).sub(edge1.cpy().scl(eUV2.x)));
+        T.scl(-1);
+        B.scl(-1);
+        N.set(T).crs(B);
+
+        // average normal
+        Ntmp.set(corners[0].normal).add(corners[1].normal).add(corners[2].normal).scl(1/3f);
+
+//        if(Ntmp.dot(N) < 0){
+//            T.scl(-1);
+//            B.scl(-1);
+//        }
+
+        float dot = T.dot(Ntmp);
+        T.sub(Ntmp.cpy().scl(dot));
+        T.nor();
+        // T = normalize(T - dot(T, N) * N);
+        //B = cross(N,T);
+        B.set(Ntmp).crs(T);
+    }
 
 
 }
