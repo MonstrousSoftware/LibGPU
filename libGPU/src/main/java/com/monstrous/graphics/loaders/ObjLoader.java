@@ -41,7 +41,7 @@ public class ObjLoader implements ModelLoader {
         if(defaultmaterial == null)
             defaultmaterial = new Material( Color.WHITE );   // fallback
         rootNode.nodeParts.add( new NodePart(meshPart, defaultmaterial ));
-        model.addNode(rootNode);
+        model.addRootNode(rootNode);
         return model;
     }
 

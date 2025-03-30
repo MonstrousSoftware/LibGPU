@@ -28,10 +28,10 @@ import java.util.ArrayList;
  */
 public class Model implements Disposable {
     public String filePath;
-    public ArrayList<Mesh> meshes;
+    private ArrayList<Mesh> meshes;
     private boolean ownsMeshes = true;
-    public ArrayList<Node> rootNodes;
-    public ArrayList<Material> materials;
+    private ArrayList<Node> rootNodes;
+    private ArrayList<Material> materials;
 
 
     public Model(){
@@ -99,12 +99,24 @@ public class Model implements Disposable {
         materials.add(mat);
     }
 
+    public ArrayList<Material> getMaterials(){
+        return materials;
+    }
+
     public void addMesh( Mesh mesh ){
         meshes.add(mesh);
     }
 
-    public void addNode( Node node ){
+    public ArrayList<Mesh> getMeshes(){
+        return meshes;
+    }
+
+    public void addRootNode(Node node ){
         rootNodes.add(node);
+    }
+
+    public ArrayList<Node> getRootNodes(){
+        return rootNodes;
     }
 
 

@@ -211,7 +211,7 @@ public class TestSponza extends ApplicationAdapter {
         mb.begin(vertexAttributes, 32000, 32000);
 
         for(ModelInstance instance : instances){
-            Node rootNode = instance.model.rootNodes.get(0);
+            Node rootNode = instance.model.getRootNodes().get(0);
             for(NodePart part : rootNode.nodeParts){
 
                 BoundingBox bb = new BoundingBox(part.meshPart.getMesh().boundingBox);

@@ -46,12 +46,12 @@ public class ModelInstance {
 
     /** update bounding boxes to match the instance transform. Call this after changing the transform. */
     public void update(){
-        boundingBox.set(model.meshes.get(0).boundingBox);   // todo assumes only one mesh per model
+        boundingBox.set(model.getMeshes().get(0).boundingBox);   // todo assumes only one mesh per model
         boundingBox.transform(transform);
     }
 
     public void getRenderables(ArrayList<Renderable> renderables, RenderablePool pool ){
-        for(Node rootNode : model.rootNodes)
+        for(Node rootNode : model.getRootNodes())
             rootNode.getRenderables(renderables, transform, pool);
     }
 }

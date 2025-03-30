@@ -91,7 +91,7 @@ public class GLTFLoader implements ModelLoader {
 
             Node rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
             rootNode.updateMatrices(true);
-            model.addNode(rootNode);
+            model.addRootNode(rootNode);
         }
         //System.out.println("loaded "+filePath);
         return model;

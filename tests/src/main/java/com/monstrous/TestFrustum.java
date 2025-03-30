@@ -97,7 +97,7 @@ public class TestFrustum extends ApplicationAdapter {
         invisibleBlockModel = new Model(BoxShapeBuilder.build(mb, 0.1f, 0.1f, 0.1f), new Material(Color.BLUE));
         visibleBlockModel = new Model(BoxShapeBuilder.build(mb, 0.1f, 0.1f, 0.1f),  new Material(Color.GREEN));
         bigBlockModel = new Model(BoxShapeBuilder.build(mb, 1f, 1f, 1f),  new Material(Color.ORANGE));
-        bigBlockModel2 = new Model(BoxShapeBuilder.build(mb, bigBlockModel.meshes.get(0).boundingBox),  new Material(Color.RED));
+        bigBlockModel2 = new Model(BoxShapeBuilder.build(mb, bigBlockModel.getMeshes().get(0).boundingBox),  new Material(Color.RED));
         mb.end();
 
         populate();
