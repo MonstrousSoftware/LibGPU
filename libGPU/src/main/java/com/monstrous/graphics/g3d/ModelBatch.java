@@ -36,7 +36,7 @@ import java.util.List;
 
 public class ModelBatch implements Disposable {
 
-    private final int MAX_PASSES = 10;
+    private final int MAX_PASSES = 20;
     private final int MAX_DIR_LIGHTS = 5;
     private final int MAX_POINT_LIGHTS = 5;
     private final int MAX_INSTANCES = 4096;

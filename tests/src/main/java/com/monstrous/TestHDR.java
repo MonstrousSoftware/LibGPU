@@ -5,39 +5,46 @@ import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.g3d.ibl.IBLComposer;
 import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
-import com.monstrous.graphics.lights.DirectionalLight;
+import com.monstrous.graphics.g3d.shapeBuilder.SphereShapeBuilder;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Vector3;
-import com.monstrous.utils.ScreenUtils;
+import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.*;
-import jnr.ffi.Pointer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class TestHDR extends ApplicationAdapter {
 
-    private static final int SIZE = 2048;
+    private static final int ENVMAP_SIZE = 2048;
 
     private SpriteBatch batch;
     private Texture textureEquirectangular;
     private Texture[] textureSides;
-    private Texture depthMap;
+    //private Texture depthMap;
     private ShaderProgram shader;
     private Mesh mesh;
     private Model model;
+    private ModelInstance sphereInstance;
+    private ArrayList<Disposable> disposables;
+    private ArrayList<ModelInstance> instances;
     private ModelInstance instance;
     private ModelBatch modelBatch;
     private PerspectiveCamera camera;
     CameraController camController;
     Environment environment;
     PerspectiveCamera snapCam;
-    Texture cubeMap;
+    Texture environmentMap;
+    Texture irradianceMap;
     Texture refCubeMap;
 
 
     @Override
     public void create() {
+
+        disposables = new ArrayList<>();
+        instances = new ArrayList<>();
 
         batch = new SpriteBatch();
         //shader = new ShaderProgram(Files.internal("shaders/sprite-HDR.wgsl"));
@@ -56,6 +63,8 @@ public class TestHDR extends ApplicationAdapter {
         model = buildUnitCube(textureEquirectangular);
         instance = new ModelInstance(model, 0,0,0);
 
+
+
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(3, 2, -3);
         camera.direction.set(camera.position).scl(-1).nor();
@@ -65,8 +74,8 @@ public class TestHDR extends ApplicationAdapter {
         LibGPU.input.setInputProcessor(camController);
 
         environment = new Environment();
-        environment.add( new DirectionalLight( Color.WHITE, new Vector3(0.1f,-1,0)));
-        environment.ambientLightLevel = 0.8f;
+        //environment.add( new DirectionalLight( Color.WHITE, new Vector3(0.1f,-1,0)));
+        environment.ambientLightLevel = 0.5f;
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
@@ -74,28 +83,46 @@ public class TestHDR extends ApplicationAdapter {
         modelBatch = new ModelBatch();
 
 
+
         textureSides = new Texture[6];
 
-//        String[] fileNames = {
-//                "textures/leadenhall/pos-x.jpg",
-//                "textures/leadenhall/neg-x.jpg",
-//                "textures/leadenhall/pos-y.jpg",
-//                "textures/leadenhall/neg-y.jpg",
-//                "textures/leadenhall/pos-z.jpg",
-//                "textures/leadenhall/neg-z.jpg",
-//        };
-//
-//        refCubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
-//        environment.setSkybox(new SkyBox(refCubeMap));
 
-        depthMap = new Texture(SIZE, SIZE, false, true, WGPUTextureFormat.Depth32Float, 1);
 
-        snapCam = new PerspectiveCamera(90, SIZE, SIZE);
+
+        snapCam = new PerspectiveCamera(90, ENVMAP_SIZE, ENVMAP_SIZE);
         snapCam.position.set(0,0,-1);
         snapCam.direction.set(0,0,1);
         snapCam.update();
 
-        prepare();
+        buildEnvMap();
+        buildIrradianceMap();
+
+        Texture brdfLUT = new Texture(Files.internal("environment/LUT.png"), false);
+        environment.setCubeMap(null);
+        environment.useImageBasedLighting = true;
+        environment.setIrradianceMap(irradianceMap);
+        //environment.setRadianceMap(environmentMap);
+        environment.setBRDFLookUpTable( brdfLUT );
+
+        environment.setSkybox(new SkyBox(irradianceMap));
+
+        //sphere =  new Model("models/sphere.gltf");
+
+        Model sphere = buildSphere(0.5110f,  0.45f);
+        instances.add( new ModelInstance(sphere, 0,0,0) );
+        disposables.add(sphere);
+
+        sphere = buildSphere(1.0f,  0.2f);
+        instances.add( new ModelInstance(sphere, 2,0,0) );
+        disposables.add(sphere);
+
+        sphere = buildSphere(1.0f,  0.75f);
+        instances.add( new ModelInstance(sphere, 4,0,0) );
+        disposables.add(sphere);
+
+        sphere = buildSphere(0f,  0.5f);
+        instances.add( new ModelInstance(sphere, -2,0,0) );
+        disposables.add(sphere);
 
     }
 
@@ -112,7 +139,7 @@ public class TestHDR extends ApplicationAdapter {
 
 
         modelBatch.begin(camera, environment);
-        modelBatch.render(instance);
+        modelBatch.render(instances);
         modelBatch.end();
 
         batch.begin();
@@ -126,16 +153,37 @@ public class TestHDR extends ApplicationAdapter {
 
     }
 
-    private void prepare(){
+    private void buildEnvMap(){
+        // Convert an equirectangular image to a cube map
         environment.shaderSourcePath = "shaders/modelbatchEquilateral.wgsl";        // hacky
         LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
-        constructSideTextures();
-        cubeMap = copyTextures();
+        int size = ENVMAP_SIZE;
+        Texture depthMap = new Texture(size, size, false, true, WGPUTextureFormat.Depth32Float, 1);
+        constructSideTextures(size, depthMap);
+        environmentMap = copyTextures(size);
         LibGPU.app.finishEncoder(LibGPU.commandEncoder);
+        depthMap.dispose();
 
-        environment.setCubeMap(cubeMap);
+        //environment.setCubeMap(cubeMap);
         environment.shaderSourcePath = null;
-        environment.setSkybox(new SkyBox(cubeMap));
+        //environment.setSkybox(new SkyBox(environmentMap));
+    }
+
+    private void buildIrradianceMap(){
+        // Convert an environment cube map to an irradiance cube map
+        environment.shaderSourcePath = "shaders/modelbatchCubeMapIrradiance.wgsl";        // hacky
+        environment.setCubeMap(environmentMap);
+        LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+        int size = 32;
+        Texture depthMap = new Texture(size, size, false, true, WGPUTextureFormat.Depth32Float, 1);
+        constructSideTextures(size, depthMap);
+        irradianceMap = copyTextures(size);
+        LibGPU.app.finishEncoder(LibGPU.commandEncoder);
+        depthMap.dispose();
+
+        //environment.setCubeMap(cubeMap);
+        environment.shaderSourcePath = null;
+        environment.setSkybox(new SkyBox(irradianceMap));
     }
 
 
@@ -146,7 +194,8 @@ public class TestHDR extends ApplicationAdapter {
 
     // note: for use as a skybox the images are mirrored
     // also seem more pixelated than expected
-    private void constructSideTextures(){
+    private void constructSideTextures(int size, Texture depthMap){
+
         for (int side = 0; side < 6; side++) {
 
             snapCam.direction.set(directions[side]);
@@ -159,17 +208,19 @@ public class TestHDR extends ApplicationAdapter {
                 snapCam.up.set(0,1,0);
             snapCam.update();
 
-            textureSides[side] = new Texture(SIZE, SIZE, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
+            textureSides[side] = new Texture(size, size, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
 
             modelBatch.begin(snapCam, environment, Color.GREEN, textureSides[side], depthMap);
             modelBatch.render(instance);
             modelBatch.end();
         }
+
     }
 
 
-    private Texture copyTextures(){
-        Texture cube = new Texture(SIZE, SIZE, 6);
+    /** copy 6 textures (textureSides[]) into a new cube map */
+    private Texture copyTextures(int size){
+        Texture cube = new Texture(size, size, 6);
 
         for (int side = 0; side < 6; side++) {
 
@@ -190,8 +241,8 @@ public class TestHDR extends ApplicationAdapter {
             destination.getOrigin().setZ(side);
 
             WGPUExtent3D ext = WGPUExtent3D.createDirect()
-                    .setWidth(SIZE)
-                    .setHeight(SIZE)
+                    .setWidth(size)
+                    .setHeight(size)
                     .setDepthOrArrayLayers(1);
 
             LibGPU.webGPU.wgpuCommandEncoderCopyTextureToTexture(LibGPU.commandEncoder, source, destination, ext);
@@ -226,6 +277,27 @@ public class TestHDR extends ApplicationAdapter {
 
         MeshPart meshPart = BoxShapeBuilder.build(mb, 1, 1, 1,  WGPUPrimitiveTopology.TriangleList);
         Material material = new Material( texture );
+        mesh = mb.end();
+
+        return new Model(meshPart, material);
+    }
+
+    private Model buildSphere(float metallic, float roughness){
+
+        MeshBuilder mb = new MeshBuilder();
+        // vertex attributes are fixed per mesh
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
+        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+        vertexAttributes.end();
+
+        mb.begin(vertexAttributes, 4096, 4096);
+
+        MeshPart meshPart = SphereShapeBuilder.build(mb, 1, 32,  WGPUPrimitiveTopology.TriangleStrip);
+        Material material = new Material( Color.RED );
+        material.metallicFactor = metallic;
+        material.roughnessFactor = roughness;
         mesh = mb.end();
 
         return new Model(meshPart, material);

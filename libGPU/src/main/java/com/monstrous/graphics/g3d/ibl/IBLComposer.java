@@ -1,6 +1,6 @@
 
-// from gdx-gltf
-
+// from gdx-gltf by MGSX-dev
+// https://github.com/mgsx-dev/gdx-gltf/tree/master
 
 package com.monstrous.graphics.g3d.ibl;
 
