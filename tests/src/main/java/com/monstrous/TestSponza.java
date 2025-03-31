@@ -162,7 +162,7 @@ public class TestSponza extends ApplicationAdapter {
         // text
         batch.begin();
         font.draw(batch, status, 10, 50);
-        //font.draw(batch, "cam at :"+camera.position.toString()+" dir:"+camera.direction.toString(), 10, 100);
+        font.draw(batch, "Press 1 for reference camera position, press 2 for free look with mouse", 10, 100);
         batch.end();
 
 

@@ -4,7 +4,7 @@
 
 allprojects {
     group = 'com.monstrous'
-    version = '1.0.0-SNAPSHOT'
+    version = '0.1.0-SNAPSHOT'
 
     ext.j2w_version = "1.0.0"
 
