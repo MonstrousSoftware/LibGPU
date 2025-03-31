@@ -12,7 +12,7 @@ import java.util.ArrayList;
 // Following LibGDX tutorial "a simple game"
 // https://libgdx.com/wiki/start/a-simple-game#loading-assets
 
-// Note: no sound or music
+// Note: no sound or music, also no actual catching of drops (lacking Rectangle class).
 
 public class TestSimpleGame extends ApplicationAdapter {
 
@@ -104,6 +104,8 @@ public class TestSimpleGame extends ApplicationAdapter {
 
             // if the top of the drop goes below the bottom of the view, remove it
             if (dropSprite.getY() < -dropHeight) dropSprites.remove(i);
+
+            // Rectangle test is missing here
         }
 
         dropTimer -= delta;

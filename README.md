@@ -20,9 +20,9 @@ Warning:  This project is under active development and breaking changes may be i
 
 ## Tests
 
-The tests folder contains a number of demos and tests of various aspects and gives examples of LibGPU applications.
-Typically, the application's main class is the Launcher, which sets the application configuration, creates an ApplicationAdapter and launches is.
-The Menu class is convenient to call demo applications.  By convention, the Escape key closes the demo application and returns to the menu.
+The tests folder contains a number of demos and tests of various aspects and gives examples of LibGPU applications. (See [show case](docs/showcase.md)).
+Typically, the application's main class is the Launcher, which sets the application configuration, creates an ApplicationAdapter and launches it.
+The Menu class is convenient to call demo applications.  By convention, the Escape key usually closes the demo application and returns to the menu.
 
 ## Features
 The following features are supported:
@@ -44,6 +44,6 @@ The following features are supported:
 - Directional lights, point lights.
 - Shadows
 - GPU timing
-- Experimental UI: Scene2d (partial), JLay (flexbox style layout)
+- Experimental UI: Scene2d (partial), JLay (flexbox style layout) (very much work in progress)
 
 
