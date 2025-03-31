@@ -2,28 +2,13 @@
 Note we use the webgpu.h header file from the Learn Webgpu in C++ web site. It is not the latest header file.
 
 
-
-Get glfw3.dll from here for Windows 64
-
-https://www.glfw.org/download
+Get glfw3.dll from here for Windows 64: https://www.glfw.org/download
 
 
 Command line:
 g++ -m64 main.cpp -I.\include -Wl,--kill-at wgpu_native.dll glfw3.dll
 
 Note: use wgpu_native.dll not -Lwgpu_native on the command line
-
-
-F:\Coding\IdeaProjects\CallingWebGPU\src\main\c>g++ -m64 main.cpp -I.\include -Wl,--kill-at wgpu_native.dll glfw3.dll
-F:/Coding/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\Marco\AppData\Local\Temp\ccpRpXPB.o:main.cpp:(.text+0x466): undefined reference to `glfwGetWGPUSurface'
-F:/Coding/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\Marco\AppData\Local\Temp\ccpRpXPB.o:main.cpp:(.text+0x4d0): undefined reference to `requestAdapterSync(WGPUInstanceImpl*, WGPURequestAdapterOptions const*)'
-F:/Coding/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\Marco\AppData\Local\Temp\ccpRpXPB.o:main.cpp:(.text+0x5ca): undefined reference to `requestDeviceSync(WGPUAdapterImpl*, WGPUDeviceDescriptor const*)'
-collect2.exe: error: ld returned 1 exit status
-
-
-F:\Coding\IdeaProjects\CallingWebGPU\src\main\c>g++ -m64 main.cpp webgpu-utils.cpp -I.\include -Wl,--kill-at wgpu_native.dll glfw3.dll
-F:/Coding/mingw64/bin/../lib/gcc/x86_64-w64-mingw32/14.2.0/../../../../x86_64-w64-mingw32/bin/ld.exe: C:\Users\Marco\AppData\Local\Temp\cc0qfLb0.o:main.cpp:(.text+0x466): undefined reference to `glfwGetWGPUSurface'
-collect2.exe: error: ld returned 1 exit status
 
 Add glfw3webgpu.c and glfw3webgpu.h to the source directory (from https://eliemichel.github.io/LearnWebGPU/getting-started/hello-webgpu.html)
 
