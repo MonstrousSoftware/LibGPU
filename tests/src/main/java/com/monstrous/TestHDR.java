@@ -35,8 +35,9 @@ public class TestHDR extends ApplicationAdapter {
     CameraController camController;
     Environment environment;
     PerspectiveCamera snapCam;
-    Texture environmentMap;
-    Texture irradianceMap;
+    Texture environmentMap;     // cube map
+    Texture irradianceMap;  // low resolution cube map
+    Texture prefilterMap;    // mipmapped cube map
     Texture refCubeMap;
 
 
@@ -97,32 +98,29 @@ public class TestHDR extends ApplicationAdapter {
         buildEnvMap();
         buildIrradianceMap();
 
+        prefilterMap = new Texture(128, 128, true, 6 );  // mipmapped cube map
+
+        buildRadianceMap();
+
         Texture brdfLUT = new Texture(Files.internal("environment/LUT.png"), false);
         environment.setCubeMap(null);
         environment.useImageBasedLighting = true;
         environment.setIrradianceMap(irradianceMap);
-        //environment.setRadianceMap(environmentMap);
+        environment.setRadianceMap(prefilterMap);
         environment.setBRDFLookUpTable( brdfLUT );
 
-        environment.setSkybox(new SkyBox(irradianceMap));
+        environment.setSkybox(new SkyBox(environmentMap));
 
         //sphere =  new Model("models/sphere.gltf");
 
-        Model sphere = buildSphere(0.5110f,  0.45f);
-        instances.add( new ModelInstance(sphere, 0,0,0) );
-        disposables.add(sphere);
-
-        sphere = buildSphere(1.0f,  0.2f);
-        instances.add( new ModelInstance(sphere, 2,0,0) );
-        disposables.add(sphere);
-
-        sphere = buildSphere(1.0f,  0.75f);
-        instances.add( new ModelInstance(sphere, 4,0,0) );
-        disposables.add(sphere);
-
-        sphere = buildSphere(0f,  0.5f);
-        instances.add( new ModelInstance(sphere, -2,0,0) );
-        disposables.add(sphere);
+        Model sphere;
+        for(int y = 0; y <= 5; y++) {
+            for (int x = 0; x <= 5; x++) {
+                sphere = buildSphere(0.2f * x, 0.2f*y);
+                instances.add(new ModelInstance(sphere, 3 * (x - 2.5f), 3*(y-2.5f), 0));
+                disposables.add(sphere);
+            }
+        }
 
     }
 
@@ -144,9 +142,9 @@ public class TestHDR extends ApplicationAdapter {
 
         batch.begin();
         //batch.setShader(shader);
-        //batch.draw(textureEquirectangular, 0,0);
+        //atch.draw(textureEquirectangular, 0,0);
 //        for(int side = 0; side < 6; side++) {
-//            batch.draw(textureSides[side], SIZE*side, LibGPU.graphics.getHeight() - SIZE);
+//            batch.draw(textureSides[side], 128*side, LibGPU.graphics.getHeight() - 128);
 //        }
         batch.end();
 
@@ -157,6 +155,7 @@ public class TestHDR extends ApplicationAdapter {
         // Convert an equirectangular image to a cube map
         environment.shaderSourcePath = "shaders/modelbatchEquilateral.wgsl";        // hacky
         LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+        LibGPU.graphics.passNumber = 0;
         int size = ENVMAP_SIZE;
         Texture depthMap = new Texture(size, size, false, true, WGPUTextureFormat.Depth32Float, 1);
         constructSideTextures(size, depthMap);
@@ -174,6 +173,7 @@ public class TestHDR extends ApplicationAdapter {
         environment.shaderSourcePath = "shaders/modelbatchCubeMapIrradiance.wgsl";        // hacky
         environment.setCubeMap(environmentMap);
         LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+        LibGPU.graphics.passNumber = 0;
         int size = 32;
         Texture depthMap = new Texture(size, size, false, true, WGPUTextureFormat.Depth32Float, 1);
         constructSideTextures(size, depthMap);
@@ -184,6 +184,31 @@ public class TestHDR extends ApplicationAdapter {
         //environment.setCubeMap(cubeMap);
         environment.shaderSourcePath = null;
         environment.setSkybox(new SkyBox(irradianceMap));
+    }
+
+    private void buildRadianceMap(){
+        // Convert an environment cube map to an irradiance cube map
+        environment.shaderSourcePath = "shaders/modelbatchCubeMapRadiance.wgsl";        // hacky
+        environment.setSkybox(null);
+        environment.setCubeMap(environmentMap);
+        LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+        LibGPU.graphics.passNumber = 0;
+        Texture[] depthMaps = new Texture[5];
+        int size = 128;
+        for(int mip = 0; mip < 5; mip++) {
+            environment.ambientLightLevel = 0.2f*mip;   // use this to pass roughness level
+            depthMaps[mip] = new Texture(size, size, false, true, WGPUTextureFormat.Depth32Float, 1);
+
+            constructSideTextures(size, depthMaps[mip]);
+            copyTextures(prefilterMap, size, mip);
+            size /= 2;
+        }
+        LibGPU.app.finishEncoder(LibGPU.commandEncoder);
+        for(int mip = 0; mip < 5; mip++)
+            depthMaps[mip].dispose();
+
+        //environment.setCubeMap(cubeMap);
+        environment.shaderSourcePath = null;
     }
 
 
@@ -210,6 +235,7 @@ public class TestHDR extends ApplicationAdapter {
 
             textureSides[side] = new Texture(size, size, false, true, WGPUTextureFormat.RGBA8Unorm, 1);
 
+
             modelBatch.begin(snapCam, environment, Color.GREEN, textureSides[side], depthMap);
             modelBatch.render(instance);
             modelBatch.end();
@@ -219,9 +245,13 @@ public class TestHDR extends ApplicationAdapter {
 
 
     /** copy 6 textures (textureSides[]) into a new cube map */
-    private Texture copyTextures(int size){
+    private Texture copyTextures(int size) {
         Texture cube = new Texture(size, size, 6);
+        return copyTextures(cube, size, 0);
+    }
 
+
+    private Texture copyTextures(Texture cube, int size, int mipLevel){
         for (int side = 0; side < 6; side++) {
 
             WGPUImageCopyTexture source = WGPUImageCopyTexture.createDirect()
@@ -239,6 +269,7 @@ public class TestHDR extends ApplicationAdapter {
             destination.getOrigin().setX(0);
             destination.getOrigin().setY(0);
             destination.getOrigin().setZ(side);
+            destination.setMipLevel(mipLevel);
 
             WGPUExtent3D ext = WGPUExtent3D.createDirect()
                     .setWidth(size)
@@ -257,6 +288,8 @@ public class TestHDR extends ApplicationAdapter {
         batch.dispose();
         mesh.dispose();
         model.dispose();
+        for(Disposable d : disposables)
+            d.dispose();
     }
 
     @Override

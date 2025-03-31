@@ -60,6 +60,15 @@ public class Texture {
         create( "3d texture map", 1, false,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1);
     }
 
+    public Texture(int width, int height, boolean mipMapping, int numLayers ){
+        this.width = width;
+        this.height = height;
+        mipLevelCount = 1;
+        if (mipMapping)
+            mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));
+        create( "3d texture map", mipLevelCount, false,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1);
+    }
+
 
 
     public Texture(String fileName) {
