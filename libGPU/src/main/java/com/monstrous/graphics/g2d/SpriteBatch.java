@@ -245,14 +245,7 @@ public class SpriteBatch implements Disposable {
         flush();
         renderPass.end();
         renderPass = null;
-        pipelineCount = pipelines.size();
-
-//        int index = 0;
-//        for(Pipeline pipeline: pipelines.pipelines ){
-//            System.out.println("Pipeline "+index+" : "+pipeline.specification.shaderFilePath+" "+pipeline.specification.shader.getName());
-//            index++;
-//        }
-//        System.out.println("Pipeline count: "+pipelines.pipelines.size());
+        pipelineCount = pipelines.size();   // statistics
     }
 
     // create or reuse pipeline on demand to match the pipeline spec

@@ -152,6 +152,7 @@ public class TestShadow extends ApplicationAdapter {
         environment.renderShadows = false;  // not rendering shadows now
         environment.setShadowMap(shadowCam, null);  // set depth texture to write to
 
+        // for demonstration purposes we fill a color map as well as a depth map
         modelBatch.begin(shadowCam, environment, Color.GRAY, colorMap, depthMap, RenderPassType.SHADOW_PASS);
         modelBatch.render(instances);
         modelBatch.end();
@@ -166,7 +167,7 @@ public class TestShadow extends ApplicationAdapter {
         modelBatch.end();
 
         batch.begin();
-        font.draw(batch, "camera "+camera.position.toString()+" angleX:"+camController.anglex, 10, 500);
+        font.draw(batch, "Depth Map:", 20, 230);
         batch.draw(colorMap,0, 0, 200, 200);        // debug view of depth map
         batch.end();
 

@@ -2,10 +2,10 @@
 
 
 - generate mipmaps in a compute shader
-- generate IBL textures (env, irradiance, radians) from a single file
+- generate IBL textures (env, irradiance, radians) from a single file (on-going)
 - replace constant in shader for radiance LOD count by a uniform
 
-- support (packed) color per vertex as option in the standard shader
+- support (packed) color per vertex as option in the standard model batch shader
 - DONE sphere builder
 - DONE frustum builder
 - other shapes
@@ -24,5 +24,4 @@ Model loader:
 
 
 ## Bugs to fix
-- post shader demo is broken
-- - frustum issues in shadow demo
+- 

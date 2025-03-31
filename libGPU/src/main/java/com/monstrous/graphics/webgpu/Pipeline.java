@@ -49,7 +49,6 @@ public class Pipeline implements Disposable {
             spec.shader = shader;
             spec.recalcHash();
             ownsShader = true;
-            System.out.println("Shader compile: "+spec.shaderFilePath);
         }
         this.specification = new PipelineSpecification(spec);
 
