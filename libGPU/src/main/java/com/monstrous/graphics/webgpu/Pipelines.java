@@ -27,7 +27,7 @@ import java.util.ArrayList;
  */
 
 public class Pipelines implements Disposable {
-    private ArrayList<Pipeline> pipelines;      // todo or use map? using spec hash code as key
+    public ArrayList<Pipeline> pipelines;      // todo or use map? using spec hash code as key
 
     public Pipelines() {
         pipelines = new ArrayList<>();

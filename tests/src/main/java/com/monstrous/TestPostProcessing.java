@@ -66,10 +66,12 @@ public class TestPostProcessing extends ApplicationAdapter {
 
         modelBatch = new ModelBatch();
 
-        batch = new SpriteBatch();
-
         // post-processing shader
         filter = new ShaderProgram(Files.internal("shaders/sprite-greyscale.wgsl"));
+
+
+        batch = new SpriteBatch(100, null);
+
 
         font = new BitmapFont();
     }
@@ -119,7 +121,7 @@ public class TestPostProcessing extends ApplicationAdapter {
 
         if (System.nanoTime() - startTime > 1000000000) {
             System.out.println("fps: " + frames +
-                    " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds"  );
+                    " GPU: "+(int)LibGPU.app.getAverageGPUtime()+" microseconds pipelines:"+batch.pipelineCount );
             frames = 0;
             startTime = System.nanoTime();
         }

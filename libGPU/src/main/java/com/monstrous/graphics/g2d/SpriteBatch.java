@@ -18,6 +18,9 @@ import java.nio.ShortBuffer;
  * Class to render textured rectangles in batches.
  */
 public class SpriteBatch implements Disposable {
+
+    private final static String DEFAULT_SHADER = "shaders/sprite.wgsl";
+
     private WebGPU_JNI webGPU;
     private ShaderProgram specificShader;
     private int maxSprites;
@@ -45,6 +48,7 @@ public class SpriteBatch implements Disposable {
     private boolean blendingEnabled;
     public int maxSpritesInBatch;
     public int renderCalls;
+    public int pipelineCount;
 
 
     public SpriteBatch() {
@@ -55,6 +59,11 @@ public class SpriteBatch implements Disposable {
         this(maxSprites, null);
     }
 
+    /** Create a SpriteBatch.
+     *
+     * @param maxSprites        maximum number of sprite to be supported (default is 1000)
+     * @param specificShader    specific ShaderProgram to use, must be compatible with "sprite.wgsl". Leave null to use the default shader.
+     */
     public SpriteBatch(int maxSprites, ShaderProgram specificShader) {
         this.maxSprites = maxSprites;
         this.specificShader = specificShader;
@@ -93,7 +102,6 @@ public class SpriteBatch implements Disposable {
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.specificShader);
-        pipelineSpec.shaderFilePath = "shaders/sprite.wgsl";
     }
 
     // the index buffer is fixed and only has to be filled on start-up
@@ -181,6 +189,8 @@ public class SpriteBatch implements Disposable {
         pipelineSpec.enableBlending();
         pipelineSpec.disableDepth();
         pipelineSpec.shader = specificShader;
+        if(specificShader == null)
+            pipelineSpec.shaderFilePath = DEFAULT_SHADER;
         pipelineSpec.vertexAttributes = vertexAttributes;
         pipelineSpec.numSamples =  LibGPU.app.configuration.numSamples;
 
@@ -235,6 +245,14 @@ public class SpriteBatch implements Disposable {
         flush();
         renderPass.end();
         renderPass = null;
+        pipelineCount = pipelines.size();
+
+//        int index = 0;
+//        for(Pipeline pipeline: pipelines.pipelines ){
+//            System.out.println("Pipeline "+index+" : "+pipeline.specification.shaderFilePath+" "+pipeline.specification.shader.getName());
+//            index++;
+//        }
+//        System.out.println("Pipeline count: "+pipelines.pipelines.size());
     }
 
     // create or reuse pipeline on demand to match the pipeline spec
@@ -246,15 +264,24 @@ public class SpriteBatch implements Disposable {
         }
     }
 
-    public void setShader(ShaderProgram shaderProgram){
+    public void setShader(ShaderProgram shaderProgram) {
         flush();
-        if(shaderProgram == null)
+        if (shaderProgram == null) {
             pipelineSpec.shader = specificShader;
+            if (specificShader == null)
+                pipelineSpec.shaderFilePath = DEFAULT_SHADER;
+            pipelineSpec.recalcHash();
+        }
         else {
             pipelineSpec.shader = shaderProgram;
+            pipelineSpec.shaderFilePath = shaderProgram.getName();
+            pipelineSpec.recalcHash();
         }
-        setPipeline();
+
+        setPipeline();  // probably not needed because flush() will do it again
     }
+
+
 
     public Matrix4 getProjectionMatrix() {
         return projectionMatrix;

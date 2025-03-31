@@ -34,7 +34,6 @@ public class Pipeline implements Disposable {
     private boolean ownsShader;
 
     public Pipeline(Pointer pipelineLayout, PipelineSpecification spec) {
-        this.specification = new PipelineSpecification(spec);
 
         this.pipelineLayout = pipelineLayout;
 
@@ -50,7 +49,9 @@ public class Pipeline implements Disposable {
             spec.shader = shader;
             spec.recalcHash();
             ownsShader = true;
+            System.out.println("Shader compile: "+spec.shaderFilePath);
         }
+        this.specification = new PipelineSpecification(spec);
 
         Pointer shaderModule = shader.getHandle();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes != null ? spec.vertexAttributes.getVertexBufferLayout() : null;
