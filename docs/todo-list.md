@@ -16,6 +16,11 @@
 
 - when textures, materials, meshes, etc. are shared, we need to track ownership to allow correct disposal (i.e. dispose exactly once)
 
+Model loader:
+
+- Support for animations
+- Support for groups/objects on OBJ files, currently it always produces one meshPart
+- Support for G3DB format
 
 
 ## Bugs to fix
