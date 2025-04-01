@@ -7,6 +7,7 @@ import com.monstrous.graphics.g3d.ibl.IBLComposer;
 import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
 import com.monstrous.graphics.g3d.shapeBuilder.SphereShapeBuilder;
 import com.monstrous.graphics.lights.Environment;
+import com.monstrous.graphics.lights.PointLight;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.*;
@@ -76,7 +77,12 @@ public class TestHDR extends ApplicationAdapter {
 
         environment = new Environment();
         //environment.add( new DirectionalLight( Color.WHITE, new Vector3(0.1f,-1,0)));
-        environment.ambientLightLevel = 0.5f;
+        //environment.ambientLightLevel = 0.5f;
+        float intensity = 250f;
+        environment.add( new PointLight(Color.WHITE, new Vector3(-10f,10f,10), intensity));
+        environment.add( new PointLight(Color.WHITE, new Vector3(10f,-10f,10), intensity));
+        environment.add( new PointLight(Color.WHITE, new Vector3(10f,10f,10), intensity));
+        environment.add( new PointLight(Color.WHITE, new Vector3(-10f,-10f,10), intensity));
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
@@ -114,10 +120,11 @@ public class TestHDR extends ApplicationAdapter {
         //sphere =  new Model("models/sphere.gltf");
 
         Model sphere;
-        for(int y = 0; y <= 5; y++) {
+        for(int y = 0; y <= 1; y++) {
             for (int x = 0; x <= 5; x++) {
-                sphere = buildSphere(0.2f * x, 0.2f*y);
-                instances.add(new ModelInstance(sphere, 3 * (x - 2.5f), 3*(y-2.5f), 0));
+                sphere = buildSphere(y, 0.2f*x);
+                sphere.getMaterials().get(0).baseColor.set(1.0f, y, y, 1.0f);
+                instances.add(new ModelInstance(sphere, 3 * (x - 2.5f), 3*y-1.5f, 0));
                 disposables.add(sphere);
             }
         }
