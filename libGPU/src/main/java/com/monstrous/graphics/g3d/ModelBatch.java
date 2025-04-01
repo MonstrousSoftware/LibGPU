@@ -26,7 +26,6 @@ import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
-import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
@@ -342,7 +341,8 @@ public class ModelBatch implements Disposable {
         pipelineSpec.environment = environment;
         pipelineSpec.shader = null;
         pipelineSpec.shaderFilePath = selectShaderSourceFile(pass.type, environment);
-        pipelineSpec.enableDepth();
+        pipelineSpec.useDepthTest = true;
+        pipelineSpec.noDepthAttachment = (pass.type == RenderPassType.NO_DEPTH);
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.isDepthPass = (pass.type == RenderPassType.SHADOW_PASS || pass.type == RenderPassType.DEPTH_PREPASS);
         pipelineSpec.afterDepthPrepass = (pass.type == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS);
@@ -402,18 +402,18 @@ public class ModelBatch implements Disposable {
     private BindGroupLayout createFrameBindGroupLayout(){
         BindGroupLayout layout = new BindGroupLayout("ModelBatch Bind Group Layout (Frame)");
         layout.begin();
-        int binding = 0;
-        layout.addBuffer(binding++, WGPUShaderStage.Vertex | WGPUShaderStage.Fragment, WGPUBufferBindingType.Uniform, FRAME_UB_SIZE, true);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Depth, WGPUTextureViewDimension._2D, false);
-        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Comparison);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
-        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
+
+        layout.addBuffer(0, WGPUShaderStage.Vertex | WGPUShaderStage.Fragment, WGPUBufferBindingType.Uniform, FRAME_UB_SIZE, true);
+        layout.addTexture(1, WGPUShaderStage.Fragment , WGPUTextureSampleType.Depth, WGPUTextureViewDimension._2D, false);  // shadow map
+        layout.addSampler(2, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Comparison); // shadow sampler
+        layout.addTexture(3, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false); // cube map
+        layout.addSampler(4, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
 
         // IBL textures
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
-        layout.addSampler(binding++, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
-        layout.addTexture(binding++, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);
+        layout.addTexture(5, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false); // irradiance map
+        layout.addSampler(6, WGPUShaderStage.Fragment , WGPUSamplerBindingType.Filtering);
+        layout.addTexture(7, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension.Cube, false);
+        layout.addTexture(8, WGPUShaderStage.Fragment , WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);
         layout.end();
         return layout;
     }

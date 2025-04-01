@@ -444,7 +444,7 @@ public class Application {
         depthTextureDesc.setDimension( WGPUTextureDimension._2D);
         depthTextureDesc.setFormat( depthTextureFormat );
         depthTextureDesc.setMipLevelCount(1);
-        depthTextureDesc.setSampleCount(configuration.numSamples);
+        depthTextureDesc.setSampleCount(configuration.numSamples);  // needs to match the color attachment
         depthTextureDesc.getSize().setWidth(width);
         depthTextureDesc.getSize().setHeight(height);
         depthTextureDesc.getSize().setDepthOrArrayLayers(1);

@@ -2,10 +2,11 @@
 // Shader source can be tuned by #defines of the following:
 // NORMAL_MAP
 // SHADOWS
-// CUBEMAP todo combine with USE_IBL
+// CUBEMAP deprecated, use USE_IBL
 // TEXTURE_COORDINATE
 // NORMAL
 // USE_IBL
+// COLOR
 
 
 const MAX_DIR_LIGHTS : i32 = 5;
@@ -75,11 +76,11 @@ struct ModelUniforms {
 
 // Material
 @group(1) @binding(0) var<uniform> material: MaterialUniforms;
-@group(1) @binding(1) var albedoTexture: texture_2d<f32>;
-@group(1) @binding(2) var textureSampler: sampler;
-@group(1) @binding(3) var emissiveTexture: texture_2d<f32>;
+@group(1) @binding(1) var albedoTexture:        texture_2d<f32>;
+@group(1) @binding(2) var textureSampler:       sampler;
+@group(1) @binding(3) var emissiveTexture:      texture_2d<f32>;
 #ifdef NORMAL_MAP
-    @group(1) @binding(4) var normalTexture: texture_2d<f32>;
+    @group(1) @binding(4) var normalTexture:    texture_2d<f32>;
 #endif
 @group(1) @binding(5) var metallicRoughnessTexture: texture_2d<f32>;
 
@@ -100,6 +101,9 @@ struct VertexInput {
     @location(3) tangent: vec3f,
     @location(4) bitangent: vec3f,
 #endif
+#ifdef COLOR
+    @location(5) color: vec4f,
+#endif
 };
 
 struct VertexOutput {
@@ -114,6 +118,7 @@ struct VertexOutput {
     @location(5) cameraPosition: vec3f,
     @location(6) worldPosition: vec3f,
     @location(7) shadowPos: vec3f,
+    @location(8) color: vec4f,
 };
 
 @vertex
@@ -141,6 +146,11 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    out.uv = in.uv;
 #else
    out.uv = vec2f(0,0);
+#endif
+#ifdef COLOR
+   out.color = in.color;
+#else
+   out.color = vec4f(1); // white
 #endif
    out.viewDirection = cameraPosition.xyz - worldPosition.xyz;
    out.cameraPosition = cameraPosition.xyz;
@@ -261,7 +271,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let V = normalize(in.viewDirection);
 
-    let baseColor = textureSample(albedoTexture, textureSampler, in.uv).rgba * material.baseColorFactor.rgba;
+    let baseColor = in.color * textureSample(albedoTexture, textureSampler, in.uv).rgba * material.baseColorFactor.rgba;
 
 
 

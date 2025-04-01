@@ -63,11 +63,11 @@ public class SkyBox implements Disposable {
         pipelineSpec.environment = null;
         pipelineSpec.shader = null;
         pipelineSpec.shaderFilePath =  "shaders/skybox.wgsl"; //Files.classpath("shaders/skybox.wgsl");
-        pipelineSpec.enableDepth();
+        pipelineSpec.enableDepthTest();
         pipelineSpec.setCullMode(WGPUCullMode.Back);
         pipelineSpec.colorFormat = LibGPU.surfaceFormat;
         pipelineSpec.depthFormat = WGPUTextureFormat.Depth24Plus;
-        pipelineSpec.numSamples = 1;
+        pipelineSpec.numSamples = LibGPU.app.configuration.numSamples;
         pipelineSpec.isSkyBox = true;
 
         pipeline = new Pipeline(pipelineLayout.getHandle(), pipelineSpec);

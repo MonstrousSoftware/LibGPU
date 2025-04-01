@@ -32,7 +32,8 @@ public class PipelineSpecification  {
     public Environment environment;
     public String shaderFilePath;
     public ShaderProgram shader;
-    public boolean hasDepth;
+    public boolean useDepthTest;
+    public boolean noDepthAttachment; // use only when not rendering to the screen, removes the depth attachment
     public boolean isSkyBox;
     public boolean isDepthPass;
     public boolean afterDepthPrepass;
@@ -53,7 +54,8 @@ public class PipelineSpecification  {
 
     public PipelineSpecification() {
         this.name = "pipeline";
-        enableDepth();
+        enableDepthTest();
+        noDepthAttachment = false;
         disableBlending();
         setCullMode(WGPUCullMode.None);
         indexFormat = WGPUIndexFormat.Uint16;
@@ -87,7 +89,8 @@ public class PipelineSpecification  {
         this.environment = spec.environment;
         this.shaderFilePath = spec.shaderFilePath;
         this.shader = spec.shader;
-        this.hasDepth = spec.hasDepth;
+        this.useDepthTest = spec.useDepthTest;
+        this.noDepthAttachment = spec.noDepthAttachment;
         this.isDepthPass= spec.isDepthPass;
         this.blendSrcColor = spec.blendSrcColor;
         this.blendDstColor = spec.blendDstColor;
@@ -107,13 +110,13 @@ public class PipelineSpecification  {
         recalcHash();
     }
 
-    public void enableDepth(){
-        hasDepth = true;
+    public void enableDepthTest(){
+        useDepthTest = true;
         recalcHash();
     }
 
-    public void disableDepth(){
-        hasDepth = false;
+    public void disableDepthTest(){
+        useDepthTest = false;
         recalcHash();
     }
 
@@ -148,7 +151,7 @@ public class PipelineSpecification  {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PipelineSpecification that = (PipelineSpecification) o;
-        return hasDepth == that.hasDepth && Objects.equals(vertexAttributes, that.vertexAttributes) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor
+        return useDepthTest == that.useDepthTest && Objects.equals(vertexAttributes, that.vertexAttributes) && blendSrcColor == that.blendSrcColor && blendDstColor == that.blendDstColor
                 && blendOpColor == that.blendOpColor && blendSrcAlpha == that.blendSrcAlpha && blendDstAlpha == that.blendDstAlpha && blendOpAlpha == that.blendOpAlpha &&
                 numSamples == that.numSamples;
         // todo compare shader
@@ -164,11 +167,12 @@ public class PipelineSpecification  {
         hash = Objects.hash(vertexAttributes != null ? vertexAttributes.getUsageFlags() : 0,
                 shaderFilePath,
                 isDepthPass, afterDepthPrepass,
+                useDepthTest, noDepthAttachment,
                 topology, indexFormat,
                 environment == null ? 0 :!environment.depthPass && environment.renderShadows,
                 environment == null ? 0 : environment.cubeMap != null,
                 environment == null ? 0 : environment.useImageBasedLighting,
-                hasDepth, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox, depthFormat, numSamples);
+                useDepthTest, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox, depthFormat, numSamples);
     }
 
     // note: don't include compiled shader in the hash because this would force new compiles every frame since a spec of an uncompiled shader <> compiled shader

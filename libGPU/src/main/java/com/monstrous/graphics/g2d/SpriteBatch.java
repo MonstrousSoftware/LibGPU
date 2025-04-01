@@ -102,6 +102,7 @@ public class SpriteBatch implements Disposable {
 
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, this.specificShader);
+        pipelineSpec.name = "SpriteBatch pipeline";
     }
 
     // the index buffer is fixed and only has to be filled on start-up
@@ -168,7 +169,9 @@ public class SpriteBatch implements Disposable {
     }
 
     public void begin(Color clearColor) {
-        renderPass = RenderPassBuilder.create(clearColor,  LibGPU.app.configuration.numSamples);
+
+        renderPass = RenderPassBuilder.create(clearColor, LibGPU.app.configuration.numSamples);
+        //'renderPass = RenderPassBuilder.create("SpriteBatch pass", clearColor,  null, null, null, LibGPU.app.configuration.numSamples, RenderPassType.NO_DEPTH);
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");
@@ -187,7 +190,7 @@ public class SpriteBatch implements Disposable {
         tint.set(Color.WHITE);
         blendingEnabled = true;
         pipelineSpec.enableBlending();
-        pipelineSpec.disableDepth();
+        pipelineSpec.disableDepthTest();
         pipelineSpec.shader = specificShader;
         if(specificShader == null)
             pipelineSpec.shaderFilePath = DEFAULT_SHADER;

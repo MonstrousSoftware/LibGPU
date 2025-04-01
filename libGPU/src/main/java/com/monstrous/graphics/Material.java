@@ -39,6 +39,7 @@ public class Material implements Disposable {
     private static Texture blackPixel;  // fallback texture
 
     private static BindGroupLayout materialBindGroupLayout;
+    private static BindGroupLayout materialHDRBindGroupLayout;
     private UniformBuffer materialUniformBuffer;
     private BindGroup materialBindGroup;
 
@@ -169,12 +170,20 @@ public class Material implements Disposable {
         // to do : this is never released
         if(materialBindGroupLayout == null)
             materialBindGroupLayout = createMaterialBindGroupLayout();
+        if(materialHDRBindGroupLayout == null)
+            materialHDRBindGroupLayout = createHDRMaterialBindGroupLayout();
         return materialBindGroupLayout;
     }
 
     // bind material to the render pass
     public void bindGroup(RenderPass renderPass, int groupId ){
-        if(materialBindGroup == null){  // lazy init, in case some material properties are set after the Material constructor
+        if(diffuseTexture != null && diffuseTexture.getFormat() == WGPUTextureFormat.RGBA32Float){
+            // fill the uniform buffer
+            writeMaterialUniforms(materialUniformBuffer);
+            // create a bind group
+            materialBindGroup = createHDRMaterialBindGroup(this, materialHDRBindGroupLayout, materialUniformBuffer);   // bind group for textures and uniforms
+        }
+        else if(materialBindGroup == null){  // lazy init, in case some material properties are set after the Material constructor
             // fill the uniform buffer
             writeMaterialUniforms(materialUniformBuffer);
 
@@ -200,6 +209,23 @@ public class Material implements Disposable {
         return layout;
     }
 
+    private static BindGroupLayout createHDRMaterialBindGroupLayout(){
+        int location = 0;
+        BindGroupLayout layout = new BindGroupLayout("ModelBatch Bind Group Layout (Material - HDR albedo)");
+        layout.begin();
+        layout.addBuffer(location++, WGPUShaderStage.Fragment, WGPUBufferBindingType.Uniform, MATERIAL_UB_SIZE, false);
+        //layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);
+        layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.UnfilterableFloat, WGPUTextureViewDimension._2D, false);
+        //layout.addSampler(location++, WGPUShaderStage.Fragment,WGPUSamplerBindingType.Filtering);
+        layout.addSampler(location++, WGPUShaderStage.Fragment,WGPUSamplerBindingType.NonFiltering);
+        layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);// emissive texture
+        layout.addTexture(location++, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);// normal texture
+        layout.addTexture(location, WGPUShaderStage.Fragment,WGPUTextureSampleType.Float, WGPUTextureViewDimension._2D, false);// metallic roughness texture
+
+        layout.end();
+        return layout;
+    }
+
     // per material bind group
     private BindGroup createMaterialBindGroup(Material material, BindGroupLayout bindGroupLayout, Buffer materialUniformBuffer) {
         BindGroup bg = new BindGroup(bindGroupLayout);
@@ -207,6 +233,20 @@ public class Material implements Disposable {
         bg.addBuffer(0, materialUniformBuffer);
         bg.addTexture(1, material.diffuseTexture.getTextureView());
         bg.addSampler(2, material.diffuseTexture.getSampler());
+        bg.addTexture(3, material.emissiveTexture.getTextureView());
+        bg.addTexture(4, material.normalTexture.getTextureView());
+        bg.addTexture(5, material.metallicRoughnessTexture.getTextureView());
+        bg.end();
+        return bg;
+    }
+
+    // per material bind group
+    private BindGroup createHDRMaterialBindGroup(Material material, BindGroupLayout bindGroupLayout, Buffer materialUniformBuffer) {
+        BindGroup bg = new BindGroup(bindGroupLayout);
+        bg.begin();
+        bg.addBuffer(0, materialUniformBuffer);
+        bg.addTexture(1, material.diffuseTexture.getTextureView());
+        bg.addSampler(2, material.diffuseTexture.getHDRSampler());
         bg.addTexture(3, material.emissiveTexture.getTextureView());
         bg.addTexture(4, material.normalTexture.getTextureView());
         bg.addTexture(5, material.metallicRoughnessTexture.getTextureView());

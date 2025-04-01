@@ -157,7 +157,7 @@ public class RoundedRectangleBatch implements Disposable {
         tint.set(Color.WHITE);
         blendingEnabled = true;
         pipelineSpec.enableBlending();
-        pipelineSpec.disableDepth();
+        pipelineSpec.disableDepthTest();
         pipelineSpec.shader = specificShader;
         pipelineSpec.vertexAttributes = vertexAttributes;
         pipelineSpec.numSamples =  LibGPU.app.configuration.numSamples;

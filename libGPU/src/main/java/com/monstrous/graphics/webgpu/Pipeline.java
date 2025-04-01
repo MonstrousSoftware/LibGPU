@@ -89,6 +89,7 @@ public class Pipeline implements Disposable {
             blendState.getAlpha().setDstFactor(spec.blendDstAlpha);
             blendState.getAlpha().setOperation(spec.blendOpAlpha);
 
+
             WGPUColorTargetState colorTarget = WGPUColorTargetState.createDirect();
             colorTarget.setFormat(spec.colorFormat);
             colorTarget.setBlend(blendState);
@@ -104,10 +105,10 @@ public class Pipeline implements Disposable {
         setDefault(depthStencilState);
 
         if (spec.isSkyBox) {
-            depthStencilState.setDepthCompare(WGPUCompareFunction.LessEqual);// we are clearing to 1.0 and rendering at 1.0
+            depthStencilState.setDepthCompare(WGPUCompareFunction.LessEqual);// we are clearing to 1.0 and rendering at 1.0, i.e. at max distance
             depthStencilState.setDepthWriteEnabled(1L);
         } else {
-            if (!spec.hasDepth) {
+            if (!spec.useDepthTest) {
                 // disable depth testing
                 depthStencilState.setDepthCompare(WGPUCompareFunction.Always);
                 depthStencilState.setDepthWriteEnabled(0L);
@@ -122,13 +123,14 @@ public class Pipeline implements Disposable {
             }
         }
 
-        //
-        depthStencilState.setFormat(spec.depthFormat);
-        // deactivate stencil
-        depthStencilState.setStencilReadMask(0L);
-        depthStencilState.setStencilWriteMask(0L);
+        if(!spec.noDepthAttachment) {
+            depthStencilState.setFormat(spec.depthFormat);
+            // deactivate stencil
+            depthStencilState.setStencilReadMask(0L);
+            depthStencilState.setStencilWriteMask(0L);
 
-        pipelineDesc.setDepthStencil(depthStencilState);
+            pipelineDesc.setDepthStencil(depthStencilState);
+        }
 
         pipelineDesc.getMultisample().setCount(spec.numSamples);
         pipelineDesc.getMultisample().setMask( -1L );

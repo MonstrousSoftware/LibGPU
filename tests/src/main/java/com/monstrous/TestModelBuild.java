@@ -27,7 +27,7 @@ public class TestModelBuild extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
-    private Model modelBox, modelSphere, modelBox2;
+    private Model modelBox, modelPyramid, modelSphere, modelBox2;
     private Mesh mesh;
     private ArrayList<ModelInstance> modelInstances;
     private Environment environment;
@@ -60,6 +60,9 @@ public class TestModelBuild extends ApplicationAdapter {
         modelBox = buildCubeShape(mb);
         modelInstances.add( new ModelInstance(modelBox, 0,0,0) );
 
+        modelPyramid = buildPyramid();
+        modelInstances.add( new ModelInstance(modelPyramid, 3,0,0) );
+
         modelSphere = buildSphere(mb);
         modelInstances.add( new ModelInstance(modelSphere, 0,2,0) );
 
@@ -76,8 +79,8 @@ public class TestModelBuild extends ApplicationAdapter {
         LibGPU.input.setInputProcessor(camController);
 
         environment = new Environment();
-        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0.1f,-1,0)));
-        environment.ambientLightLevel = 0.5f;
+        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(1f,-1,0)));
+        environment.ambientLightLevel = 0.8f;
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
@@ -195,6 +198,48 @@ public class TestModelBuild extends ApplicationAdapter {
         return new Model(part, material);
     }
 
+    private Model buildPyramid(){
+        Vector3[] corners = {
+                new Vector3(-1, 0, 1), new Vector3(1, 0, 1), new Vector3(1,0,-1), new Vector3(-1, 0, -1),// base
+                new Vector3(0, 2,  0) // top
+        };
+        //Color[] colors = { Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.RED };
+
+        VertexAttributes vertexAttributes = new VertexAttributes();
+        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color", WGPUVertexFormat.Unorm8x4, 5);
+        // beware: the shaderLocation values have to match the shader
+        vertexAttributes.end();
+
+        MeshBuilder mb = new MeshBuilder();
+        mb.begin(vertexAttributes, 18, 18);
+        MeshPart part = mb.part("pyramid", WGPUPrimitiveTopology.TriangleList);
+
+        mb.setNormal(0,-1,0);
+        mb.setColor(Color.BLUE);
+        mb.addRect(corners[0], corners[1], corners[2], corners[3]); // base, CCW from below
+
+        // sides
+        mb.setColor(Color.RED);
+        mb.setNormal(0,1,1);
+        mb.addTriangle(corners[0], corners[1], corners[4]);
+        mb.setColor(Color.ORANGE);
+        mb.setNormal(1,1,0);
+        mb.addTriangle(corners[1], corners[2], corners[4]);
+        mb.setColor(Color.YELLOW);
+        mb.setNormal(0,1,-1);
+        mb.addTriangle(corners[2], corners[3], corners[4]);
+        mb.setNormal(-1,1,0);
+        mb.addTriangle(corners[3], corners[0], corners[4]);
+
+        mb.end();
+
+        Material material = new Material( Color.WHITE );
+
+        return new Model(part, material);
+    }
+
     private Model buildCubeShape(MeshBuilder mb){
 
         MeshPart meshPart = BoxShapeBuilder.build(mb, 2, 2, 2,  WGPUPrimitiveTopology.TriangleList);
@@ -243,6 +288,7 @@ public class TestModelBuild extends ApplicationAdapter {
         modelBox.dispose();
         modelSphere.dispose();
         modelBox2.dispose();
+        modelPyramid.dispose();
         modelBatch.dispose();
         mesh.dispose();
         texture.dispose();

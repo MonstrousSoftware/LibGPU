@@ -15,9 +15,9 @@ public class Launcher {
         config.numSamples = 1;      // MSAA samples: can be 1 (no MSAA) or 4 (multi-sampling)
         //config.noWindow = true;   // use this to run a program without a window
 
-        config.enableGPUtiming = true;
+        config.enableGPUtiming = false;
 
-        new Application(new TestHDR(), config);
+        new Application(new Menu(), config);
 
     }
 }

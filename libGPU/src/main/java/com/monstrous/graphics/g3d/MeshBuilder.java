@@ -85,6 +85,9 @@ public class MeshBuilder {
                         vertexData[vindex++] = vi.color.b;
                         vertexData[vindex++] = vi.color.a;
                         break;
+                    case COLOR_PACKED:
+                        vertexData[vindex++] = vi.color.toFloatBits();
+                        break;
                     case TEXTURE_COORDINATE:
                         vertexData[vindex++] = vi.uv.x;
                         vertexData[vindex++] = vi.uv.y;
@@ -108,7 +111,6 @@ public class MeshBuilder {
         this.topology = topology;
         part = new MeshPart(mesh, name, topology);
         part.setOffset(numIndices);     // support for Mesh without indices?
-        System.out.println("Offset for "+name+" : "+numIndices);
         return part;
     }
 
@@ -124,7 +126,6 @@ public class MeshBuilder {
         return numVertices;
     }
 
-    /** note: color per vertex is not supported in standard shader */
     public void setColor(Color color){
         this.color.set(color);
     }

@@ -137,7 +137,7 @@ public class ShapeRenderer implements Disposable {
         tint.set(1,1,1,1);
         blendingEnabled = true;
         pipelineSpec.enableBlending();
-        pipelineSpec.disableDepth();
+        pipelineSpec.disableDepthTest();
         setPipeline();
         setUniforms();
     }

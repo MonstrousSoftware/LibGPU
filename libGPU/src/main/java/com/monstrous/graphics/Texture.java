@@ -32,7 +32,8 @@ public class Texture {
     private Pointer image;
     private Pointer texture;
     private Pointer textureView;
-    private Pointer sampler;
+    private static Pointer sampler;
+    private Pointer hdrSampler;
     private WGPUTextureFormat format;
     private String label;
 
@@ -266,6 +267,8 @@ public class Texture {
 
     public Pointer getSampler() { return sampler; }
 
+    public Pointer getHDRSampler() { return hdrSampler; }
+
     public WGPUTextureFormat getFormat(){
         return format;
     }
@@ -331,19 +334,38 @@ public class Texture {
         textureView = LibGPU.webGPU.wgpuTextureCreateView(texture, textureViewDesc);
 
         // Create a sampler
-        WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
-        samplerDesc.setAddressModeU(WGPUAddressMode.Repeat);
-        samplerDesc.setAddressModeV(WGPUAddressMode.Repeat);
-        samplerDesc.setAddressModeW(WGPUAddressMode.Repeat);
-        samplerDesc.setMagFilter(WGPUFilterMode.Linear);
-        samplerDesc.setMinFilter(WGPUFilterMode.Linear);
-        samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Linear);
+        //
+        if(sampler == null) { // lazy init of static member, default sampler shared by all textures
+            WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
+            samplerDesc.setLabel("Standard texture sampler");
+            samplerDesc.setAddressModeU(WGPUAddressMode.Repeat);
+            samplerDesc.setAddressModeV(WGPUAddressMode.Repeat);
+            samplerDesc.setAddressModeW(WGPUAddressMode.Repeat);
+            samplerDesc.setMagFilter(WGPUFilterMode.Linear);
+            samplerDesc.setMinFilter(WGPUFilterMode.Linear);
+            samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Linear);
 
-        samplerDesc.setLodMinClamp(0);
-        samplerDesc.setLodMaxClamp(mipLevelCount);
-        samplerDesc.setCompare(WGPUCompareFunction.Undefined);
-        samplerDesc.setMaxAnisotropy(1);
-        sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
+            samplerDesc.setLodMinClamp(0);
+            samplerDesc.setLodMaxClamp(mipLevelCount);
+            samplerDesc.setCompare(WGPUCompareFunction.Undefined);
+            samplerDesc.setMaxAnisotropy(1);
+            sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
+        }
+
+        //WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
+//        samplerDesc.setLabel("HDR texture sampler");
+//        samplerDesc.setAddressModeU(WGPUAddressMode.Repeat);
+//        samplerDesc.setAddressModeV(WGPUAddressMode.Repeat);
+//        samplerDesc.setAddressModeW(WGPUAddressMode.Repeat);
+//        samplerDesc.setMagFilter(WGPUFilterMode.Nearest);
+//        samplerDesc.setMinFilter(WGPUFilterMode.Nearest);
+//        samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Nearest);
+//
+//        samplerDesc.setLodMinClamp(0);
+//        samplerDesc.setLodMaxClamp(mipLevelCount);
+//        samplerDesc.setCompare(WGPUCompareFunction.Undefined);
+//        samplerDesc.setMaxAnisotropy(1);
+//        hdrSampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
     }
 
     public void fill(Color color) {
@@ -424,6 +446,41 @@ public class Texture {
 
         // N.B. using textureDesc.getSize() for param won't work!
         LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
+    }
+
+    /** fill textures using floats arranged as r, g, b, a, r, g, b, a, etc.
+     * Size of buffer must be 4*width*height
+     * Allows for HDR textures.
+     * */
+    public void fill(float[] pixels) {
+        if(pixels.length != 4*width*height) throw new IllegalArgumentException("Texture.fill(): float array is wrong size.");
+        // Arguments telling which part of the texture we upload to
+        // (together with the last argument of writeTexture)
+        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+        destination.setTexture(texture);
+        destination.setMipLevel(0);
+        destination.getOrigin().setX(0);
+        destination.getOrigin().setY(0);
+        destination.getOrigin().setZ(0);
+        destination.setAspect(WGPUTextureAspect.All);   // not relevant
+
+        // Arguments telling how the C++ side pixel memory is laid out
+        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+        source.setOffset(0);
+        source.setBytesPerRow(4L * width*Float.BYTES);
+        source.setRowsPerImage(height);
+
+        Pointer pixelPtr = JavaWebGPU.createFloatArrayPointer(pixels);
+
+        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+        ext.setWidth(width);
+        ext.setHeight(height);
+        ext.setDepthOrArrayLayers(1);
+
+        destination.setMipLevel(0);
+
+        // N.B. using textureDesc.getSize() for param won't work!
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4L*Float.BYTES, source, ext);
     }
 
     public void fillHDR(Color color) {
@@ -661,11 +718,6 @@ public class Texture {
         return ((int) x) & 0xff;
     }
 
-    private byte convert(byte input){
-        return input;
-        //return (byte) (255f*Math.pow(input/255f, 0.44f));
-    }
-
     public void dispose(){
         if(image != null) {
             //System.out.println("free: "+image);
@@ -674,7 +726,8 @@ public class Texture {
         }
         if(texture != null) {   // guard against double dispose
             System.out.println("Destroy texture " + label);
-            LibGPU.webGPU.wgpuSamplerRelease(sampler);
+            // todo released when?
+            //LibGPU.webGPU.wgpuSamplerRelease(sampler);
             LibGPU.webGPU.wgpuTextureViewRelease(textureView);
             LibGPU.webGPU.wgpuTextureDestroy(texture);
             LibGPU.webGPU.wgpuTextureRelease(texture);

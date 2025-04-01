@@ -81,7 +81,7 @@ public class RenderPassBuilder {
         renderPassDescriptor.setOcclusionQuerySet(JavaWebGPU.createNullPointer());
 
 
-        if(  passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ||passType == RenderPassType.SHADOW_PASS ){  // todo TEMP SHADOW FOR DEBUG
+        if(  passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ||passType == RenderPassType.SHADOW_PASS ||passType == RenderPassType.NO_DEPTH){  // todo TEMP SHADOW FOR DEBUG
 
             renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
             renderPassColorAttachment.setNextInChain();
@@ -123,24 +123,26 @@ public class RenderPassBuilder {
             renderPassDescriptor.setColorAttachmentCount(0);
         }
 
+        if(passType != RenderPassType.NO_DEPTH) {
+            depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
+            depthStencilAttachment.setDepthClearValue(1.0f);
+            // if we just did a depth prepass, don't clear the depth buffer
+            depthStencilAttachment.setDepthLoadOp(passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ? WGPULoadOp.Load : WGPULoadOp.Clear);
+            depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
+            depthStencilAttachment.setDepthReadOnly(0L);
+            depthStencilAttachment.setStencilClearValue(0);
+            depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
+            depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
+            depthStencilAttachment.setStencilReadOnly(1L);
 
-        depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
-        depthStencilAttachment.setDepthClearValue(1.0f);
-        // if we just did a depth prepass, don't clear the depth buffer
-        depthStencilAttachment.setDepthLoadOp(  passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ? WGPULoadOp.Load : WGPULoadOp.Clear);
-        depthStencilAttachment.setDepthStoreOp(WGPUStoreOp.Store);
-        depthStencilAttachment.setDepthReadOnly( 0L);
-        depthStencilAttachment.setStencilClearValue(0);
-        depthStencilAttachment.setStencilLoadOp(WGPULoadOp.Undefined);
-        depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
-        depthStencilAttachment.setStencilReadOnly(1L);
+            depthStencilAttachment.setView(depthTextureView);
 
-        depthStencilAttachment.setView(depthTextureView);
-
-        renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
-
+            renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
+        }
 
         LibGPU.app.gpuTiming.configureRenderPassDescriptor(renderPassDescriptor);
+
+
 
         Pointer renderPassPtr = webGPU.wgpuCommandEncoderBeginRenderPass(LibGPU.commandEncoder, renderPassDescriptor);
         RenderPass pass = new RenderPass(renderPassPtr, passType, colorFormat, depthFormat, sampleCount,
