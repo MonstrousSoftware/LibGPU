@@ -101,7 +101,10 @@ public class TestHDR extends ApplicationAdapter {
         snapCam.direction.set(0,0,1);
         snapCam.update();
 
+
+
         buildEnvMap();
+        //environmentMap = loadEnvMap();
         buildIrradianceMap();
 
         prefilterMap = new Texture(128, 128, true, 6 );  // mipmapped cube map
@@ -147,13 +150,11 @@ public class TestHDR extends ApplicationAdapter {
         modelBatch.render(instances);
         modelBatch.end();
 
-        batch.begin();
-        //batch.setShader(shader);
-        //atch.draw(textureEquirectangular, 0,0);
+//        batch.begin();
 //        for(int side = 0; side < 6; side++) {
-//            batch.draw(textureSides[side], 128*side, LibGPU.graphics.getHeight() - 128);
+//            batch.draw(textureSides[side], 128*side, LibGPU.graphics.getHeight() - 128, 128, 128);
 //        }
-        batch.end();
+//        batch.end();
 
 
     }
@@ -177,6 +178,7 @@ public class TestHDR extends ApplicationAdapter {
 
     private void buildIrradianceMap(){
         // Convert an environment cube map to an irradiance cube map
+        // todo not sure if the map is inadvertently mirrored
         environment.shaderSourcePath = "shaders/modelbatchCubeMapIrradiance.wgsl";        // hacky
         environment.setCubeMap(environmentMap);
         LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
@@ -248,6 +250,21 @@ public class TestHDR extends ApplicationAdapter {
             modelBatch.end();
         }
 
+    }
+
+    private Texture loadEnvMap(){
+        // the order of the layers is +X, -X, +Y, -Y, +Z, -Z
+        String[] fileNames = {
+                "textures/testcubemap/posx.png",
+                "textures/testcubemap/negx.png",
+                "textures/testcubemap/posy.png",
+                "textures/testcubemap/negy.png",
+                "textures/testcubemap/posz.png",
+                "textures/testcubemap/negz.png",
+
+        };
+
+        return new Texture(fileNames, false, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
     }
 
 

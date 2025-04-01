@@ -5,6 +5,7 @@ import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.g3d.Model;
 import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.g3d.ModelInstance;
+import com.monstrous.graphics.g3d.SkyBox;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
@@ -62,17 +63,20 @@ public class TestCubeMap extends ApplicationAdapter {
 
         // the order of the layers is +X, -X, +Y, -Y, +Z, -Z
         String[] fileNames = {
+//                "textures/testcubemap/posx.png",
+//                "textures/testcubemap/negx.png",
+//                "textures/testcubemap/posy.png",
+//                "textures/testcubemap/negy.png",
+//                "textures/testcubemap/posz.png",
+//                "textures/testcubemap/negz.png",
+
                 "textures/leadenhall/pos-x.jpg",
                 "textures/leadenhall/neg-x.jpg",
                 "textures/leadenhall/pos-y.jpg",
                 "textures/leadenhall/neg-y.jpg",
                 "textures/leadenhall/pos-z.jpg",
                 "textures/leadenhall/neg-z.jpg",
-//                "textures/daysky/environment_negx.jpg",
-//                "textures/daysky/environment_posy.jpg",
-//                "textures/daysky/environment_negy.jpg",
-//                "textures/daysky/environment_posz.jpg",
-//                "textures/daysky/environment_negz.jpg"
+
         };
 
         cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
@@ -112,6 +116,7 @@ public class TestCubeMap extends ApplicationAdapter {
         environment.setShadowMap(shadowCam, depthMap);
         environment.ambientLightLevel = 0.5f;
         environment.setCubeMap(cubeMap);
+        environment.setSkybox(new SkyBox(cubeMap));
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor(camController);

@@ -35,7 +35,7 @@ fn vs_main(@builtin(vertex_index) index: u32) -> VertexOutput {
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let t = uniforms.inverseProjectionViewMatrix * in.pos;
-    var color:vec3f = textureSample(cubeMap, cubeMapSampler, normalize(t.xyz / t.w) * vec3f(-1, 1, 1)).rgb;
+    var color:vec3f = textureSample(cubeMap, cubeMapSampler, normalize(t.xyz / t.w) * vec3f(1, 1, -1)).rgb;
 
     //color = color / (color + vec3(1.0));
     return vec4f(color, 1f);

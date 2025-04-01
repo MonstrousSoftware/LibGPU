@@ -69,14 +69,22 @@ public class TestSkyBox extends ApplicationAdapter {
 
         // the order of the layers is +X, -X, +Y, -Y, +Z, -Z
         String[] fileNames = {
+//                "textures/testcubemap/posx.png",
+//                "textures/testcubemap/negx.png",
+//                "textures/testcubemap/posy.png",
+//                "textures/testcubemap/negy.png",
+//                "textures/testcubemap/posz.png",
+//                "textures/testcubemap/negz.png",
+
                 "textures/leadenhall/pos-x.jpg",
                 "textures/leadenhall/neg-x.jpg",
                 "textures/leadenhall/pos-y.jpg",
                 "textures/leadenhall/neg-y.jpg",
                 "textures/leadenhall/pos-z.jpg",
                 "textures/leadenhall/neg-z.jpg",
+
 //                "textures/daysky/environment_posx.jpg",
-//                 "textures/daysky/environment_negx.jpg",
+//                "textures/daysky/environment_negx.jpg",
 //                "textures/daysky/environment_posy.jpg",
 //                "textures/daysky/environment_negy.jpg",
 //                "textures/daysky/environment_posz.jpg",
