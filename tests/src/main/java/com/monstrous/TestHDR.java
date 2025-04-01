@@ -39,7 +39,7 @@ public class TestHDR extends ApplicationAdapter {
     Texture environmentMap;     // cube map
     Texture irradianceMap;  // low resolution cube map
     Texture prefilterMap;    // mipmapped cube map
-    Texture refCubeMap;
+
 
 
     @Override
@@ -51,8 +51,8 @@ public class TestHDR extends ApplicationAdapter {
         batch = new SpriteBatch();
         //shader = new ShaderProgram(Files.internal("shaders/sprite-HDR.wgsl"));
 
-        //FileHandle file = Files.internal("hdr/brown_photostudio_02_1k.hdr");
-        FileHandle file = Files.internal("hdr/leadenhall_market_2k.hdr");
+        FileHandle file = Files.internal("hdr/brown_photostudio_02_1k.hdr");
+        //FileHandle file = Files.internal("hdr/leadenhall_market_2k.hdr");
         IBLComposer ibl = new IBLComposer();
 
         try {
@@ -131,6 +131,9 @@ public class TestHDR extends ApplicationAdapter {
                 disposables.add(sphere);
             }
         }
+//        Model xyz = ModelBuilder.createXYZCoordinates(50, 0.5f);
+//        instances.add(new ModelInstance(xyz));
+//        disposables.add(xyz);
 
     }
 

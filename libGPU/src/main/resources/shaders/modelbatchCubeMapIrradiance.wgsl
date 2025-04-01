@@ -74,7 +74,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 	        let tangentSample:vec3f = vec3f(sin(theta) * cos(phi),  sin(theta) * sin(phi), cos(theta));
 	        // tangent space to world
             let sampleVec:vec3f = tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal;
-	        irradiance += textureSample(cubeMap, cubeMapSampler, sampleVec).rgb * cos(theta) * sin(theta);
+	        irradiance += textureSample(cubeMap, cubeMapSampler, sampleVec*vec3(1,1,-1)).rgb * cos(theta) * sin(theta);
 	        nrSamples += 1.0;
 	    }
 	}
