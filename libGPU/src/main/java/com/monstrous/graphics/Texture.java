@@ -256,6 +256,11 @@ public class Texture {
         return height;
     }
 
+    public int getMipLevelCount() {
+
+        return mipLevelCount;
+    }
+
     // native format from smb_image
     public int getNativeFormat() {
         return nativeFormat;

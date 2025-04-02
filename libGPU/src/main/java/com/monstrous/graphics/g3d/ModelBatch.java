@@ -505,13 +505,17 @@ public class ModelBatch implements Disposable {
             }
         }
         uniformBuffer.append(numPointLights);
-        uniformBuffer.pad(3*4); // padding
+
+        // roughnessLevels = mip count of radiance map when using IBL
+        uniformBuffer.append((environment == null||environment.radianceMap == null) ? 0 : environment.radianceMap.getMipLevelCount());
 
 
         if(environment != null && environment.shadowCamera != null) {
             uniformBuffer.append(environment.shadowCamera.combined);
             uniformBuffer.append(environment.shadowCamera.position);
         }
+
+
 
         if(passNumber >= MAX_PASSES) throw new RuntimeException("ModelBatch: too many passes");
         uniformBuffer.endFill(passNumber*uniformBuffer.getUniformStride());   // write to GPU buffer

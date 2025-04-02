@@ -85,22 +85,25 @@ public class ImageBasedLighting implements Disposable {
         return irradianceMap;
     }
 
-    public Texture buildRadianceMap(Texture environmentMap, int size, int mipLevels){
+    public Texture buildRadianceMap(Texture environmentMap, int size){
         Texture prefilterMap = new Texture(size, size, true, 6 );  // mipmapped cube map
+        int mipLevels = prefilterMap.getMipLevelCount();
+        //System.out.println("radiance map mips:"+mipLevels);
         Model cube = new Model(buildUnitCube(), new Material(Color.WHITE));
         ModelInstance instance = new ModelInstance(cube);
         // Convert an environment cube map to a radiance cube map
         environment.shaderSourcePath = "shaders/modelbatchCubeMapRadiance.wgsl";        // hacky
         environment.setCubeMap(environmentMap);
-        LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
-        LibGPU.graphics.passNumber = 0;
+
         for(int mip = 0; mip < mipLevels; mip++) {
-            environment.ambientLightLevel = (float)mip/mipLevels;   // hacky; use this to pass roughness level
+            LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+            LibGPU.graphics.passNumber = 0;
+            environment.ambientLightLevel = (float)mip/(mipLevels-1);   // hacky; use this to pass roughness level
             constructSideTextures(instance, size);
             copyTextures(prefilterMap, size, mip);
+            LibGPU.app.finishEncoder(LibGPU.commandEncoder);
             size /= 2;
         }
-        LibGPU.app.finishEncoder(LibGPU.commandEncoder);
         environment.shaderSourcePath = null;
         cube.dispose();
         return prefilterMap;
@@ -163,12 +166,11 @@ public class ImageBasedLighting implements Disposable {
 
             WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect()
                     .setTexture(cube.getHandle())
-                    .setMipLevel(0)
+                    .setMipLevel(mipLevel)                  // put in specific mip level
                     .setAspect(WGPUTextureAspect.All);
             destination.getOrigin().setX(0);
             destination.getOrigin().setY(0);
             destination.getOrigin().setZ(side);
-            destination.setMipLevel(mipLevel);
 
             WGPUExtent3D ext = WGPUExtent3D.createDirect()
                     .setWidth(size)

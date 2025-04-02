@@ -58,8 +58,10 @@ public class TestIBLGen extends ApplicationAdapter {
         camera.update();
 
         camController = new CameraController(camera);
+        camController.mouseSensitivity = 3f;
         LibGPU.input.setInputProcessor(camController);
 
+        // Add lighting
         environment = new Environment();
         float intensity = 250f;
         environment.add( new PointLight(Color.WHITE, new Vector3(-10f,10f,10), intensity));
@@ -72,11 +74,12 @@ public class TestIBLGen extends ApplicationAdapter {
 
         modelBatch = new ModelBatch();
 
+        // create image based environmental lighting
         ImageBasedLighting ibl = new ImageBasedLighting();
 
         Texture environmentMap = ibl.buildEnvironmentMapFromEquirectangularTexture(textureEquirectangular, ENVMAP_SIZE);
         Texture irradianceMap = ibl.buildIrradianceMap(environmentMap, 32);
-        Texture prefilterMap = ibl.buildRadianceMap(environmentMap, 128, 5);
+        Texture prefilterMap = ibl.buildRadianceMap(environmentMap, 128);
         Texture brdfLUT = ibl.getBRDFLookUpTable();
 
         environment.useImageBasedLighting = true;
@@ -84,9 +87,9 @@ public class TestIBLGen extends ApplicationAdapter {
         environment.setRadianceMap(prefilterMap);
         environment.setBRDFLookUpTable( brdfLUT );
 
-        environment.setSkybox(new SkyBox(environmentMap));
+        environment.setSkybox(new SkyBox(prefilterMap));
 
-
+        // create some spheres
         Model sphere;
         for(int y = 0; y <= 1; y++) {
             for (int x = 0; x <= 5; x++) {
@@ -133,7 +136,7 @@ public class TestIBLGen extends ApplicationAdapter {
         // vertex attributes are fixed per mesh
         VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.NORMAL);
 
-        mb.begin(vertexAttributes, 4096, 4096);
+        mb.begin(vertexAttributes);
 
         MeshPart meshPart = SphereShapeBuilder.build(mb, 1, 32,  WGPUPrimitiveTopology.TriangleStrip);
         Material material = new Material( Color.RED );

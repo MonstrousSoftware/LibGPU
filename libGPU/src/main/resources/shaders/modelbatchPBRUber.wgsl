@@ -33,14 +33,15 @@ struct FrameUniforms {
     ambientLightLevel : f32,
 
     directionalLights : array<DirectionalLight, MAX_DIR_LIGHTS>,
-    numDirectionalLights: i32,
+    numDirectionalLights: u32,
 
     pointLights : array<PointLight, MAX_POINT_LIGHTS>,
-    numPointLights: i32,
+    numPointLights: u32,
+
+    numRoughnessLevels: u32,        // mip levels in roughness for prefilterMap
 
     lightCombinedMatrix: mat4x4f,
     lightPosition: vec3f,
-
 };
 
 struct MaterialUniforms {
@@ -235,9 +236,9 @@ fn ambientIBL( V:vec3f, N: vec3f, roughness:f32, metallic:f32, baseColor: vec3f)
     let irradiance:vec3f = textureSample(irradianceMap, iblSampler, lightSample).rgb;
     let diffuse:vec3f    = irradiance * baseColor.rgb;
 
-    let MAX_REFLECTION_LOD = 5.0;       // todo should be a uniform
+    let maxReflectionLOD:f32 = f32(uFrame.numRoughnessLevels);
     let R:vec3f = reflect(-V, N)*vec3f(1, 1, -1);
-    let prefilteredColor:vec3f = textureSampleLevel(radianceMap, iblSampler, R, roughness * MAX_REFLECTION_LOD).rgb;
+    let prefilteredColor:vec3f = textureSampleLevel(radianceMap, iblSampler, R, roughness * maxReflectionLOD).rgb;
     let envBRDF = textureSample(brdfLUT, iblSampler, vec2(NdotV, roughness)).rg;
     let specular: vec3f = prefilteredColor * (F * envBRDF.x + envBRDF.y);
     let ambient:vec3f    = (kD * diffuse) + specular;
@@ -268,9 +269,7 @@ fn getShadowNess( shadowPos:vec3f ) -> f32 {
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
-
     let V = normalize(in.viewDirection);
-
     let baseColor = in.color * textureSample(albedoTexture, textureSampler, in.uv).rgba * material.baseColorFactor.rgba;
 
 
@@ -310,7 +309,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
 
     // for each directional light
-    for (var i: i32 = 0; i < uFrame.numDirectionalLights; i++) {
+    for (var i: u32 = 0; i < uFrame.numDirectionalLights; i++) {
         let light = uFrame.directionalLights[i];
 
         let L = -normalize(light.direction.xyz);       // L is vector towards light
@@ -321,7 +320,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     }
 
     // for each point light
-    for (var i: i32 = 0; i < uFrame.numPointLights; i++) {
+    for (var i: u32 = 0; i < uFrame.numPointLights; i++) {
         let light:PointLight = uFrame.pointLights[i];
         var lightVector =  light.position.xyz - in.worldPosition.xyz;    // vector towards light source
         let distance:f32 = length(lightVector);
@@ -358,6 +357,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = uFrame.pointLights[0].color.rgb;
     // color = baseColor.rgb;
     //color = normalize(in.normal);
+    //color = vec3(0.1f * uFrame.numRoughnessLevels, 0, 0);
+   // color = vec3(material.roughnessFactor, 0, 0);
+   //color = ambient;
 
 
     return vec4f(color, baseColor.a);
