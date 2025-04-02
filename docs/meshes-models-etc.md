@@ -23,9 +23,62 @@ may use a line list or a triangle strip.  The topology is defined by the mesh pa
 Using mesh parts in models, allows different models to share the same mesh (just different parts of it).  This means the GPU can render the 
 different models without switching vertex buffer. 
 
-If you build a Model from a Mesh it will automatically create a MeshPart corresponding to the entire Mesh. It will assume a topology of triangle list [check].
+If you build a model from a mesh it will automatically create a mesh part corresponding to the entire mesh. 
+It will assume a topology of triangle list or you can use the more extended constructor to define the topology:
+```
+	public Model(Mesh mesh, WGPUPrimitiveTopology topology, Material material);
+```
 
-[can a model have multiple mesh parts?]
+
+### Load from file
+
+Instead of building a model in code, the more usual approach is to load it from a file.  The following file formats are supported:
+- GLTF  Graphics Library Transmission Format 2.0 by the Khronos group
+- GLB (binary version of GLTF)
+- OBJ	Wavefront OBJ format
+
+(G3DB and G3DJ formats are not supported at this moment).
+(GLTF support does not include animations, morphing, extensions).
+
+Loading a model from a file, which has to be located in the assets folder, is as simple as the following example:
+
+```java
+	Model bunnyModel = new Model("bunny.gltf");
+```
+
+### Model with multiple meshes, materials
+A model can have multiple meshes and multiple materials. They can be added as follows:
+
+```java
+	model.addMesh( mesh );
+	model.addMaterial( material );
+```
+
+(Note that using `addMesh()` will *not* create a corresponding mesh part, this only happens when the mesh is provided to the model constructor).
+
+A model's meshes and materials are only useful when they are used by a mesh part.  Adding a mesh part to a model, is done by adding via a node and a node part:
+
+```java
+	NodePart nodePart = new NodePart( meshPart, material);
+	Node node = new Node( nodePart );
+	model.addRootNode( node );
+```
+
+Nodes are used in models to define a hierarchy of transforms as a tree structure with mesh parts located at the leaf nodes (NodePart). 
+Imagine you have a car model with four wheels.  The wheels could be the four times the same mesh part with different transformations from the car's origin. 
+
+### Disposal
+
+Note that models needs to be disposed when they are no longer needed. For example, a mesh will have a vertex buffer and possibly an index buffer allocated on the GPU which are released
+when the model and its meshes are disposed.
+
+```java
+		model.dispose();
+```
+ 
+A model should not be disposed as long as a model instance that was derived from it is still in use.  The model needs to outlive its model instances.
+
+
 
 ## Mesh
 A mesh doesn't know about topology but it does have to know about which data to store per vertex: the vertex attributes. One vertex attribute is mandatory: the position.
@@ -34,6 +87,7 @@ Other potential vertex attributes are:
 - normal vector
 - texture coordinate 
 
+### VertexAttributes
 Which attributes you want in a mesh depends on the application.  Since there are usually many vertices, it makes sense to store only the vertex attributes you need.
 
 It is possible to have a index list as well as a vertex list in a mesh.  In this case, the index list gives the order of vertices to use when rendering the mesh.
@@ -43,14 +97,26 @@ An index can be 16 bit (short) or 32 bit (int).  A 16 bit index is more compact 
 
 
 Vertex attributes are defined using the VertexAttributes class. [subject to change].  Different attributes are defined using the `add()` method.
+Once all attributes have been defined use the `end()` method to finalize the definition.
 
 For each attribute you can define:
-- the usage, which is defined using the enum VertexAttribute.Usage [give list]
-- a label, which is for deugging convenience
-- a format using the enum WGPUVertexFormat
-- the bind location which mst correspond to the bind location in the shader.
+- the usage, which is defined using one of the values from VertexAttribute.Usage (see below)
+- a label, which is a free format string for debugging convenience
+- a data format using the enum WGPUVertexFormat
+- the bind location which must correspond to the bind location in the shader.
 
-Once all attributes have been defined use the `end()` method to finalize the definition.
+```
+VertexAttribute.Usage:
+        static public final int POSITION = 1;
+        static public final int COLOR = 2;
+        static public final int COLOR_PACKED = 4;
+        static public final int TEXTURE_COORDINATE = 8;
+        static public final int NORMAL= 16;
+        static public final int TANGENT = 32;
+        static public final int BITANGENT = 64;
+```
+
+
 
 ```java
         VertexAttributes vertexAttributes = new VertexAttributes();
@@ -59,6 +125,7 @@ Once all attributes have been defined use the `end()` method to finalize the def
         vertexAttributes.end();
 ```
 
+### Mesh construction
 
 A mesh can be constructed using from a float array. For example to define three vertices (and no index list):
 
@@ -131,7 +198,7 @@ For common shapes there are a few shape builder classes to define a mesh. For ex
         vertexAttributes.end();
 		
         MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, 1000, 1000);
+        mb.begin(vertexAttributes, 100, 100);
 		
         MeshPart meshPart = BoxShapeBuilder.build(mb, 2, 2, 2,  WGPUPrimitiveTopology.TriangleList);
         Material material = new Material( texture );
@@ -140,12 +207,7 @@ For common shapes there are a few shape builder classes to define a mesh. For ex
 ```
 
 
-[todo] load model
 
-Note that models needs to be disposed when they are no longer needed to free up the memory they use. [check]
-If a model is still used by a model instance, it should not be disposed.
-
-		model.dispose();
 
 ## Materials
 
@@ -181,9 +243,9 @@ diffuse texture will default to a texture of a single white pixel.
 A ModelInstance is when a Model is placed in the game world. It requires at the very least a model and a position:
 
 For example:
-
+```java
 	ModelInstance boxInstance = new ModelInstance( boxModel, 0, 2, 0 );	// place box at position (0,2,0)
-	
+```	
 	
 More generally, instead of a position we can use a transform matrix because the model can also be rotated and scaled.
 
