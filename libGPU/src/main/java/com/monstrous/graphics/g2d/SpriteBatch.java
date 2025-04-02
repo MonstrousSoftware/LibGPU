@@ -71,11 +71,11 @@ public class SpriteBatch implements Disposable {
         begun = false;
         webGPU = LibGPU.webGPU;
 
-        vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",        WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv",    WGPUVertexFormat.Float32x2, 1 );
-        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color",        WGPUVertexFormat.Unorm8x4, 2 );
-        vertexAttributes.end();
+        vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION_2D|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.COLOR_PACKED);
+//        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",        WGPUVertexFormat.Float32x2, 0 );
+//        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv",    WGPUVertexFormat.Float32x2, 1 );
+//        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color",        WGPUVertexFormat.Unorm8x4, 2 );
+//        vertexAttributes.end();
         defaultVertexAttributes = vertexAttributes;
 
         // vertex: x, y, u, v, rgba
@@ -351,47 +351,46 @@ public class SpriteBatch implements Disposable {
 
         vertexData.put(x);
         vertexData.put(y);
+        if(hasColor) {
+            vertexData.put(col);
+        }
         if(hasUV) {
             vertexData.put(u);
             vertexData.put(v);
-        }
-        if(hasColor) {
-            vertexData.put(col);
-//            vertexData.put(tint.r);
-//            vertexData.put(tint.g);
-//            vertexData.put(tint.b);
-//            vertexData.put(tint.a);
         }
 
         vertexData.put(x);
         vertexData.put(y+h);
+        if(hasColor) {
+            vertexData.put(col);
+        }
         if(hasUV) {
             vertexData.put(u);
             vertexData.put(v2);
         }
-        if(hasColor) {
-            vertexData.put(col);
-        }
+
 
         vertexData.put(x+w);
         vertexData.put(y+h);
+        if(hasColor) {
+            vertexData.put(col);
+        }
         if(hasUV) {
             vertexData.put(u2);
             vertexData.put(v2);
         }
-        if(hasColor) {
-            vertexData.put(col);
-        }
+
 
         vertexData.put(x+w);
         vertexData.put(y);
+        if(hasColor) {
+            vertexData.put(col);
+        }
         if(hasUV) {
             vertexData.put(u2);
             vertexData.put(v);
         }
-        if(hasColor) {
-            vertexData.put(col);
-        }
+
     }
 
 

@@ -18,7 +18,7 @@ const smoothing : f32 = 1/16.0;
 struct VertexInput {
     @location(0) position: vec2f,
     @location(1) uv: vec2f,
-    @location(2) color: vec4f,
+    @location(5) color: vec4f,
 };
 
 struct VertexOutput {

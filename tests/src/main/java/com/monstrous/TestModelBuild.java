@@ -43,12 +43,12 @@ public class TestModelBuild extends ApplicationAdapter {
 
         MeshBuilder mb = new MeshBuilder();
         // vertex attributes are fixed per mesh
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
-        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-        // beware: the shaderLocation values have to match the shader
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.NORMAL);
+//        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+//        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
+//        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+//        // beware: the shaderLocation values have to match the shader
+//        vertexAttributes.end();
 
         // Note that the shapes we build will become meshParts of a single mesh.
         // This means we don't need to swap vertex buffer and index buffer between rendering these shapes.
@@ -140,11 +140,11 @@ public class TestModelBuild extends ApplicationAdapter {
                 -1, 1, -1, 1, 0, 1, 0, 1, 1, 0,
         };
 
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.COLOR, "color", WGPUVertexFormat.Float32x4, 1);
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 2);
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.COLOR);
+//        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+//        vertexAttributes.add(VertexAttribute.Usage.COLOR, "color", WGPUVertexFormat.Float32x4, 1);
+//        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 2);
+//        vertexAttributes.end();
 
         Mesh mesh = new Mesh();
         mesh.setVertexAttributes(vertexAttributes);
@@ -163,11 +163,7 @@ public class TestModelBuild extends ApplicationAdapter {
         };
         Vector2[] texCoords = { new Vector2(0,0), new Vector2(1,0), new Vector2(1,1), new Vector2(0,1) };
 
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 1);
-        // beware: the shaderLocation values have to match the shader
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.NORMAL);
 
         MeshBuilder mb = new MeshBuilder();
         mb.begin(vertexAttributes, 6*4, 8*6);
@@ -205,12 +201,12 @@ public class TestModelBuild extends ApplicationAdapter {
         };
         //Color[] colors = { Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.RED };
 
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color", WGPUVertexFormat.Unorm8x4, 5);
-        // beware: the shaderLocation values have to match the shader
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.COLOR_PACKED|VertexAttribute.Usage.NORMAL);
+//        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+//        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+//        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color", WGPUVertexFormat.Unorm8x4, 5);
+//        // beware: the shaderLocation values have to match the shader
+//        vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
         mb.begin(vertexAttributes, 18, 18);

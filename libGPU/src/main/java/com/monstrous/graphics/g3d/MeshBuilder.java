@@ -72,7 +72,6 @@ public class MeshBuilder {
                         vertexData[vindex++] = vi.position.x;
                         vertexData[vindex++] = vi.position.y;
                         vertexData[vindex++] = vi.position.z;
-                        vertexData[vindex++] = 0;   // because it is defined as Float32x4
                         break;
                     case NORMAL:
                         vertexData[vindex++] = vi.normal.x;

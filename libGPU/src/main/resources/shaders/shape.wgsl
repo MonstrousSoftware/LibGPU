@@ -8,7 +8,7 @@ struct MyUniforms {
 
 struct VertexInput {
     @location(0) position: vec2f,
-    @location(1) color: vec4f,
+    @location(5) color: vec4f,
 };
 
 struct VertexOutput {

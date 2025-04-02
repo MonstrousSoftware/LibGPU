@@ -131,11 +131,7 @@ public class TestIBLGen extends ApplicationAdapter {
 
         MeshBuilder mb = new MeshBuilder();
         // vertex attributes are fixed per mesh
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
-        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.NORMAL);
 
         mb.begin(vertexAttributes, 4096, 4096);
 

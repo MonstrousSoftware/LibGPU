@@ -53,10 +53,7 @@ public class ShapeRenderer implements Disposable {
         begun = false;
         webGPU = LibGPU.webGPU;
 
-        vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",    WGPUVertexFormat.Float32x2, 0 );
-        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED, "color",       WGPUVertexFormat.Unorm8x4, 1 );
-        vertexAttributes.end();
+        vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION_2D | VertexAttribute.Usage.COLOR_PACKED);
         vertexSize = vertexAttributes.getVertexSizeInBytes() / Float.BYTES;
 
         indexValues = new short[maxShapes * 6];    // 6 indices per rectangle

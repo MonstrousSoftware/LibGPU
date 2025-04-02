@@ -33,8 +33,8 @@ public class TestInstancing extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/Ducky/ducky.glb");
-        //model = new Model("models/ToyCar/ToyCar.gltf");
+        //model = new Model("models/Ducky/ducky.glb");
+        model = new Model("models/ToyCar/ToyCar.gltf");
         modelInstances = new ArrayList<>();
 
         transforms = makeTransforms();

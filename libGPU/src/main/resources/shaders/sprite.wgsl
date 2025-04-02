@@ -15,7 +15,7 @@ struct VertexInput {
     @location(1) uv: vec2f,
 #endif
 #ifdef COLOR
-    @location(2) color: vec4f,
+    @location(5) color: vec4f,
 #endif
 };
 

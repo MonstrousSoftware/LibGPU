@@ -82,12 +82,7 @@ public class TestFrustum extends ApplicationAdapter {
         modelBatch = new ModelBatch();
 
         MeshBuilder mb = new MeshBuilder();
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
-        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-        // beware: the shaderLocation values have to match the shader
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.NORMAL);
 
         mb.begin(vertexAttributes, 256, 256);
 

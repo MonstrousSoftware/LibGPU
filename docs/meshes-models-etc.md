@@ -63,7 +63,7 @@ A model's meshes and materials are only useful when they are used by a mesh part
 ```java
 	NodePart nodePart = new NodePart( meshPart, material);
 	Node node = new Node( nodePart );
-	model.addRootNode( node );
+	model.addNode( node );
 ```
 
 Nodes are used in models to define a hierarchy of transforms as a tree structure with mesh parts located at the leaf nodes (NodePart). 
@@ -98,40 +98,29 @@ Other potential vertex attributes are:
 ### VertexAttributes
 Which attributes you want in a mesh depends on the application.  Since there are usually many vertices, it makes sense to store only the vertex attributes you need.
 
-It is possible to have a index list as well as a vertex list in a mesh.  In this case, the index list gives the order of vertices to use when rendering the mesh.
+It is possible to have an index list as well as a vertex list in a mesh.  In this case, the index list gives the order of vertices to use when rendering the mesh.
 The advantage is that it is more compact when the same vertex is used multiple times; you don't have to repeat the vertex information, just provide the same index. 
 
 An index can be 16 bit (short) or 32 bit (int).  A 16 bit index is more compact (less memory, faster to send to the GPU), but 32 bit allows for more complex meshes.
 
 
-Vertex attributes are defined using the VertexAttributes class. [subject to change].  Different attributes are defined using the `add()` method.
-Once all attributes have been defined use the `end()` method to finalize the definition.
-
-For each attribute you can define:
-- the usage, which is defined using one of the values from VertexAttribute.Usage (see below)
-- a label, which is a free format string for debugging convenience
-- a data format using the enum WGPUVertexFormat
-- the bind location which must correspond to the bind location in the shader.
-
-```
-VertexAttribute.Usage:
-        static public final int POSITION = 1;
-        static public final int COLOR = 2;
-        static public final int COLOR_PACKED = 4;
-        static public final int TEXTURE_COORDINATE = 8;
-        static public final int NORMAL= 16;
-        static public final int TANGENT = 32;
-        static public final int BITANGENT = 64;
-```
-
-
+Vertex attributes are defined using the VertexAttributes class and providing the desired combination of usages values.
+The usage values are defined as bit flags in VertexAttribute.Usage and can be combined with the OR operator, for example:
 
 ```java
-        VertexAttributes vertexAttributes = new VertexAttributes();
-	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-	vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 1);
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes( VertexAttribute.Usage.POSITION | VertexAttribute.Usage.TEXTURE_COORDINATE );
 ```
+
+The following usage constants are available for use:
+- POSITION
+- POSITION_2D
+- COLOR
+- COLOR_PACKED
+- TEXTURE_COORDINATE
+- NORMAL
+- TANGENT
+- BITANGENT
+
 
 ### Mesh construction
 
@@ -152,9 +141,7 @@ A mesh can be constructed using from a float array. For example to define three 
 A mesh can also be constructed using the utility class MeshBuilder.  For example, to build a mesh containing one triangle.
 
 ```java
-        VertexAttributes vertexAttributes = new VertexAttributes();
-	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0); [or Float32x3?]
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION);
 
         MeshBuilder mb = new MeshBuilder();
         mb.begin(vertexAttributes, 3, 3);		// 3 vertices, 3 indices
@@ -175,46 +162,36 @@ the end of the mesh or the next mesh part.  The `part()` method allows to define
 Also note that there are convenience methods for defining lines, triangles or rectangles.
 
 ```java
-	Vector3[] corners = { .. };
+    Vector3[] corners = { .. };
         
-	VertexAttributes vertexAttributes = new VertexAttributes();
-	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-	vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-	vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color", WGPUVertexFormat.Unorm8x4, 5);
-        vertexAttributes.end();
+    VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.NORMAL|VertexAttribute.Usage.COLOR_PACKED);
 		
-        MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, 18, 18);
-        MeshPart part = mb.part("pyramid", WGPUPrimitiveTopology.TriangleList);
+    MeshBuilder mb = new MeshBuilder();
+    mb.begin(vertexAttributes, 18, 18);
+    MeshPart part = mb.part("pyramid", WGPUPrimitiveTopology.TriangleList);
 
-        mb.setNormal(0,-1,0);     mb.setColor(Color.BLUE); mb.addRect(corners[0], corners[1], corners[2], corners[3]); 
+    mb.setNormal(0,-1,0);     mb.setColor(Color.BLUE); mb.addRect(corners[0], corners[1], corners[2], corners[3]); 
 
-        // sides
-        mb.setColor(Color.RED);    mb.setNormal(0,1,1);  mb.addTriangle(corners[0], corners[1], corners[4]);
-        mb.setColor(Color.ORANGE); mb.setNormal(1,1,0);  mb.addTriangle(corners[1], corners[2], corners[4]);
-        mb.setColor(Color.YELLOW); mb.setNormal(0,1,-1); mb.addTriangle(corners[2], corners[3], corners[4]);
-        mb.setColor(Color.WHITE);  mb.setNormal(-1,1,0); mb.addTriangle(corners[3], corners[0], corners[4]);
-        mb.end();
+    // sides
+    mb.setColor(Color.RED);    mb.setNormal(0,1,1);  mb.addTriangle(corners[0], corners[1], corners[4]);
+    mb.setColor(Color.ORANGE); mb.setNormal(1,1,0);  mb.addTriangle(corners[1], corners[2], corners[4]);
+    mb.setColor(Color.YELLOW); mb.setNormal(0,1,-1); mb.addTriangle(corners[2], corners[3], corners[4]);
+    mb.setColor(Color.WHITE);  mb.setNormal(-1,1,0); mb.addTriangle(corners[3], corners[0], corners[4]);
+    mb.end();
 		
-	Material material = new Material( Color.WHITE );
-        Model pyramidModel = new Model(part, material);
+    Material material = new Material( Color.WHITE );
+    Model pyramidModel = new Model(part, material);
 ```
 
 For common shapes there are a few shape builder classes to define a mesh. For example, to construct a box of 2 by 2 by 2 world units:
 
 ```java
-	VertexAttributes vertexAttributes = new VertexAttributes();
-	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-	vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-        vertexAttributes.end();
-		
-        MeshBuilder mb = new MeshBuilder();
-        mb.begin(vertexAttributes, 100, 100);
-		
-        MeshPart meshPart = BoxShapeBuilder.build(mb, 2, 2, 2,  WGPUPrimitiveTopology.TriangleList);
-        Material material = new Material( texture );
-
-        Model boxModel = new Model(meshPart, material);
+    VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.NORMAL);
+    MeshBuilder mb = new MeshBuilder();
+    mb.begin(vertexAttributes, 100, 100);
+    MeshPart meshPart = BoxShapeBuilder.build(mb, 2, 2, 2,  WGPUPrimitiveTopology.TriangleList);
+    Material material = new Material( texture );
+    Model boxModel = new Model(meshPart, material);
 ```
 
 
@@ -239,11 +216,11 @@ It is also possible to construct a material using the MaterialData class for fin
 Materials can support:
 - base color
 - diffuse texture
-- normal texture			a normal map
+- normal texture:			a normal map
 - emissive texture				
-- metallicFactor			between 0 and 1
-- roughnessFactor			between 0 and 1
-- metalicRoughness texture	the blue channel is used for metalness and the green channel for roughness
+- metallicFactor:			value between 0 and 1
+- roughnessFactor:			value between 0 and 1
+- metalicRoughness texture:	the blue channel is used for metalness and the green channel for roughness
 
 Values that are not defined are set to a default value. E.g. the base color will default to white and the 
 diffuse texture will default to a texture of a single white pixel.
@@ -256,15 +233,15 @@ A ModelInstance is when a Model is placed in the game world. It requires a model
 For example:
 ```java
 	ModelInstance boxInstance = new ModelInstance( boxModel, 0, 2, 0 );	// place box at position (0,2,0)
-```	
+```
 	
 More generally, instead of only a translation to set a position we can use a transform matrix because the model can also be rotated and scaled.
 
 ```java
 	Matrix4 transform = new Matrix4();
 	transform
-		.scl(0.5f)				// scale
-		.trn(0, -1, 0);			// translate
+		.scl(0.5f)       // scale
+		.trn(0, -1, 0);  // translate
 
 	ModelInstance boxInstance = new ModelInstance( boxModel, transform );
 ```

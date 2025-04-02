@@ -34,12 +34,7 @@ public class TestLighting extends ApplicationAdapter {
         disposables = new ArrayList<>();
         instances = new ArrayList<>();
         MeshBuilder mb = new MeshBuilder();
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        //vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
-        vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-        // beware: the shaderLocation values have to match the shader
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.NORMAL);
 
         mb.begin(vertexAttributes, 32000, 32000);
 
@@ -71,7 +66,7 @@ public class TestLighting extends ApplicationAdapter {
 
 
         environment = new Environment();
-        DirectionalLight dir1 = new DirectionalLight(new Color(1,1,1,1), new Vector3(.3f,-.7f,0));
+        DirectionalLight dir1 = new DirectionalLight(Color.WHITE, new Vector3(.3f,-.7f,0));
         dir1.setIntensity(2f);
         environment.add( dir1 );
         Model lightD1 = new Model(lightMeshPart, new Material(Color.WHITE));
@@ -128,7 +123,7 @@ public class TestLighting extends ApplicationAdapter {
 
         camController.update();
 
-        modelBatch.begin(camera, environment);
+        modelBatch.begin(camera, environment, Color.TEAL);
         modelBatch.render(instances);
         modelBatch.end();
 

@@ -51,7 +51,7 @@ public class ModelInstance {
     }
 
     public void getRenderables(ArrayList<Renderable> renderables, RenderablePool pool ){
-        for(Node rootNode : model.getRootNodes())
+        for(Node rootNode : model.getNodes())
             rootNode.getRenderables(renderables, transform, pool);
     }
 }

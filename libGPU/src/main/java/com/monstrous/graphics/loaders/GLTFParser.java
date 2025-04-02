@@ -130,7 +130,8 @@ public class GLTFParser {
                 JSONArray bc = (JSONArray)pbrMR.get("baseColorFactor");
                 if(bc != null){
                     pbr.baseColorFactor = getColor(bc);
-                }
+                } else
+                    pbr.baseColorFactor = Color.WHITE;
 
                 Number roughnessFactor = (Number) pbrMR.get("roughnessFactor");
                 if(roughnessFactor != null){

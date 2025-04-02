@@ -184,10 +184,7 @@ public class ImageBasedLighting implements Disposable {
 
         MeshBuilder mb = new MeshBuilder();
         // vertex attributes are fixed per mesh
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, 1);
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE);
 
         mb.begin(vertexAttributes, 32, 36);
 

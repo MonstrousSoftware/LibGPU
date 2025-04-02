@@ -29,10 +29,14 @@ public class Color {
     }
 
     public Color(int r, int g, int b) {
+        this(r, g, b, 255);
+    }
+
+    public Color(int r, int g, int b, int a) {
         this.r = r/255f;
         this.g = g/255f;
         this.b = b/255f;
-        this.a = 1.0f;
+        this.a = a/255f;
     }
 
     public Color(Color color){

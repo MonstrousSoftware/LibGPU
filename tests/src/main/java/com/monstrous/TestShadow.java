@@ -60,9 +60,7 @@ public class TestShadow extends ApplicationAdapter {
 
 
         // build a ground plane
-        VertexAttributes vertexAttributes = new VertexAttributes();
-        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-        vertexAttributes.end();
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION);
 
         MeshBuilder mb = new MeshBuilder();
         mb.begin(vertexAttributes, 6*4, 8*6);

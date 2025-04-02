@@ -111,11 +111,11 @@ public class Model implements Disposable {
         return meshes;
     }
 
-    public void addRootNode(Node node ){
+    public void addNode(Node node ){
         rootNodes.add(node);
     }
 
-    public ArrayList<Node> getRootNodes(){
+    public ArrayList<Node> getNodes(){
         return rootNodes;
     }
 

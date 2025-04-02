@@ -24,6 +24,8 @@ import com.monstrous.webgpu.WGPUVertexStepMode;
 
 import java.util.ArrayList;
 
+import static com.monstrous.graphics.VertexAttribute.Usage.*;
+
 public class VertexAttributes implements Disposable {
 
     public ArrayList<VertexAttribute> attributes;
@@ -38,6 +40,29 @@ public class VertexAttributes implements Disposable {
         usageFlags = 0L;
     }
 
+    public VertexAttributes(long usageFlags) {
+        attributes = new ArrayList<>();
+        vertexBufferLayout = null;
+        vertexSize = -1;
+        this.usageFlags = 0L;
+        for(int flag = 1; flag <= VertexAttribute.Usage._LAST; flag++){
+            if((usageFlags & flag) == flag){
+                switch(flag){
+                    case POSITION:      add(flag, "position", WGPUVertexFormat.Float32x3, 0); break;
+                    case POSITION_2D:   add(flag, "position", WGPUVertexFormat.Float32x2, 0); break;
+                    case COLOR:         add(flag, "color", WGPUVertexFormat.Float32x4, 5); break;
+                    case COLOR_PACKED:  add(flag, "color", WGPUVertexFormat.Unorm8x4, 5); break;
+                    case TEXTURE_COORDINATE: add(flag, "uv", WGPUVertexFormat.Float32x2, 1); break;
+                    case NORMAL:        add(flag, "normal", WGPUVertexFormat.Float32x3, 2); break;
+                    case TANGENT:       add(flag, "tangent", WGPUVertexFormat.Float32x3, 3); break;
+                    case BITANGENT:     add(flag, "bitangent", WGPUVertexFormat.Float32x3, 4); break;
+                }
+            }
+        }
+        end();
+    }
+
+    /** use with caution */
     public void add(long usage, String label, WGPUVertexFormat format, int shaderLocation){
         VertexAttribute va = new VertexAttribute(usage, label, format, shaderLocation);
         usageFlags |= usage;

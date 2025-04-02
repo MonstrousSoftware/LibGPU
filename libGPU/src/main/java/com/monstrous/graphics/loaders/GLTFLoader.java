@@ -91,7 +91,7 @@ public class GLTFLoader implements ModelLoader {
 
             Node rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
             rootNode.updateMatrices(true);
-            model.addRootNode(rootNode);
+            model.addNode(rootNode);
         }
         //System.out.println("loaded "+filePath);
         return model;
@@ -174,16 +174,11 @@ public class GLTFLoader implements ModelLoader {
         MeshData meshData = new MeshData();
 
         // todo adjust this based on the file contents:
-        meshData.vertexAttributes = new VertexAttributes();
-        int location = 0;
-        meshData.vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x3, location++);
-        meshData.vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv", WGPUVertexFormat.Float32x2, location++);
-        meshData.vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, location++);
-        if(hasNormalMap) {
-            meshData.vertexAttributes.add(VertexAttribute.Usage.TANGENT, "tangent", WGPUVertexFormat.Float32x3, location++);
-            meshData.vertexAttributes.add(VertexAttribute.Usage.BITANGENT, "bitangent", WGPUVertexFormat.Float32x3, location++);
-        }
-        meshData.vertexAttributes.end();
+        int vaFlags = VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.NORMAL;
+        if(hasNormalMap)
+            vaFlags |= VertexAttribute.Usage.TANGENT|VertexAttribute.Usage.BITANGENT;
+
+        meshData.vertexAttributes = new VertexAttributes(vaFlags);
 
         if(indexAccessor.componentType != GLTF.USHORT16 && indexAccessor.componentType != GLTF.UINT32 )
             throw new RuntimeException("GLTF: Can only support short or integer index");

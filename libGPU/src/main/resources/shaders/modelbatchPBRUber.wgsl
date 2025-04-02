@@ -274,7 +274,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let baseColor = in.color * textureSample(albedoTexture, textureSampler, in.uv).rgba * material.baseColorFactor.rgba;
 
 
-
 #ifdef NORMAL_MAP
     let normalMapStrength = 0.8;
 
@@ -357,7 +356,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = encodedN;
     //color = N;
     //color = uFrame.pointLights[0].color.rgb;
-    //color = baseColor.rgb;
+    // color = baseColor.rgb;
     //color = normalize(in.normal);
 
 
