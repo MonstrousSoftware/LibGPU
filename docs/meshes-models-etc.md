@@ -9,9 +9,9 @@ and 50 model instances of palm trees in your game. They are all the same model, 
 You can create a Model in code by constructing it from a mesh and a material.
 
 ```java
-	Mesh = ...												// build a mesh
-	Material material = new Material( Color.GREEN );		// make a material
-	Model model = new Model( mesh, material );				// create a model
+	Mesh = // see below					// build a mesh
+	Material material = new Material( Color.GREEN );	// make a material
+	Model model = new Model( mesh, material );		// create a model
 ```
 
 It is also possible to build a model from a mesh part instead of a mesh. A mesh part is, as the name suggests, a subset of a mesh.
@@ -120,8 +120,8 @@ VertexAttribute.Usage:
 
 ```java
         VertexAttributes vertexAttributes = new VertexAttributes();
-			vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-			vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 1);
+	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+	vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE,"uv", WGPUVertexFormat.Float32x2, 1);
         vertexAttributes.end();
 ```
 
@@ -129,31 +129,34 @@ VertexAttribute.Usage:
 
 A mesh can be constructed using from a float array. For example to define three vertices (and no index list):
 
-
-		float[]  vertexData = {
-                // float4 position, float2 uv,
-                1, -1, 1, 1,	 0, 1,
-                -1, -1, 1, 1,	 1, 1,
-                -1, -1, -1, 1, 	 1, 0,
-				}
+```java
+	float[]  vertexData = {
+           // float4 position, float2 uv,
+            1, -1, 1, 1,	 0, 1,
+           -1, -1, 1, 1,	 1, 1,
+           -1, -1, -1, 1, 	 1, 0,
+	};
         Mesh mesh = new Mesh();
         mesh.setVertexAttributes(vertexAttributes);	// see above
         mesh.setVertices(vertexData);
+```
 
 A mesh can also be constructed using the utility class MeshBuilder.  For example, to build a mesh containing one triangle.
 
+```java
         VertexAttributes vertexAttributes = new VertexAttributes();
-			vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0); [or Float32x3?]
+	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0); [or Float32x3?]
         vertexAttributes.end();
 
         MeshBuilder mb = new MeshBuilder();
         mb.begin(vertexAttributes, 3, 3);		// 3 vertices, 3 indices
-			mb.addVertex( 1, 0 , 0 );  
-			mb.addVertex( -1, 0 , 0 );  
-			mb.addVertex( 0, 0 , 1 );  
+	mb.addVertex( 1, 0 , 0 );  
+	mb.addVertex( -1, 0 , 0 );  
+	mb.addVertex( 0, 0 , 1 );  
         Mesh mesh = mb.end();
+```
 
-The `begin()` method takes a VertexAttributes object, an upper limit for the number of vertices and a maximum number of indices. [needed?]
+The `begin()` method takes a VertexAttributes object, an upper limit for the number of vertices and a maximum number of indices. (needed?)
 The upper limit values are only used during construction, the resulting mesh will contain only the number of vertices that were defined.
 
 ## MeshPart
@@ -164,12 +167,12 @@ the end of the mesh or the next mesh part.  The `part()` method allows to define
 Also note that there are convenience methods for defining lines, triangles or rectangles.
 
 ```java
-		Vector3[] corners = { .. };
+	Vector3[] corners = { .. };
         
-		VertexAttributes vertexAttributes = new VertexAttributes();
-			vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-			vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
-			vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color", WGPUVertexFormat.Unorm8x4, 5);
+	VertexAttributes vertexAttributes = new VertexAttributes();
+	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+	vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+	vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color", WGPUVertexFormat.Unorm8x4, 5);
         vertexAttributes.end();
 		
         MeshBuilder mb = new MeshBuilder();
@@ -179,22 +182,22 @@ Also note that there are convenience methods for defining lines, triangles or re
         mb.setNormal(0,-1,0);     mb.setColor(Color.BLUE); mb.addRect(corners[0], corners[1], corners[2], corners[3]); 
 
         // sides
-        mb.setColor(Color.RED);  	mb.setNormal(0,1,1);  mb.addTriangle(corners[0], corners[1], corners[4]);
-        mb.setColor(Color.ORANGE);  mb.setNormal(1,1,0);  mb.addTriangle(corners[1], corners[2], corners[4]);
-        mb.setColor(Color.YELLOW);  mb.setNormal(0,1,-1); mb.addTriangle(corners[2], corners[3], corners[4]);
-        mb.setColor(Color.WHITE);	mb.setNormal(-1,1,0); mb.addTriangle(corners[3], corners[0], corners[4]);
+        mb.setColor(Color.RED);    mb.setNormal(0,1,1);  mb.addTriangle(corners[0], corners[1], corners[4]);
+        mb.setColor(Color.ORANGE); mb.setNormal(1,1,0);  mb.addTriangle(corners[1], corners[2], corners[4]);
+        mb.setColor(Color.YELLOW); mb.setNormal(0,1,-1); mb.addTriangle(corners[2], corners[3], corners[4]);
+        mb.setColor(Color.WHITE);  mb.setNormal(-1,1,0); mb.addTriangle(corners[3], corners[0], corners[4]);
         mb.end();
 		
-		Material material = new Material( Color.WHITE );
+	Material material = new Material( Color.WHITE );
         Model pyramidModel = new Model(part, material);
 ```
 
 For common shapes there are a few shape builder classes to define a mesh. For example, to construct a box of 2 by 2 by 2 world units:
 
 ```java
-		VertexAttributes vertexAttributes = new VertexAttributes();
-			vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
-			vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
+	VertexAttributes vertexAttributes = new VertexAttributes();
+	vertexAttributes.add(VertexAttribute.Usage.POSITION, "position", WGPUVertexFormat.Float32x4, 0);
+	vertexAttributes.add(VertexAttribute.Usage.NORMAL, "normal", WGPUVertexFormat.Float32x3, 2);
         vertexAttributes.end();
 		
         MeshBuilder mb = new MeshBuilder();
@@ -274,14 +277,14 @@ For example:
 
 The `begin()` method has additional variants:
 
-	begin(Camera camera, Environment environment);
-	begin(Camera camera, Environment environment, Color clearColor);
-	begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture)
-	begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture, RenderPassType passType)
+- begin(Camera camera, Environment environment);
+- begin(Camera camera, Environment environment, Color clearColor);
+- begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture)
+- begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture, RenderPassType passType)
 
-The environment is used to define lighting.
+The `environment` is used to define lighting.
 
-The clear color will set the background color if it is defined (a null value means the screen is not cleared).  This is an alternative to using `ScreenUtils.clear()` which avoids an extra render pass.
+The `clearColor` will set the background color if it is defined (a null value means the screen is not cleared).  This is an alternative to using `ScreenUtils.clear()` which avoids an extra render pass.
 
 By provide output textures (color and depth), the scene can be renderered to a texture instead of to the screen.
 This technique can be used instead of Frame Buffer Objects for example if you want to perform some screen effects. 
@@ -290,4 +293,4 @@ Note: such textures must be defined as render attachment, e.g. by setting render
 ```java
     public Texture(int width, int height, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numSamples )
 ```
-
+The `passType` parameter can be used to defined a specific render pass type, e.g. a shadow pass. (subject to change)
