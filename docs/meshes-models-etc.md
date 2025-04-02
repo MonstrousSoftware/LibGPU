@@ -1,6 +1,8 @@
 # Models, Meshes, MeshParts
 
 
+
+
 ## Model
 A Model is a three-dimensional graphical object.  It consists of a mesh (a polygonal shape) and a material (such as a color or a texture).  
 It is used as a template for a ModelInstance which puts a Model in a particular location in the game world. For example, you may have one model of a palm tree,
@@ -66,6 +68,12 @@ A model's meshes and materials are only useful when they are used by a mesh part
 
 Nodes are used in models to define a hierarchy of transforms as a tree structure with mesh parts located at the leaf nodes (NodePart). 
 Imagine you have a car model with four wheels.  The wheels could be the four times the same mesh part with different transformations from the car's origin. 
+
+The following diagram shows the relationships between the classes we've discussed so far:
+
+![object diagram](images/model.png)
+
+Note: that there is some redundancy in the data model.  A Model contains Meshes and Materials, but for the purpose of rendering these are accessed via NodeParts.
 
 ### Disposal
 
