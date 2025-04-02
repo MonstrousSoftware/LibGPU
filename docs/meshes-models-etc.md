@@ -4,7 +4,7 @@
 
 
 ## Model
-A Model is a three-dimensional graphical object.  It consists of a mesh (a polygonal shape) and a material (such as a color or a texture).  
+A Model is a three-dimensional graphical object.  In the simples case, it consists of a mesh (a polygonal shape) and a material (such as a color or a texture).  
 It is used as a template for a ModelInstance which puts a Model in a particular location in the game world. For example, you may have one model of a palm tree,
 and 50 model instances of palm trees in your game. They are all the same model, but appear in different locations and are scaled and rotated differently.
 
@@ -251,14 +251,14 @@ diffuse texture will default to a texture of a single white pixel.
 
 ## ModelInstance
 
-A ModelInstance is when a Model is placed in the game world. It requires at the very least a model and a position:
+A ModelInstance is when a Model is placed in the game world. It requires a model and transform, for example a translation:
 
 For example:
 ```java
 	ModelInstance boxInstance = new ModelInstance( boxModel, 0, 2, 0 );	// place box at position (0,2,0)
 ```	
 	
-More generally, instead of a position we can use a transform matrix because the model can also be rotated and scaled.
+More generally, instead of only a translation to set a position we can use a transform matrix because the model can also be rotated and scaled.
 
 ```java
 	Matrix4 transform = new Matrix4();
@@ -268,7 +268,8 @@ More generally, instead of a position we can use a transform matrix because the 
 
 	ModelInstance boxInstance = new ModelInstance( boxModel, transform );
 ```
-	
+
+Note that the model instance maintains a reference to the original model. If the model changes, so will all the model instances that depend on it. (This is different than in libGDX which makes a copy of the model per model instance). 
 
 
 ## ModelBatch
