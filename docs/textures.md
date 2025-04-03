@@ -94,6 +94,10 @@ public Texture(String[] fileNames, String extension, int lodLevels, WGPUTextureF
 
 Note: there is a utility class to create a cube map from an equirectangular image.
 
+```java
+	ImageBasedLighting ibl = new ImageBasedLighting();
+        CubeMap environmentMap = ibl.buildEnvironmentMapFromEquirectangularTexture(textureEquirectangular, 2048);
+```
 
 ## Texture3D
 Not implemented.
