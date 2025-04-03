@@ -18,6 +18,7 @@ package com.monstrous.graphics.g3d;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Camera;
+import com.monstrous.graphics.CubeMap;
 import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
@@ -38,7 +39,7 @@ public class SkyBox implements Disposable {
 
     private final int FRAME_UB_SIZE = 16*Float.BYTES;   // to hold one 4x4 matrix
 
-    private final Texture cubeMap;
+    private final CubeMap cubeMap;
     private final UniformBuffer uniformBuffer;
     private final BindGroupLayout bindGroupLayout;
     private final BindGroup bindGroup;
@@ -48,7 +49,7 @@ public class SkyBox implements Disposable {
     private final Matrix4 invertedProjectionView;
 
 
-    public SkyBox( Texture cubeMap ){
+    public SkyBox( CubeMap cubeMap ){
         this.cubeMap = cubeMap;
 
         uniformBuffer = new UniformBuffer(FRAME_UB_SIZE, WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform);

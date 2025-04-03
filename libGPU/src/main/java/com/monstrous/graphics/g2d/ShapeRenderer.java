@@ -69,11 +69,9 @@ public class ShapeRenderer implements Disposable {
         bindGroupLayout = createBindGroupLayout();
         pipelineLayout = makePipelineLayout(bindGroupLayout);
 
-;
-
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, "shaders/shape.wgsl");
-
+        pipelineSpec.name = "shape renderer pipeline";
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }

@@ -1,9 +1,6 @@
 package com.monstrous;
 
-import com.monstrous.graphics.Camera;
-import com.monstrous.graphics.Color;
-import com.monstrous.graphics.PerspectiveCamera;
-import com.monstrous.graphics.Texture;
+import com.monstrous.graphics.*;
 import com.monstrous.graphics.g3d.Model;
 import com.monstrous.graphics.g3d.ModelBatch;
 import com.monstrous.graphics.g3d.ModelInstance;
@@ -63,9 +60,9 @@ public class TestGLB extends ApplicationAdapter {
         // create image based environmental lighting
         ImageBasedLighting ibl = new ImageBasedLighting();
 
-        Texture environmentMap = ibl.buildEnvironmentMapFromEquirectangularTexture(textureEquirectangular, 2048);
-        Texture irradianceMap = ibl.buildIrradianceMap(environmentMap, 32);
-        Texture prefilterMap = ibl.buildRadianceMap(environmentMap, 128);
+        CubeMap environmentMap = ibl.buildCubeMapFromEquirectangularTexture(textureEquirectangular, 2048);
+        CubeMap irradianceMap = ibl.buildIrradianceMap(environmentMap, 32);
+        CubeMap prefilterMap = ibl.buildRadianceMap(environmentMap, 128);
         Texture brdfLUT = ibl.getBRDFLookUpTable();
 
         environment.useImageBasedLighting = true;

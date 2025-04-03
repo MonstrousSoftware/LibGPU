@@ -77,9 +77,9 @@ public class TestIBLGen extends ApplicationAdapter {
         // create image based environmental lighting
         ImageBasedLighting ibl = new ImageBasedLighting();
 
-        Texture environmentMap = ibl.buildEnvironmentMapFromEquirectangularTexture(textureEquirectangular, ENVMAP_SIZE);
-        Texture irradianceMap = ibl.buildIrradianceMap(environmentMap, 32);
-        Texture prefilterMap = ibl.buildRadianceMap(environmentMap, 128);
+        CubeMap environmentMap = ibl.buildCubeMapFromEquirectangularTexture(textureEquirectangular, ENVMAP_SIZE);
+        CubeMap irradianceMap = ibl.buildIrradianceMap(environmentMap, 32);
+        CubeMap prefilterMap = ibl.buildRadianceMap(environmentMap, 128);
         Texture brdfLUT = ibl.getBRDFLookUpTable();
 
         environment.useImageBasedLighting = true;

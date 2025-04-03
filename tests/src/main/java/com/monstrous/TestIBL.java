@@ -24,9 +24,9 @@ public class TestIBL extends ApplicationAdapter {
     private int frames;
     private SpriteBatch batch;
     private BitmapFont font;
-    private Texture cubeMap;
-    private Texture irradianceCubeMap;
-    private Texture radianceCubeMap;
+    private CubeMap cubeMap;
+    private CubeMap irradianceCubeMap;
+    private CubeMap radianceCubeMap;
     private Texture brdfLUT;
     private SkyBox skybox;
     private int fps;
@@ -53,7 +53,7 @@ public class TestIBL extends ApplicationAdapter {
                 "environment/Studio-envmap_negz.png"
         };
 
-        cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
+        cubeMap = new CubeMap(fileNames, true);
 
 
         String[] fileNamesIrradiance = {
@@ -65,7 +65,7 @@ public class TestIBL extends ApplicationAdapter {
                 "environment/Studio-irradiance_negz.png"
         };
 
-        irradianceCubeMap = new Texture(fileNamesIrradiance, false, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
+        irradianceCubeMap = new CubeMap(fileNamesIrradiance, false);
 
         String[] fileNamesRadiance = {
                 // note: to be appended 0.png, 1.png, etc.
@@ -76,7 +76,7 @@ public class TestIBL extends ApplicationAdapter {
                 "environment/Studio-radiance_posz_",
                 "environment/Studio-radiance_negz_"
         };
-        radianceCubeMap = new Texture(fileNamesRadiance, ".png", 9, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
+        radianceCubeMap = new CubeMap(fileNamesRadiance, ".png", 9);       // format should be taken from the image files....
 
         brdfLUT = new Texture(Files.internal("environment/LUT.png"), false);
 

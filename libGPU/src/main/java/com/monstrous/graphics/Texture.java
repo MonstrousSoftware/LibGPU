@@ -19,26 +19,24 @@ package com.monstrous.graphics;
 import com.monstrous.FileHandle;
 import com.monstrous.Files;
 import com.monstrous.LibGPU;
+import com.monstrous.utils.Disposable;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
 
-public class Texture {
-    private int width;
-    private int height;
-    private int nativeFormat;
-    private int mipLevelCount;
+public class Texture implements Disposable {
+    protected int width;
+    protected int height;
+    protected int mipLevelCount;
     private Pointer image;
     private Pointer texture;
     private Pointer textureView;
     private Pointer sampler;
-    private WGPUTextureFormat format;
-    private String label;
+    protected WGPUTextureFormat format;
+    protected String label;
 
-
-    public Texture() {
-        this(256, 256);
+    public Texture(){
     }
 
     public Texture(int width, int height){
@@ -48,202 +46,52 @@ public class Texture {
     public Texture(int width, int height, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numSamples ) {
         this.width = width;
         this.height = height;
-        mipLevelCount = 1;
-        if (mipMapping)
-            mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));      // todo test for non-square, non POT etc.
+        mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
         create( "texture", mipLevelCount, renderAttachment, format, 1, numSamples);
     }
 
-    public Texture(int width, int height, int numLayers ){
-        this.width = width;
-        this.height = height;
-        create( "3d texture map", 1, false,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1);
-    }
-
-    public Texture(int width, int height, boolean mipMapping, int numLayers ){
-        this.width = width;
-        this.height = height;
-        mipLevelCount = 1;
-        if (mipMapping)
-            mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));
-        create( "3d texture map", mipLevelCount, false,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1);
-    }
-
-
+    /*
+     * File loading.
+     */
 
     public Texture(String fileName) {
         this(fileName, true);
     }
 
-    public Texture(String fileName,boolean mipMapping) {
+    public Texture(String fileName, boolean mipMapping) {
         this(Files.internal(fileName), mipMapping);
     }
 
-
-    public Texture(FileHandle file, boolean mipMapping){
-        this(file, mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
+    public Texture(FileHandle file, boolean mipMapping ){
+        byte[] byteArray = file.readAllBytes();
+        loadFileData(byteArray, file.file.getName(), mipMapping);
     }
 
-    public Texture(String fileName, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
-        this(Files.internal(fileName), mipMapping, renderAttachment, format);
-    }
-
-
-    public Texture(FileHandle file, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
-        byte[] fileData = file.readAllBytes();
-
-        Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
-        image = JavaWebGPU.getUtils().gdx2d_load(data, fileData.length);        // use native function to parse image file
-
-        PixmapInfo info = PixmapInfo.createAt(image);
-        this.width = info.width.intValue();
-        this.height = info.height.intValue();
-        this.nativeFormat = info.format.intValue();
-        Pointer pixelPtr = info.pixels.get();
-//        if(nativeFormat == 12) { // HDR image
-//            format = WGPUTextureFormat.RGBA16Float;
-//            System.out.println("Reading HDR image: "+file);
-//        }
-
-        mipLevelCount = 1;
-        if (mipMapping)
-            mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));      // todo test for non-square, non POT etc.
-        create( file.file.getName(),  mipLevelCount, renderAttachment, format, 1, 1);
-//        if(nativeFormat == 12)  // HDR image
-//            fillHDR(Color.RED); //loadHDR(pixelPtr);            // todo HACK
-//        else
-            load(pixelPtr, 0);
-
-    }
-
-    public Texture(byte[] byteArray, boolean mipMapping) {
-        this(byteArray, "texture", mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
-    }
-
+    /** byte array contains full file content, i.e. including file header */
     public Texture(byte[] byteArray, String name, boolean mipMapping) {
-        this(byteArray, name, mipMapping, false, WGPUTextureFormat.RGBA8Unorm);
+        loadFileData(byteArray, name, mipMapping);
     }
 
-    public Texture(byte[] byteArray, String name, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format) {
-
+    private void loadFileData(byte[] byteArray, String name, boolean mipMapping) {
         Pointer data = JavaWebGPU.createByteArrayPointer(byteArray);
         image = JavaWebGPU.getUtils().gdx2d_load(data, byteArray.length);        // use native function to parse image file
 
         PixmapInfo info = PixmapInfo.createAt(image);
         this.width = info.width.intValue();
         this.height = info.height.intValue();
-        this.nativeFormat = info.format.intValue();
+        int channelsInFile = info.format.intValue();    // gdx2d_load will convert to RGBA, this value gives the original #channels in the file, e.g. 3 for RGB
         Pointer pixelPtr = info.pixels.get();
+        format = WGPUTextureFormat.RGBA8Unorm;
 
-        if(nativeFormat == 12) { // HDR image  experimental!!!
-            format = WGPUTextureFormat.RGBA16Float;
-            System.out.println("Reading HDR image: "+name);
-        }
-        mipLevelCount = 1;
-        if (mipMapping)
-            mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));      // todo test for non-square, non POT etc.
-        create( name, mipLevelCount, renderAttachment, format, 1, 1);
-        if(nativeFormat == 12)  // HDR image
-            loadHDR(pixelPtr);
-        else
-            load(pixelPtr, 0);
-    }
-
-    // for a multi-layer texture, e.g. a cube map
-    public Texture(String[] fileNames, boolean mipMapping, WGPUTextureFormat format) {
-
-        int numLayers = fileNames.length;
-
-        for(int layer = 0; layer < numLayers; layer++) {
-
-            byte[] fileData;
-
-                FileHandle handle = Files.internal(fileNames[layer]);
-                fileData = handle.readAllBytes();
-                int len = fileData.length;
-                Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
-
-                image = JavaWebGPU.getUtils().gdx2d_load(data, len);        // use native function to parse image file
-                PixmapInfo info = PixmapInfo.createAt(image);
-
-                // use the first image to
-                if(layer == 0) {
-                    this.width = info.width.intValue();
-                    this.height = info.height.intValue();
-                    mipLevelCount = 1;
-                    if (mipMapping)
-                        mipLevelCount = Math.max(1, bitWidth(Math.max(width, height)));
-                    create(fileNames[layer], mipLevelCount, false, format, numLayers, 1);
-                } else {
-                    if(info.width.intValue() != width || info.height.intValue() != height)
-                        throw new RuntimeException("Texture: layers must have same size");
-                }
-
-                this.nativeFormat = info.format.intValue();
-                Pointer pixelPtr = info.pixels.get();
-
-                load(pixelPtr, layer);
-        }
-    }
-
-    /** Make a cube map from 6 textures */
-    public Texture(Texture[] sides) {
-        if(sides.length != 6) throw new IllegalArgumentException("Texture cube map requires array of 6 textures.");
-        int numLayers = 6;
-
-        this.width = sides[0].width;
-        this.height = sides[0].height;
-        create("cubemap", sides[0].mipLevelCount, false, sides[0].format, numLayers, 1);
-
-        for(int layer = 0; layer < numLayers; layer++) {
-
-            // ?
-        }
+        mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
+        create( name, mipLevelCount, false, format, 1, 1);
+        load(pixelPtr, 0);
     }
 
 
-    /** Create a 3D Texture with LOD levels from image files
-     *
-      * @param fileNames    Array of files names for different layers. LOD level and extension will be appended.
-     * @param extension     File name extension, e.g. ".png"
-     * @param lodLevels     Number of LOD levels
-     * @param format
-     */
-    public Texture(String[] fileNames, String extension, int lodLevels, WGPUTextureFormat format) {
 
-        int numLayers = fileNames.length;
 
-        for(int layer = 0; layer < numLayers; layer++) {
 
-            for(int level = 0; level < lodLevels; level++) {
-                byte[] fileData;
-
-                String fileName = fileNames[layer] + level+ extension;
-
-                FileHandle handle = Files.internal(fileName);
-                fileData = handle.readAllBytes();
-                int len = fileData.length;
-                Pointer data = JavaWebGPU.createByteArrayPointer(fileData);
-
-                image = JavaWebGPU.getUtils().gdx2d_load(data, len);        // use native function to parse image file
-                PixmapInfo info = PixmapInfo.createAt(image);
-
-                // use the first image to create the texture
-                if (layer == 0 && level == 0) {
-                    this.width = info.width.intValue();
-                    this.height = info.height.intValue();
-                    create(fileName, lodLevels, false, format, numLayers, 1);
-                } else if (level == 0){
-                    if (info.width.intValue() != width || info.height.intValue() != height)
-                        throw new RuntimeException("Texture: layers must have same size");
-                }
-
-                this.nativeFormat = info.format.intValue();
-
-                loadMipLevel(info, layer, level);
-            }
-        }
-    }
 
 
 
@@ -256,13 +104,7 @@ public class Texture {
     }
 
     public int getMipLevelCount() {
-
         return mipLevelCount;
-    }
-
-    // native format from smb_image
-    public int getNativeFormat() {
-        return nativeFormat;
     }
 
     public Pointer getTextureView(){
@@ -280,7 +122,7 @@ public class Texture {
     }
 
 
-    private int bitWidth(int value) {
+    protected int bitWidth(int value) {
         if (value == 0)
             return 0;
         else {
@@ -295,7 +137,7 @@ public class Texture {
     // numLayers - normally 1, e.g. 6 for a cube map
     // numSamples - for anti-aliasing
     //
-    private void create( String label, int mipLevelCount, boolean renderAttachment, WGPUTextureFormat format, int numLayers, int numSamples) {
+    protected void create( String label, int mipLevelCount, boolean renderAttachment, WGPUTextureFormat format, int numLayers, int numSamples) {
         if (LibGPU.device == null || LibGPU.queue == null)
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
@@ -331,7 +173,7 @@ public class Texture {
         textureViewDesc.setArrayLayerCount(numLayers);
         textureViewDesc.setBaseMipLevel(0);
         textureViewDesc.setMipLevelCount(mipLevelCount);
-        textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : WGPUTextureViewDimension.Cube);    // assume it's a cube map if layers > 1
+        textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : (numLayers == 6 ? WGPUTextureViewDimension.Cube: WGPUTextureViewDimension._2DArray));
         textureViewDesc.setFormat(textureDesc.getFormat());
         textureView = LibGPU.webGPU.wgpuTextureCreateView(texture, textureViewDesc);
 
@@ -522,7 +364,7 @@ public class Texture {
      * @param pixelPtr
      * @param layer which layer to load in case of a 3d texture, otherwise 0
      */
-   private void load(Pointer pixelPtr, int layer) {
+    protected void load(Pointer pixelPtr, int layer) {
 
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -545,6 +387,7 @@ public class Texture {
 
         int mipLevelWidth = width;
         int mipLevelHeight = height;
+        int numComponents = numComponents(format);
 
         WGPUExtent3D ext = WGPUExtent3D.createDirect();
 
@@ -555,7 +398,7 @@ public class Texture {
 
             if(mipLevel == 0){
                 // fast copy for most common case: mip level 0
-                pixelPtr.get(0, pixels, 0, 4 * mipLevelWidth * mipLevelHeight);
+                pixelPtr.get(0, pixels, 0, numComponents * mipLevelWidth * mipLevelHeight);
             }
             else {
                 // todo with compute shader
@@ -616,11 +459,11 @@ public class Texture {
      * @param layer
      * @param mipLevel
      */
-    private void loadMipLevel(PixmapInfo info, int layer, int mipLevel) {
+    protected void loadMipLevel(PixmapInfo info, int layer, int mipLevel) {
         loadMipLevel(info.pixels.get(), info.width.intValue(), info.height.intValue(), layer, mipLevel);
     }
 
-    private void loadMipLevel(Pointer data, int width, int height, int layer, int mipLevel) {
+    protected void loadMipLevel(Pointer data, int width, int height, int layer, int mipLevel) {
 
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -649,7 +492,7 @@ public class Texture {
 
 
     // load HDR image (RBGA16Float), no mip mapping, no layers
-    private void loadHDR(Pointer pixelPtr) {
+    protected void loadHDR(Pointer pixelPtr) {
 
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -704,6 +547,21 @@ public class Texture {
         return ((int) x) & 0xff;
     }
 
+    protected static int numComponents(WGPUTextureFormat format ){
+        int n = 4;
+        switch(format) {
+            case R8Unorm: n = 1; break;
+            case RG8Uint: n = 2; break;
+            case RGBA8Uint: n = 4; break;
+            case RGBA8Unorm: n = 4; break;
+            case BGRA8Unorm: n = 4; break;
+            default: throw new IllegalArgumentException("Unsupported format: "+format);
+
+        }
+        return n;
+    }
+
+    @Override
     public void dispose(){
         if(image != null) {
             //System.out.println("free: "+image);

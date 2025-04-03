@@ -4,9 +4,9 @@
 - generate mipmaps in a compute shader
 - DONE generate IBL textures (env, irradiance, radians) from a single file (but not HDR)
 - support HDR textures (32bit float format is tricky in WebGPU)
-- replace constant in shader for radiance LOD count by a uniform
+- DONE replace constant in shader for radiance LOD count by a uniform
 
-- support (packed) color per vertex as option in the standard model batch shader
+- DONE support (packed) color per vertex as option in the standard model batch shader
 - DONE sphere builder
 - DONE frustum builder
 - other shapes
@@ -26,4 +26,5 @@ Model loader:
 
 
 ## Bugs to fix
-- 
+- shape renderer with numSamples=4
+- simple game textures

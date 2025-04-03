@@ -35,7 +35,7 @@ public class TestSkyBox extends ApplicationAdapter {
     private int frames;
     private SpriteBatch batch;
     private BitmapFont font;
-    private Texture cubeMap;
+    private CubeMap cubeMap;
     private SkyBox skybox;
     private int fps;
 
@@ -91,7 +91,7 @@ public class TestSkyBox extends ApplicationAdapter {
 //                "textures/daysky/environment_negz.jpg"
         };
 
-        cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
+        cubeMap = new CubeMap(fileNames, true);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());

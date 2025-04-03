@@ -172,7 +172,7 @@ public class PipelineSpecification  {
                 environment == null ? 0 :!environment.depthPass && environment.renderShadows,
                 environment == null ? 0 : environment.cubeMap != null,
                 environment == null ? 0 : environment.useImageBasedLighting,
-                useDepthTest, blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox, depthFormat, numSamples);
+                blendSrcColor, blendDstColor, blendOpColor, blendSrcAlpha, blendDstAlpha, blendOpAlpha, numSamples, cullMode, isSkyBox, depthFormat, numSamples);
     }
 
     // note: don't include compiled shader in the hash because this would force new compiles every frame since a spec of an uncompiled shader <> compiled shader

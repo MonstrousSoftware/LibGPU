@@ -177,13 +177,14 @@ public class Material implements Disposable {
 
     // bind material to the render pass
     public void bindGroup(RenderPass renderPass, int groupId ){
-        if(diffuseTexture != null && diffuseTexture.getFormat() == WGPUTextureFormat.RGBA32Float){
-            // fill the uniform buffer
-            writeMaterialUniforms(materialUniformBuffer);
-            // create a bind group
-            materialBindGroup = createHDRMaterialBindGroup(this, materialHDRBindGroupLayout, materialUniformBuffer);   // bind group for textures and uniforms
-        }
-        else if(materialBindGroup == null){  // lazy init, in case some material properties are set after the Material constructor
+//        if(diffuseTexture != null && diffuseTexture.getFormat() == WGPUTextureFormat.RGBA32Float){
+//            // fill the uniform buffer
+//            writeMaterialUniforms(materialUniformBuffer);
+//            // create a bind group
+//            materialBindGroup = createHDRMaterialBindGroup(this, materialHDRBindGroupLayout, materialUniformBuffer);   // bind group for textures and uniforms
+//        }
+//        else
+        if(materialBindGroup == null){  // lazy init, in case some material properties are set after the Material constructor
             // fill the uniform buffer
             writeMaterialUniforms(materialUniformBuffer);
 
@@ -241,18 +242,18 @@ public class Material implements Disposable {
     }
 
     // per material bind group
-    private BindGroup createHDRMaterialBindGroup(Material material, BindGroupLayout bindGroupLayout, Buffer materialUniformBuffer) {
-        BindGroup bg = new BindGroup(bindGroupLayout);
-        bg.begin();
-        bg.addBuffer(0, materialUniformBuffer);
-        bg.addTexture(1, material.diffuseTexture.getTextureView());
-        bg.addSampler(2, material.diffuseTexture.getHDRSampler());
-        bg.addTexture(3, material.emissiveTexture.getTextureView());
-        bg.addTexture(4, material.normalTexture.getTextureView());
-        bg.addTexture(5, material.metallicRoughnessTexture.getTextureView());
-        bg.end();
-        return bg;
-    }
+//    private BindGroup createHDRMaterialBindGroup(Material material, BindGroupLayout bindGroupLayout, Buffer materialUniformBuffer) {
+//        BindGroup bg = new BindGroup(bindGroupLayout);
+//        bg.begin();
+//        bg.addBuffer(0, materialUniformBuffer);
+//        bg.addTexture(1, material.diffuseTexture.getTextureView());
+//        bg.addSampler(2, material.diffuseTexture.getHDRSampler());
+//        bg.addTexture(3, material.emissiveTexture.getTextureView());
+//        bg.addTexture(4, material.normalTexture.getTextureView());
+//        bg.addTexture(5, material.metallicRoughnessTexture.getTextureView());
+//        bg.end();
+//        return bg;
+//    }
 
     private void writeMaterialUniforms( UniformBuffer uniformBuffer){
 

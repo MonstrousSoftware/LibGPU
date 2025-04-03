@@ -49,7 +49,7 @@ public class ImageBasedLighting implements Disposable {
         snapCam.update();
     }
 
-    public Texture buildEnvironmentMapFromEquirectangularTexture(Texture equiRectangular, int size){
+    public CubeMap buildCubeMapFromEquirectangularTexture(Texture equiRectangular, int size){
         // Convert an equirectangular image to a cube map
         Material material = new Material( equiRectangular );
         Model cube = new Model(buildUnitCube(), material);
@@ -60,7 +60,7 @@ public class ImageBasedLighting implements Disposable {
         LibGPU.graphics.passNumber = 0;
 
         constructSideTextures(instance, size);
-        Texture environmentMap = copyTextures(size);
+        CubeMap environmentMap = copyTextures(size);
         LibGPU.app.finishEncoder(LibGPU.commandEncoder);
         environment.shaderSourcePath = null;
         cube.dispose();
@@ -68,7 +68,7 @@ public class ImageBasedLighting implements Disposable {
         return environmentMap;
     }
 
-    public Texture buildIrradianceMap(Texture environmentMap, int size){
+    public CubeMap buildIrradianceMap(CubeMap environmentMap, int size){
         // Convert an environment cube map to an irradiance cube map
         Model cube = new Model(buildUnitCube(), new Material(Color.WHITE));
         ModelInstance instance = new ModelInstance(cube);
@@ -78,15 +78,15 @@ public class ImageBasedLighting implements Disposable {
         LibGPU.graphics.passNumber = 0;
 
         constructSideTextures(instance, size);
-        Texture irradianceMap = copyTextures(size);
+        CubeMap irradianceMap = copyTextures(size);
         LibGPU.app.finishEncoder(LibGPU.commandEncoder);
         environment.shaderSourcePath = null;
         cube.dispose();
         return irradianceMap;
     }
 
-    public Texture buildRadianceMap(Texture environmentMap, int size){
-        Texture prefilterMap = new Texture(size, size, true, 6 );  // mipmapped cube map
+    public CubeMap buildRadianceMap(CubeMap environmentMap, int size){
+        CubeMap prefilterMap = new CubeMap(size, size, true);  // mipmapped cube map
         int mipLevels = prefilterMap.getMipLevelCount();
         //System.out.println("radiance map mips:"+mipLevels);
         Model cube = new Model(buildUnitCube(), new Material(Color.WHITE));
@@ -147,13 +147,13 @@ public class ImageBasedLighting implements Disposable {
 
 
     /** copy 6 textures (textureSides[]) into a new cube map */
-    private Texture copyTextures(int size) {
-        Texture cube = new Texture(size, size, 6);
+    private CubeMap copyTextures(int size) {
+        CubeMap cube = new CubeMap(size, size);
         return copyTextures(cube, size, 0);
     }
 
 
-    private Texture copyTextures(Texture cube, int size, int mipLevel){
+    private CubeMap copyTextures(CubeMap cube, int size, int mipLevel){
         for (int side = 0; side < 6; side++) {
 
             WGPUImageCopyTexture source = WGPUImageCopyTexture.createDirect()

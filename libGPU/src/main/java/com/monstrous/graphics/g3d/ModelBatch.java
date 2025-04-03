@@ -76,7 +76,7 @@ public class ModelBatch implements Disposable {
 
     private DirectionalLight defaultDirectionalLight;
     private UniformBuffer instanceBuffer;
-    private Texture dummyCubemap;
+    private CubeMap dummyCubemap;
     private Texture dummyShadowMap;
     private Texture dummy2DTexture;
 
@@ -102,7 +102,7 @@ public class ModelBatch implements Disposable {
         pipelineLayout = new PipelineLayout("ModelBatch Pipeline Layout", frameBindGroupLayout, Material.getBindGroupLayout(),instancingBindGroupLayout);
 
         dummyShadowMap =  new Texture(1, 1, false, true, WGPUTextureFormat.Depth32Float, 1);
-        dummyCubemap = new Texture(1,1, 6);
+        dummyCubemap = new CubeMap(1,1);
         dummy2DTexture = new Texture(1,1);
 
         int instanceSize = 16*Float.BYTES;      // data size per instance

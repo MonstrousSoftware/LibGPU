@@ -27,8 +27,7 @@ public class TestCubeMap extends ApplicationAdapter {
     private Environment environment;
     private Matrix4 modelMatrix;
     private Model model, model2, model3;
-    private ModelInstance modelInstance1;
-    private ModelInstance modelInstance2;
+    private ModelInstance modelInstance1, modelInstance2;
     private ArrayList<ModelInstance> instances;
     private float currentTime;
     private long startTime;
@@ -37,7 +36,7 @@ public class TestCubeMap extends ApplicationAdapter {
     private SpriteBatch batch;
     private ShaderProgram filter;
     private BitmapFont font;
-    private Texture cubeMap;
+    private CubeMap cubeMap;
 
     public void create() {
         startTime = System.nanoTime();
@@ -79,7 +78,7 @@ public class TestCubeMap extends ApplicationAdapter {
 
         };
 
-        cubeMap = new Texture(fileNames, true, WGPUTextureFormat.RGBA8Unorm);       // format should be taken from the image files....
+        cubeMap = new CubeMap(fileNames, true);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());

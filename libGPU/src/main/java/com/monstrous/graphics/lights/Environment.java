@@ -1,6 +1,7 @@
 package com.monstrous.graphics.lights;
 
 import com.monstrous.graphics.Camera;
+import com.monstrous.graphics.CubeMap;
 import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.g3d.SkyBox;
 
@@ -9,9 +10,9 @@ import java.util.ArrayList;
 public class Environment {
     public ArrayList<Light> lights;
     public float ambientLightLevel;         // 0 .. 1
-    public Texture cubeMap;                 // 6 layered texture
-    public Texture irradianceMap;           // 6 layered texture
-    public Texture radianceMap;             // 6 layered texture with LOD levels
+    public CubeMap cubeMap;                 // 6 layered texture
+    public CubeMap irradianceMap;           // 6 layered texture
+    public CubeMap radianceMap;             // 6 layered texture with LOD levels
     public Texture brdfLUT;                 // 2d BRDF lookup table
     public SkyBox skybox;
     public boolean useImageBasedLighting;
@@ -36,7 +37,7 @@ public class Environment {
         this.shadowCamera = shadowCamera;
     }
 
-    public void setCubeMap(Texture texture){
+    public void setCubeMap(CubeMap texture){
         cubeMap = texture;
     }
 
@@ -46,11 +47,11 @@ public class Environment {
 
 
 
-    public void setRadianceMap(Texture texture){
+    public void setRadianceMap(CubeMap texture){
         radianceMap = texture;
     }
 
-    public void setIrradianceMap(Texture texture){
+    public void setIrradianceMap(CubeMap texture){
         irradianceMap = texture;
     }
 
