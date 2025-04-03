@@ -82,7 +82,6 @@ public class Preprocessor {
         //System.out.print("#define "+a);
         if(b != null)
             System.out.print(" := "+b);
-        System.out.println();
     }
 
     private static boolean defined(String name){

@@ -26,4 +26,4 @@ Model loader:
 
 
 ## Bugs to fix
-
+- in Sponza the corners of pillars are too straight, issue with normal map?

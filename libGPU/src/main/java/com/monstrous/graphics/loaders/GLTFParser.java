@@ -295,6 +295,46 @@ public class GLTFParser {
             gltf.nodes.add(node);
         }
 
+        JSONArray animations = (JSONArray)file.get("animations");
+        System.out.println("animations: "+animations.size());
+        for(int i = 0; i < animations.size(); i++){
+            GLTFAnimation animation = new GLTFAnimation();
+
+            JSONObject an = (JSONObject)animations.get(i);
+            animation.name = (String)an.get("name");
+            System.out.println("animations: "+animation.name);
+
+            JSONArray chs = (JSONArray)an.get("channels");
+            for(int j= 0 ; j < chs.size(); j++){
+                GLTFAnimationChannel channel = new GLTFAnimationChannel();
+                JSONObject ch = (JSONObject)chs.get(j);
+                Long sam = (Long)ch.get("sampler");
+                channel.sampler = sam.intValue();
+                System.out.println("sampler: "+channel.sampler);
+
+
+                JSONObject tgt = (JSONObject)ch.get("target");
+                Long node= (Long)tgt.get("node");
+                channel.node = node.intValue();
+                channel.path = (String)tgt.get("path");
+
+                animation.channels.add(channel);
+            }
+            JSONArray smplrs = (JSONArray)an.get("samplers");
+            for(int j= 0 ; j < smplrs.size(); j++){
+                GLTFAnimationSampler sampler = new GLTFAnimationSampler();
+                JSONObject sm = (JSONObject)smplrs.get(j);
+                Long in = (Long)sm.get("input");
+                sampler.input = in.intValue();
+                Long out = (Long)sm.get("output");
+                sampler.output = out.intValue();
+                sampler.interpolation = (String)sm.get("interpolation");
+
+                animation.samplers.add(sampler);
+            }
+            gltf.animations.add(animation);
+        }
+
         JSONArray scenes = (JSONArray)file.get("scenes");
        //System.out.println("scenes: "+accessors.size());
         for(int i = 0; i < scenes.size(); i++){

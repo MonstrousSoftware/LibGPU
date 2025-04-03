@@ -140,6 +140,12 @@ public class TestSponza extends ApplicationAdapter {
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
             LibGPU.app.exit();
         }
+        if(LibGPU.input.isKeyPressed(Input.Keys.L)){
+            System.out.println("Invalidating pipelines...");
+            modelBatch.invalidatePipelines();
+            return;
+        }
+
         if(LibGPU.input.isKeyPressed(Input.Keys.NUM_1)){
             userControl = false;
             camera.position.set(6.7f, 5, -1.6f);
