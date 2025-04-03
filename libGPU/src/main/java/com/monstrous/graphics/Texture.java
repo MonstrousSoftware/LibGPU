@@ -33,7 +33,6 @@ public class Texture {
     private Pointer texture;
     private Pointer textureView;
     private Pointer sampler;
-    private Pointer hdrSampler;
     private WGPUTextureFormat format;
     private String label;
 
@@ -272,8 +271,6 @@ public class Texture {
 
     public Pointer getSampler() { return sampler; }
 
-    public Pointer getHDRSampler() { return hdrSampler; }
-
     public WGPUTextureFormat getFormat(){
         return format;
     }
@@ -355,21 +352,6 @@ public class Texture {
         samplerDesc.setMaxAnisotropy(1);
         sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
 
-
-        //WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
-//        samplerDesc.setLabel("HDR texture sampler");
-//        samplerDesc.setAddressModeU(WGPUAddressMode.Repeat);
-//        samplerDesc.setAddressModeV(WGPUAddressMode.Repeat);
-//        samplerDesc.setAddressModeW(WGPUAddressMode.Repeat);
-//        samplerDesc.setMagFilter(WGPUFilterMode.Nearest);
-//        samplerDesc.setMinFilter(WGPUFilterMode.Nearest);
-//        samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Nearest);
-//
-//        samplerDesc.setLodMinClamp(0);
-//        samplerDesc.setLodMaxClamp(mipLevelCount);
-//        samplerDesc.setCompare(WGPUCompareFunction.Undefined);
-//        samplerDesc.setMaxAnisotropy(1);
-//        hdrSampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
     }
 
     public void fill(Color color) {

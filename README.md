@@ -20,7 +20,7 @@ Warning:  This project is under active development and breaking changes may be i
 
 ## Tests
 
-The tests folder contains a number of demos and tests of various aspects and gives examples of LibGPU applications. (See [show case](docs/showcase.md)).
+The tests folder contains a number of demos and tests of various aspects and gives examples of LibGPU applications. (See [show case](docs/user documentation/showcase.md)).
 Typically, the application's main class is the Launcher, which sets the application configuration, creates an ApplicationAdapter and launches it.
 The Menu class is convenient to call demo applications.  By convention, the Escape key usually closes the demo application and returns to the menu.
 
