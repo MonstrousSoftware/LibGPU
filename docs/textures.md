@@ -89,10 +89,19 @@ A cube map can be created from a set of image files. For this it needs an array 
 in the order X+, X-, Y+, Y-, Z+, Z- (left, right, top, bottom, front, back). 
 
 ```java
-public Texture(String[] fileNames, String extension, int lodLevels, WGPUTextureFormat format)
+	public CubeMap(String[] fileNames, boolean mipMapping, WGPUTextureFormat format); // format to be removed
 ```
 
-Note: there is a utility class to create a cube map from an equirectangular image.
+There is also a constructor to read a cube map from image files with multiple LOD levels (mip levels):
+
+```java
+	public CubeMap(String[] fileNames, String extension, int lodLevels, WGPUTextureFormat format) // format to be removed
+```
+
+This will append a number and the extension to each filename. E.g. if the first file name is "xpos-", the extension is ".png" and lodLevels is 3, 
+then it will try to read "xpos-0.png", "xpos-1.png", "xpos-2.png" for the different mip levels of the left side of the cube.
+
+Note: there is also a utility class to create a cube map from an equirectangular image.
 
 ```java
 	ImageBasedLighting ibl = new ImageBasedLighting();
