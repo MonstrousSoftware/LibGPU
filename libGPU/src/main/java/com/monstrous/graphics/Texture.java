@@ -32,7 +32,7 @@ public class Texture {
     private Pointer image;
     private Pointer texture;
     private Pointer textureView;
-    private static Pointer sampler;
+    private Pointer sampler;
     private Pointer hdrSampler;
     private WGPUTextureFormat format;
     private String label;
@@ -340,22 +340,21 @@ public class Texture {
 
         // Create a sampler
         //
-        if(sampler == null) { // lazy init of static member, default sampler shared by all textures
-            WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
-            samplerDesc.setLabel("Standard texture sampler");
-            samplerDesc.setAddressModeU(WGPUAddressMode.Repeat);
-            samplerDesc.setAddressModeV(WGPUAddressMode.Repeat);
-            samplerDesc.setAddressModeW(WGPUAddressMode.Repeat);
-            samplerDesc.setMagFilter(WGPUFilterMode.Linear);
-            samplerDesc.setMinFilter(WGPUFilterMode.Linear);
-            samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Linear);
+        WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
+        samplerDesc.setLabel("Standard texture sampler");
+        samplerDesc.setAddressModeU(WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeV(WGPUAddressMode.Repeat);
+        samplerDesc.setAddressModeW(WGPUAddressMode.Repeat);
+        samplerDesc.setMagFilter(WGPUFilterMode.Linear);
+        samplerDesc.setMinFilter(WGPUFilterMode.Linear);
+        samplerDesc.setMipmapFilter(WGPUMipmapFilterMode.Linear);
 
-            samplerDesc.setLodMinClamp(0);
-            samplerDesc.setLodMaxClamp(mipLevelCount);
-            samplerDesc.setCompare(WGPUCompareFunction.Undefined);
-            samplerDesc.setMaxAnisotropy(1);
-            sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
-        }
+        samplerDesc.setLodMinClamp(0);
+        samplerDesc.setLodMaxClamp(mipLevelCount);
+        samplerDesc.setCompare(WGPUCompareFunction.Undefined);
+        samplerDesc.setMaxAnisotropy(1);
+        sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
+
 
         //WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
 //        samplerDesc.setLabel("HDR texture sampler");

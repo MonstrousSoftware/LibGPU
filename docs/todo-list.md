@@ -16,7 +16,7 @@
 - remove the need to provide #vertices/#indices to mesh builder
 
 - when textures, materials, meshes, etc. are shared, we need to track ownership to allow correct disposal (i.e. dispose exactly once)
-- using IBL it seems the radiance map mip levels don't go as low as you'd expect for high roughness.
+
 - 
 Model loader:
 
