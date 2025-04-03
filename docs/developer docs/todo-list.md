@@ -26,5 +26,4 @@ Model loader:
 
 
 ## Bugs to fix
-- shape renderer with numSamples=4
-- simple game textures
+

@@ -5,8 +5,14 @@ import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.TextureRegion;
 
 public class Sprite extends TextureRegion {
-    final static int VERTEX_SIZE = 5;       // x, y, u, v, col
+    final static int VERTEX_SIZE = 5;       // x, y, col, u, v
     final static int SPRITE_SIZE = 4*VERTEX_SIZE;
+
+    final static int X = 0;
+    final static int Y = 1;
+    final static int COL = 2;
+    final static int U = 3;
+    final static int V = 4;
 
     private float[] vertexData = new float[SPRITE_SIZE];
     private final Color color;
@@ -31,10 +37,10 @@ public class Sprite extends TextureRegion {
         this.width = width;
         this.height = height;
 
-        vertexData[0+2*VERTEX_SIZE] = x+width;
-        vertexData[0+3*VERTEX_SIZE] = x+width;
-        vertexData[1+VERTEX_SIZE] = y+height;
-        vertexData[1+2*VERTEX_SIZE] = y+height;
+        vertexData[X+2*VERTEX_SIZE] = x+width;
+        vertexData[X+3*VERTEX_SIZE] = x+width;
+        vertexData[Y+VERTEX_SIZE] = y+height;
+        vertexData[Y+2*VERTEX_SIZE] = y+height;
     }
 
     public float getWidth(){
@@ -50,22 +56,22 @@ public class Sprite extends TextureRegion {
     public void setPosition(float x, float y){
         this.x = x;
         this.y = y;
-        vertexData[0] = x;
-        vertexData[0+VERTEX_SIZE] = x;
-        vertexData[0+2*VERTEX_SIZE] = x+width;
-        vertexData[0+3*VERTEX_SIZE] = x+width;
-        vertexData[1] = y;
-        vertexData[1+VERTEX_SIZE] = y+height;
-        vertexData[1+2*VERTEX_SIZE] = y+height;
-        vertexData[1+3*VERTEX_SIZE] = y;
+        vertexData[X] = x;
+        vertexData[X+VERTEX_SIZE] = x;
+        vertexData[X+2*VERTEX_SIZE] = x+width;
+        vertexData[X+3*VERTEX_SIZE] = x+width;
+        vertexData[Y] = y;
+        vertexData[Y+VERTEX_SIZE] = y+height;
+        vertexData[Y+2*VERTEX_SIZE] = y+height;
+        vertexData[Y+3*VERTEX_SIZE] = y;
     }
 
     public void setX(float x){
         this.x = x;
-        vertexData[0] = x;
-        vertexData[0+VERTEX_SIZE] = x;
-        vertexData[0+2*VERTEX_SIZE] = x+width;
-        vertexData[0+3*VERTEX_SIZE] = x+width;
+        vertexData[X] = x;
+        vertexData[X+VERTEX_SIZE] = x;
+        vertexData[X+2*VERTEX_SIZE] = x+width;
+        vertexData[X+3*VERTEX_SIZE] = x+width;
     }
 
     public float getX(){
@@ -74,10 +80,10 @@ public class Sprite extends TextureRegion {
 
     public void setY(float y){
         this.y = y;
-        vertexData[1] = y;
-        vertexData[1+VERTEX_SIZE] = y+height;
-        vertexData[1+2*VERTEX_SIZE] = y+height;
-        vertexData[1+3*VERTEX_SIZE] = y;
+        vertexData[Y] = y;
+        vertexData[Y+VERTEX_SIZE] = y+height;
+        vertexData[Y+2*VERTEX_SIZE] = y+height;
+        vertexData[Y+3*VERTEX_SIZE] = y;
     }
     public float getY(){
         return y;
@@ -86,7 +92,7 @@ public class Sprite extends TextureRegion {
     public void setColor(Color color){
         this.color.set(color);
         for(int v = 0; v < 4; v++){
-            vertexData[4+v*VERTEX_SIZE] = color.toFloatBits();
+            vertexData[COL+v*VERTEX_SIZE] = color.toFloatBits();
         }
     }
 
@@ -96,15 +102,15 @@ public class Sprite extends TextureRegion {
         float u2 = (float) (srcX+srcWidth) /texture.getWidth();
         float v = (float) srcY /texture.getHeight();
         float v2 = (float) (srcY+srcHeight) /texture.getHeight();
-        vertexData[2] = u;
-        vertexData[2+VERTEX_SIZE] = u;
-        vertexData[2+2*VERTEX_SIZE] = u2;
-        vertexData[2+3*VERTEX_SIZE] = u2;
+        vertexData[U] = u;
+        vertexData[U+VERTEX_SIZE] = u;
+        vertexData[U+2*VERTEX_SIZE] = u2;
+        vertexData[U+3*VERTEX_SIZE] = u2;
 
-        vertexData[3] = v2;
-        vertexData[3+VERTEX_SIZE] = v;
-        vertexData[3+2*VERTEX_SIZE] = v;
-        vertexData[3+3*VERTEX_SIZE] = v2;
+        vertexData[V] = v2;
+        vertexData[V+VERTEX_SIZE] = v;
+        vertexData[V+2*VERTEX_SIZE] = v;
+        vertexData[V+3*VERTEX_SIZE] = v2;
     }
 
 
@@ -114,17 +120,17 @@ public class Sprite extends TextureRegion {
 
     public void translateX(float dx){
         x += dx;
-        vertexData[0] += dx;
-        vertexData[0+VERTEX_SIZE] += dx;
-        vertexData[0+2*VERTEX_SIZE] += dx;
-        vertexData[0+3*VERTEX_SIZE] += dx;
+        vertexData[X] += dx;
+        vertexData[X+VERTEX_SIZE] += dx;
+        vertexData[X+2*VERTEX_SIZE] += dx;
+        vertexData[X+3*VERTEX_SIZE] += dx;
     }
 
     public void translateY(float dy){
         y += dy;
-        vertexData[1] += dy;
-        vertexData[1+VERTEX_SIZE] += dy;
-        vertexData[1+2*VERTEX_SIZE] += dy;
-        vertexData[1+3*VERTEX_SIZE] += dy;
+        vertexData[Y] += dy;
+        vertexData[Y+VERTEX_SIZE] += dy;
+        vertexData[Y+2*VERTEX_SIZE] += dy;
+        vertexData[Y+3*VERTEX_SIZE] += dy;
     }
 }

@@ -77,12 +77,12 @@ public class TestSimpleGame extends ApplicationAdapter {
         float delta = LibGPU.graphics.getDeltaTime();
         input( delta );
 
-        viewport.apply();
+       viewport.apply();
 
 
         batch.setProjectionMatrix(viewport.getCamera().combined);
 
-        ScreenUtils.clear(Color.BLACK);
+        ScreenUtils.clear(Color.WHITE);
         batch.begin();
 
         batch.draw(background, 0,0, viewport.getWorldWidth(), viewport.getWorldHeight());
