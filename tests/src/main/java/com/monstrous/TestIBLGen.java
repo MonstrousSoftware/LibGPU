@@ -87,7 +87,7 @@ public class TestIBLGen extends ApplicationAdapter {
         environment.setRadianceMap(prefilterMap);
         environment.setBRDFLookUpTable( brdfLUT );
 
-        environment.setSkybox(new SkyBox(prefilterMap));
+        environment.setSkybox(new SkyBox(irradianceMap));
 
         // create some spheres
         Model sphere;

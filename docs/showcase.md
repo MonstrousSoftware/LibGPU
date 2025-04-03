@@ -48,3 +48,9 @@ Shadows
 ![test-gltf.png](images%2Ftest-gltf.png)
 
 Load model from GLTF file
+
+
+
+![test-gltf.png](images%2Ftest-IBLgen.png)
+
+Imaged Based Lighting

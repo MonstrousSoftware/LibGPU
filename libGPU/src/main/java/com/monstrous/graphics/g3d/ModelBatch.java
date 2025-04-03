@@ -60,6 +60,7 @@ public class ModelBatch implements Disposable {
 
     private final Pipelines pipelines;
     private Pipeline prevPipeline;
+    private RenderPassType passType;
     private PipelineSpecification pipelineSpec;
     private final List<Renderable> renderables;
     private final List<Renderable> visibleRenderables;
@@ -136,6 +137,7 @@ public class ModelBatch implements Disposable {
     public void begin(Camera camera, Environment environment, Color clearColor, Texture outputTexture, Texture depthTexture, RenderPassType passType){
         this.camera = camera;
         this.environment = environment;
+        this.passType = passType;
 
         // create a new render pass
         int samples = LibGPU.app.configuration.numSamples;
@@ -247,7 +249,7 @@ public class ModelBatch implements Disposable {
         frameBindGroup.dispose();
         instancingBindGroup.dispose();
 
-        if(environment.skybox != null)
+        if(passType == RenderPassType.COLOR_PASS && environment.skybox != null) // todo move out skybox rendering
             environment.skybox.render(camera, pass);
         pass.end();
         pass = null;
@@ -509,7 +511,7 @@ public class ModelBatch implements Disposable {
         // roughnessLevels = mip count of radiance map when using IBL
         uniformBuffer.append((environment == null||environment.radianceMap == null) ? 0 : environment.radianceMap.getMipLevelCount());
 
-
+        uniformBuffer.pad(2*4); // padding
         if(environment != null && environment.shadowCamera != null) {
             uniformBuffer.append(environment.shadowCamera.combined);
             uniformBuffer.append(environment.shadowCamera.position);

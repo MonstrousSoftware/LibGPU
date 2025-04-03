@@ -3,6 +3,8 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.g3d.*;
+import com.monstrous.graphics.g3d.ibl.HDRLoader;
+import com.monstrous.graphics.g3d.ibl.ImageBasedLighting;
 import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
@@ -12,6 +14,7 @@ import com.monstrous.math.Vector3;
 import com.monstrous.webgpu.WGPUTextureFormat;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class TestSponza extends ApplicationAdapter {
@@ -42,6 +45,7 @@ public class TestSponza extends ApplicationAdapter {
     private Texture colorMap, depthMap;
     private boolean userControl = true;
     private int frame;
+    private Texture textureEquirectangular;
 
     public void create() {
         startTime = System.nanoTime();
@@ -78,6 +82,32 @@ public class TestSponza extends ApplicationAdapter {
         environment = new Environment();
         environment.add(sun);
         environment.ambientLightLevel = 0.4f;
+
+        FileHandle file = Files.internal("hdr/brown_photostudio_02_1k.hdr");
+       // FileHandle file = Files.internal("hdr/leadenhall_market_2k.hdr");
+        HDRLoader hdrLoader = new HDRLoader();
+
+        try {
+            hdrLoader.loadHDR(file);
+            textureEquirectangular = hdrLoader.getHDRTexture(true);
+        } catch(IOException e) {
+            System.out.println("Cannot load HDR file.");
+        }
+
+        // create image based environmental lighting
+        ImageBasedLighting ibl = new ImageBasedLighting();
+
+        Texture environmentMap = ibl.buildEnvironmentMapFromEquirectangularTexture(textureEquirectangular, 2048);
+        Texture irradianceMap = ibl.buildIrradianceMap(environmentMap, 32);
+        Texture prefilterMap = ibl.buildRadianceMap(environmentMap, 128);
+        Texture brdfLUT = ibl.getBRDFLookUpTable();
+
+        environment.useImageBasedLighting = true;
+        environment.setIrradianceMap(irradianceMap);
+        environment.setRadianceMap(prefilterMap);
+        environment.setBRDFLookUpTable( brdfLUT );
+
+//        environment.setSkybox(new SkyBox(irradianceMap));
 
         shadowCam = new OrthographicCamera(SHADOW_VIEWPORT_SIZE, SHADOW_VIEWPORT_SIZE); // in world units
 
