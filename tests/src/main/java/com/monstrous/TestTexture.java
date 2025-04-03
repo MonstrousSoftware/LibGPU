@@ -1,6 +1,7 @@
 package com.monstrous;
 
 import com.monstrous.graphics.*;
+import com.monstrous.graphics.g2d.Sprite;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.webgpu.WGPUTextureFormat;
 import com.monstrous.webgpu.WGPUVertexFormat;
@@ -10,17 +11,24 @@ public class TestTexture extends ApplicationAdapter {
 
     private SpriteBatch batch;
     private Texture texture;
+    private Texture background;
+    private Sprite sprite;
 
 
 
     @Override
     public void create() {
 
-        texture = new Texture("textures/monstrous.png", false);
+        background = new Texture("textures/simplegame/background.png", true);
+        //texture = new Texture("textures/simplegame/bucket.png", true);
+        texture = new Texture("textures/simplegame/drop.png", true);
+//        texture = new Texture("textures/monstrous.png", false);
         //texture2 = new Texture("textures/jackRussel.png", true);
         //texture = new Texture("textures/alien.png", false);
         System.out.println("Texture format:" + texture.getFormat());
         batch = new SpriteBatch();
+
+        sprite = new Sprite(texture);
     }
 
     @Override
@@ -32,7 +40,8 @@ public class TestTexture extends ApplicationAdapter {
 
         // SpriteBatch testing
         batch.begin(Color.TEAL);
-        batch.draw(texture, 100, 100);
+        batch.draw(background, 0, 0);
+        batch.draw(sprite, 300, 100);
         batch.end();
     }
 

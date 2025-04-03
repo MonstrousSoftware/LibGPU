@@ -72,6 +72,7 @@ public class ShapeRenderer implements Disposable {
         pipelines = new Pipelines();
         pipelineSpec = new PipelineSpecification(vertexAttributes, "shaders/shape.wgsl");
         pipelineSpec.name = "shape renderer pipeline";
+        pipelineSpec.numSamples = LibGPU.app.configuration.numSamples;
 
         resize(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
     }
@@ -117,8 +118,12 @@ public class ShapeRenderer implements Disposable {
         setPipeline();
     }
 
-    public void begin() {
-        renderPass = RenderPassBuilder.create();
+    public void begin(){
+        begin(null);
+    }
+
+    public void begin(Color clearColor) {
+        renderPass = RenderPassBuilder.create(clearColor, LibGPU.app.configuration.numSamples);
 
         if (begun)
             throw new RuntimeException("Must end() before begin()");

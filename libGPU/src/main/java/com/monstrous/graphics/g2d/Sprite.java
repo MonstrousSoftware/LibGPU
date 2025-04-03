@@ -9,7 +9,7 @@ public class Sprite extends TextureRegion {
     final static int SPRITE_SIZE = 4*VERTEX_SIZE;
 
     private float[] vertexData = new float[SPRITE_SIZE];
-    private Color color;
+    private final Color color;
     private float x, y;
     private float width, height;
 
