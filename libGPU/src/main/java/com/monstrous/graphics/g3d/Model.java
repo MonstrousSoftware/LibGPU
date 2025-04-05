@@ -34,11 +34,15 @@ public class Model implements Disposable {
     private ArrayList<Material> materials;
 
 
+    private ArrayList<Animation> animations;
+
+
     public Model(){
         meshes = new ArrayList<>();
         ownsMeshes = false;
         materials = new ArrayList<>();
         rootNodes = new ArrayList<>();
+        animations = new ArrayList<>();
     }
 
     public Model(String filePath) {
@@ -118,6 +122,16 @@ public class Model implements Disposable {
     public ArrayList<Node> getNodes(){
         return rootNodes;
     }
+
+    public void addAnimation(Animation animation) {
+        this.animations.add(animation);
+    }
+
+
+    public ArrayList<Animation> getAnimations() {
+        return animations;
+    }
+
 
 
     @Override

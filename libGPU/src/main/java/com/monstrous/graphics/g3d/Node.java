@@ -29,6 +29,7 @@ public class Node {
     public ArrayList<Node> children;
 
     public String name;
+    public boolean isAnimated;
     public Matrix4 localTransform;
     public Matrix4 globalTransform;
     public Vector3 translation;
@@ -42,6 +43,7 @@ public class Node {
         children = new ArrayList<>(2);
 
         localTransform = new Matrix4();
+        isAnimated = false;
         globalTransform = new Matrix4();
         translation = new Vector3(0,0,0);
         scale = new Vector3(1,1,1);
@@ -61,8 +63,8 @@ public class Node {
     }
 
     public void updateMatrices(boolean recurse){
-        //Quaternion rot = new Quaternion();
-        localTransform.set(translation, rotation, scale);
+        if(!isAnimated)
+            localTransform.set(translation, rotation, scale);
 
         if(parent != null)
             globalTransform.set(parent.globalTransform).mul(localTransform);

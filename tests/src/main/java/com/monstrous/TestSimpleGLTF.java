@@ -2,10 +2,7 @@ package com.monstrous;
 
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
-import com.monstrous.graphics.g3d.Model;
-import com.monstrous.graphics.g3d.ModelBatch;
-import com.monstrous.graphics.g3d.ModelInstance;
-import com.monstrous.graphics.g3d.SkyBox;
+import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.g3d.ibl.HDRLoader;
 import com.monstrous.graphics.g3d.ibl.ImageBasedLighting;
 import com.monstrous.graphics.lights.DirectionalLight;
@@ -33,16 +30,21 @@ public class TestSimpleGLTF extends ApplicationAdapter {
     private String status;
     private CameraController camController;
     private Texture textureEquirectangular;
+    private AnimationController animController;
 
     public void create() {
         instances = new ArrayList<>();
 
-        model = new Model("models/AnimatedCube/glTF/AnimatedCube.gltf");
+        //model = new Model("models/AnimatedCube/glTF/AnimatedCube.gltf");
+        model = new Model("models/BoxAnimated/glTF/BoxAnimated.gltf");
 
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);
         instances.add(modelInstance1);
+
+        animController = new AnimationController(modelInstance1);
+        animController.setAnimation("animation_AnimatedCube", -1);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -73,8 +75,10 @@ public class TestSimpleGLTF extends ApplicationAdapter {
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
             LibGPU.app.exit();
         }
-        currentTime += LibGPU.graphics.getDeltaTime();
+        float deltaTime =  LibGPU.graphics.getDeltaTime();
+        currentTime += deltaTime;
 
+        animController.update(deltaTime);
         camController.update();
 
         modelBatch.begin(camera, environment, Color.GRAY);
