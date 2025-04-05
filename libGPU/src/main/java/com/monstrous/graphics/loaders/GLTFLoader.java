@@ -22,6 +22,7 @@ public class GLTFLoader implements ModelLoader {
     private final Map<GLTFPrimitive, Mesh> meshMap = new HashMap<>();
     private final ArrayList<Material> materials = new ArrayList<>();
     //private final Map<Integer, Boolean> hasNormalMap = new HashMap<>();
+    private final ArrayList<Node> nodes = new ArrayList<>();
 
     @Override
     public Model loadFromFile(Model model, String filePath) {
@@ -89,12 +90,18 @@ public class GLTFLoader implements ModelLoader {
 //
 //        }
 
+        nodes.clear();
+        for( GLTFNode gltfNode : gltf.nodes ) {
+            Node node = addNode(gltf, gltfNode);
+            nodes.add(node);
+        }
 
         GLTFScene scene = gltf.scenes.get(gltf.scene);
         for( int nodeId : scene.nodes ) {
             GLTFNode gltfNode = gltf.nodes.get(nodeId);
+            Node rootNode = nodes.get(nodeId);
 
-            Node rootNode = addNode(gltf, gltfNode);     // recursively add the node hierarchy
+            addNodeHierarchy(gltf, gltfNode, rootNode);     // recursively add the node hierarchy
             rootNode.updateMatrices(true);
             model.addNode(rootNode);
         }
@@ -102,52 +109,57 @@ public class GLTFLoader implements ModelLoader {
         for(GLTFAnimation gltfAnim : gltf.animations ){
             Animation animation = new Animation();
             animation.name = gltfAnim.name;
+            float maxDuration = 0f;
             for(GLTFAnimationChannel gltfChannel : gltfAnim.channels){
                 NodeAnimation nodeAnimation = new NodeAnimation();
-                nodeAnimation.node = model.getNodes().get(gltfChannel.node); // todo check the ordering is the same
+                nodeAnimation.node = nodes.get(gltfChannel.node);
 
-                if(gltfChannel.path.contentEquals("translation")){
+                int numComponents = 3;
+                if(gltfChannel.path.contentEquals("rotation"))
+                    numComponents = 4; // 4 floats per quaternion
 
-                } else if(gltfChannel.path.contentEquals("rotation")) {
-                    int numComponents = 4; // 4 floats per quaternion
-                    GLTFAnimationSampler sampler = gltfAnim.samplers.get(gltfChannel.sampler);
-                    GLTFAccessor inAccessor = gltf.accessors.get(sampler.input);
-                    GLTFAccessor outAccessor = gltf.accessors.get(sampler.output);
-                    // ignore interpolation, we only do linear
+                GLTFAnimationSampler sampler = gltfAnim.samplers.get(gltfChannel.sampler);
+                GLTFAccessor inAccessor = gltf.accessors.get(sampler.input);
+                GLTFAccessor outAccessor = gltf.accessors.get(sampler.output);
+                // ignore interpolation, we only do linear
 
-                    GLTFBufferView inView = gltf.bufferViews.get(inAccessor.bufferView);
-                    if(inView.buffer != 0)
-                        throw new RuntimeException("GLTF can only support buffer 0");
-                    gltf.rawBuffer.byteBuffer.position(inView.byteOffset);  // does this carry over to floatbuf?
-                    FloatBuffer timeBuf = gltf.rawBuffer.byteBuffer.asFloatBuffer();
-                    float[] times = new float[inAccessor.count];
-                    timeBuf.get(times, 0, inAccessor.count);
+                GLTFBufferView inView = gltf.bufferViews.get(inAccessor.bufferView);
+                if(inView.buffer != 0)
+                    throw new RuntimeException("GLTF can only support buffer 0");
+                gltf.rawBuffer.byteBuffer.position(inView.byteOffset+ inAccessor.byteOffset);  // does this carry over to floatbuf?
+                FloatBuffer timeBuf = gltf.rawBuffer.byteBuffer.asFloatBuffer();
+                float[] times = new float[inAccessor.count];
+                timeBuf.get(times, 0, inAccessor.count);
 
-                    GLTFBufferView outView = gltf.bufferViews.get(outAccessor.bufferView);
-                    if(outView.buffer != 0)
-                        throw new RuntimeException("GLTF can only support buffer 0");
-                    gltf.rawBuffer.byteBuffer.position(outView.byteOffset);  // does this carry over to floatbuf?
-                    FloatBuffer floatBuf = gltf.rawBuffer.byteBuffer.asFloatBuffer();
-                    float[] floats = new float[numComponents * outAccessor.count];
-                    floatBuf.get(floats, 0, numComponents * outAccessor.count);
+                GLTFBufferView outView = gltf.bufferViews.get(outAccessor.bufferView);
+                if(outView.buffer != 0)
+                    throw new RuntimeException("GLTF can only support buffer 0");
+                gltf.rawBuffer.byteBuffer.position(outView.byteOffset+outAccessor.byteOffset);  // does this carry over to floatbuf?
+                FloatBuffer floatBuf = gltf.rawBuffer.byteBuffer.asFloatBuffer();
+                float[] floats = new float[numComponents * outAccessor.count];
+                floatBuf.get(floats, 0, numComponents * outAccessor.count);
 
 
-                    for(int key = 0; key < inAccessor.count; key++){
-                        float time = times[key];
-                        Quaternion q = new Quaternion(floats[4*key], floats[key*4+1], floats[key*4+2], floats[key*4+3]);
+                for(int key = 0; key < inAccessor.count; key++){
+                    float time = times[key];
+                    if(gltfChannel.path.contentEquals("translation")) {
+                        Vector3 tr = new Vector3(floats[3 * key], floats[3*key + 1], floats[3*key + 2]);
+                        NodeKeyframe<Vector3> keyFrame = new NodeKeyframe<Vector3>(time, tr);
+                        nodeAnimation.addTranslation(keyFrame);
+                    } else  if(gltfChannel.path.contentEquals("rotation")) {
+                        Quaternion q = new Quaternion(floats[4 * key], floats[key * 4 + 1], floats[key * 4 + 2], floats[key * 4 + 3]);
                         NodeKeyframe<Quaternion> keyFrame = new NodeKeyframe<Quaternion>(time, q);
                         nodeAnimation.addRotation(keyFrame);
+                    } else if(gltfChannel.path.contentEquals("scale")) {
+                        Vector3 tr = new Vector3(floats[3 * key], floats[3*key + 1], floats[3*key + 2]);
+                        NodeKeyframe<Vector3> keyFrame = new NodeKeyframe<Vector3>(time, tr);
+                        nodeAnimation.addScaling(keyFrame);
                     }
-                    animation.duration = times[inAccessor.count-1];
-
-                } else if(gltfChannel.path.contentEquals("scale")){
-
-                } else {
-                    System.out.println("Invalid path in GLTF animation: "+gltfChannel.path);
                 }
+                maxDuration = Math.max(maxDuration,times[inAccessor.count-1]);
                 animation.addNodeAnimation(nodeAnimation);
             }
-
+            animation.duration = maxDuration;
 
             model.addAnimation(animation);
         }
@@ -208,13 +220,17 @@ public class GLTFLoader implements ModelLoader {
                 node.nodeParts.add( new NodePart(meshPart, materials.get(primitive.material)) );
             }
         }
+        return node;
+    }
+
+    private void addNodeHierarchy(GLTF gltf, GLTFNode gltfNode, Node root){
         // now add any children
         for(int j : gltfNode.children ){
             GLTFNode gltfChild = gltf.nodes.get(j);
-            Node child = addNode(gltf, gltfChild);
-            node.addChild(child);
+            Node child = nodes.get(j);
+            root.addChild(child);
+            addNodeHierarchy(gltf, gltfChild, child);
         }
-        return node;
     }
 
 

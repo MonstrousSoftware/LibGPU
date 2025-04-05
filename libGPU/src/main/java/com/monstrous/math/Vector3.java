@@ -103,6 +103,13 @@ public class Vector3 {
                 x * l_mat[Matrix4.M20] + y * l_mat[Matrix4.M21] + z * l_mat[Matrix4.M22] + l_mat[Matrix4.M23]);
     }
 
+    public Vector3 lerp (final Vector3 target, float alpha) {
+        x += alpha * (target.x - x);
+        y += alpha * (target.y - y);
+        z += alpha * (target.z - z);
+        return this;
+    }
+
     @Override
     public String toString () {
         return "(" + x + "," + y + "," + z + ")";

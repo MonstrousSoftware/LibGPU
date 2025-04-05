@@ -22,14 +22,9 @@ public class TestSimpleGLTF extends ApplicationAdapter {
     private Model model;
     private ModelInstance modelInstance1;
     private ArrayList<ModelInstance> instances;
-    private float currentTime;
-    private long startTime;
-    private int frames;
     private SpriteBatch batch;
     private BitmapFont font;
-    private String status;
     private CameraController camController;
-    private Texture textureEquirectangular;
     private AnimationController animController;
 
     public void create() {
@@ -76,14 +71,17 @@ public class TestSimpleGLTF extends ApplicationAdapter {
             LibGPU.app.exit();
         }
         float deltaTime =  LibGPU.graphics.getDeltaTime();
-        currentTime += deltaTime;
 
-        animController.update(deltaTime);
+        AnimationController.AnimationDesc desc = animController.update(deltaTime);
         camController.update();
 
         modelBatch.begin(camera, environment, Color.GRAY);
         modelBatch.render(instances);
         modelBatch.end();
+
+        batch.begin();
+        font.draw(batch, "time: "+desc.time, 10, 50);
+        batch.end();
     }
 
     public void dispose(){
