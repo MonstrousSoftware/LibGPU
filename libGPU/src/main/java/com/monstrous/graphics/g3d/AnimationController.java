@@ -99,8 +99,6 @@ public class AnimationController {
                     if(prevKey.keyTime <= animationDesc.time && keyFrame.keyTime > animationDesc.time){
                         float fraction = (animationDesc.time - prevKey.keyTime)/(keyFrame.keyTime- prevKey.keyTime);
                         tmpTra.set(prevKey.value).lerp(keyFrame.value, fraction);//
-                        if(tmpTra.y < 0)
-                            throw new RuntimeException("panic");
                         break;
                     }
                     else
@@ -122,7 +120,7 @@ public class AnimationController {
 
             nodeAnim.node.isAnimated = true;
             nodeAnim.node.localTransform.set(tmpTra, tmpQ, tmpScl);
-            System.out.println("tra: "+tmpTra.y);
+            //System.out.println("tra: "+tmpTra.y);
         }
         // todo local copy per instance
         for(Node rootNode : instance.model.getNodes())
