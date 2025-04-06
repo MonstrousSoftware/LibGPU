@@ -52,7 +52,7 @@ public class TestSimpleGLTF extends ApplicationAdapter {
         environment = new Environment();
 
         environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
-        environment.ambientLightLevel = 0.5f;
+        environment.ambientLightLevel = 1.0f;
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
@@ -70,7 +70,7 @@ public class TestSimpleGLTF extends ApplicationAdapter {
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
             LibGPU.app.exit();
         }
-        float deltaTime =  LibGPU.graphics.getDeltaTime();
+        float deltaTime =  0.625f; //LibGPU.graphics.getDeltaTime();
 
         AnimationController.AnimationDesc desc = animController.update(deltaTime);
         camController.update();

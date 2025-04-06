@@ -86,6 +86,8 @@ public class AnimationController {
                 for( NodeKeyframe<Quaternion> keyFrame: nodeAnim.rotation){
                     if(prevKey.keyTime <= animationDesc.time && keyFrame.keyTime > animationDesc.time){
                         float fraction = (animationDesc.time - prevKey.keyTime)/(keyFrame.keyTime- prevKey.keyTime);
+                        if(fraction > 1.0001f)
+                            throw new RuntimeException("Fraction > 1.0");
                         tmpQ.set(prevKey.value).slerp(keyFrame.value, fraction);
                         break;
                     }

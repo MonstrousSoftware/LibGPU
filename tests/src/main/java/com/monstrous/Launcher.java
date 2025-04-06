@@ -17,7 +17,7 @@ public class Launcher {
 
         config.enableGPUtiming = false;
 
-        new Application(new TestSimpleGLTF(), config);
+        new Application(new Menu(), config);
 
     }
 }
