@@ -26,6 +26,7 @@ public class TestPostProcessing extends ApplicationAdapter {
     private long startTime;
     private int frames;
     private Texture colorMap;
+    private Texture depthMap;
     private SpriteBatch batch;
     private ShaderProgram filter;
     private BitmapFont font;
@@ -62,7 +63,9 @@ public class TestPostProcessing extends ApplicationAdapter {
 
         LibGPU.input.setInputProcessor(new CameraController(camera));
 
+        // create "frame buffer"
         colorMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.RGBA8Unorm, 1);
+        depthMap = new Texture(LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight(), false, true, WGPUTextureFormat.Depth24Plus, 1);
 
         modelBatch = new ModelBatch();
 
@@ -95,7 +98,7 @@ public class TestPostProcessing extends ApplicationAdapter {
         ScreenUtils.clear(Color.WHITE);
 
         // render 3d scene to texture
-        modelBatch.begin(camera, environment,Color.WHITE, colorMap,  null);
+        modelBatch.begin(camera, environment,Color.WHITE, colorMap,  depthMap);
         modelBatch.render(instances);
         modelBatch.end();
 
@@ -106,10 +109,8 @@ public class TestPostProcessing extends ApplicationAdapter {
         ScreenUtils.clear(Color.BLUE);
         batch.begin();
         batch.draw(colorMap,10,10, W/2-20, H-20);
-
         batch.setShader(filter);    // use the post-processing shader
         batch.draw(colorMap,W/2+10, 10, W/2-20, H-20);
-
         batch.setShader(null);
 
         font.draw(batch, "Original", 20, 30);

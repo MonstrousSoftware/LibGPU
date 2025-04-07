@@ -140,7 +140,8 @@ public class ModelBatch implements Disposable {
         this.passType = passType;
 
         // create a new render pass
-        int samples = LibGPU.app.configuration.numSamples;
+
+        int samples = (outputTexture != null) ? outputTexture.getNumSamples() : LibGPU.app.configuration.numSamples;
         if(passType == RenderPassType.SHADOW_PASS || passType == RenderPassType.DEPTH_PREPASS)
             samples = 1;
         if(depthTexture == null)

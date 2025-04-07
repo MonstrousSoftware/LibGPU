@@ -35,6 +35,7 @@ public class Texture implements Disposable {
     private Pointer sampler;
     protected WGPUTextureFormat format;
     protected String label;
+    private int numSamples;
 
     public Texture(){
     }
@@ -47,6 +48,7 @@ public class Texture implements Disposable {
         this.width = width;
         this.height = height;
         mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
+        this.numSamples = numSamples;
         create( "texture", mipLevelCount, renderAttachment, format, 1, numSamples);
     }
 
@@ -84,7 +86,8 @@ public class Texture implements Disposable {
         format = WGPUTextureFormat.RGBA8Unorm;
 
         mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
-        create( name, mipLevelCount, false, format, 1, 1);
+        numSamples = 1;
+        create( name, mipLevelCount, false, format, 1, numSamples);
         load(pixelPtr, 0);
     }
 
@@ -119,6 +122,10 @@ public class Texture implements Disposable {
 
     public Pointer getHandle(){
         return texture;
+    }
+
+    public int getNumSamples(){
+        return numSamples;
     }
 
 
