@@ -148,6 +148,7 @@ public class GLTFLoader implements ModelLoader {
                         nodeAnimation.addTranslation(keyFrame);
                     } else  if(gltfChannel.path.contentEquals("rotation")) {
                         Quaternion q = new Quaternion(floats[4 * key], floats[key * 4 + 1], floats[key * 4 + 2], floats[key * 4 + 3]);
+                        q.nor();
                         NodeKeyframe<Quaternion> keyFrame = new NodeKeyframe<Quaternion>(time, q);
                         nodeAnimation.addRotation(keyFrame);
                     } else if(gltfChannel.path.contentEquals("scale")) {

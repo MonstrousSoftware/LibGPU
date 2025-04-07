@@ -354,6 +354,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = N*0.5 + 0.5;
     //color = encodedN;
     //color = N;
+    //color = radiance*visibility;
     //color = uFrame.pointLights[0].color.rgb;
     // color = baseColor.rgb;
     //color = normalize(in.normal);

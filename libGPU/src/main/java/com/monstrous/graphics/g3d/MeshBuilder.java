@@ -162,10 +162,19 @@ public class MeshBuilder {
         return numVertices - 1;
     }
 
-    public void addIndex(short index){
+    public void addIndex(int index){
+        if(index > Short.MAX_VALUE)
+            throw new RuntimeException("MeshBuilder: index value > 32K.");
         if(numIndices >= indices.length)
             throw new RuntimeException("MeshBuilder: too many indices.");
-        indices[numIndices++] = index;
+        indices[numIndices++] = (short)index;
+    }
+
+    public void addLine(float x1, float y1, float z1, float x2, float y2, float z2){
+        int i0 = addVertex(x1, y1, z2);
+        int i1 = addVertex(x2, y2, z2);
+        addIndex((short)i0);
+        addIndex((short)i1);
     }
 
     public void addLine(Vector3 c0, Vector3 c1){
@@ -232,6 +241,11 @@ public class MeshBuilder {
             addIndex((short) i1);            addIndex((short) i2);
             addIndex((short) i2);            addIndex((short) i3);
             addIndex((short) i3);            addIndex((short) i0);
+        } else if(topology == WGPUPrimitiveTopology.PointList) {
+            addIndex((short) i0);
+            addIndex((short) i1);
+            addIndex((short) i2);
+            addIndex((short) i3);
         }
     }
 }

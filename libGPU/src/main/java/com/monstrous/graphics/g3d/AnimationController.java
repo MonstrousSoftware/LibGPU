@@ -77,21 +77,21 @@ public class AnimationController {
         animationDesc.update(deltaTime);
         if(animationDesc.time > animationDesc.duration)
             throw new RuntimeException("Animation time out of bounds");
-        tmpQ.idt();
-        tmpScl.set(1,1,1);
-        tmpTra.set(0,0,0);
+
         for(NodeAnimation nodeAnim: animationDesc.animation.nodeAnimations){
-            if(nodeAnim.rotation != null){
+            // reset per node animation
+            tmpQ.idt(); // no rotation
+            tmpScl.set(1,1,1); // no scaling
+            tmpTra.set(0,0,0); // no translation
+
+            if(nodeAnim.rotation != null) {
                 NodeKeyframe<Quaternion> prevKey = nodeAnim.rotation.get(0);
-                for( NodeKeyframe<Quaternion> keyFrame: nodeAnim.rotation){
-                    if(prevKey.keyTime <= animationDesc.time && keyFrame.keyTime > animationDesc.time){
-                        float fraction = (animationDesc.time - prevKey.keyTime)/(keyFrame.keyTime- prevKey.keyTime);
-                        if(fraction > 1.0001f)
-                            throw new RuntimeException("Fraction > 1.0");
+                for (NodeKeyframe<Quaternion> keyFrame : nodeAnim.rotation) {
+                    if (prevKey.keyTime <= animationDesc.time && keyFrame.keyTime > animationDesc.time) {
+                        float fraction = (animationDesc.time - prevKey.keyTime) / (keyFrame.keyTime - prevKey.keyTime);
                         tmpQ.set(prevKey.value).slerp(keyFrame.value, fraction);
                         break;
-                    }
-                    else
+                    } else
                         prevKey = keyFrame;
                 }
             }
@@ -122,8 +122,8 @@ public class AnimationController {
 
             nodeAnim.node.isAnimated = true;
             nodeAnim.node.localTransform.set(tmpTra, tmpQ, tmpScl);
-            //System.out.println("tra: "+tmpTra.y);
         }
+
         // todo local copy per instance
         for(Node rootNode : instance.model.getNodes())
             rootNode.updateMatrices(true);

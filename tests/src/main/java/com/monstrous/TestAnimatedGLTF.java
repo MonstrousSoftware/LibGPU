@@ -3,17 +3,14 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.g3d.*;
-import com.monstrous.graphics.g3d.ibl.HDRLoader;
-import com.monstrous.graphics.g3d.ibl.ImageBasedLighting;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
-public class TestSimpleGLTF extends ApplicationAdapter {
+public class TestAnimatedGLTF extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
@@ -30,16 +27,17 @@ public class TestSimpleGLTF extends ApplicationAdapter {
     public void create() {
         instances = new ArrayList<>();
 
-        //model = new Model("models/AnimatedCube/glTF/AnimatedCube.gltf");
+//        model = new Model("models/AnimatedCube/glTF/AnimatedCube.gltf");
+//        String animationId = "animation_AnimatedCube";
         model = new Model("models/BoxAnimated/glTF/BoxAnimated.gltf");
-
+        String animationId = "CubeAction";
 
         modelMatrix = new Matrix4();
         modelInstance1 = new ModelInstance(model, modelMatrix);
         instances.add(modelInstance1);
 
         animController = new AnimationController(modelInstance1);
-        animController.setAnimation("animation_AnimatedCube", -1);
+        animController.setAnimation(animationId, -1);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -51,8 +49,10 @@ public class TestSimpleGLTF extends ApplicationAdapter {
 
         environment = new Environment();
 
-        environment.add( new DirectionalLight( new Color(1,1,1,1), new Vector3(0,-1,0)));
-        environment.ambientLightLevel = 1.0f;
+        DirectionalLight sun = new DirectionalLight( Color.WHITE, new Vector3(.6f,-1,.3f).nor());
+        sun.setIntensity(3f);
+        environment.add( sun );
+        environment.ambientLightLevel = 0.7f;
 
         camController = new CameraController(camera);
         LibGPU.input.setInputProcessor( camController );
@@ -70,7 +70,10 @@ public class TestSimpleGLTF extends ApplicationAdapter {
         if(LibGPU.input.isKeyPressed(Input.Keys.ESCAPE)){
             LibGPU.app.exit();
         }
-        float deltaTime =  0.625f; //LibGPU.graphics.getDeltaTime();
+        float deltaTime =  LibGPU.graphics.getDeltaTime();
+        if(LibGPU.input.isKeyPressed(Input.Keys.SPACE)){
+            deltaTime =  0.f;
+        }
 
         AnimationController.AnimationDesc desc = animController.update(deltaTime);
         camController.update();
@@ -79,9 +82,12 @@ public class TestSimpleGLTF extends ApplicationAdapter {
         modelBatch.render(instances);
         modelBatch.end();
 
-        batch.begin();
-        font.draw(batch, "time: "+desc.time, 10, 50);
-        batch.end();
+//        batch.begin();
+//        if(desc != null) {
+//            font.draw(batch, "Animation name: "+desc.animation.name, 10, 70);
+//            font.draw(batch, "time: " + desc.time, 10, 50);
+//        }
+//        batch.end();
     }
 
     public void dispose(){

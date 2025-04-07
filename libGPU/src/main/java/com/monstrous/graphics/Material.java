@@ -100,7 +100,7 @@ public class Material implements Disposable {
         this.normalTexture = getDefaultBlackTexture();
         hasNormalMap = false;
         roughnessFactor = 1f;
-        metallicFactor = 1f; // default
+        metallicFactor = 0f; // default
         this.emissiveTexture = getDefaultBlackTexture();
         this.metallicRoughnessTexture = getDefaultWhiteTexture();
         createBindGroupLayout();

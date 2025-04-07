@@ -217,7 +217,7 @@ public class Quaternion {
      * @param alpha alpha in the range [0,1]
      * @return this quaternion for chaining */
     public Quaternion slerp (Quaternion end, float alpha) {
-        final float d = this.x * end.x + this.y * end.y + this.z * end.z + this.w * end.w;
+        float d = this.x * end.x + this.y * end.y + this.z * end.z + this.w * end.w;
         float absDot = d < 0.f ? -d : d;
 
         // Set the first and second scale for the interpolation

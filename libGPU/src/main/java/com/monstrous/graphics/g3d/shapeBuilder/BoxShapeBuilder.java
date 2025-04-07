@@ -60,6 +60,7 @@ public class BoxShapeBuilder {
         switch(topology) {
             case TriangleList:    numIndices = 6 * 6; break;
             case LineList:        numIndices = 8 * 6; break;
+            case PointList:       numIndices = 8 * 6; break;
             default:
                 throw new IllegalArgumentException("buildBox: topology unsupported "+topology);
         }

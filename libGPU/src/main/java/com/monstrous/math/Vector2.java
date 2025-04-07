@@ -24,6 +24,10 @@ public class Vector2 {
         return set(v.x, v.y);
     }
 
+    public float dot(Vector2 v){
+        return x * v.x + y * v.y;
+    }
+
 
     public Vector2 add(Vector2 v){
         set(x+v.x, y+v.y);
