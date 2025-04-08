@@ -35,10 +35,6 @@ import static com.monstrous.LibGPU.webGPU;
 public class RenderPassBuilder {
 
     private static Viewport viewport = null;
-    private static WGPURenderPassColorAttachment renderPassColorAttachment;
-    private static WGPURenderPassDepthStencilAttachment depthStencilAttachment;
-    private static WGPURenderPassDescriptor renderPassDescriptor;
-
 
     public static RenderPass create() {
         return create(null);
@@ -74,16 +70,13 @@ public class RenderPassBuilder {
 
         WGPUTextureFormat colorFormat = WGPUTextureFormat.Undefined;
 
-        renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
-        renderPassDescriptor.setNextInChain();
-
-        renderPassDescriptor.setLabel(name);
-        renderPassDescriptor.setOcclusionQuerySet(JavaWebGPU.createNullPointer());
+        WGPURenderPassDescriptor renderPassDescriptor = WGPURenderPassDescriptor.createDirect();
+        renderPassDescriptor.setNextInChain().setLabel(name).setOcclusionQuerySet(JavaWebGPU.createNullPointer());
 
 
         if(  passType == RenderPassType.COLOR_PASS || passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ||passType == RenderPassType.SHADOW_PASS ||passType == RenderPassType.NO_DEPTH){  // todo TEMP SHADOW FOR DEBUG
 
-            renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
+            WGPURenderPassColorAttachment renderPassColorAttachment = WGPURenderPassColorAttachment.createDirect();
             renderPassColorAttachment.setNextInChain();
 
             renderPassColorAttachment.setStoreOp(WGPUStoreOp.Store);
@@ -124,7 +117,7 @@ public class RenderPassBuilder {
         }
 
         if(passType != RenderPassType.NO_DEPTH) {
-            depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
+            WGPURenderPassDepthStencilAttachment depthStencilAttachment = WGPURenderPassDepthStencilAttachment.createDirect();
             depthStencilAttachment.setDepthClearValue(1.0f);
             // if we just did a depth prepass, don't clear the depth buffer
             depthStencilAttachment.setDepthLoadOp(passType == RenderPassType.COLOR_PASS_AFTER_DEPTH_PREPASS ? WGPULoadOp.Load : WGPULoadOp.Clear);
@@ -156,11 +149,6 @@ public class RenderPassBuilder {
         }
         return pass;
     }
-
-
-//    public static Texture getOutputTexture(){
-//        return outputTexture;
-//    }
 
 
     // set viewport on future render passes created, set to null to not apply a viewport.

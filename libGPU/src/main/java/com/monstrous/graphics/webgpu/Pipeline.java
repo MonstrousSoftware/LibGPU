@@ -24,6 +24,9 @@ import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
+import org.lwjgl.system.MemoryStack;
+
+import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class Pipeline implements Disposable {
 
@@ -55,9 +58,11 @@ public class Pipeline implements Disposable {
         Pointer shaderModule = shader.getHandle();
         WGPUVertexBufferLayout vertexBufferLayout = spec.vertexAttributes != null ? spec.vertexAttributes.getVertexBufferLayout() : null;
 
+
         WGPURenderPipelineDescriptor pipelineDesc = WGPURenderPipelineDescriptor.createDirect();        // todo worth reusing these?
+
         pipelineDesc.setNextInChain();
-        pipelineDesc.setLabel( spec.name );
+        pipelineDesc.setLabel(spec.name);
 
         pipelineDesc.getVertex().setBufferCount(vertexBufferLayout != null ? 1 : 0);
         pipelineDesc.getVertex().setBuffers(vertexBufferLayout);
@@ -68,11 +73,11 @@ public class Pipeline implements Disposable {
         pipelineDesc.getVertex().setConstants();
 
         pipelineDesc.getPrimitive().setTopology(spec.topology);
-        pipelineDesc.getPrimitive().setStripIndexFormat(isStripTopology(spec.topology)? spec.indexFormat: WGPUIndexFormat.Undefined);
+        pipelineDesc.getPrimitive().setStripIndexFormat(isStripTopology(spec.topology) ? spec.indexFormat : WGPUIndexFormat.Undefined);
         pipelineDesc.getPrimitive().setFrontFace(WGPUFrontFace.CCW);
         pipelineDesc.getPrimitive().setCullMode(spec.cullMode);
 
-        if(spec.colorFormat != WGPUTextureFormat.Undefined) {   // if there is a color attachment
+        if (spec.colorFormat != WGPUTextureFormat.Undefined) {   // if there is a color attachment
             WGPUFragmentState fragmentState = WGPUFragmentState.createDirect();
             fragmentState.setNextInChain();
             fragmentState.setModule(shaderModule);
@@ -123,7 +128,7 @@ public class Pipeline implements Disposable {
             }
         }
 
-        if(!spec.noDepthAttachment) {
+        if (!spec.noDepthAttachment) {
             depthStencilState.setFormat(spec.depthFormat);
             // deactivate stencil
             depthStencilState.setStencilReadMask(0L);
@@ -133,11 +138,12 @@ public class Pipeline implements Disposable {
         }
 
         pipelineDesc.getMultisample().setCount(spec.numSamples);
-        pipelineDesc.getMultisample().setMask( -1L );
+        pipelineDesc.getMultisample().setMask(-1L);
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 
         pipelineDesc.setLayout(pipelineLayout);
         pipeline = LibGPU.webGPU.wgpuDeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
+
         if(pipeline == null)
             throw new RuntimeException("Pipeline creation failed");
     }

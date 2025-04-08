@@ -22,8 +22,12 @@ import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.webgpu.RenderPassBuilder;
 import com.monstrous.webgpu.WebGPU_JNI;
 import jnr.ffi.Pointer;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.ByteBuffer;
 
 import static com.monstrous.utils.JavaWebGPU.createIntegerArrayPointer;
+import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class Application {
     public ApplicationConfiguration configuration;
@@ -43,6 +47,11 @@ public class Application {
     private boolean isMinimized = false;
     private WindowedApp winApp;
 
+    private final WGPUSurfaceTexture surfaceTexture;
+    private final WGPUTextureViewDescriptor viewDescriptor;
+    private final WGPUCommandEncoderDescriptor encoderDescriptor;
+    private final WGPUCommandBufferDescriptor bufferDescriptor;
+
 
 
     public Application(ApplicationListener listener) {
@@ -59,10 +68,18 @@ public class Application {
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
 
+
+
         winApp = new WindowedApp();
         if(!config.noWindow)
             winApp.openWindow(this, config);
         initWebGPU(winApp.getWindowHandle());
+
+        // pre-allocate some structures we'll use often
+        surfaceTexture = WGPUSurfaceTexture.createDirect();
+        viewDescriptor = WGPUTextureViewDescriptor.createDirect();
+        encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
+        bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
 
         while(listener != null) {
 
@@ -406,7 +423,7 @@ public class Application {
         // [...] Get the next surface texture
 
 
-        WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
+        // WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
         webGPU.wgpuSurfaceGetCurrentTexture(LibGPU.surface, surfaceTexture);
         //System.out.println("get current texture: "+surfaceTexture.status.get());
         if(surfaceTexture.getStatus() != WGPUSurfaceGetCurrentTextureStatus.Success){
@@ -414,7 +431,7 @@ public class Application {
             return JavaWebGPU.createNullPointer();
         }
         // [...] Create surface texture view
-        WGPUTextureViewDescriptor viewDescriptor = WGPUTextureViewDescriptor.createDirect();
+;
         viewDescriptor.setNextInChain();
         viewDescriptor.setLabel("Surface texture view");
         Pointer tex = surfaceTexture.getTexture();
@@ -480,27 +497,24 @@ public class Application {
     }
 
     public Pointer prepareEncoder() {
-        WGPUCommandEncoderDescriptor encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
-        encoderDescriptor.setNextInChain();
-        encoderDescriptor.setLabel("My Encoder");
-
+        encoderDescriptor.setNextInChain().setLabel("My Encoder");
         return webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDescriptor);
     }
 
     public void finishEncoder(Pointer encoder){
         gpuTiming.resolveTimeStamps(encoder);
-        WGPUCommandBufferDescriptor bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
-        bufferDescriptor.setNextInChain();
-        bufferDescriptor.setLabel("Command Buffer");
+
+        bufferDescriptor.setNextInChain().setLabel("Command Buffer");
         Pointer commandBuffer = webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
         webGPU.wgpuCommandEncoderRelease(encoder);
 
+        try (MemoryStack stack = stackPush()) {
+            // create native array of command buffer pointers
+            ByteBuffer pBuffers = stack.malloc(Long.BYTES);
+            pBuffers.putLong(0, commandBuffer.address());
 
-        long[] buffers = new long[1];
-        buffers[0] = commandBuffer.address();
-        Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
-
-        webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
+            webGPU.wgpuQueueSubmit(LibGPU.queue, 1, JavaWebGPU.createByteBufferPointer(pBuffers));
+        }
 
         gpuTiming.fetchTimestamps();
 
