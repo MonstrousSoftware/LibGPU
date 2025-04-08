@@ -3,10 +3,6 @@ package com.monstrous;
 import com.monstrous.graphics.*;
 import com.monstrous.graphics.g2d.SpriteBatch;
 import com.monstrous.graphics.g3d.*;
-import com.monstrous.graphics.g3d.ibl.HDRLoader;
-import com.monstrous.graphics.g3d.ibl.ImageBasedLighting;
-import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
-import com.monstrous.graphics.g3d.shapeBuilder.SphereShapeBuilder;
 import com.monstrous.graphics.lights.DirectionalLight;
 import com.monstrous.graphics.lights.Environment;
 import com.monstrous.math.Vector2;
@@ -14,10 +10,9 @@ import com.monstrous.math.Vector3;
 import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
-/** Test building a terrain mesh from a height map.
+/** Test building a terrain mesh from a Perlin noise height map.
  *
  */
 
@@ -26,6 +21,7 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
 
     private ModelBatch modelBatch;
     private Camera camera;
+    private Texture texture;
     private Model modelTerrain;
     private Model modelTerrainDebug;
     private ArrayList<ModelInstance> modelInstances;
@@ -38,8 +34,9 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
     public void create() {
         modelInstances = new ArrayList<>();
 
+        texture = new Texture("textures/rocks-diffuse.jpg");
 
-        Material terrainMaterial = new Material(Color.GREEN_YELLOW);
+        Material terrainMaterial = new Material(texture);
         terrainMaterial.metallicFactor = 0f;
         terrainMaterial.roughnessFactor = 0.5f;
         modelTerrain = buildTerrainModel(false, terrainMaterial);
@@ -83,6 +80,7 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
         // dimension are in terms of grid cells, vertex counts are one higher.
         int width = 128;
         int depth = 128;
+        float uvScale = 20f/width;
 
 
 
@@ -90,10 +88,24 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
         // get an extra row and column for the heightmap so we can calculate the normals on the far edge
         float[][] heightMap = noise.generatePerlinMap(xoffset, yoffset, width+1, depth+1,  7, 30);
 
+        Vector3[][] positions = new Vector3[width+1][depth+1];
+        Vector3[][] normals = new Vector3[width+1][depth+1];
+
+        for(int z = 0; z <= depth; z++) {
+            for (int x = 0; x <= width; x++) {
+                positions[z][x] = new Vector3(x * cellSize, heightMap[z][x], z * cellSize);
+                normals[z][x] = new Vector3(0, 0, 0);   // create normal vector and initialize to zero
+            }
+        }
+
+        calculateNormals(width, depth, positions, normals);
+
+
+
 
         MeshBuilder mb = new MeshBuilder();
         // vertex attributes are fixed per mesh
-        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.NORMAL);
+        VertexAttributes vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION|VertexAttribute.Usage.NORMAL|VertexAttribute.Usage.TEXTURE_COORDINATE);
 
         mb.begin(vertexAttributes, (width+1)*(depth+1)*2, (width+1)*(depth+1)*(debug?8:2));
 
@@ -111,8 +123,8 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
             int p1 = 0;
             for(int z = 0; z < depth; z++) {
                 for (int x = 0; x <= width; x++) {
-                    int i0 = mb.addVertex(x * cellSize, heightMap[z][x], z * cellSize);
-                    int i1 = mb.addVertex(x * cellSize,  heightMap[z+1][x], (z + 1) * cellSize);
+                    int i0 = mb.addVertex(positions[z][x]);
+                    int i1 = mb.addVertex(positions[z+1][x]);
                     mb.addIndex((short) i0);
                     mb.addIndex((short) i1);
                     if(x > 0) {
@@ -130,12 +142,11 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
 
         } else {  // TriangleStrip
             int ix = 0;
-            Vector3 N;
             for(int z = 0; z <= depth; z++) {
                 for (int x = 0; x <= width; x++) {
-                    N = calcNormal(heightMap, x, z);
-                    mb.setNormal(N);
-                    mb.addVertex(x * cellSize,  heightMap[z][x], z * cellSize);
+                    mb.setNormal(normals[z][x].nor());
+                    mb.setTextureCoordinate(z*uvScale, x*uvScale);
+                    mb.addVertex(positions[z][x]);
                 }
                 if(z < depth) {
                     for (int x = 0; x <= width; x++) {
@@ -156,23 +167,44 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
     }
 
 
-    private Vector3 p0 = new Vector3();
-    private Vector3 p1 = new Vector3();
-    private Vector3 p2 = new Vector3();
-    private Vector3 u = new Vector3();
-    private Vector3 v = new Vector3();
-    private Vector3 n = new Vector3();
 
-    private Vector3 calcNormal(float[][]heightMap, int x, int z){
-        p0.set(x*cellSize, heightMap[z][x], z * cellSize);
-        p1.set(x*cellSize, heightMap[z+1][x], (z+1) * cellSize);
-        p2.set((x+1)*cellSize, heightMap[z][x+1], z * cellSize);
+    private final Vector3 u = new Vector3();
+    private final Vector3 v = new Vector3();
+    private final Vector3 n = new Vector3();
 
-        u = new Vector3(p1).sub(p0);
-        v = new Vector3(p2).sub(p0);
-        n = new Vector3(u).crs(v).nor();
-        return n;
+    /** calculate smooth normals for all vertices by taking average normal of all 6 triangles the vertex is part of */
+    private void calculateNormals(int width, int depth, final Vector3[][]positions, Vector3[][]normals) {
+        for (int z = 0; z < depth; z++) {
+            for (int x = 0; x < width; x++) {
+                // three corners of the upper triangle of the grid square
+                Vector3 p0 = positions[z][x];
+                Vector3 px = positions[z][x+1];
+                Vector3 pz = positions[z+1][x];
+                // take cross product of the edge vectors
+                u.set(px).sub(p0);
+                v.set(pz).sub(p0);
+                n.set(v).crs(u).nor();
+                // accumulate normal vector of involved vertices
+                normals[z][x].add(n).scl(2);    // double weight for a 90-degree angle
+                normals[z][x+1].add(n);
+                normals[z+1][x].add(n);
+
+                // now do the lower triangle
+                p0 = positions[z+1][x+1];
+                pz = positions[z][x+1];
+                px = positions[z+1][x];
+                // take cross product of the edge vectors
+                u.set(px).sub(p0);
+                v.set(pz).sub(p0);
+                n.set(v).crs(u).nor();
+                // accumulate normal vector
+                normals[z+1][x+1].add(n).scl(2);
+                normals[z][x+1].add(n);
+                normals[z+1][x].add(n);
+            }
+        }
     }
+
 
 
     public void render( ){
@@ -286,7 +318,6 @@ public class TestHeightMapTerrain extends ApplicationAdapter {
                 }
             }
             return noise;
-
         }
     }
 

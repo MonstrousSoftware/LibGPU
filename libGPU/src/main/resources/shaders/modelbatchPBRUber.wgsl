@@ -266,12 +266,15 @@ fn getShadowNess( shadowPos:vec3f ) -> f32 {
 }
 #endif
 
+
+// fragment shader ================================
+
+
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
     let V = normalize(in.viewDirection);
     let baseColor = in.color * textureSample(albedoTexture, textureSampler, in.uv).rgba * material.baseColorFactor.rgba;
-
 
 #ifdef NORMAL_MAP
     let normalMapStrength = 0.8;
@@ -296,9 +299,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let roughness : f32 = mrSample.g * material.roughnessFactor;
     let metallic : f32 = mrSample.b * material.metallicFactor;
 
-     //var color = vec3f(0.0);
-    // todo some of this could go to vertex shader?
-
     var radiance = vec3f(0.0);
 
 #ifdef USE_IBL
@@ -317,6 +317,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
         if(irradiance > 0.0) {
             radiance += BRDF(L, V, N, roughness, metallic, baseColor.rgb) * irradiance *  light.color.rgb;
         }
+
     }
 
     // for each point light
@@ -352,9 +353,9 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     //color = vec3f(roughness);
     //color = Lo;
     //color = N*0.5 + 0.5;
-    //color = encodedN;
+    //color = vec3f(in.normal.y);
     //color = N;
-    //color = radiance*visibility;
+    //color = radiance;
     //color = uFrame.pointLights[0].color.rgb;
     // color = baseColor.rgb;
     //color = normalize(in.normal);
