@@ -46,10 +46,10 @@ public class BindGroup implements Disposable {
         addBuffer(bindingId, buffer, 0, buffer.getSize());
     }
 
-    public void addTexture(int bindingId, Pointer textureView) {
+    public void addTexture(int bindingId, TextureView textureView) {
         WGPUBindGroupEntry entry = WGPUBindGroupEntry.createDirect();
         entry.setBinding(bindingId);
-        entry.setTextureView(textureView);
+        entry.setTextureView(textureView.getHandle());
         entries.add(entry);
     }
 

@@ -49,7 +49,7 @@ public class RenderPassBuilder {
     }
 
 
-    public static RenderPass create(Color clearColor, Texture outTexture, WGPUTextureFormat depthFormat, Pointer depthTextureView, int sampleCount){
+    public static RenderPass create(Color clearColor, Texture outTexture, WGPUTextureFormat depthFormat, TextureView depthTextureView, int sampleCount){
         return create("color pass", clearColor, outTexture, depthFormat, depthTextureView, sampleCount, RenderPassType.COLOR_PASS);
     }
 
@@ -64,7 +64,7 @@ public class RenderPassBuilder {
      * @param passType
      * @return
      */
-    public static RenderPass create(String name, Color clearColor, Texture outTexture,  WGPUTextureFormat depthFormat, Pointer depthTextureView, int sampleCount, RenderPassType passType) {
+    public static RenderPass create(String name, Color clearColor, Texture outTexture,  WGPUTextureFormat depthFormat, TextureView depthTextureView, int sampleCount, RenderPassType passType) {
         if(LibGPU.commandEncoder == null)
             throw new RuntimeException("Encoder must be set before calling RenderPass.create()");
 
@@ -94,7 +94,7 @@ public class RenderPassBuilder {
 
             if (outTexture == null) {
                 if ( sampleCount > 1) {
-                    renderPassColorAttachment.setView(LibGPU.app.multiSamplingTexture.getTextureView());
+                    renderPassColorAttachment.setView(LibGPU.app.multiSamplingTexture.getTextureView().getHandle());
                     renderPassColorAttachment.setResolveTarget(LibGPU.app.targetView);
                 } else {
                     renderPassColorAttachment.setView(LibGPU.app.targetView);
@@ -103,7 +103,7 @@ public class RenderPassBuilder {
                 colorFormat = LibGPU.surfaceFormat;
 
             } else {
-                renderPassColorAttachment.setView(outTexture.getTextureView());
+                renderPassColorAttachment.setView(outTexture.getTextureView().getHandle());
                 renderPassColorAttachment.setResolveTarget(JavaWebGPU.createNullPointer());
                 colorFormat = outTexture.getFormat();
                 sampleCount = 1;
@@ -128,7 +128,7 @@ public class RenderPassBuilder {
             depthStencilAttachment.setStencilStoreOp(WGPUStoreOp.Undefined);
             depthStencilAttachment.setStencilReadOnly(1L);
 
-            depthStencilAttachment.setView(depthTextureView);
+            depthStencilAttachment.setView(depthTextureView.getHandle());
 
             renderPassDescriptor.setDepthStencilAttachment(depthStencilAttachment);
         }

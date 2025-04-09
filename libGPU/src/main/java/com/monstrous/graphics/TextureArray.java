@@ -4,6 +4,7 @@ import com.monstrous.FileHandle;
 import com.monstrous.Files;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.WGPUTextureUsage;
 import jnr.ffi.Pointer;
 
 public class TextureArray extends Texture {
@@ -21,7 +22,8 @@ public class TextureArray extends Texture {
         this.height = height;
         this.numLayers = numLayers;
         mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
-        create( "texture array", mipLevelCount, false,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1);
+        int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst;
+        create( "texture array", mipLevelCount, textureUsage,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1, null);
     }
 
     /** create a texture array from a series of image files */
@@ -47,7 +49,8 @@ public class TextureArray extends Texture {
             if(layer == 0) {
                 this.width = info.width.intValue();
                 this.height = info.height.intValue();
-                create(fileNames[layer], mipLevelCount, false, format, numLayers, 1);
+                int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst;
+                create(fileNames[layer], mipLevelCount, textureUsage, format, numLayers, 1, null);
             } else {
                 if(info.width.intValue() != width || info.height.intValue() != height)
                     throw new RuntimeException("Texture: layers must have same size");
@@ -86,7 +89,8 @@ public class TextureArray extends Texture {
                 if (layer == 0 && level == 0) {
                     this.width = info.width.intValue();
                     this.height = info.height.intValue();
-                    create(fileName, lodLevels, false, format, numLayers, 1);
+                    int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst;
+                    create(fileName, lodLevels, textureUsage, format, numLayers, 1, null);
                 } else if (level == 0){
                     if (info.width.intValue() != width || info.height.intValue() != height)
                         throw new RuntimeException("Texture: layers must have same size");

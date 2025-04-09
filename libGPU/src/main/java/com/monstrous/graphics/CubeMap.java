@@ -1,6 +1,7 @@
 package com.monstrous.graphics;
 
 import com.monstrous.webgpu.WGPUTextureFormat;
+import com.monstrous.webgpu.WGPUTextureUsage;
 
 public class CubeMap extends TextureArray {
 
@@ -13,7 +14,8 @@ public class CubeMap extends TextureArray {
         this.height = height;
         this.numLayers = 6;
         mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
-        create( "cube map", mipLevelCount, false,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1);
+        int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst;
+        create( "cube map", mipLevelCount, textureUsage,  WGPUTextureFormat.RGBA8Unorm, numLayers, 1, null);
     }
 
     public CubeMap(String[] fileNames, boolean mipMapping) {

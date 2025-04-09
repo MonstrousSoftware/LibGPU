@@ -19,6 +19,7 @@ package com.monstrous.graphics;
 import com.monstrous.FileHandle;
 import com.monstrous.Files;
 import com.monstrous.LibGPU;
+import com.monstrous.graphics.webgpu.TextureView;
 import com.monstrous.utils.Disposable;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
@@ -31,7 +32,7 @@ public class Texture implements Disposable {
     protected int mipLevelCount;
     private Pointer image;
     private Pointer texture;
-    private Pointer textureView;
+    private TextureView textureView;
     private Pointer sampler;
     protected WGPUTextureFormat format;
     protected String label;
@@ -49,7 +50,29 @@ public class Texture implements Disposable {
         this.height = height;
         mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
         this.numSamples = numSamples;
-        create( "texture", mipLevelCount, renderAttachment, format, 1, numSamples);
+        int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst;
+        if (renderAttachment)
+            textureUsage |= (WGPUTextureUsage.RenderAttachment | WGPUTextureUsage.CopySrc);    // todo COPY_SRC is temp
+        create( "texture", mipLevelCount, textureUsage, format, 1, numSamples, null);
+    }
+
+    public Texture(int width, int height, int mipLevelCount, int textureUsage, WGPUTextureFormat format, int numSamples ) {
+        this.width = width;
+        this.height = height;
+        this.numSamples = numSamples;
+        this.mipLevelCount = mipLevelCount;
+        this.format = format;
+
+        create( "texture", mipLevelCount, textureUsage, format, 1, numSamples, null);
+    }
+
+    public Texture(int width, int height, int mipLevelCount, int textureUsage, WGPUTextureFormat format, int numSamples, WGPUTextureFormat viewFormat ) {
+        this.width = width;
+        this.height = height;
+        this.numSamples = numSamples;
+        this.mipLevelCount = mipLevelCount;
+        this.format = format;
+        create( "texture", mipLevelCount, textureUsage, format, 1, numSamples, viewFormat);
     }
 
     /*
@@ -74,7 +97,7 @@ public class Texture implements Disposable {
         loadFileData(byteArray, name, mipMapping);
     }
 
-    private void loadFileData(byte[] byteArray, String name, boolean mipMapping) {
+    public void loadFileData(byte[] byteArray, String name, boolean mipMapping) {
         Pointer data = JavaWebGPU.createByteArrayPointer(byteArray);
         image = JavaWebGPU.getUtils().gdx2d_load(data, byteArray.length);        // use native function to parse image file
 
@@ -87,7 +110,8 @@ public class Texture implements Disposable {
 
         mipLevelCount = mipMapping ? Math.max(1, bitWidth(Math.max(width, height))) : 1;
         numSamples = 1;
-        create( name, mipLevelCount, false, format, 1, numSamples);
+        int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst;
+        create( name, mipLevelCount, textureUsage, format, 1, numSamples, null);
         load(pixelPtr, 0);
     }
 
@@ -110,7 +134,7 @@ public class Texture implements Disposable {
         return mipLevelCount;
     }
 
-    public Pointer getTextureView(){
+    public TextureView getTextureView(){
         return textureView;
     }
 
@@ -144,7 +168,7 @@ public class Texture implements Disposable {
     // numLayers - normally 1, e.g. 6 for a cube map
     // numSamples - for anti-aliasing
     //
-    protected void create( String label, int mipLevelCount, boolean renderAttachment, WGPUTextureFormat format, int numLayers, int numSamples) {
+    protected void create( String label, int mipLevelCount, int textureUsage, WGPUTextureFormat format, int numLayers, int numSamples, WGPUTextureFormat viewFormat) {
         if (LibGPU.device == null || LibGPU.queue == null)
             throw new RuntimeException("Texture creation requires device and queue to be available\n");
 
@@ -162,27 +186,37 @@ public class Texture implements Disposable {
         textureDesc.getSize().setWidth(width);
         textureDesc.getSize().setHeight(height);
         textureDesc.getSize().setDepthOrArrayLayers(numLayers);
-        if (renderAttachment)
-            textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst | WGPUTextureUsage.RenderAttachment | WGPUTextureUsage.CopySrc);    // todo COP|Y_SRC temp
-        else
-            textureDesc.setUsage(WGPUTextureUsage.TextureBinding | WGPUTextureUsage.CopyDst);
-        textureDesc.setViewFormatCount(0);
-        textureDesc.setViewFormats(JavaWebGPU.createNullPointer());
+        textureDesc.setUsage(textureUsage);
+        if (viewFormat == null) {
+            textureDesc.setViewFormatCount(0);
+            textureDesc.setViewFormats(JavaWebGPU.createNullPointer());
+        } else {
+            long[] formats = new long[1];       // TMP
+            formats[0] = viewFormat.ordinal();
+            Pointer formatPtr = JavaWebGPU.createLongArrayPointer(formats);
+            textureDesc.setViewFormatCount(1);
+            textureDesc.setViewFormats( formatPtr );
+        }
+
         texture = LibGPU.webGPU.wgpuDeviceCreateTexture(LibGPU.device, textureDesc);
 
         //System.out.println("dimensions: "+textureDesc.getSize().getDepthOrArrayLayers());
 
 
         // Create the view of the  texture manipulated by the rasterizer
-        WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
-        textureViewDesc.setAspect(WGPUTextureAspect.All);
-        textureViewDesc.setBaseArrayLayer(0);
-        textureViewDesc.setArrayLayerCount(numLayers);
-        textureViewDesc.setBaseMipLevel(0);
-        textureViewDesc.setMipLevelCount(mipLevelCount);
-        textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : (numLayers == 6 ? WGPUTextureViewDimension.Cube: WGPUTextureViewDimension._2DArray));
-        textureViewDesc.setFormat(textureDesc.getFormat());
-        textureView = LibGPU.webGPU.wgpuTextureCreateView(texture, textureViewDesc);
+        WGPUTextureViewDimension dimension = (numLayers == 1 ? WGPUTextureViewDimension._2D : (numLayers == 6 ? WGPUTextureViewDimension.Cube: WGPUTextureViewDimension._2DArray));
+        textureView =  new TextureView(this, WGPUTextureAspect.All, dimension, format, 0,
+                mipLevelCount, 0, numLayers );
+
+//        WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
+//        textureViewDesc.setAspect(WGPUTextureAspect.All);
+//        textureViewDesc.setBaseArrayLayer(0);
+//        textureViewDesc.setArrayLayerCount(numLayers);
+//        textureViewDesc.setBaseMipLevel(0);
+//        textureViewDesc.setMipLevelCount(mipLevelCount);
+//        textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : (numLayers == 6 ? WGPUTextureViewDimension.Cube: WGPUTextureViewDimension._2DArray));
+//        textureViewDesc.setFormat(textureDesc.getFormat());
+//        textureView = LibGPU.webGPU.wgpuTextureCreateView(texture, textureViewDesc);
 
         // Create a sampler
         //
@@ -364,14 +398,13 @@ public class Texture implements Disposable {
         LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, (long) width * height * 4*4, source, ext);
     }
 
-   // layer : which layer to load for a 3d texture, otherwise 0
 
     /** Load pixel data into texture.
      *
      * @param pixelPtr
      * @param layer which layer to load in case of a 3d texture, otherwise 0
      */
-    protected void load(Pointer pixelPtr, int layer) {
+    public void load(Pointer pixelPtr, int layer) {
 
         // Arguments telling which part of the texture we upload to
         // (together with the last argument of writeTexture)
@@ -579,7 +612,8 @@ public class Texture implements Disposable {
             System.out.println("Destroy texture " + label);
             // todo released when?
             //LibGPU.webGPU.wgpuSamplerRelease(sampler);
-            LibGPU.webGPU.wgpuTextureViewRelease(textureView);
+            textureView.dispose();
+            //LibGPU.webGPU.wgpuTextureViewRelease(textureView);
             LibGPU.webGPU.wgpuTextureDestroy(texture);
             LibGPU.webGPU.wgpuTextureRelease(texture);
             texture = null;
