@@ -14,6 +14,7 @@ public class TestComputeMipMap extends ApplicationAdapter {
     private Texture sourceTexture;
     private ShaderProgram computeShader;
     private Texture texture;
+    private Texture destTexture;
     private TextureView inputTextureView;
     private TextureView outputTextureView;
     private Pointer pipeline;
@@ -25,11 +26,14 @@ public class TestComputeMipMap extends ApplicationAdapter {
         webGPU = LibGPU.webGPU;
         batch = new SpriteBatch();
 
-        sourceTexture = new Texture("textures/exit.jpg", true);
+        sourceTexture = new Texture("textures/jackRussel256.png", true);
+
+        int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.StorageBinding|WGPUTextureUsage.CopyDst | WGPUTextureUsage.CopySrc;
+        destTexture = new Texture(128, 128, 1, textureUsage, WGPUTextureFormat.RGBA8Unorm, 1);
 
         // create a texture with 2 mip levels
         // level 0 to be filled from source file
-        int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.StorageBinding|WGPUTextureUsage.CopyDst | WGPUTextureUsage.CopySrc;
+        //textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.StorageBinding|WGPUTextureUsage.CopyDst | WGPUTextureUsage.CopySrc;
         int mipLevels = 8;
         texture = new Texture(256, 256, mipLevels, textureUsage, WGPUTextureFormat.RGBA8Unorm, 1);
 
@@ -43,8 +47,9 @@ public class TestComputeMipMap extends ApplicationAdapter {
         Pointer pixelPtr = info.pixels.get();
         texture.load(pixelPtr, 0);
 
+        // note: the textures need to be different otherwise it doesn't work. Error: includes writable usage and another usage in the same synchronization scope
         inputTextureView =  new TextureView(texture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), 0, 1, 0, 1 );
-        outputTextureView = new TextureView(texture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), 1, 1, 0, 1 );
+        outputTextureView = new TextureView(destTexture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), 1, 1, 0, 1 );
 
         onCompute();
     }
@@ -58,8 +63,8 @@ public class TestComputeMipMap extends ApplicationAdapter {
 
         // SpriteBatch testing
         batch.begin(Color.TEAL);
-        batch.draw(texture, 0,0, 256, 256);        // normal texture
-        batch.draw(texture, 256,0, 128, 128);
+        batch.draw(sourceTexture, 0,0, 512, 512);        // normal texture
+        batch.draw(destTexture, 512,0, 512, 512);        // normal texture
         batch.end();
     }
 
@@ -180,35 +185,8 @@ public class TestComputeMipMap extends ApplicationAdapter {
         Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
         webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
 
-//        boolean[] done = { false };
-//        WGPUBufferMapCallback callback = (WGPUBufferMapAsyncStatus status, Pointer userdata) -> {
-//            if (status == WGPUBufferMapAsyncStatus.Success) {
-//                Pointer buf = webGPU.wgpuBufferGetConstMappedRange(mapBuffer.getHandle(), 0, BUFFER_SIZE);
-//                for(int i = 0; i < numFloats; i++){
-//                    outputData[i] = buf.getFloat(i*Float.BYTES);
-//                }
-//            } else
-//                System.out.println("Buffer map async error: "+status);
-//            done[0] = true; // signal that the call back was executed
-//        };
-
-
-
-//        // note: there is a newer function for this and using this one will raise a warning,
-//        // but it requires a struct containing a pointer to a callback function...
-//        webGPU.wgpuBufferMapAsync(mapBuffer.getHandle(), WGPUMapMode.Read, 0, BUFFER_SIZE, callback, null);
-//
-//        while(!done[0]) {
-//            System.out.println("Tick.");
-//            webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
-//        }
 
         webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
-
-//        System.out.println("output: ");
-//        for(int i = 0; i < 5; i++)
-//            System.out.print(" "+outputData[i]);
-//        System.out.println();
 
         webGPU.wgpuCommandBufferRelease(commandBuffer);
         webGPU.wgpuCommandEncoderRelease(encoder);

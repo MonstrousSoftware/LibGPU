@@ -423,7 +423,6 @@ public class Application {
     private Pointer getNextSurfaceTextureView() {
         // [...] Get the next surface texture
 
-
         // WGPUSurfaceTexture surfaceTexture = WGPUSurfaceTexture.createDirect();
         webGPU.wgpuSurfaceGetCurrentTexture(LibGPU.surface, surfaceTexture);
         //System.out.println("get current texture: "+surfaceTexture.status.get());
@@ -452,55 +451,20 @@ public class Application {
 
         depthTextureFormat = WGPUTextureFormat.Depth24Plus;
 
-//        long[] formats = new long[1];
-//        formats[0] = depthTextureFormat.ordinal();
-//        Pointer formatPtr = JavaWebGPU.createLongArrayPointer(formats);
-//
-//        // Create the depth texture
-//        public Texture(int width, int height, boolean mipMapping, boolean renderAttachment, WGPUTextureFormat format, int numSamples, depthTextureFormat );
-//        WGPUTextureDescriptor depthTextureDesc = WGPUTextureDescriptor.createDirect();
-//        depthTextureDesc.setNextInChain();
-//        depthTextureDesc.setDimension( WGPUTextureDimension._2D);
-//        depthTextureDesc.setFormat( depthTextureFormat );
-//        depthTextureDesc.setMipLevelCount(1);
-//        depthTextureDesc.setSampleCount(configuration.numSamples);  // needs to match the color attachment
-//        depthTextureDesc.getSize().setWidth(width);
-//        depthTextureDesc.getSize().setHeight(height);
-//        depthTextureDesc.getSize().setDepthOrArrayLayers(1);
-//        depthTextureDesc.setUsage( WGPUTextureUsage.RenderAttachment );
-//        depthTextureDesc.setViewFormatCount(1);
-//        depthTextureDesc.setViewFormats( formatPtr );
-//        depthTexture = webGPU.wgpuDeviceCreateTexture(LibGPU.device, depthTextureDesc);
-
         depthTexture = new Texture(width, height, 1, WGPUTextureUsage.RenderAttachment,
                 depthTextureFormat,configuration.numSamples, depthTextureFormat );
 
-
         // Create the view of the depth texture manipulated by the rasterizer
-//            public TextureView(Texture texture, WGPUTextureAspect aspect, WGPUTextureViewDimension dimension, WGPUTextureFormat format,
-//        int baseMipLevel, int mipLevelCount, int baseArrayLayer, int arrayLayerCount)
         depthTextureView = new TextureView(depthTexture, WGPUTextureAspect.DepthOnly, WGPUTextureViewDimension._2D,depthTextureFormat, 0, 1, 0, 1 );
-//        WGPUTextureViewDescriptor depthTextureViewDesc = WGPUTextureViewDescriptor.createDirect();
-//        depthTextureViewDesc.setAspect(WGPUTextureAspect.DepthOnly);
-//        depthTextureViewDesc.setBaseArrayLayer(0);
-//        depthTextureViewDesc.setArrayLayerCount(1);
-//        depthTextureViewDesc.setBaseMipLevel(0);
-//        depthTextureViewDesc.setMipLevelCount(1);
-//        depthTextureViewDesc.setDimension( WGPUTextureViewDimension._2D);
-//        depthTextureViewDesc.setFormat(depthTextureFormat);
-//        depthTextureView = webGPU.wgpuTextureCreateView(depthTexture, depthTextureViewDesc);
-
     }
 
     private void terminateDepthBuffer(){
         // Destroy the depth texture and its view
         if(depthTextureView != null)
             depthTextureView.dispose();
-            //webGPU.wgpuTextureViewRelease(depthTextureView);
+
         if(depthTexture != null) {
             depthTexture.dispose();
-//            webGPU.wgpuTextureDestroy(depthTexture);
-//            webGPU.wgpuTextureRelease(depthTexture);
         }
         depthTextureView = null;
         depthTexture = null;
