@@ -47,6 +47,9 @@ public class TestComputeMipMap extends ApplicationAdapter {
         Pointer pixelPtr = info.pixels.get();
         texture.load(pixelPtr, 0);
 
+        int ok = ImageSave.saveToPNG("saved.png", pixelPtr, 256, 256, 4);
+        System.out.println("save png: "+ok);
+
         // note: the textures need to be different otherwise it doesn't work. Error: includes writable usage and another usage in the same synchronization scope
         inputTextureView =  new TextureView(texture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), 0, 1, 0, 1 );
         outputTextureView = new TextureView(destTexture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), 1, 1, 0, 1 );
@@ -102,6 +105,8 @@ public class TestComputeMipMap extends ApplicationAdapter {
         computeShader.dispose();
         bindGroup.dispose();
         bindGroupLayout.dispose();
+
+        ImageSave.saveToPNG("mip-1.png", destTexture,0);
     }
 
 

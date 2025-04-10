@@ -587,7 +587,7 @@ public class Texture implements Disposable {
         return ((int) x) & 0xff;
     }
 
-    protected static int numComponents(WGPUTextureFormat format ){
+    public static int numComponents(WGPUTextureFormat format ){
         int n = 4;
         switch(format) {
             case R8Unorm: n = 1; break;

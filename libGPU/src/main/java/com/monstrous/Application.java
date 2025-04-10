@@ -192,6 +192,7 @@ public class Application {
 
     private void initWebGPU(long windowHandle) {
         webGPU = JavaWebGPU.init();
+        System.out.println(JavaWebGPU.getVersionString());
         LibGPU.webGPU = webGPU;
 
         LibGPU.instance = webGPU.wgpuCreateInstance(null);
