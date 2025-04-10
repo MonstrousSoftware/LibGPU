@@ -4,10 +4,7 @@ import com.monstrous.graphics.BitmapFont;
 import com.monstrous.graphics.Color;
 import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.graphics.g2d.SpriteBatch;
-import com.monstrous.graphics.webgpu.BindGroup;
-import com.monstrous.graphics.webgpu.BindGroupLayout;
-import com.monstrous.graphics.webgpu.Buffer;
-import com.monstrous.graphics.webgpu.PipelineLayout;
+import com.monstrous.graphics.webgpu.*;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
@@ -33,10 +30,8 @@ public class TestCompute extends ApplicationAdapter {
 
     @Override
     public void create() {
-
         batch = new SpriteBatch();
         font = new BitmapFont();
-
         webGPU = LibGPU.webGPU;
 
         onCompute();
@@ -50,7 +45,7 @@ public class TestCompute extends ApplicationAdapter {
 
         // Create an intermediary buffer to which we copy the output and that can be
         // used for reading into the CPU memory (because Storage is incompatible with MapRead).
-        Buffer mapBuffer = new Buffer("Map buffer", BUFFER_SIZE,WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
+        Buffer mapBuffer = new Buffer("Map buffer", WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead, BUFFER_SIZE );
 
         // make a pipeline
         BindGroupLayout bindGroupLayout = makeBindGroupLayout();
@@ -107,7 +102,11 @@ public class TestCompute extends ApplicationAdapter {
         return webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device, pipelineDescriptor);
     }
 
+
+
     private void compute(BindGroup bindGroup, Buffer inputBuffer, Buffer outputBuffer, Buffer mapBuffer) {
+
+        Queue queue = new Queue(LibGPU.device);
 
         // Fill input buffer
         int numFloats = BUFFER_SIZE / Float.BYTES;
@@ -115,47 +114,34 @@ public class TestCompute extends ApplicationAdapter {
             inputData[i] = 0.1f * i;
         // copy float array to native memory
         Pointer input = JavaWebGPU.createFloatArrayPointer(inputData);
+
         // write to input buffer
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, inputBuffer.getHandle(), 0, input, BUFFER_SIZE);
+        queue.writeBuffer(inputBuffer, 0, input, BUFFER_SIZE);
 
-        // create a command encoder
-        WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
-        encoderDesc.setNextInChain();
-        Pointer encoder = webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDesc);
+        CommandEncoder encoder = new CommandEncoder(LibGPU.device);
 
-        // Create a compute pass
-        WGPUComputePassDescriptor passDesc = WGPUComputePassDescriptor.createDirect();
-        passDesc.setNextInChain();
-        passDesc.setTimestampWrites();
-        Pointer computePass = webGPU.wgpuCommandEncoderBeginComputePass(encoder, passDesc);
+        ComputePass pass = encoder.beginComputePass();
 
-        // set pipeline
-        webGPU.wgpuComputePassEncoderSetPipeline(computePass, pipeline);
-        // set bind group
-        webGPU.wgpuComputePassEncoderSetBindGroup(computePass, 0, bindGroup.getHandle(), 0, JavaWebGPU.createNullPointer());
+        // set pipeline & bind group 0
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(0, bindGroup);
 
         int workGroupSize = 32;
         int invocationCount = BUFFER_SIZE / Float.BYTES;    // nr of input values
         // This ceils invocationCount / workgroupSize
         int workgroupCount = (invocationCount + workGroupSize - 1) / workGroupSize;
-        webGPU.wgpuComputePassEncoderDispatchWorkgroups(computePass, workgroupCount, 1, 1);
+        pass.dispatchWorkGroups( workgroupCount, 1, 1);
 
-        webGPU.wgpuComputePassEncoderEnd(computePass);
+        pass.end();
 
         // copy output buffer to map buffer so that we can read it back
-        webGPU.wgpuCommandEncoderCopyBufferToBuffer(encoder, outputBuffer.getHandle(), 0, mapBuffer.getHandle(), 0, BUFFER_SIZE);
+        encoder.copyBufferToBuffer(outputBuffer, 0, mapBuffer, 0, BUFFER_SIZE);
 
         // finish the encoder to give use command buffer
-        WGPUCommandBufferDescriptor bufferDescriptor = WGPUCommandBufferDescriptor.createDirect();
-        bufferDescriptor.setNextInChain();
-        Pointer commandBuffer = webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
-        webGPU.wgpuCommandEncoderRelease(encoder);
-
+        CommandBuffer commandBuffer = encoder.finish();
+        encoder.dispose();
         // feed the command buffer to the queue
-        long[] buffers = new long[1];
-        buffers[0] = commandBuffer.address();
-        Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
-        webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
+        queue.submit(commandBuffer);
 
         boolean[] done = { false };
         WGPUBufferMapCallback callback = (WGPUBufferMapAsyncStatus status, Pointer userdata) -> {
@@ -168,8 +154,6 @@ public class TestCompute extends ApplicationAdapter {
                 System.out.println("Buffer map async error: "+status);
             done[0] = true; // signal that the call back was executed
         };
-
-
 
         // note: there is a newer function for this and using this one will raise a warning,
         // but it requires a struct containing a pointer to a callback function...
@@ -185,9 +169,10 @@ public class TestCompute extends ApplicationAdapter {
             System.out.print(" "+outputData[i]);
         System.out.println();
 
-        webGPU.wgpuCommandBufferRelease(commandBuffer);
-        webGPU.wgpuCommandEncoderRelease(encoder);
-        //webGPU.wgpuComputePassEncoderRelease(computePass); // causes crash
+        commandBuffer.dispose();
+        encoder.dispose();
+        pass.dispose();
+        queue.dispose();
     }
 
 
