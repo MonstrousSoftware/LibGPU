@@ -11,13 +11,13 @@ import jnr.ffi.Pointer;
  */
 public class ImageSave {
 
-    public static int saveToPNG(String filename, byte[] pixels, int width, int height, int numComponents){
+    public static int saveToPNG(String filename, byte[] pixels, int width, int height, int numComponents, int bytesPerRow){
         Pointer data = JavaWebGPU.createByteArrayPointer(pixels);
-        return JavaWebGPU.getUtils().write_png(filename, width, height, numComponents, data, width*numComponents);
+        return JavaWebGPU.getUtils().write_png(filename, width, height, numComponents, data, bytesPerRow);
     }
 
-    public static int saveToPNG(String filename, Pointer data, int width, int height, int numComponents){
-        return JavaWebGPU.getUtils().write_png(filename, width, height, numComponents, data, width*numComponents);
+    public static int saveToPNG(String filename, Pointer data, int width, int height, int numComponents, int bytesPerRow){
+        return JavaWebGPU.getUtils().write_png(filename, width, height, numComponents, data, bytesPerRow);
     }
 
     public static int saveToPNG(String filename, Texture texture, int mipLevel){
@@ -25,7 +25,7 @@ public class ImageSave {
         int width = texture.getWidth()/(1 << mipLevel);
         int height = texture.getHeight()/(1 << mipLevel);
         int numComponents = Texture.numComponents(texture.getFormat());
-        int bytesPerRow = width * numComponents;
+        final int bytesPerRow = align256(width * numComponents);        // buffer must have a multiple of 256 per row
         long bufferSize = (long) bytesPerRow * height;
 
         // create a buffer to hold the image data
@@ -73,7 +73,8 @@ public class ImageSave {
         WGPUBufferMapCallback callback = (WGPUBufferMapAsyncStatus status, Pointer userdata) -> {
             if (status == WGPUBufferMapAsyncStatus.Success) {
                 Pointer buf = LibGPU.webGPU.wgpuBufferGetConstMappedRange(buffer.getHandle(), 0, bufferSize);
-                saveToPNG(filename, buf, width, height, numComponents);
+                saveToPNG(filename, buf, width, height, numComponents, bytesPerRow);
+                //System.out.println("Saving texture as png: "+filename);
                 LibGPU.webGPU.wgpuBufferUnmap(buffer.getHandle());
             } else
                 System.out.println("Buffer map async error: "+status);
@@ -90,11 +91,15 @@ public class ImageSave {
             LibGPU.webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
 
         // cleanup
-        LibGPU.webGPU.wgpuCommandEncoderRelease(encoder);
         LibGPU.webGPU.wgpuCommandBufferRelease(commandBuffer);
 
         buffer.dispose();
 
         return 1;
+    }
+
+    private static int align256(int value){
+        int d = value / 256 + (value % 256 == 0 ? 0 : 1);
+        return 256 * d;
     }
 }

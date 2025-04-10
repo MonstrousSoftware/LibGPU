@@ -11,30 +11,22 @@ import jnr.ffi.Pointer;
 public class TestComputeMipMap extends ApplicationAdapter {
 
     private SpriteBatch batch;
-    private Texture sourceTexture;
+    private BitmapFont font;
     private ShaderProgram computeShader;
     private Texture texture;
-    private Texture destTexture;
-    private TextureView inputTextureView;
-    private TextureView outputTextureView;
+    private int mipLevels;
+    private TextureView[] textureViews;
     private Pointer pipeline;
     private WebGPU_JNI webGPU;
-
 
     @Override
     public void create() {
         webGPU = LibGPU.webGPU;
         batch = new SpriteBatch();
-
-        sourceTexture = new Texture("textures/jackRussel256.png", true);
+        font = new BitmapFont();
 
         int textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.StorageBinding|WGPUTextureUsage.CopyDst | WGPUTextureUsage.CopySrc;
-        destTexture = new Texture(128, 128, 1, textureUsage, WGPUTextureFormat.RGBA8Unorm, 1);
-
-        // create a texture with 2 mip levels
-        // level 0 to be filled from source file
-        //textureUsage = WGPUTextureUsage.TextureBinding | WGPUTextureUsage.StorageBinding|WGPUTextureUsage.CopyDst | WGPUTextureUsage.CopySrc;
-        int mipLevels = 8;
+        mipLevels = 8;
         texture = new Texture(256, 256, mipLevels, textureUsage, WGPUTextureFormat.RGBA8Unorm, 1);
 
 
@@ -47,12 +39,10 @@ public class TestComputeMipMap extends ApplicationAdapter {
         Pointer pixelPtr = info.pixels.get();
         texture.load(pixelPtr, 0);
 
-        int ok = ImageSave.saveToPNG("saved.png", pixelPtr, 256, 256, 4);
-        System.out.println("save png: "+ok);
-
-        // note: the textures need to be different otherwise it doesn't work. Error: includes writable usage and another usage in the same synchronization scope
-        inputTextureView =  new TextureView(texture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), 0, 1, 0, 1 );
-        outputTextureView = new TextureView(destTexture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), 1, 1, 0, 1 );
+        // create separate texture views per mip level
+        textureViews = new TextureView[mipLevels];
+        for(int mip = 0; mip < mipLevels; mip++)
+            textureViews[mip] =  new TextureView(texture, WGPUTextureAspect.All, WGPUTextureViewDimension._2D, texture.getFormat(), mip, 1, 0, 1 );
 
         onCompute();
     }
@@ -64,18 +54,29 @@ public class TestComputeMipMap extends ApplicationAdapter {
             return;
         }
 
-        // SpriteBatch testing
+
         batch.begin(Color.TEAL);
-        batch.draw(sourceTexture, 0,0, 512, 512);        // normal texture
-        batch.draw(destTexture, 512,0, 512, 512);        // normal texture
+        batch.draw(texture, 0, 0, 256, 256);
+        batch.draw(texture, 256, 0, 128, 128);
+        batch.draw(texture, 256+128, 0, 64, 64);
+        batch.draw(texture, 256+128+64, 0, 32, 32);
+        batch.draw(texture, 256+128+64+32, 0, 16, 16);
+        batch.draw(texture, 256+128+64+32+16, 0, 8, 8);
+        batch.draw(texture, 256+128+64+32+16+8, 0, 4, 4);
+        batch.draw(texture, 256+128+64+32+16+8+4, 0, 2, 2);
+
+        font.draw(batch, "Mip maps were computed by a compute shader", 10, LibGPU.graphics.getHeight()-50);
         batch.end();
     }
 
     @Override
     public void dispose(){
         // cleanup
+        for(int mip = 0; mip < mipLevels; mip++)
+            textureViews[mip].dispose();
         texture.dispose();
         batch.dispose();
+        font.dispose();
     }
 
     @Override
@@ -86,27 +87,26 @@ public class TestComputeMipMap extends ApplicationAdapter {
 
     private void onCompute() {
 
-        // make a pipeline
-
-        BindGroupLayout bindGroupLayout = makeBindGroupLayout();
-        BindGroup bindGroup = makeBindGroup(bindGroupLayout);
 
         // compute shader
         computeShader = new ShaderProgram(Files.internal("shaders/compute-mipmap.wgsl"));
 
+        // make a pipeline
+        BindGroupLayout bindGroupLayout = makeBindGroupLayout();
         PipelineLayout pipelineLayout = new PipelineLayout("compute pipeline layout", bindGroupLayout);
         pipeline = makeComputePipeline(computeShader, pipelineLayout);
 
-        compute(bindGroup);
+        compute(bindGroupLayout);
 
         // cleanup
         webGPU.wgpuComputePipelineRelease(pipeline);
         pipelineLayout.dispose();
         computeShader.dispose();
-        bindGroup.dispose();
         bindGroupLayout.dispose();
 
-        ImageSave.saveToPNG("mip-1.png", destTexture,0);
+        for(int mip = 1; mip < mipLevels; mip++) {
+            ImageSave.saveToPNG("mip-"+mip+".png", texture, mip);
+        }
     }
 
 
@@ -124,11 +124,11 @@ public class TestComputeMipMap extends ApplicationAdapter {
         return bindGroupLayout;
     }
 
-    private BindGroup makeBindGroup(BindGroupLayout bindGroupLayout){
+    private BindGroup makeBindGroup(BindGroupLayout bindGroupLayout, int nextMipLevel){
         // create bind group
         BindGroup bindGroup = new BindGroup(bindGroupLayout);
-        bindGroup.addTexture(0, inputTextureView);
-        bindGroup.addTexture(1, outputTextureView);
+        bindGroup.addTexture(0, textureViews[nextMipLevel-1]);
+        bindGroup.addTexture(1, textureViews[nextMipLevel]);
         bindGroup.end();
         return bindGroup;
     }
@@ -146,7 +146,7 @@ public class TestComputeMipMap extends ApplicationAdapter {
         return LibGPU.webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device, pipelineDescriptor);
     }
 
-    private void compute(BindGroup bindGroup) {
+    private void compute(BindGroupLayout bindGroupLayout) {
 
         // create a command encoder
         WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
@@ -161,21 +161,29 @@ public class TestComputeMipMap extends ApplicationAdapter {
 
         // set pipeline
         webGPU.wgpuComputePassEncoderSetPipeline(computePass, pipeline);
-        // set bind group
-        webGPU.wgpuComputePassEncoderSetBindGroup(computePass, 0, bindGroup.getHandle(), 0, JavaWebGPU.createNullPointer());
+        int width = texture.getWidth();
+        int height = texture.getHeight();
+        for(int mip = 1; mip < mipLevels; mip++) {
 
-        // use one thread per texel of the output, i.e. half the size of the input texture
-        int invocationCountX = texture.getWidth() / 2;
-        int invocationCountY = texture.getHeight() / 2;
+            BindGroup bindGroup = makeBindGroup(bindGroupLayout, mip);
+            // set bind group
+            webGPU.wgpuComputePassEncoderSetBindGroup(computePass, 0, bindGroup.getHandle(), 0, JavaWebGPU.createNullPointer());
 
-        int workgroupSizePerDim = 8;
-        // This ceils invocationCountX / workgroupSizePerDim
-        int workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
-        int workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
+            width /= 2;
+            height /= 2;
+            // use one thread per texel of the output, i.e. half the size of the input texture
+            int invocationCountX = width;
+            int invocationCountY = height;
 
-        // dispatch workgroups
-        webGPU.wgpuComputePassEncoderDispatchWorkgroups(computePass, workgroupCountX,workgroupCountY, 1);
+            int workgroupSizePerDim = 8;
+            // This ceils invocationCountX / workgroupSizePerDim
+            int workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
+            int workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
 
+            // dispatch workgroups
+            webGPU.wgpuComputePassEncoderDispatchWorkgroups(computePass, workgroupCountX, workgroupCountY, 1);
+            bindGroup.dispose();
+        }
         webGPU.wgpuComputePassEncoderEnd(computePass);
 
         // finish the encoder to give use command buffer
@@ -185,13 +193,11 @@ public class TestComputeMipMap extends ApplicationAdapter {
         webGPU.wgpuCommandEncoderRelease(encoder);
 
         // feed the command buffer to the queue
+
         long[] buffers = new long[1];
         buffers[0] = commandBuffer.address();
         Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
         webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
-
-
-        webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
 
         webGPU.wgpuCommandBufferRelease(commandBuffer);
         webGPU.wgpuCommandEncoderRelease(encoder);

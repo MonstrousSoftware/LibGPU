@@ -7,7 +7,7 @@ group = 'com.monstrous'
 version = '1.0-SNAPSHOT'
 
 repositories {
-    mavenLocal();
+    //mavenLocal();
     mavenCentral()
     maven { url 'https://jitpack.io' }
 }

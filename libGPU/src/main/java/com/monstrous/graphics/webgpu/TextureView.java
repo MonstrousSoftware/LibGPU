@@ -41,9 +41,9 @@ public class TextureView implements Disposable {
         // Create the view of the  texture manipulated by the rasterizer
         WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();   // todo reuse
         textureViewDesc.setAspect(WGPUTextureAspect.All);
-        textureViewDesc.setBaseArrayLayer(0);
+        textureViewDesc.setBaseArrayLayer(baseArrayLayer);
         textureViewDesc.setArrayLayerCount(arrayLayerCount);
-        textureViewDesc.setBaseMipLevel(0);
+        textureViewDesc.setBaseMipLevel(baseMipLevel);
         textureViewDesc.setMipLevelCount(mipLevelCount);
         textureViewDesc.setDimension(dimension);
         textureViewDesc.setFormat(texture.getFormat());
