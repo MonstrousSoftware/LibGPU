@@ -151,13 +151,14 @@ public class ShapeRenderer implements Disposable {
         int numFloats = numRects * 4 * vertexSize;
         Pointer data = JavaWebGPU.createDirectPointer(numFloats * Float.BYTES);
         data.put(0, vertFloats, 0, numFloats);
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer, vbOffset, data, (int) numFloats*Float.BYTES);
+        //LibGPU.queue.writeBuffer(vertexBuffer, vbOffset, data, (int) numFloats*Float.BYTES);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue.getHandle(), vertexBuffer, vbOffset, data, (long) numFloats*Float.BYTES);
 
 
         // Upload index data to the buffer
         Pointer idata = JavaWebGPU.createDirectPointer( numRects*6*Short.BYTES);
         idata.put(0, indexValues, 0, numRects*6);
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer, ibOffset, idata, (int) numRects*6*Short.BYTES);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue.getHandle(), indexBuffer, ibOffset, idata,  numRects*6*Short.BYTES);
 
 
         Pointer bg = makeBindGroup();
@@ -330,7 +331,7 @@ public class ShapeRenderer implements Disposable {
         setUniformMatrix(uniformData, offset, projectionMatrix);
         offset += 16*Float.BYTES;
 
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, uniformBuffer, 0, uniformData, uniformBufferSize);
+        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue.getHandle(), uniformBuffer, 0, uniformData, uniformBufferSize);
     }
 
     private Pointer createBindGroupLayout() {

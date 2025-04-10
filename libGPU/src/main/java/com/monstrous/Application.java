@@ -16,11 +16,10 @@
 
 package com.monstrous;
 
-import com.monstrous.graphics.webgpu.TextureView;
+import com.monstrous.graphics.webgpu.*;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import com.monstrous.graphics.Texture;
-import com.monstrous.graphics.webgpu.RenderPassBuilder;
 import com.monstrous.webgpu.WebGPU_JNI;
 import jnr.ffi.Pointer;
 import org.lwjgl.system.MemoryStack;
@@ -50,8 +49,8 @@ public class Application {
 
     private final WGPUSurfaceTexture surfaceTexture;
     private final WGPUTextureViewDescriptor viewDescriptor;
-    private final WGPUCommandEncoderDescriptor encoderDescriptor;
-    private final WGPUCommandBufferDescriptor bufferDescriptor;
+//    private final WGPUCommandEncoderDescriptor encoderDescriptor;
+//    private final WGPUCommandBufferDescriptor bufferDescriptor;
 
 
 
@@ -79,8 +78,8 @@ public class Application {
         // pre-allocate some structures we'll use often
         surfaceTexture = WGPUSurfaceTexture.createDirect();
         viewDescriptor = WGPUTextureViewDescriptor.createDirect();
-        encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
-        bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
+//        encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
+//        bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
 
         while(listener != null) {
 
@@ -104,17 +103,22 @@ public class Application {
                         return;
                     }
 
-                    LibGPU.commandEncoder = prepareEncoder();
+                    CommandEncoder encoder = new CommandEncoder(LibGPU.device);
+                    LibGPU.commandEncoder = encoder.getHandle();        // e.g. RenderPassBuilder needs it
+                    //LibGPU.commandEncoder = prepareEncoder();
 
                     LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
                     LibGPU.graphics.passNumber = 0;
 
                     listener.render();
 
-                    finishEncoder(LibGPU.commandEncoder);
+                    finishEncoder(encoder);
+                    //finishEncoder(LibGPU.commandEncoder);
+                    //LibGPU.commandEncoder = null;
+                    encoder.dispose();
                     LibGPU.commandEncoder = null;
 
-                    // At the end of the frame
+                            // At the end of the frame
                     webGPU.wgpuTextureViewRelease(targetView);
                     webGPU.wgpuSurfacePresent(LibGPU.surface);
                 }
@@ -332,7 +336,7 @@ public class Application {
         }
 
 
-        LibGPU.queue = webGPU.wgpuDeviceGetQueue(device);
+        LibGPU.queue = new Queue(device); //webGPU.wgpuDeviceGetQueue(device);
 
 //        // use a lambda expression to define a callback function
 //        WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
@@ -392,7 +396,8 @@ public class Application {
     }
 
     private void terminateDevice(){
-        webGPU.wgpuQueueRelease(LibGPU.queue);
+        LibGPU.queue.dispose();
+        //webGPU.wgpuQueueRelease(LibGPU.queue);
         webGPU.wgpuDeviceRelease(LibGPU.device);
     }
 
@@ -471,29 +476,57 @@ public class Application {
         depthTexture = null;
     }
 
-    public Pointer prepareEncoder() {
-        encoderDescriptor.setNextInChain().setLabel("My Encoder");
-        return webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDescriptor);
-    }
+//    public Pointer prepareEncoder() {
+//        encoderDescriptor.setNextInChain().setLabel("My Encoder");
+//        return webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDescriptor);
+//    }
 
-    public void finishEncoder(Pointer encoder){
-        gpuTiming.resolveTimeStamps(encoder);
+//    public void finishEncoder(Pointer encoder){
+//        gpuTiming.resolveTimeStamps(encoder);
+//
+//        //CommandBuffer commandBuffer = enod
+//
+//        bufferDescriptor.setNextInChain().setLabel("Command Buffer");
+//        Pointer commandBuffer = webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
+//        webGPU.wgpuCommandEncoderRelease(encoder);
+//
+//        try (MemoryStack stack = stackPush()) {
+//            // create native array of command buffer pointers
+//            ByteBuffer pBuffers = stack.malloc(Long.BYTES);
+//            pBuffers.putLong(0, commandBuffer.address());
+//
+//            webGPU.wgpuQueueSubmit(LibGPU.queue, 1, JavaWebGPU.createByteBufferPointer(pBuffers));
+//        }
+//
+//        gpuTiming.fetchTimestamps();
+//
+//        webGPU.wgpuCommandBufferRelease(commandBuffer);
+//    }
 
-        bufferDescriptor.setNextInChain().setLabel("Command Buffer");
-        Pointer commandBuffer = webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
-        webGPU.wgpuCommandEncoderRelease(encoder);
+    public void finishEncoder(CommandEncoder encoder){
+        gpuTiming.resolveTimeStamps(encoder.getHandle());
 
-        try (MemoryStack stack = stackPush()) {
-            // create native array of command buffer pointers
-            ByteBuffer pBuffers = stack.malloc(Long.BYTES);
-            pBuffers.putLong(0, commandBuffer.address());
+        CommandBuffer commandBuffer = encoder.finish();
 
-            webGPU.wgpuQueueSubmit(LibGPU.queue, 1, JavaWebGPU.createByteBufferPointer(pBuffers));
-        }
+        LibGPU.queue.submit(commandBuffer);
+
+//        bufferDescriptor.setNextInChain().setLabel("Command Buffer");
+//        Pointer commandBuffer = webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
+//        webGPU.wgpuCommandEncoderRelease(encoder);
+
+//        try (MemoryStack stack = stackPush()) {
+//            // create native array of command buffer pointers
+//            ByteBuffer pBuffers = stack.malloc(Long.BYTES);
+//            pBuffers.putLong(0, commandBuffer.address());
+//
+//            webGPU.wgpuQueueSubmit(LibGPU.queue, 1, JavaWebGPU.createByteBufferPointer(pBuffers));
+//        }
 
         gpuTiming.fetchTimestamps();
 
-        webGPU.wgpuCommandBufferRelease(commandBuffer);
+        commandBuffer.dispose();
+
+       // webGPU.wgpuCommandBufferRelease(commandBuffer);
     }
 
 

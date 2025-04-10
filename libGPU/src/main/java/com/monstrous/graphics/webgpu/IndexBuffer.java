@@ -95,6 +95,7 @@ public class IndexBuffer extends Buffer {
         if(indexBufferSize > getSize()) throw new IllegalArgumentException("IndexBuffer.setIndices: data too large.");
 
         // Upload data to the buffer
-        LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, getHandle(), 0, idata, indexBufferSize);
+        LibGPU.queue.writeBuffer(this, 0, idata, indexBufferSize);
+        //LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, getHandle(), 0, idata, indexBufferSize);
     }
 }

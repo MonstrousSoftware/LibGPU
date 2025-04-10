@@ -16,6 +16,7 @@
 
 package com.monstrous;
 
+import com.monstrous.graphics.webgpu.Queue;
 import com.monstrous.webgpu.WGPUSupportedLimits;
 import com.monstrous.webgpu.WGPUTextureFormat;
 import com.monstrous.webgpu.WebGPU_JNI;
@@ -33,6 +34,7 @@ public class LibGPU {
     public static WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
     public static WGPUSupportedLimits supportedLimits;
     public static Pointer device;
-    public static Pointer queue;
+    public static Queue queue;
+    //public static Pointer queue;
     public static Pointer commandEncoder;
 }

@@ -23,6 +23,7 @@ import com.monstrous.graphics.*;
 import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.g3d.shapeBuilder.BoxShapeBuilder;
 import com.monstrous.graphics.lights.Environment;
+import com.monstrous.graphics.webgpu.CommandEncoder;
 import com.monstrous.graphics.webgpu.RenderPassType;
 import com.monstrous.math.Vector3;
 import com.monstrous.utils.Disposable;
@@ -56,12 +57,15 @@ public class ImageBasedLighting implements Disposable {
         ModelInstance instance = new ModelInstance(cube);
 
         environment.shaderSourcePath = "shaders/modelbatchEquilateral.wgsl";
-        LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+        CommandEncoder encoder = new CommandEncoder(LibGPU.device);
+        LibGPU.commandEncoder = encoder.getHandle(); //LibGPU.app.prepareEncoder();
         LibGPU.graphics.passNumber = 0;
 
         constructSideTextures(instance, size);
         CubeMap environmentMap = copyTextures(size);
-        LibGPU.app.finishEncoder(LibGPU.commandEncoder);
+
+        LibGPU.app.finishEncoder(encoder);
+        encoder.dispose();
         environment.shaderSourcePath = null;
         cube.dispose();
 
@@ -74,12 +78,14 @@ public class ImageBasedLighting implements Disposable {
         ModelInstance instance = new ModelInstance(cube);
         environment.shaderSourcePath = "shaders/modelbatchCubeMapIrradiance.wgsl";
         environment.setCubeMap(environmentMap);
-        LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+        CommandEncoder encoder = new CommandEncoder(LibGPU.device);
+        LibGPU.commandEncoder = encoder.getHandle(); //LibGPU.app.prepareEncoder();
         LibGPU.graphics.passNumber = 0;
 
         constructSideTextures(instance, size);
         CubeMap irradianceMap = copyTextures(size);
-        LibGPU.app.finishEncoder(LibGPU.commandEncoder);
+        LibGPU.app.finishEncoder(encoder);
+        encoder.dispose();
         environment.shaderSourcePath = null;
         cube.dispose();
         return irradianceMap;
@@ -96,12 +102,14 @@ public class ImageBasedLighting implements Disposable {
         environment.setCubeMap(environmentMap);
 
         for(int mip = 0; mip < mipLevels; mip++) {
-            LibGPU.commandEncoder = LibGPU.app.prepareEncoder();
+            CommandEncoder encoder = new CommandEncoder(LibGPU.device);
+            LibGPU.commandEncoder = encoder.getHandle(); //LibGPU.app.prepareEncoder();
             LibGPU.graphics.passNumber = 0;
             environment.ambientLightLevel = (float)mip/(mipLevels-1);   // hacky; use this to pass roughness level
             constructSideTextures(instance, size);
             copyTextures(prefilterMap, size, mip);
-            LibGPU.app.finishEncoder(LibGPU.commandEncoder);
+            LibGPU.app.finishEncoder(encoder);
+            encoder.dispose();
             size /= 2;
         }
         environment.shaderSourcePath = null;

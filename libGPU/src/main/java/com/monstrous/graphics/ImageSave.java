@@ -2,6 +2,8 @@ package com.monstrous.graphics;
 
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.webgpu.Buffer;
+import com.monstrous.graphics.webgpu.CommandBuffer;
+import com.monstrous.graphics.webgpu.CommandEncoder;
 import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
@@ -32,9 +34,10 @@ public class ImageSave {
         Buffer buffer = new Buffer("image save buffer", WGPUBufferUsage.MapRead|WGPUBufferUsage.CopyDst,  bufferSize);
 
         // create a command encoder
-        WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
-        encoderDesc.setNextInChain();
-        Pointer encoder = LibGPU.webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDesc);
+        CommandEncoder encoder = new CommandEncoder(LibGPU.device);
+//        WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
+//        encoderDesc.setNextInChain();
+//        Pointer encoder = LibGPU.webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDesc);
 
         // texture to copy
         WGPUImageCopyTexture copyTexture = WGPUImageCopyTexture.createDirect()
@@ -54,19 +57,24 @@ public class ImageSave {
         WGPUExtent3D extent = WGPUExtent3D.createDirect().setWidth(width).setHeight(height).setDepthOrArrayLayers(1);
 
         // copy texture to buffer
-        LibGPU.webGPU.wgpuCommandEncoderCopyTextureToBuffer(encoder, copyTexture, copyBuffer, extent);
+        LibGPU.webGPU.wgpuCommandEncoderCopyTextureToBuffer(encoder.getHandle(), copyTexture, copyBuffer, extent);
 
         // finish the encoder to give us command buffer
-        WGPUCommandBufferDescriptor bufferDescriptor = WGPUCommandBufferDescriptor.createDirect();
-        bufferDescriptor.setNextInChain();
-        Pointer commandBuffer = LibGPU.webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
-        LibGPU.webGPU.wgpuCommandEncoderRelease(encoder);
+        CommandBuffer commandBuffer = encoder.finish();
+        encoder.dispose();
+        LibGPU.queue.submit(commandBuffer);
 
-        // feed the command buffer to the queue
-        long[] buffers = new long[1];
-        buffers[0] = commandBuffer.address();
-        Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
-        LibGPU.webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
+
+//        WGPUCommandBufferDescriptor bufferDescriptor = WGPUCommandBufferDescriptor.createDirect();
+//        bufferDescriptor.setNextInChain();
+//        Pointer commandBuffer = LibGPU.webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
+//        LibGPU.webGPU.wgpuCommandEncoderRelease(encoder);
+//
+//        // feed the command buffer to the queue
+//        long[] buffers = new long[1];
+//        buffers[0] = commandBuffer.address();
+//        Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
+//        LibGPU.webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
 
         // map buffer
         boolean[] done = { false };
@@ -91,7 +99,8 @@ public class ImageSave {
             LibGPU.webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
 
         // cleanup
-        LibGPU.webGPU.wgpuCommandBufferRelease(commandBuffer);
+        commandBuffer.dispose();
+        //LibGPU.webGPU.wgpuCommandBufferRelease(commandBuffer);
 
         buffer.dispose();
 

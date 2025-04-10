@@ -175,7 +175,7 @@ public class TestComputeRaw extends ApplicationAdapter {
         // copy float array to native memory
         Pointer input = JavaWebGPU.createFloatArrayPointer(inputData);
         // write to input buffer
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, inputBuffer, 0, input, BUFFER_SIZE);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue.getHandle(), inputBuffer, 0, input, BUFFER_SIZE);
 
         // create a command encoder
         WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
@@ -214,7 +214,7 @@ public class TestComputeRaw extends ApplicationAdapter {
         long[] buffers = new long[1];
         buffers[0] = commandBuffer.address();
         Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
-        webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
+        webGPU.wgpuQueueSubmit(LibGPU.queue.getHandle(), 1, bufferPtr);
 
         boolean[] done = { false };
         WGPUBufferMapCallback callback = (WGPUBufferMapAsyncStatus status, Pointer userdata) -> {

@@ -123,7 +123,7 @@ public class SpriteBatch implements Disposable {
         }
         indexData.flip();
         Pointer indexDataPtr = Pointer.wrap(JavaWebGPU.getRuntime(), bb);
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, indexBuffer.getHandle(), 0, indexDataPtr, (long) maxSprites *6*Short.BYTES);
+        webGPU.wgpuQueueWriteBuffer(LibGPU.queue.getHandle(), indexBuffer.getHandle(), 0, indexDataPtr, (long) maxSprites *6*Short.BYTES);
     }
 
 
@@ -217,7 +217,8 @@ public class SpriteBatch implements Disposable {
         int numBytes = numRects * 4 * vertexSize;
 
         // append new vertex data to GPU vertex buffer
-        webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer.getHandle(), vbOffset, vertexDataPtr, numBytes);
+        LibGPU.queue.writeBuffer(vertexBuffer, vbOffset, vertexDataPtr, numBytes);
+        //webGPU.wgpuQueueWriteBuffer(LibGPU.queue, vertexBuffer.getHandle(), vbOffset, vertexDataPtr, numBytes);
 
         // bind texture
         BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer, texture);

@@ -280,7 +280,7 @@ public class Texture implements Disposable {
         destination.setMipLevel(0);
 
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelPtr, width * height * 4, source, ext);
    }
 
     /** fill textures using bytes arranged as r, g, b, a, r, g, b, a, etc.
@@ -314,7 +314,7 @@ public class Texture implements Disposable {
         destination.setMipLevel(0);
 
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelPtr, width * height * 4, source, ext);
     }
 
     /** fill textures using floats arranged as r, g, b, a, r, g, b, a, etc.
@@ -349,7 +349,7 @@ public class Texture implements Disposable {
         destination.setMipLevel(0);
 
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, width * height * 4L*Float.BYTES, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelPtr, width * height * 4L*Float.BYTES, source, ext);
     }
 
     public void fillHDR(Color color) {
@@ -395,7 +395,7 @@ public class Texture implements Disposable {
         destination.setMipLevel(0);
 
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, (long) width * height * 4*4, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelPtr, (long) width * height * 4*4, source, ext);
     }
 
 
@@ -478,13 +478,13 @@ public class Texture implements Disposable {
             ext.setDepthOrArrayLayers(1);
 
             if(mipLevel == 0){
-                LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelPtr, mipLevelWidth * mipLevelHeight * 4, source, ext);
+                LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelPtr, mipLevelWidth * mipLevelHeight * 4, source, ext);
             } else {
 
                 // wrap byte array in native pointer
                 Pointer pixelData = JavaWebGPU.createByteArrayPointer(pixels);
                 // N.B. using textureDesc.getSize() for param won't work!
-                LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
+                LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelData, mipLevelWidth * mipLevelHeight * 4, source, ext);
             }
 
             mipLevelWidth /= 2;
@@ -526,7 +526,7 @@ public class Texture implements Disposable {
         ext.setHeight(height);
         ext.setDepthOrArrayLayers(1);
 
-        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, data, 4L * width * height, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, data, 4L * width * height, source, ext);
     }
 
 
@@ -578,7 +578,7 @@ public class Texture implements Disposable {
         // wrap byte array in native pointer
         Pointer pixelData = JavaWebGPU.createFloatArrayPointer(pixels);
         // N.B. using textureDesc.getSize() for param won't work!
-        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue, destination, pixelData, width * height * 8, source, ext);
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelData, width * height * 8, source, ext);
 
     }
 
