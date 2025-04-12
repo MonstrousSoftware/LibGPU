@@ -146,63 +146,6 @@ public class TestComputeMipMap extends ApplicationAdapter {
         return LibGPU.webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device.getHandle(), pipelineDescriptor);
     }
 
-//    private void compute(BindGroupLayout bindGroupLayout) {
-//
-//        // create a command encoder
-//        WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
-//        encoderDesc.setNextInChain();
-//        Pointer encoder = webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDesc);
-//
-//        // Create a compute pass
-//        WGPUComputePassDescriptor passDesc = WGPUComputePassDescriptor.createDirect();
-//        passDesc.setNextInChain();
-//        passDesc.setTimestampWrites();
-//        Pointer computePass = webGPU.wgpuCommandEncoderBeginComputePass(encoder, passDesc);
-//
-//        // set pipeline
-//        webGPU.wgpuComputePassEncoderSetPipeline(computePass, pipeline);
-//        int width = texture.getWidth();
-//        int height = texture.getHeight();
-//        for(int mip = 1; mip < mipLevels; mip++) {
-//
-//            BindGroup bindGroup = makeBindGroup(bindGroupLayout, mip);
-//            // set bind group
-//            webGPU.wgpuComputePassEncoderSetBindGroup(computePass, 0, bindGroup.getHandle(), 0, JavaWebGPU.createNullPointer());
-//
-//            width /= 2;
-//            height /= 2;
-//            // use one thread per texel of the output, i.e. half the size of the input texture
-//            int invocationCountX = width;
-//            int invocationCountY = height;
-//
-//            int workgroupSizePerDim = 8;
-//            // This ceils invocationCountX / workgroupSizePerDim
-//            int workgroupCountX = (invocationCountX + workgroupSizePerDim - 1) / workgroupSizePerDim;
-//            int workgroupCountY = (invocationCountY + workgroupSizePerDim - 1) / workgroupSizePerDim;
-//
-//            // dispatch workgroups
-//            webGPU.wgpuComputePassEncoderDispatchWorkgroups(computePass, workgroupCountX, workgroupCountY, 1);
-//            bindGroup.dispose();
-//        }
-//        webGPU.wgpuComputePassEncoderEnd(computePass);
-//
-//        // finish the encoder to give use command buffer
-//        WGPUCommandBufferDescriptor bufferDescriptor = WGPUCommandBufferDescriptor.createDirect();
-//        bufferDescriptor.setNextInChain();
-//        Pointer commandBuffer = webGPU.wgpuCommandEncoderFinish(encoder, bufferDescriptor);
-//        webGPU.wgpuCommandEncoderRelease(encoder);
-//
-//        // feed the command buffer to the queue
-//
-//        long[] buffers = new long[1];
-//        buffers[0] = commandBuffer.address();
-//        Pointer bufferPtr = JavaWebGPU.createLongArrayPointer(buffers);
-//        webGPU.wgpuQueueSubmit(LibGPU.queue, 1, bufferPtr);
-//
-//        webGPU.wgpuCommandBufferRelease(commandBuffer);
-//        //webGPU.wgpuComputePassEncoderRelease(computePass); // causes crash
-//    }
-
     private void compute2(BindGroupLayout bindGroupLayout) {
 
         Queue queue = new Queue(LibGPU.device);

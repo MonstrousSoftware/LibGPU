@@ -72,10 +72,6 @@ public class SpriteBatch implements Disposable {
         webGPU = LibGPU.webGPU;
 
         vertexAttributes = new VertexAttributes(VertexAttribute.Usage.POSITION_2D|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.COLOR_PACKED);
-//        vertexAttributes.add(VertexAttribute.Usage.POSITION, "position",        WGPUVertexFormat.Float32x2, 0 );
-//        vertexAttributes.add(VertexAttribute.Usage.TEXTURE_COORDINATE, "uv",    WGPUVertexFormat.Float32x2, 1 );
-//        vertexAttributes.add(VertexAttribute.Usage.COLOR_PACKED,"color",        WGPUVertexFormat.Unorm8x4, 2 );
-//        vertexAttributes.end();
         defaultVertexAttributes = vertexAttributes;
 
         // vertex: x, y, u, v, rgba
@@ -256,7 +252,7 @@ public class SpriteBatch implements Disposable {
     private void setPipeline() {
         Pipeline pipeline = pipelines.findPipeline( pipelineLayout.getHandle(), pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
-            renderPass.setPipeline(pipeline.getPipeline());
+            renderPass.setPipeline(pipeline.getHandle());
             prevPipeline = pipeline;
         }
     }

@@ -149,8 +149,7 @@ public class UniformBuffer extends Buffer {
         int dataSize = offset;
         if(dataSize > contentSize) throw new RuntimeException("Overflow in UniformBuffer: content ("+dataSize+") > size ("+contentSize+").");
         if(destOffset > getSize()-dataSize) throw new IllegalArgumentException("UniformBuffer: offset too large.");
-        LibGPU.queue.writeBuffer(this, destOffset, floatData, dataSize);
-        //LibGPU.webGPU.wgpuQueueWriteBuffer(LibGPU.queue, getHandle(), destOffset, floatData, dataSize);
+        write(destOffset, floatData, dataSize);
     }
 
 }

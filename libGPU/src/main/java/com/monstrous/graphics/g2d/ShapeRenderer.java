@@ -190,7 +190,7 @@ public class ShapeRenderer implements Disposable {
     private void setPipeline() {
         Pipeline pipeline = pipelines.findPipeline( pipelineLayout, pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
-            renderPass.setPipeline( pipeline.getPipeline());
+            renderPass.setPipeline( pipeline.getHandle());
             prevPipeline = pipeline;
         }
     }

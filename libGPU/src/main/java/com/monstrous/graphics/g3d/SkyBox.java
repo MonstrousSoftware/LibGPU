@@ -19,7 +19,6 @@ package com.monstrous.graphics.g3d;
 import com.monstrous.LibGPU;
 import com.monstrous.graphics.Camera;
 import com.monstrous.graphics.CubeMap;
-import com.monstrous.graphics.Texture;
 import com.monstrous.graphics.webgpu.*;
 import com.monstrous.math.Matrix4;
 import com.monstrous.math.Vector3;
@@ -81,7 +80,7 @@ public class SkyBox implements Disposable {
     public void render(Camera camera, RenderPass pass){
         writeUniforms(uniformBuffer, camera);
 
-        pass.setPipeline(pipeline.getPipeline());
+        pass.setPipeline(pipeline.getHandle());
         pass.setBindGroup(0, bindGroup.getHandle());
         pass.draw(3);
     }

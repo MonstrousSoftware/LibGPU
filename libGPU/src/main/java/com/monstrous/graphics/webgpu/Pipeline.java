@@ -24,9 +24,6 @@ import com.monstrous.graphics.ShaderProgram;
 import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
-import org.lwjgl.system.MemoryStack;
-
-import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class Pipeline implements Disposable {
 
@@ -167,7 +164,7 @@ public class Pipeline implements Disposable {
 //                spec.hasDepth == this.specification.hasDepth);
     }
 
-    public Pointer getPipeline(){
+    public Pointer getHandle(){
         return pipeline;
     }
 

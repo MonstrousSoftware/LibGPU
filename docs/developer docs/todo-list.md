@@ -20,7 +20,7 @@
 - 
 Model loader:
 
-- Support for animations
+- DONE Support for animations
 - Support for groups/objects on OBJ files, currently it always produces one meshPart
 - Support for G3DB format
 

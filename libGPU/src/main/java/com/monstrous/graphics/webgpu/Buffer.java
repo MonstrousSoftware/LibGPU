@@ -54,6 +54,11 @@ public class Buffer implements Disposable {
         return bufferSize;
     }
 
+    public void write(int destOffset, Pointer data, int dataSize){
+        if(destOffset + dataSize > bufferSize) throw new RuntimeException("Overflow in Buffer.write().");
+        LibGPU.queue.writeBuffer(this, destOffset, data, dataSize);
+    }
+
     @Override
     public void dispose() {
         LibGPU.webGPU.wgpuBufferDestroy(handle);

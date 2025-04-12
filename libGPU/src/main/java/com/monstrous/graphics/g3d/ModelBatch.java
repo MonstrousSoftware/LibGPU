@@ -358,7 +358,7 @@ public class ModelBatch implements Disposable {
 
         Pipeline pipeline = pipelines.findPipeline(pipelineLayout.getHandle(), pipelineSpec);
         if (pipeline != prevPipeline) { // avoid unneeded switches
-            pass.setPipeline(pipeline.getPipeline());
+            pass.setPipeline(pipeline.getHandle());
             prevPipeline = pipeline;
             numPipelineSwitches++;
         }
