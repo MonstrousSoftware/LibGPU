@@ -26,7 +26,7 @@ public class PipelineLayout implements Disposable {
             pipelineLayoutDesc.setLabel(label);
             pipelineLayoutDesc.setBindGroupLayoutCount(count);
             pipelineLayoutDesc.setBindGroupLayouts(JavaWebGPU.createByteBufferPointer(pLayouts));  // expects an array of layouts in native memory
-            handle = LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, pipelineLayoutDesc);
+            handle = LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device.getHandle(), pipelineLayoutDesc);
         } // free malloced memory
     }
 

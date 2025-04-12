@@ -60,7 +60,7 @@ public class ShaderProgram implements Disposable {
 
             shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
-        shaderModule = LibGPU.webGPU.wgpuDeviceCreateShaderModule(LibGPU.device, shaderDesc);
+        shaderModule = LibGPU.webGPU.wgpuDeviceCreateShaderModule(LibGPU.device.getHandle(), shaderDesc);
         if(shaderModule == null)
             throw new RuntimeException("ShaderModule: compile failed "+name);
 

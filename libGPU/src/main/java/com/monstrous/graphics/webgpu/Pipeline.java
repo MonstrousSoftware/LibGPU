@@ -142,7 +142,7 @@ public class Pipeline implements Disposable {
         pipelineDesc.getMultisample().setAlphaToCoverageEnabled(0);
 
         pipelineDesc.setLayout(pipelineLayout);
-        pipeline = LibGPU.webGPU.wgpuDeviceCreateRenderPipeline(LibGPU.device, pipelineDesc);
+        pipeline = LibGPU.webGPU.wgpuDeviceCreateRenderPipeline(LibGPU.device.getHandle(), pipelineDesc);
 
         if(pipeline == null)
             throw new RuntimeException("Pipeline creation failed");

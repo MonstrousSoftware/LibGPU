@@ -299,7 +299,7 @@ public class ShapeRenderer implements Disposable {
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst | WGPUBufferUsage.Vertex);
         bufferDesc.setSize((long) maxShapes * 4 * vertexSize * Float.BYTES);
         bufferDesc.setMappedAtCreation(0L);
-        vertexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        vertexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device.getHandle(), bufferDesc);
 
         // Create index buffer
         bufferDesc.setLabel("Index buffer");
@@ -308,7 +308,7 @@ public class ShapeRenderer implements Disposable {
         sz = (sz + 3) & ~3; // round up to the next multiple of 4
         bufferDesc.setSize(sz);
         bufferDesc.setMappedAtCreation(0L);
-        indexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        indexBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device.getHandle(), bufferDesc);
 
         // Create uniform buffer
         uniformBufferSize = 16 * Float.BYTES;
@@ -318,7 +318,7 @@ public class ShapeRenderer implements Disposable {
         bufferDesc.setUsage(WGPUBufferUsage.CopyDst |WGPUBufferUsage.Uniform );
         bufferDesc.setSize(16 * Float.BYTES);
         bufferDesc.setMappedAtCreation(0L);
-        uniformBuffer =LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device,bufferDesc);
+        uniformBuffer =LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device.getHandle(),bufferDesc);
     }
 
     private void setUniforms(){
@@ -350,7 +350,7 @@ public class ShapeRenderer implements Disposable {
         bindGroupLayoutDesc.setLabel("ShapeRenderer binding group layout");
         bindGroupLayoutDesc.setEntryCount(1);
         bindGroupLayoutDesc.setEntries(bindingLayout); //, texBindingLayout, samplerBindingLayout);
-        return LibGPU.webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+        return LibGPU.webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device.getHandle(), bindGroupLayoutDesc);
     }
 
 
@@ -370,7 +370,7 @@ public class ShapeRenderer implements Disposable {
         // There must be as many bindings as declared in the layout!
         bindGroupDesc.setEntryCount(1);
         bindGroupDesc.setEntries(binding);
-        return LibGPU.webGPU.wgpuDeviceCreateBindGroup(LibGPU.device, bindGroupDesc);
+        return LibGPU.webGPU.wgpuDeviceCreateBindGroup(LibGPU.device.getHandle(), bindGroupDesc);
     }
 
     private Pointer makePipelineLayout(Pointer bindGroupLayout) {
@@ -384,7 +384,7 @@ public class ShapeRenderer implements Disposable {
         layoutDesc.setLabel("ShapeRenderer Pipeline Layout");
         layoutDesc.setBindGroupLayoutCount(1);
         layoutDesc.setBindGroupLayouts(layoutPtr);
-        return LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, layoutDesc);
+        return LibGPU.webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device.getHandle(), layoutDesc);
     }
 
     private void setDefault(WGPUBindGroupLayoutEntry bindingLayout) {

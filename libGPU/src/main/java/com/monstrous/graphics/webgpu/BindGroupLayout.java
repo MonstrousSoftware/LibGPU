@@ -90,7 +90,7 @@ public class BindGroupLayout implements Disposable {
             entryArray[i] = entries.get(i);
         bindGroupLayoutDesc.setEntries( entryArray );
 
-        handle = LibGPU.webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+        handle = LibGPU.webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device.getHandle(), bindGroupLayoutDesc);
     }
 
     public Pointer getHandle(){

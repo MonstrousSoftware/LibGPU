@@ -43,7 +43,7 @@ public class Buffer implements Disposable {
         bufferDesc.setUsage( usage );
         bufferDesc.setSize( bufferSize );
         bufferDesc.setMappedAtCreation(0L);
-        this.handle = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        this.handle = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device.getHandle(), bufferDesc);
     }
 
     public Pointer getHandle(){

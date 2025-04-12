@@ -198,7 +198,7 @@ public class Texture implements Disposable {
             textureDesc.setViewFormats( formatPtr );
         }
 
-        texture = LibGPU.webGPU.wgpuDeviceCreateTexture(LibGPU.device, textureDesc);
+        texture = LibGPU.webGPU.wgpuDeviceCreateTexture(LibGPU.device.getHandle(), textureDesc);
 
         //System.out.println("dimensions: "+textureDesc.getSize().getDepthOrArrayLayers());
 
@@ -233,7 +233,7 @@ public class Texture implements Disposable {
         samplerDesc.setLodMaxClamp(mipLevelCount);
         samplerDesc.setCompare(WGPUCompareFunction.Undefined);
         samplerDesc.setMaxAnisotropy(1);
-        sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
+        sampler = LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device.getHandle(), samplerDesc);
 
     }
 

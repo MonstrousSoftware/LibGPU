@@ -10,11 +10,11 @@ public class CommandEncoder implements Disposable {
 
     private final Pointer encoder;
 
-    public CommandEncoder(Pointer device) {
+    public CommandEncoder(Device device) {
         // create a command encoder
         WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
         encoderDesc.setNextInChain();
-        encoder = LibGPU.webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDesc);
+        encoder = LibGPU.webGPU.wgpuDeviceCreateCommandEncoder(device.getHandle(), encoderDesc);
     }
 
     public Pointer getHandle(){

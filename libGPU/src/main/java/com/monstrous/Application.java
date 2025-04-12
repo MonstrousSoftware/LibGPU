@@ -46,11 +46,11 @@ public class Application {
     private boolean surfaceConfigured = false;
     private boolean isMinimized = false;
     private WindowedApp winApp;
+    private Pointer instance;
+    private Device device;
 
     private final WGPUSurfaceTexture surfaceTexture;
     private final WGPUTextureViewDescriptor viewDescriptor;
-//    private final WGPUCommandEncoderDescriptor encoderDescriptor;
-//    private final WGPUCommandBufferDescriptor bufferDescriptor;
 
 
 
@@ -68,18 +68,16 @@ public class Application {
         LibGPU.graphics = new Graphics();
         LibGPU.graphics.setSize(config.width, config.height);
 
-
-
         winApp = new WindowedApp();
         if(!config.noWindow)
             winApp.openWindow(this, config);
-        initWebGPU(winApp.getWindowHandle());
+        device = initWebGPU(winApp.getWindowHandle());
+        LibGPU.device = device;
+        LibGPU.queue = new Queue(device);
 
         // pre-allocate some structures we'll use often
         surfaceTexture = WGPUSurfaceTexture.createDirect();
         viewDescriptor = WGPUTextureViewDescriptor.createDirect();
-//        encoderDescriptor = WGPUCommandEncoderDescriptor.createDirect();
-//        bufferDescriptor =  WGPUCommandBufferDescriptor.createDirect();
 
         while(listener != null) {
 
@@ -103,9 +101,8 @@ public class Application {
                         return;
                     }
 
-                    CommandEncoder encoder = new CommandEncoder(LibGPU.device);
+                    CommandEncoder encoder = new CommandEncoder(device);
                     LibGPU.commandEncoder = encoder.getHandle();        // e.g. RenderPassBuilder needs it
-                    //LibGPU.commandEncoder = prepareEncoder();
 
                     LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
                     LibGPU.graphics.passNumber = 0;
@@ -113,8 +110,6 @@ public class Application {
                     listener.render();
 
                     finishEncoder(encoder);
-                    //finishEncoder(LibGPU.commandEncoder);
-                    //LibGPU.commandEncoder = null;
                     encoder.dispose();
                     LibGPU.commandEncoder = null;
 
@@ -122,8 +117,7 @@ public class Application {
                     webGPU.wgpuTextureViewRelease(targetView);
                     webGPU.wgpuSurfacePresent(LibGPU.surface);
                 }
-
-                webGPU.wgpuDeviceTick(LibGPU.device);
+                device.tick();
 
                 // Poll for window events. The key callback above will only be
                 // invoked during this call.
@@ -194,21 +188,45 @@ public class Application {
     }
 
 
-    private void initWebGPU(long windowHandle) {
-        webGPU = JavaWebGPU.init();
+    private Device initWebGPU(long windowHandle) {
         System.out.println(JavaWebGPU.getVersionString());
+
+        webGPU = JavaWebGPU.init();
         LibGPU.webGPU = webGPU;
 
-        LibGPU.instance = webGPU.wgpuCreateInstance(null);
+        instance = webGPU.wgpuCreateInstance(null);
 
         // get window surface
         if(windowHandle != 0)
-            LibGPU.surface = JavaWebGPU.getUtils().glfwGetWGPUSurface(LibGPU.instance, windowHandle);
+            LibGPU.surface = JavaWebGPU.getUtils().glfwGetWGPUSurface(instance, windowHandle);
 
-        LibGPU.device = initDevice();
+        Adapter adapter = new Adapter(instance, LibGPU.surface);
+
+        device = new Device(adapter);
+
+        LibGPU.surfaceFormat = getSurfaceFormat(adapter, LibGPU.surface);
+
+        adapter.dispose();  // finished with adapter now that we have a device
 
         // enable gpu timing if configured
-        gpuTiming = new GPUTiming(LibGPU.device, configuration.enableGPUtiming);
+        gpuTiming = new GPUTiming(device, configuration.enableGPUtiming);
+        return device;
+    }
+
+    private WGPUTextureFormat getSurfaceFormat(Adapter adapter, Pointer surface){
+        WGPUTextureFormat surfaceFormat = WGPUTextureFormat.Undefined;
+        if(surface != null) {
+            WGPUSurfaceCapabilities caps = WGPUSurfaceCapabilities.createDirect();
+            webGPU.wgpuSurfaceGetCapabilities(LibGPU.surface, adapter.getHandle(), caps);
+            Pointer formats = caps.getFormats();
+            int format = formats.getInt(0);
+            surfaceFormat = WGPUTextureFormat.values()[format];
+
+            System.out.println("Using format: " + LibGPU.surfaceFormat);
+        } else {
+            System.out.println("No render surface.");
+        }
+        return surfaceFormat;
     }
 
     private void exitWebGPU() {
@@ -216,190 +234,104 @@ public class Application {
 
         terminateSwapChain();
         terminateDepthBuffer();
-        terminateDevice();
+
+        LibGPU.queue.dispose();
+        device.dispose();
 
         webGPU.wgpuSurfaceRelease(LibGPU.surface);
-        webGPU.wgpuInstanceRelease(LibGPU.instance);
+        webGPU.wgpuInstanceRelease(instance);
     }
 
     /** obtain Device, create Queue */
-    private Pointer initDevice() {
-
-
-        WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
-        options.setNextInChain();
-        options.setCompatibleSurface(LibGPU.surface);
-        options.setBackendType(LibGPU.app.configuration.backend);
-        options.setPowerPreference(WGPUPowerPreference.HighPerformance);
-
-        if(LibGPU.app.configuration.backend == WGPUBackendType.Null)
-            throw new IllegalStateException("Request Adapter: Back end 'Null' only valid if config.noWindow is true");
-
-        // Get Adapter
-        Pointer adapter = getAdapterSync(LibGPU.instance, options);
-        if(adapter == null){
-            System.out.println("Configured adapter back end ("+LibGPU.app.configuration.backend+") not available, requesting fallback");
-            options.setBackendType(WGPUBackendType.Undefined);
-            options.setPowerPreference(WGPUPowerPreference.HighPerformance);
-            adapter = getAdapterSync(LibGPU.instance, options);
-        }
-
-
-        LibGPU.supportedLimits = WGPUSupportedLimits.createDirect();
-        WGPUSupportedLimits supportedLimits = LibGPU.supportedLimits;
-        webGPU.wgpuAdapterGetLimits(adapter, supportedLimits);
-//        System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
-//        System.out.println("adapter maxBindGroups " + supportedLimits.getLimits().getMaxBindGroups());
+//    private Device initDevice() {
 //
-//        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
-//        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
-//        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
-//        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
-
-
-        WGPUAdapterProperties adapterProperties = WGPUAdapterProperties.createDirect();
-        adapterProperties.setNextInChain();
-
-        webGPU.wgpuAdapterGetProperties(adapter, adapterProperties);
-        System.out.println("VendorID: " + adapterProperties.getVendorID());
-        System.out.println("Vendor name: " + adapterProperties.getVendorName());
-        System.out.println("Device ID: " + adapterProperties.getDeviceID());
-        System.out.println("Back end: " + adapterProperties.getBackendType());
-        System.out.println("Description: " + adapterProperties.getDriverDescription());
-
-
-        WGPURequiredLimits requiredLimits = WGPURequiredLimits.createDirect();
-        setDefault(requiredLimits.getLimits());
-        requiredLimits.getLimits().setMaxVertexAttributes(8);
-        requiredLimits.getLimits().setMaxVertexBuffers(2);
-        requiredLimits.getLimits().setMaxInterStageShaderComponents(20); //
-
-
-        // from vert to frag
-        requiredLimits.getLimits().setMaxBufferSize(300);
-        requiredLimits.getLimits().setMaxVertexBufferArrayStride(11*Float.BYTES);
-        requiredLimits.getLimits().setMaxDynamicUniformBuffersPerPipelineLayout(1);
-        requiredLimits.getLimits().setMaxTextureDimension1D(2048);
-        requiredLimits.getLimits().setMaxTextureDimension2D(2048);
-        requiredLimits.getLimits().setMaxTextureArrayLayers(6);
-        requiredLimits.getLimits().setMaxSampledTexturesPerShaderStage(1);
-        requiredLimits.getLimits().setMaxSamplersPerShaderStage(1);
-
-        // todo these values are rather random
-
-        requiredLimits.getLimits().setMaxBindGroups(4);
-        requiredLimits.getLimits().setMaxUniformBuffersPerShaderStage(4);// We use at most 1 uniform buffer per stage
-        // Uniform structs have a size of maximum 16 float (more than what we need)
-        requiredLimits.getLimits().setMaxUniformBufferBindingSize(16*4*Float.BYTES);
-
-
-        // Get Device
-        WGPUDeviceDescriptor deviceDescriptor = WGPUDeviceDescriptor.createDirect();
-        deviceDescriptor.setNextInChain();
-        deviceDescriptor.setLabel("My Device");
-        deviceDescriptor.setRequiredLimits(requiredLimits);
-        deviceDescriptor.setRequiredFeatureCount(0);
-        deviceDescriptor.setRequiredFeatures(null);
-
-        // required feature to do timestamp queries
-        if(configuration.enableGPUtiming){
-            int[] featureValues = new int[1];
-            featureValues[0] = WGPUFeatureName.TimestampQuery;
-            Pointer requiredFeatures = createIntegerArrayPointer(featureValues);
-
-            deviceDescriptor.setRequiredFeatureCount(1);
-            deviceDescriptor.setRequiredFeatures( requiredFeatures );
-        }
-
-        Pointer device = getDeviceSync(adapter, deviceDescriptor);
-
-        // use a lambda expression to define a callback function
-        WGPUErrorCallback deviceCallback = (WGPUErrorType type, String message, Pointer userdata) -> {
-            System.out.println("*** Device error: " + type + " : " + message);
-            System.exit(-1);
-        };
-        webGPU.wgpuDeviceSetUncapturedErrorCallback(device, deviceCallback, null);
-
-        // Collect the device limits which may be more constrained than the adapter limits
-        // e.g. getMinUniformBufferOffsetAlignment maybe becomes 256 on the device instead of 64 on the adapter.
-        webGPU.wgpuDeviceGetLimits(device, LibGPU.supportedLimits);
-//        System.out.println("device maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
 //
-//        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
-//        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
-//        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
-//        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
+////        WGPURequestAdapterOptions options = WGPURequestAdapterOptions.createDirect();
+////        options.setNextInChain();
+////        options.setCompatibleSurface(LibGPU.surface);
+////        options.setBackendType(LibGPU.app.configuration.backend);
+////        options.setPowerPreference(WGPUPowerPreference.HighPerformance);
+////
+////        if(LibGPU.app.configuration.backend == WGPUBackendType.Null)
+////            throw new IllegalStateException("Request Adapter: Back end 'Null' only valid if config.noWindow is true");
+////
+////        // Get Adapter
+////        Pointer adapter = getAdapterSync(instance, options);
+////        if(adapter == null){
+////            System.out.println("Configured adapter back end ("+LibGPU.app.configuration.backend+") not available, requesting fallback");
+////            options.setBackendType(WGPUBackendType.Undefined);
+////            options.setPowerPreference(WGPUPowerPreference.HighPerformance);
+////            adapter = getAdapterSync(instance, options);
+////        }
+////
+////
+////        LibGPU.supportedLimits = WGPUSupportedLimits.createDirect();
+////        WGPUSupportedLimits supportedLimits = LibGPU.supportedLimits;
+////        webGPU.wgpuAdapterGetLimits(adapter, supportedLimits);
+//////        System.out.println("adapter maxVertexAttributes " + supportedLimits.getLimits().getMaxVertexAttributes());
+//////        System.out.println("adapter maxBindGroups " + supportedLimits.getLimits().getMaxBindGroups());
+//////
+//////        System.out.println("maxTextureDimension1D " + supportedLimits.getLimits().getMaxTextureDimension1D());
+//////        System.out.println("maxTextureDimension2D " + supportedLimits.getLimits().getMaxTextureDimension2D());
+//////        System.out.println("maxTextureDimension3D " + supportedLimits.getLimits().getMaxTextureDimension3D());
+//////        System.out.println("maxTextureArrayLayers " + supportedLimits.getLimits().getMaxTextureArrayLayers());
+////
+////
+////        WGPUAdapterProperties adapterProperties = WGPUAdapterProperties.createDirect();
+////        adapterProperties.setNextInChain();
+////
+////        webGPU.wgpuAdapterGetProperties(adapter, adapterProperties);
+////        System.out.println("VendorID: " + adapterProperties.getVendorID());
+////        System.out.println("Vendor name: " + adapterProperties.getVendorName());
+////        System.out.println("Device ID: " + adapterProperties.getDeviceID());
+////        System.out.println("Back end: " + adapterProperties.getBackendType());
+////        System.out.println("Description: " + adapterProperties.getDriverDescription());
+//
+////        device = new Device(adapter);
+////
+////        //System.out.println("Surface Capabilities: formatCount: "+caps.getFormatCount());
+////        if(LibGPU.surface != null) {
+////            WGPUSurfaceCapabilities caps = WGPUSurfaceCapabilities.createDirect();
+////            webGPU.wgpuSurfaceGetCapabilities(LibGPU.surface, adapter, caps);
+////            Pointer formats = caps.getFormats();
+////            int format = formats.getInt(0);
+////            LibGPU.surfaceFormat = WGPUTextureFormat.values()[format];
+////
+////            // Deprecated:
+////            //LibGPU.surfaceFormat = wgpu.SurfaceGetPreferredFormat(LibGPU.surface, adapter);
+////            System.out.println("Using format: " + LibGPU.surfaceFormat);
+////        } else {
+////            System.out.println("No render surface.");
+////        }
+////
+////
+////        webGPU.wgpuAdapterRelease(adapter);       // we can release our adapter as soon as we have a device
+////        return device;
+//    }
 
 
-        if (configuration.enableGPUtiming && !webGPU.wgpuDeviceHasFeature(device, WGPUFeatureName.TimestampQuery)) {
-            System.out.println("** Requested timestamp queries are not supported!");
-        }
 
 
-        LibGPU.queue = new Queue(device); //webGPU.wgpuDeviceGetQueue(device);
-
-//        // use a lambda expression to define a callback function
-//        WGPUQueueWorkDoneCallback queueCallback = (WGPUQueueWorkDoneStatus status, Pointer userdata) -> {
-//            System.out.println("=== Queue work finished with status: " + status);
+//    private Pointer getDeviceSync(Pointer adapter, WGPUDeviceDescriptor deviceDescriptor){
+//
+//        Pointer userBuf = JavaWebGPU.createLongArrayPointer(new long[1]);
+//        WGPURequestDeviceCallback callback = (WGPURequestDeviceStatus status, Pointer device, String message, Pointer userdata) -> {
+//            if(status == WGPURequestDeviceStatus.Success)
+//                userdata.putPointer(0, device);
+//            else
+//                System.out.println("Could not get device: "+message);
 //        };
-//        wgpu.QueueOnSubmittedWorkDone(LibGPU.queue, queueCallback, null);
+//        webGPU.wgpuAdapterRequestDevice(adapter, deviceDescriptor, callback, userBuf);
+//        // on native implementations, we don't have to wait for asynchronous operation. It returns result immediately.
+//        return  userBuf.getPointer(0);
+//    }
 
-        //System.out.println("Surface Capabilities: formatCount: "+caps.getFormatCount());
-        if(LibGPU.surface != null) {
-            WGPUSurfaceCapabilities caps = WGPUSurfaceCapabilities.createDirect();
-            webGPU.wgpuSurfaceGetCapabilities(LibGPU.surface, adapter, caps);
-            Pointer formats = caps.getFormats();
-            int format = formats.getInt(0);
-            LibGPU.surfaceFormat = WGPUTextureFormat.values()[format];
-
-            // Deprecated:
-            //LibGPU.surfaceFormat = wgpu.SurfaceGetPreferredFormat(LibGPU.surface, adapter);
-            System.out.println("Using format: " + LibGPU.surfaceFormat);
-        } else {
-            System.out.println("No render surface.");
-        }
-
-
-        webGPU.wgpuAdapterRelease(adapter);       // we can release our adapter as soon as we have a device
-        return device;
-    }
-
-
-    private Pointer getAdapterSync(Pointer instance, WGPURequestAdapterOptions options){
-
-        Pointer userBuf = JavaWebGPU.createLongArrayPointer(new long[1]);
-        userBuf.putPointer(0, null);
-
-        WGPURequestAdapterCallback callback = (WGPURequestAdapterStatus status, Pointer adapter, String message, Pointer userdata) -> {
-            if(status == WGPURequestAdapterStatus.Success)
-                userdata.putPointer(0, adapter);
-            else
-                System.out.println("Could not get adapter: "+message);
-        };
-        webGPU.wgpuInstanceRequestAdapter(instance, options, callback, userBuf);
-        // on native implementations, we don't have to wait for asynchronous operation. It returns result immediately.
-        return  userBuf.getPointer(0);
-    }
-
-    private Pointer getDeviceSync(Pointer adapter, WGPUDeviceDescriptor deviceDescriptor){
-
-        Pointer userBuf = JavaWebGPU.createLongArrayPointer(new long[1]);
-        WGPURequestDeviceCallback callback = (WGPURequestDeviceStatus status, Pointer device, String message, Pointer userdata) -> {
-            if(status == WGPURequestDeviceStatus.Success)
-                userdata.putPointer(0, device);
-            else
-                System.out.println("Could not get device: "+message);
-        };
-        webGPU.wgpuAdapterRequestDevice(adapter, deviceDescriptor, callback, userBuf);
-        // on native implementations, we don't have to wait for asynchronous operation. It returns result immediately.
-        return  userBuf.getPointer(0);
-    }
-
-    private void terminateDevice(){
-        LibGPU.queue.dispose();
-        //webGPU.wgpuQueueRelease(LibGPU.queue);
-        webGPU.wgpuDeviceRelease(LibGPU.device);
-    }
+//    private void terminateDevice(){
+//        LibGPU.queue.dispose();
+//        //webGPU.wgpuQueueRelease(LibGPU.queue);
+//        device.dispose();
+//        //webGPU.wgpuDeviceRelease(device);
+//    }
 
     private void initSwapChain(int width, int height){
         // configure the surface
@@ -414,7 +346,7 @@ public class Application {
         config.setViewFormatCount(0);
         config.setViewFormats(JavaWebGPU.createNullPointer());
         config.setUsage(WGPUTextureUsage.RenderAttachment);
-        config.setDevice(LibGPU.device);
+        config.setDevice(device.getHandle());
         config.setPresentMode(LibGPU.app.configuration.vsyncEnabled ? WGPUPresentMode.Fifo : WGPUPresentMode.Immediate);
         config.setAlphaMode(WGPUCompositeAlphaMode.Auto);
 
@@ -534,44 +466,4 @@ public class Application {
         return gpuTiming.getAverageGPUtime();
     }
 
-    final static long WGPU_LIMIT_U32_UNDEFINED = -1L;
-    final static long WGPU_LIMIT_U64_UNDEFINED = -1L;//.   18446744073709551615L;
-    // should be 18446744073709551615L but Java longs are signed so it is half that, will it work?
-    // todo
-
-
-    public void setDefault(WGPULimits limits) {
-        limits.setMaxTextureDimension1D(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxTextureDimension2D(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxTextureDimension3D(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxTextureArrayLayers(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBindGroups(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBindGroupsPlusVertexBuffers(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBindingsPerBindGroup(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxDynamicUniformBuffersPerPipelineLayout(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxDynamicStorageBuffersPerPipelineLayout(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxSampledTexturesPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxSamplersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxStorageBuffersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxStorageTexturesPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxUniformBuffersPerShaderStage(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxUniformBufferBindingSize(WGPU_LIMIT_U64_UNDEFINED);
-        limits.setMaxStorageBufferBindingSize(WGPU_LIMIT_U64_UNDEFINED);
-        limits.setMinUniformBufferOffsetAlignment(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMinStorageBufferOffsetAlignment(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxVertexBuffers(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxBufferSize(WGPU_LIMIT_U64_UNDEFINED);
-        limits.setMaxVertexAttributes(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxVertexBufferArrayStride(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxInterStageShaderComponents(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxInterStageShaderVariables(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxColorAttachments(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxColorAttachmentBytesPerSample(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupStorageSize(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeInvocationsPerWorkgroup(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupSizeX(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupSizeY(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupSizeZ(WGPU_LIMIT_U32_UNDEFINED);
-        limits.setMaxComputeWorkgroupsPerDimension(WGPU_LIMIT_U32_UNDEFINED);
-    }
 }

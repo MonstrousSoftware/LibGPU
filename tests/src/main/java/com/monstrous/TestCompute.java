@@ -99,7 +99,7 @@ public class TestCompute extends ApplicationAdapter {
         pipelineDescriptor.getCompute().setModule(shader.getHandle());
         pipelineDescriptor.setLayout(pipelineLayout.getHandle());
 
-        return webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device, pipelineDescriptor);
+        return webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device.getHandle(), pipelineDescriptor);
     }
 
 
@@ -161,7 +161,7 @@ public class TestCompute extends ApplicationAdapter {
 
         while(!done[0]) {
             System.out.println("Tick.");
-            webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
+            LibGPU.device.tick();
         }
 
         System.out.println("output: ");

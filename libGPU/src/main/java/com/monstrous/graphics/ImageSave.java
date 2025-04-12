@@ -96,7 +96,7 @@ public class ImageSave {
 
         // wait for mapping
         while(!done[0])
-            LibGPU.webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
+            LibGPU.device.tick();
 
         // cleanup
         commandBuffer.dispose();

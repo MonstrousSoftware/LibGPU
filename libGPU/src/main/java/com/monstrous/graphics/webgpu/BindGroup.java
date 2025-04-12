@@ -81,7 +81,7 @@ public class BindGroup implements Disposable {
             entryArray[i] = entries.get(i);
         bindGroupDescriptor.setEntries(entryArray);
 
-        handle = LibGPU.webGPU.wgpuDeviceCreateBindGroup(LibGPU.device, bindGroupDescriptor);
+        handle = LibGPU.webGPU.wgpuDeviceCreateBindGroup(LibGPU.device.getHandle(), bindGroupDescriptor);
     }
 
     public Pointer getHandle() {

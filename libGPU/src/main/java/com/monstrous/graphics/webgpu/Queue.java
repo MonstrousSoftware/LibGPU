@@ -13,8 +13,8 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 public class Queue implements Disposable {
     private final Pointer queue;
 
-    public Queue(Pointer device) {
-        queue = LibGPU.webGPU.wgpuDeviceGetQueue(device);
+    public Queue(Device device) {
+        queue = LibGPU.webGPU.wgpuDeviceGetQueue(device.getHandle());
     }
 
     public Pointer getHandle(){

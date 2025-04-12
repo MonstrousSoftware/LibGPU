@@ -143,7 +143,7 @@ public class TestComputeMipMap extends ApplicationAdapter {
         pipelineDescriptor.getCompute().setModule(shader.getHandle());
         pipelineDescriptor.setLayout(pipelineLayout.getHandle());
 
-        return LibGPU.webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device, pipelineDescriptor);
+        return LibGPU.webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device.getHandle(), pipelineDescriptor);
     }
 
 //    private void compute(BindGroupLayout bindGroupLayout) {

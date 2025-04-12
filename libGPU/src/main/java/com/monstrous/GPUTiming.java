@@ -16,6 +16,7 @@
 
 package com.monstrous;
 
+import com.monstrous.graphics.webgpu.Device;
 import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
@@ -32,7 +33,7 @@ public class GPUTiming implements Disposable {
     private boolean timeStampMapOngoing = false;
     private WGPURenderPassTimestampWrites query = null;
 
-    public GPUTiming(Pointer device, boolean enabled) {
+    public GPUTiming(Device device, boolean enabled) {
         this.timingEnabled = enabled;
         if(!timingEnabled)
             return;
@@ -44,7 +45,7 @@ public class GPUTiming implements Disposable {
         querySetDescriptor.setType(WGPUQueryType.Timestamp);
         querySetDescriptor.setCount(2); // start and end time
 
-        timestampQuerySet = webGPU.wgpuDeviceCreateQuerySet(device, querySetDescriptor);
+        timestampQuerySet = webGPU.wgpuDeviceCreateQuerySet(device.getHandle(), querySetDescriptor);
 
         // Create buffer
         WGPUBufferDescriptor bufferDesc = WGPUBufferDescriptor.createDirect();
@@ -52,12 +53,12 @@ public class GPUTiming implements Disposable {
         bufferDesc.setUsage( WGPUBufferUsage.CopySrc | WGPUBufferUsage.QueryResolve );
         bufferDesc.setSize(BUF_SIZE);     // space for 2 uint64's
         bufferDesc.setMappedAtCreation(0L);
-        timeStampResolveBuffer = webGPU.wgpuDeviceCreateBuffer(device, bufferDesc);
+        timeStampResolveBuffer = webGPU.wgpuDeviceCreateBuffer(device.getHandle(), bufferDesc);
 
         bufferDesc.setLabel("timestamp map buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
         bufferDesc.setSize(BUF_SIZE);
-        timeStampMapBuffer = webGPU.wgpuDeviceCreateBuffer(device, bufferDesc);
+        timeStampMapBuffer = webGPU.wgpuDeviceCreateBuffer(device.getHandle(), bufferDesc);
 
         query = WGPURenderPassTimestampWrites.createDirect();
         query.setBeginningOfPassWriteIndex(0);

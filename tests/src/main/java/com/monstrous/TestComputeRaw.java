@@ -68,16 +68,16 @@ public class TestComputeRaw extends ApplicationAdapter {
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage );
         bufferDesc.setSize( BUFFER_SIZE );
         bufferDesc.setMappedAtCreation(0L);
-        inputBuffer = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        inputBuffer = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device.getHandle(), bufferDesc);
 
         bufferDesc.setLabel("Output storage buffer");
         bufferDesc.setUsage( WGPUBufferUsage.CopySrc | WGPUBufferUsage.Storage );
-        outputBuffer = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        outputBuffer = LibGPU.webGPU.wgpuDeviceCreateBuffer(LibGPU.device.getHandle(), bufferDesc);
 
         // Create an intermediary buffer to which we copy the output and that can be
         // used for reading into the CPU memory.
         bufferDesc.setUsage( WGPUBufferUsage.CopyDst | WGPUBufferUsage.MapRead );
-        mapBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device, bufferDesc);
+        mapBuffer = webGPU.wgpuDeviceCreateBuffer(LibGPU.device.getHandle(), bufferDesc);
     }
 
     private Pointer makeBindGroupLayout(){
@@ -102,7 +102,7 @@ public class TestComputeRaw extends ApplicationAdapter {
         bindGroupLayoutDesc.setEntryCount(2);
         bindGroupLayoutDesc.setEntries(bindingLayout0, bindingLayout1);
 
-        return webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device, bindGroupLayoutDesc);
+        return webGPU.wgpuDeviceCreateBindGroupLayout(LibGPU.device.getHandle(), bindGroupLayoutDesc);
     }
 
     private Pointer makeBindGroup(Pointer bindGroupLayout){
@@ -123,7 +123,7 @@ public class TestComputeRaw extends ApplicationAdapter {
                 .setLayout(bindGroupLayout)
                 .setEntryCount(2)
                 .setEntries(entry0, entry1);
-        return webGPU.wgpuDeviceCreateBindGroup(LibGPU.device, bindGroupDescriptor);
+        return webGPU.wgpuDeviceCreateBindGroup(LibGPU.device.getHandle(), bindGroupDescriptor);
     }
 
     private Pointer compile(String shaderSource){
@@ -138,7 +138,7 @@ public class TestComputeRaw extends ApplicationAdapter {
 
         shaderDesc.getNextInChain().set(shaderCodeDesc.getPointerTo());
 
-        shaderModule = LibGPU.webGPU.wgpuDeviceCreateShaderModule(LibGPU.device, shaderDesc);
+        shaderModule = LibGPU.webGPU.wgpuDeviceCreateShaderModule(LibGPU.device.getHandle(), shaderDesc);
         if(shaderModule == null)
             throw new RuntimeException("ShaderModule: compile failed.");
         return shaderModule;
@@ -153,7 +153,7 @@ public class TestComputeRaw extends ApplicationAdapter {
         pipelineLayoutDesc.setNextInChain();
         pipelineLayoutDesc.setBindGroupLayoutCount(1);
         pipelineLayoutDesc.setBindGroupLayouts(layoutPtr);  // expects an array of layouts
-        pipelineLayout = webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device, pipelineLayoutDesc);
+        pipelineLayout = webGPU.wgpuDeviceCreatePipelineLayout(LibGPU.device.getHandle(), pipelineLayoutDesc);
 
         WGPUComputePipelineDescriptor pipelineDescriptor = WGPUComputePipelineDescriptor.createDirect();
         pipelineDescriptor.setNextInChain();
@@ -163,7 +163,7 @@ public class TestComputeRaw extends ApplicationAdapter {
         pipelineDescriptor.getCompute().setModule(shaderModule);
         pipelineDescriptor.setLayout(pipelineLayout);
 
-        return webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device, pipelineDescriptor);
+        return webGPU.wgpuDeviceCreateComputePipeline(LibGPU.device.getHandle(), pipelineDescriptor);
     }
 
     private void compute() {
@@ -180,7 +180,7 @@ public class TestComputeRaw extends ApplicationAdapter {
         // create a command encoder
         WGPUCommandEncoderDescriptor encoderDesc = WGPUCommandEncoderDescriptor.createDirect();
         encoderDesc.setNextInChain();
-        Pointer encoder = webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device, encoderDesc);
+        Pointer encoder = webGPU.wgpuDeviceCreateCommandEncoder(LibGPU.device.getHandle(), encoderDesc);
 
         // Create a compute pass
         WGPUComputePassDescriptor passDesc = WGPUComputePassDescriptor.createDirect();
@@ -235,7 +235,8 @@ public class TestComputeRaw extends ApplicationAdapter {
 
         while(!done[0]) {
             System.out.println("Tick.");
-            webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
+            LibGPU.device.tick();
+            //webGPU.wgpuDeviceTick(LibGPU.device);   // Dawn
         }
 
         System.out.println("output: ");

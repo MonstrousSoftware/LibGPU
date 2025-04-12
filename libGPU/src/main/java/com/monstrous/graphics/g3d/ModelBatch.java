@@ -85,7 +85,7 @@ public class ModelBatch implements Disposable {
 
     public ModelBatch (){
         webGPU = LibGPU.webGPU;
-        device = LibGPU.device;
+        device = LibGPU.device.getHandle();
 
         pipelines = new Pipelines();
         renderables = new ArrayList<>();
@@ -396,7 +396,7 @@ public class ModelBatch implements Disposable {
         samplerDesc.setLodMaxClamp(1);
         samplerDesc.setCompare(WGPUCompareFunction.Less);
         samplerDesc.setMaxAnisotropy(1);
-        return LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device, samplerDesc);
+        return LibGPU.webGPU.wgpuDeviceCreateSampler(LibGPU.device.getHandle(), samplerDesc);
     }
 
     // Bind Group Layout:
