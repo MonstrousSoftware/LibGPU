@@ -139,6 +139,8 @@ public class Application {
         }
         winApp.closeWindow();
         exitWebGPU();
+        LibGPU.queue.dispose();
+        device.dispose();
     }
 
     // set next listener to create after exiting the current one.
@@ -234,9 +236,6 @@ public class Application {
 
         terminateSwapChain();
         terminateDepthBuffer();
-
-        LibGPU.queue.dispose();
-        device.dispose();
 
         webGPU.wgpuSurfaceRelease(LibGPU.surface);
         webGPU.wgpuInstanceRelease(instance);
