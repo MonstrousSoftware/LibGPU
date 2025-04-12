@@ -54,6 +54,7 @@ fn updateParticles(@builtin(global_invocation_id) id: vec3<u32>) {
   //let pos  = uniforms.projectionMatrix * particle.position;
    particle.velocity.y = select(particle.velocity.y, -particle.velocity.y, particle.position.y < 1 && particle.position.y > 0);
 
+   particle.color.r = length(particle.velocity);
 
 
    dataOut.particles[id.x] = particle;

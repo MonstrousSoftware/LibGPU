@@ -12,7 +12,13 @@ import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
-
+// further ideas:
+// convert dots to quads to make them more visible and to add a blended texture
+// emitter on mouse button
+// use delta time
+// make particles wrap around or bounce on screen edges
+// 3d view
+// aging, color change
 public class TestParticles extends ApplicationAdapter {
 
     private SpriteBatch batch;
@@ -20,7 +26,6 @@ public class TestParticles extends ApplicationAdapter {
     private long startTime;
     private int frames;
     private String fps;
-
 
 
     @Override
@@ -71,8 +76,6 @@ public class TestParticles extends ApplicationAdapter {
     }
 
     private UniformBuffer uniformBuffer;
-    private Buffer particleBuffer;
-    private Buffer nextParticleBuffer;
     private Buffer[] particleBuffers;
     private int flip;
     private Pointer floatData;
@@ -89,15 +92,11 @@ public class TestParticles extends ApplicationAdapter {
 
         uniformBuffer = new UniformBuffer(16*Float.BYTES,WGPUBufferUsage.CopyDst | WGPUBufferUsage.Uniform  );
 
-        int usage = WGPUBufferUsage.Storage | WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc;
-        particleBuffer = new Buffer("particles", usage , numParticles * structSize);
-
-        usage = WGPUBufferUsage.Storage | WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc;
-        nextParticleBuffer = new Buffer("next particles", usage , numParticles * structSize);
-
         particleBuffers = new Buffer[2];
-        particleBuffers[0] = particleBuffer;
-        particleBuffers[1] = nextParticleBuffer;
+        int usage = WGPUBufferUsage.Storage | WGPUBufferUsage.CopyDst | WGPUBufferUsage.CopySrc;
+        particleBuffers[0] = new Buffer("particles", usage , numParticles * structSize);
+        particleBuffers[1] = new Buffer("next particles", usage , numParticles * structSize);
+
         flip = 0;
 
 
@@ -105,28 +104,28 @@ public class TestParticles extends ApplicationAdapter {
         floatData = JavaWebGPU.createDirectPointer(structSize);
         Vector3 pos = new Vector3();
         Vector3 vel = new Vector3();
-        Color color = new Color(Color.YELLOW);
+        Color color = new Color(Color.WHITE);
         for(int i = 0; i < numParticles; i++){
             pos.set(i * LibGPU.graphics.getWidth()/numParticles, LibGPU.graphics.getHeight()/2, 0);
             vel.set( 5f*(float)Math.random()-2.5f,5f*(float)Math.random()-2.5f, 0);
 
-            floatData.putFloat(0*Float.BYTES, pos.x);
-            floatData.putFloat(1*Float.BYTES, pos.y);
-            floatData.putFloat(2*Float.BYTES, pos.z);
-            floatData.putFloat(3*Float.BYTES, 1.0f);
+            int off = 0;
+            floatData.putFloat(off++*Float.BYTES, pos.x);
+            floatData.putFloat(off++*Float.BYTES, pos.y);
+            floatData.putFloat(off++*Float.BYTES, pos.z);
+            floatData.putFloat(off++*Float.BYTES, 1.0f);
 
-            floatData.putFloat(4*Float.BYTES, vel.x);
-            floatData.putFloat(5*Float.BYTES, vel.y);
-            floatData.putFloat(6*Float.BYTES, vel.z);
-            floatData.putFloat(7*Float.BYTES, 0f);
+            floatData.putFloat(off++*Float.BYTES, vel.x);
+            floatData.putFloat(off++*Float.BYTES, vel.y);
+            floatData.putFloat(off++*Float.BYTES, vel.z);
+            floatData.putFloat(off++*Float.BYTES, 0f);
 
-            //floatData.putFloat(3*Float.BYTES, color.toFloatBits());
-            floatData.putFloat(8*Float.BYTES, color.r);
-            floatData.putFloat(9*Float.BYTES, color.g);
-            floatData.putFloat(10*Float.BYTES, color.b);
-            floatData.putFloat(11*Float.BYTES, color.a);
+            floatData.putFloat(off++*Float.BYTES, color.r);
+            floatData.putFloat(off++*Float.BYTES, color.g);
+            floatData.putFloat(off++*Float.BYTES, color.b);
+            floatData.putFloat(off++*Float.BYTES, color.a);
 
-            particleBuffer.write(i*structSize, floatData, structSize);
+            particleBuffers[flip].write(i*structSize, floatData, structSize);
             // should we do one big write instead?
         }
 
@@ -211,8 +210,9 @@ public class TestParticles extends ApplicationAdapter {
         layout.begin();
         layout.addBuffer(0, WGPUShaderStage.Vertex, WGPUBufferBindingType.Uniform, uniformBuffer.getSize(), false);
         // note: vertex shader can only be bound to READ-ONLY storage buffers
-        layout.addBuffer(1, WGPUShaderStage.Vertex|WGPUShaderStage.Compute, WGPUBufferBindingType.ReadOnlyStorage, particleBuffer.getSize(), false);
-        layout.addBuffer(2, WGPUShaderStage.Compute, WGPUBufferBindingType.Storage, particleBuffer.getSize(), false);
+        layout.addBuffer(1, WGPUShaderStage.Vertex|WGPUShaderStage.Compute, WGPUBufferBindingType.ReadOnlyStorage, particleBuffers[0].getSize(), false);
+        // we ping-pong between 2 buffers for the compute shader
+        layout.addBuffer(2, WGPUShaderStage.Compute, WGPUBufferBindingType.Storage, particleBuffers[0].getSize(), false);
         layout.end();
         return layout;
     }
