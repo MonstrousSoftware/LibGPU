@@ -164,13 +164,13 @@ public class Stage implements Disposable, InputProcessor {
         y = cell.h - y;
 
         Widget found = table.hit(x, y);
+        if (widgetUnderMouse != null && found != widgetUnderMouse ){
+            widgetUnderMouse.processEvent(Event.MOUSE_EXITS);
+            widgetUnderMouse = null;
+        }
         if(found != null) {
             found.processEvent(Event.MOUSE_ENTERS);
             widgetUnderMouse = found;
-        }
-        else if (widgetUnderMouse != null){
-            widgetUnderMouse.processEvent(Event.MOUSE_EXITS);
-            widgetUnderMouse = null;
         }
         return false;
     }

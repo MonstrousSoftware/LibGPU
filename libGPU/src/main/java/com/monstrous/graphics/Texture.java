@@ -25,6 +25,10 @@ import com.monstrous.utils.JavaWebGPU;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
+
 
 public class Texture implements Disposable {
     protected int width;
@@ -208,16 +212,6 @@ public class Texture implements Disposable {
         textureView =  new TextureView(this, WGPUTextureAspect.All, dimension, format, 0,
                 mipLevelCount, 0, numLayers );
 
-//        WGPUTextureViewDescriptor textureViewDesc = WGPUTextureViewDescriptor.createDirect();
-//        textureViewDesc.setAspect(WGPUTextureAspect.All);
-//        textureViewDesc.setBaseArrayLayer(0);
-//        textureViewDesc.setArrayLayerCount(numLayers);
-//        textureViewDesc.setBaseMipLevel(0);
-//        textureViewDesc.setMipLevelCount(mipLevelCount);
-//        textureViewDesc.setDimension(numLayers == 1 ? WGPUTextureViewDimension._2D : (numLayers == 6 ? WGPUTextureViewDimension.Cube: WGPUTextureViewDimension._2DArray));
-//        textureViewDesc.setFormat(textureDesc.getFormat());
-//        textureView = LibGPU.webGPU.wgpuTextureCreateView(texture, textureViewDesc);
-
         // Create a sampler
         //
         WGPUSamplerDescriptor samplerDesc = WGPUSamplerDescriptor.createDirect();
@@ -315,6 +309,47 @@ public class Texture implements Disposable {
 
         // N.B. using textureDesc.getSize() for param won't work!
         LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelPtr, width * height * 4, source, ext);
+    }
+
+
+    /** fill textures using half-floats masquerading as shorts arranged as r, g, b, a, r, g, b, a, etc.
+     * format RBGAFloat16
+     * Size of buffer must be 4*width*height
+     * */
+    public void fill(short[] pixels) {
+        if(pixels.length != 4*width*height) throw new IllegalArgumentException("Texture.fill(): array is wrong size.");
+        if(format != WGPUTextureFormat.RGBA16Float) throw new IllegalArgumentException("Texture.fill(): expected RGBA16Float texture.");
+        // Arguments telling which part of the texture we upload to
+        // (together with the last argument of writeTexture)
+        WGPUImageCopyTexture destination = WGPUImageCopyTexture.createDirect();
+        destination.setTexture(texture);
+        destination.setMipLevel(0);
+        destination.getOrigin().setX(0);
+        destination.getOrigin().setY(0);
+        destination.getOrigin().setZ(0);
+        destination.setAspect(WGPUTextureAspect.All);   // not relevant
+
+        // Arguments telling how the C++ side pixel memory is laid out
+        WGPUTextureDataLayout source = WGPUTextureDataLayout.createDirect();
+        source.setOffset(0);
+        source.setBytesPerRow(4 * width*2);
+        source.setRowsPerImage(height);
+
+        ByteBuffer bb = ByteBuffer.allocateDirect(8*width*height);
+        bb.order( ByteOrder.LITTLE_ENDIAN);
+        ShortBuffer sb = bb.asShortBuffer();
+        sb.put(pixels);
+        Pointer pixelPtr = JavaWebGPU.createByteBufferPointer(bb);
+
+        WGPUExtent3D ext = WGPUExtent3D.createDirect();
+        ext.setWidth(width);
+        ext.setHeight(height);
+        ext.setDepthOrArrayLayers(1);
+
+        destination.setMipLevel(0);
+
+        // N.B. using textureDesc.getSize() for param won't work!
+        LibGPU.webGPU.wgpuQueueWriteTexture(LibGPU.queue.getHandle(), destination, pixelPtr, width * height * 8, source, ext);
     }
 
     /** fill textures using floats arranged as r, g, b, a, r, g, b, a, etc.
