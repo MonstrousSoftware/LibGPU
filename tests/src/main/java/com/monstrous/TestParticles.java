@@ -13,25 +13,21 @@ import com.monstrous.utils.ScreenUtils;
 import com.monstrous.webgpu.*;
 import jnr.ffi.Pointer;
 
-// further ideas:
-// emitter on mouse button
+/** Demonstration of particle system using compute shader.
+ *
+ */
 
 public class TestParticles extends ApplicationAdapter {
 
+    private static float TWO_PI= 2.0f*(float)Math.PI;
+
     private SpriteBatch batch;
     private BitmapFont font;
-    private long startTime;
-    private int frames;
-    private String fps;
     private Texture particleTexture;
 
     @Override
     public void create() {
-        startTime = System.nanoTime();
-        frames = 0;
-        fps = "";
-
-        particleTexture = new Texture("textures/particle.png", false);
+        particleTexture = new Texture("textures/particle2.png", false);
 
 
         batch = new SpriteBatch();
@@ -47,34 +43,35 @@ public class TestParticles extends ApplicationAdapter {
             return;
         }
 
+        // emit different particles per mouse button
         if(LibGPU.input.isButtonPressed(Input.Buttons.LEFT)){
-            emitParticle( LibGPU.input.getX(), LibGPU.graphics.getHeight()-LibGPU.input.getY(), 100, Color.GREEN_YELLOW, 2.0f, 4.0f);
+            emitParticle( LibGPU.input.getX(), LibGPU.graphics.getHeight()-LibGPU.input.getY(), 100, 0, TWO_PI, Color.GREEN_YELLOW, 1.5f, 4.0f);
         }
         if(LibGPU.input.isButtonPressed(Input.Buttons.RIGHT)){
-            emitParticle( LibGPU.input.getX(), LibGPU.graphics.getHeight()-LibGPU.input.getY(), 500, Color.RED, 0.05f, 2.0f);
+            emitParticle( LibGPU.input.getX(), LibGPU.graphics.getHeight()-LibGPU.input.getY(), 500, 0, 1, Color.RED, 0.5f, 2.0f);
         }
+
+        // fountain
+        emitParticle( LibGPU.graphics.getWidth()/2, 0, 500, .2f*TWO_PI, .3f*TWO_PI, Color.ORANGE, 0.75f, 3.0f);
+
 
         ScreenUtils.clear(Color.BLACK);
         updateParticles();
         renderParticles();
         batch.begin();
-        font.draw(batch, "Particles: "+numParticles, 10, 70);
-        font.draw(batch, fps, 10, 50);
+        font.draw(batch, "Compute Shader particles, ESC to quit", 10, 120 );
+        font.draw(batch, "Use mouse to draw more particles", 10, 90 );
+        font.draw(batch, "Particles: "+numParticles+"/"+maxParticles, 10, 70);
+        font.draw(batch, "fps: "+String.valueOf(LibGPU.graphics.getFramesPerSecond()), 10, 50);
         batch.end();
 
-        // At the end of the frame
-        if (System.nanoTime() - startTime > 1000000000) {
-            fps = "SpriteBatch : fps: " + frames; // + " GPU: "+LibGPU.app.getAverageGPUtime()+" microseconds"  );
-            frames = 0;
-            startTime = System.nanoTime();
-        }
-        frames++;
     }
 
     @Override
     public void dispose(){
         // cleanup
         batch.dispose();
+        particlesDispose();
     }
 
     @Override
@@ -92,10 +89,14 @@ public class TestParticles extends ApplicationAdapter {
     private int maxParticles;
     private int writeIndex;
     private int structSize;
+    private BindGroupLayout bindGroupLayout;
     private Pointer computePipeline;
+    private Pipeline renderPipeline;
     private ShaderProgram shader;
     private Vector3 particleScale;
     private Vector3 screenSize;
+
+
 
     private void initParticles(){
 
@@ -129,26 +130,47 @@ public class TestParticles extends ApplicationAdapter {
         int W = LibGPU.graphics.getWidth();
         int H = LibGPU.graphics.getHeight();
 
+
+
         for(int i = 0; i < 200 ; i++){
-            emitParticle((float) (Math.random()*W),(float)(Math.random()*H),speed,  color, 1.0f, 2.0f);
+            emitParticle((float) (Math.random()*W),(float)(Math.random()*H),speed,  0, TWO_PI, color, 1.0f, 2.0f);
         }
 
         shader = new ShaderProgram(Files.internal("shaders/particles.wgsl"));
 
-        BindGroupLayout bindGroupLayout = createBindGroupLayout();
-        PipelineLayout pipelineLayout = new PipelineLayout("particle compute pipeline", bindGroupLayout);
+        bindGroupLayout = createBindGroupLayout();
+        PipelineLayout pipelineLayout = new PipelineLayout("particle render pipeline", bindGroupLayout);
         computePipeline = makeComputePipeline(shader, pipelineLayout);
+
+        pipelineLayout = new PipelineLayout("particle render pipeline", bindGroupLayout);
+
+        PipelineSpecification pipeSpec = new PipelineSpecification();
+        pipeSpec.numSamples =  LibGPU.app.configuration.numSamples;
+        pipeSpec.topology = WGPUPrimitiveTopology.TriangleList;
+        pipeSpec.shader = shader;
+        pipeSpec.blendSrcColor = WGPUBlendFactor.SrcAlpha;
+        pipeSpec.blendDstColor = WGPUBlendFactor.One;
+        pipeSpec.blendOpColor = WGPUBlendOperation.Add;
+        pipeSpec.blendSrcAlpha = WGPUBlendFactor.Src;
+        pipeSpec.blendDstAlpha = WGPUBlendFactor.One;
+        pipeSpec.blendOpAlpha = WGPUBlendOperation.Add;
+        pipeSpec.disableDepthTest();    // disable depth test to avoid transparent pixels appearing as black
+
+        renderPipeline = new Pipeline(pipelineLayout.getHandle(), pipeSpec);
+        pipelineLayout.dispose();
     }
 
-    private void emitParticle(float x, float y, float speed, Color color, float scale, float age){
+
+    private Vector3 pos = new Vector3();
+    private Vector3 vel = new Vector3();
+
+    private void emitParticle(float x, float y, float speed, float minAngle, float maxAngle, Color color, float scale, float age){
         if(writeIndex >= maxParticles)
             writeIndex = 0; // start overwriting oldest particles
 
-        Vector3 pos = new Vector3();
-        Vector3 vel = new Vector3();
-
         pos.set(x, y,0);
-        float angle = (float)(2*Math.PI * Math.random());
+        //float angle = (float)(2*Math.PI * Math.random());
+        float angle = (float) (minAngle + (maxAngle-minAngle)*Math.random());
         vel.set( speed*(float)(Math.cos(angle)),speed*((float)Math.sin(angle)), 0);
 
 
@@ -186,39 +208,18 @@ public class TestParticles extends ApplicationAdapter {
 
     private void renderParticles(){
 
-        Matrix4 projectionMatrix = new Matrix4();
-        projectionMatrix.setToOrtho(0f, LibGPU.graphics.getWidth(), 0f, LibGPU.graphics.getHeight(), -1f, 1f);
-        setUniforms(batch.getProjectionMatrix(), screenSize, particleScale, LibGPU.graphics.getDeltaTime());   // PV matrix?
+        setUniforms(batch.getProjectionMatrix(), screenSize, particleScale, LibGPU.graphics.getDeltaTime());
 
         RenderPass renderPass = RenderPassBuilder.create(null, LibGPU.app.configuration.numSamples);
 
-        BindGroupLayout bindGroupLayout = createBindGroupLayout();
         BindGroup bg = makeBindGroup(bindGroupLayout, uniformBuffer, particleBuffers[flip], particleBuffers[1-flip], particleTexture);
 
-        PipelineLayout pipelineLayout = new PipelineLayout("particle render pipeline", bindGroupLayout);
-
-        PipelineSpecification pipeSpec = new PipelineSpecification();
-        pipeSpec.numSamples =  LibGPU.app.configuration.numSamples;
-        pipeSpec.topology = WGPUPrimitiveTopology.TriangleList;
-        pipeSpec.shader = shader;
-        pipeSpec.blendSrcColor = WGPUBlendFactor.SrcAlpha;
-        pipeSpec.blendDstColor = WGPUBlendFactor.One;
-        pipeSpec.blendOpColor = WGPUBlendOperation.Add;
-        pipeSpec.blendSrcAlpha = WGPUBlendFactor.Src;
-        pipeSpec.blendDstAlpha = WGPUBlendFactor.One;
-        pipeSpec.blendOpAlpha = WGPUBlendOperation.Add;
-        pipeSpec.disableDepthTest();    // disable depth test to avoid transparent pixels appearing as black
-
-        Pipeline pipeline = new Pipeline(pipelineLayout.getHandle(), pipeSpec);
-
-        renderPass.setPipeline(pipeline.getHandle());
+        renderPass.setPipeline(renderPipeline.getHandle());
         renderPass.setBindGroup( 0, bg.getHandle(), 0, JavaWebGPU.createNullPointer());
-
 
         renderPass.draw( 6* numParticles ); // 6 vertices per particle
         bg.dispose();
         renderPass.end();
-
     }
 
     private void updateParticles(){
@@ -231,7 +232,6 @@ public class TestParticles extends ApplicationAdapter {
         // set pipeline
         pass.setPipeline(computePipeline);
 
-        BindGroupLayout bindGroupLayout = createBindGroupLayout();
         BindGroup bindGroup = makeBindGroup(bindGroupLayout, uniformBuffer, particleBuffers[flip], particleBuffers[1-flip], particleTexture);
         flip = 1 - flip;
         // set bind group
@@ -244,8 +244,6 @@ public class TestParticles extends ApplicationAdapter {
         // dispatch workgroups
         pass.dispatchWorkGroups(workgroupCountX, 1, 1);
         bindGroup.dispose();
-        bindGroupLayout.dispose();
-
         pass.end();
 
         CommandBuffer commandBuffer = encoder.finish();
@@ -254,6 +252,16 @@ public class TestParticles extends ApplicationAdapter {
         // feed the command buffer to the queue
         LibGPU.queue.submit(commandBuffer);
         commandBuffer.dispose();
+    }
+
+    private void particlesDispose(){
+        uniformBuffer.dispose();
+        particleBuffers[0].dispose();
+        particleBuffers[1].dispose();
+        bindGroupLayout.dispose();
+        renderPipeline.dispose();
+        LibGPU.webGPU.wgpuRenderPipelineRelease(computePipeline);
+        shader.dispose();
     }
 
 

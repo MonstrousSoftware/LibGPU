@@ -104,7 +104,7 @@ public class Application {
                     CommandEncoder encoder = new CommandEncoder(device);
                     LibGPU.commandEncoder = encoder.getHandle();        // e.g. RenderPassBuilder needs it
 
-                    LibGPU.graphics.setDeltaTime(winApp.getDeltaTime());
+                    LibGPU.graphics.update(winApp.getDeltaTime());
                     LibGPU.graphics.passNumber = 0;
 
                     listener.render();
@@ -127,6 +127,7 @@ public class Application {
             System.out.println("Application exit");
             listener.pause();
             listener.dispose();
+            LibGPU.input.setInputProcessor(null);   // ensure input processor is deactivated
 
             // Application chaining: if nextListener is defined, we start up a new listener now that the current listener has exited.
             // if returnToPreviousListener is true, then we will return to the current listener when the new listener exits.

@@ -3,9 +3,9 @@
 
 struct Uniforms {
     projectionMatrix: mat4x4f,
-    screenSize: vec4f,  //xy
-    quadScale: vec4f,   // xy
-    deltaTime: f32,
+    screenSize: vec4f,  //xy, to bounce off the edges
+    quadScale: vec4f,   // xy, global scale of particles
+    deltaTime: f32,     // delta time per frame
 };
 
 struct Particle {
@@ -35,7 +35,8 @@ struct VertexOutput {
     @location(3) uv: vec2f,
 };
 
-  const localPos = array<vec2f, 6> (
+// 6 vertices per quad
+const localPos = array<vec2f, 6> (
     // 1st triangle
     vec2f( 0.0,  0.0),  // center
     vec2f( 1.0,  0.0),  // right, center
@@ -45,16 +46,16 @@ struct VertexOutput {
     vec2f( 0.0,  1.0),  // center, top
     vec2f( 1.0,  0.0),  // right, center
     vec2f( 1.0,  1.0),  // right, top
-  );
+);
 
-// use 6 vertex indices per particle
+
 
 @vertex
 fn vs_main(@builtin(vertex_index) vertexIndex : u32) -> VertexOutput {
    var out: VertexOutput;
 
-   let localIx = vertexIndex % 6;
-   let partIx = vertexIndex / 6;
+   let localIx = vertexIndex % 6;   // 6 vertices per particle quad
+   let partIx = vertexIndex / 6;    // particle number
 
    let particle:Particle = dataIn.particles[partIx];
 
@@ -62,8 +63,7 @@ fn vs_main(@builtin(vertex_index) vertexIndex : u32) -> VertexOutput {
    let pos =  uniforms.projectionMatrix * vec4f(particle.position.xy, 0.0, 1.0);
    out.position = pos + vec4f(localPos[localIx].x*scale.x, localPos[localIx].y*scale.y, 0, 0);
    out.color = particle.color;
-   out.uv.x = localPos[localIx].x;
-   out.uv.y = 1.0 - localPos[localIx].y;
+   out.uv = localPos[localIx]*vec2(1,-1);   // flip Y-axis for UV coordinates
 
    return out;
 }
@@ -90,7 +90,7 @@ fn updateParticles(@builtin(global_invocation_id) id: vec3<u32>) {
          particle.velocity.y *= -0.6;
     }
     particle.color.a = clamp(particle.age/2.0, 0.0, 1.0);
-    particle.scale = clamp(particle.age/2.0, 0.0, 1.0);
+    particle.scale -= 0.1 * uniforms.deltaTime;
    dataOut.particles[id.x] = particle;
 
 }

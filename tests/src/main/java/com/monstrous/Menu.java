@@ -13,7 +13,9 @@ import com.monstrous.utils.ScreenUtils;
 public class Menu extends ApplicationAdapter {
 
     private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Rounded Rectangle", "Simple Game", "Viewport", "GUI", "Build Model", "Instancing", "Frustum demo",
-            "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)", "GLTF (Sponza)", "Animation", "Image Based Lighting", "IBL Generator", "Compute MipMap"  };
+            "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)", "GLTF (Sponza)", "Animation", "Image Based Lighting", "IBL Generator", "Compute MipMap",
+            "Particles"
+    };
 
     private Stage stage;
 
@@ -104,7 +106,10 @@ public class Menu extends ApplicationAdapter {
             listener = new TestIBL();
         else if(name.contentEquals("Compute MipMap"))
             listener = new TestComputeMipMap();
+        else if(name.contentEquals("Particles"))
+            listener = new TestParticles();
         else
+
             throw new RuntimeException("No class known for test: "+name);
 
         LibGPU.app.setNextListener(listener, true);
