@@ -6,9 +6,7 @@ import com.monstrous.graphics.VertexAttribute;
 import com.monstrous.graphics.VertexAttributes;
 import com.monstrous.graphics.g3d.*;
 import com.monstrous.graphics.loaders.gltf.*;
-import com.monstrous.math.Quaternion;
-import com.monstrous.math.Vector2;
-import com.monstrous.math.Vector3;
+import com.monstrous.math.*;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
 import com.monstrous.webgpu.WGPUVertexFormat;
 
@@ -104,6 +102,33 @@ public class GLTFLoader implements ModelLoader {
             addNodeHierarchy(gltf, gltfNode, rootNode);     // recursively add the node hierarchy
             rootNode.updateMatrices(true);
             model.addNode(rootNode);
+        }
+
+        for(GLTFSkin skin : gltf.skins) {
+            // skin.inverseBindMatrices points to an accessor to get mat4 data
+            GLTFAccessor ibmAccessor = gltf.accessors.get(skin.inverseBindMatrices);
+            if(ibmAccessor.componentType != GLTF.FLOAT32 || !ibmAccessor.type.contentEquals("MAT4"))
+                throw new RuntimeException("GLTF: Expected inverseBindMatrices of MAT4(float32)");
+            GLTFBufferView ibmView = gltf.bufferViews.get(ibmAccessor.bufferView);
+
+            if(ibmView.buffer != 0)
+                throw new RuntimeException("GLTF can only support buffer 0");
+            gltf.rawBuffer.byteBuffer.position(ibmAccessor.byteOffset+ ibmView.byteOffset);
+            FloatBuffer matBuf = gltf.rawBuffer.byteBuffer.asFloatBuffer();
+
+            float[] floats = new float[16];
+            for(int i = 0; i < ibmAccessor.count; i++) {    // read each matrix
+                matBuf.get(floats, 0,  16); // get next 16 floats from the float buffer
+                Matrix4 mat = new Matrix4();
+                mat.set(floats);
+                model.inverseBoneTransforms.add(mat);
+            }
+
+            //skin.joints
+            for(int i = 0; i < skin.joints.size(); i++){
+                Node jointNode = nodes.get(skin.joints.get(i));
+                model.joints.add(jointNode);
+            }
         }
 
         for(GLTFAnimation gltfAnim : gltf.animations ){
@@ -251,9 +276,18 @@ public class GLTFLoader implements ModelLoader {
         MeshData meshData = new MeshData();
 
         // todo adjust this based on the file contents:
+
         int vaFlags = VertexAttribute.Usage.POSITION|VertexAttribute.Usage.TEXTURE_COORDINATE|VertexAttribute.Usage.NORMAL;
         if(hasNormalMap)
             vaFlags |= VertexAttribute.Usage.TANGENT|VertexAttribute.Usage.BITANGENT;
+        for(GLTFAttribute attrib : primitive.attributes){
+            if(attrib.name.contentEquals("JOINTS_0")){  // todo only supports _0
+                vaFlags |= VertexAttribute.Usage.JOINTS;
+            }
+            if(attrib.name.contentEquals("WEIGHTS_0")){
+                vaFlags |= VertexAttribute.Usage.WEIGHTS;
+            }
+        }
 
         meshData.vertexAttributes = new VertexAttributes(vaFlags);
 
@@ -285,6 +319,8 @@ public class GLTFLoader implements ModelLoader {
         int normalAccessorId = -1;
         int uvAccessorId = -1;
         int tangentAccessorId = -1;
+        int jointsAccessorId = -1;
+        int weightsAccessorId = -1;
         ArrayList<GLTFAttribute> attributes = primitive.attributes;
         for(GLTFAttribute attribute : attributes){
             if(attribute.name.contentEquals("POSITION")){
@@ -295,6 +331,10 @@ public class GLTFLoader implements ModelLoader {
                 uvAccessorId = attribute.value;
             } else if(attribute.name.contentEquals("TANGENT")){
                 tangentAccessorId = attribute.value;
+            } else if(attribute.name.contentEquals("JOINTS_0")){
+                jointsAccessorId = attribute.value;
+            } else if(attribute.name.contentEquals("WEIGHTS_0")){
+                weightsAccessorId = attribute.value;
             }
         }
         if(positionAccessorId < 0)
@@ -396,6 +436,66 @@ public class GLTFLoader implements ModelLoader {
             }
         }
 
+        ArrayList<Vector4> joints = new ArrayList<>();
+        if(jointsAccessorId >= 0) {
+            GLTFAccessor jointsAccessor = gltf.accessors.get(jointsAccessorId);
+            if (jointsAccessor.componentType != GLTF.USHORT16 &&  jointsAccessor.componentType != GLTF.UBYTE8)
+                throw new RuntimeException("GLTF: Can only joints defined as USHORT16 or UBYTE8, type = "+jointsAccessor.componentType);
+            if ( !jointsAccessor.type.contentEquals("VEC4"))
+                throw new RuntimeException("GLTF: Can only support joints as vec4, type = "+jointsAccessor.type);
+            view = gltf.bufferViews.get(jointsAccessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += jointsAccessor.byteOffset;
+            rawBuffer.byteBuffer.position(offset);
+            boolean isByte = (jointsAccessor.componentType == GLTF.UBYTE8);
+            short u1, u2, u3, u4;
+            for (int i = 0; i < jointsAccessor.count; i++) {
+                // assuming ubyte8 or ushort16 (handled as (signed) short here)
+                if(isByte) {
+                    u1 = rawBuffer.byteBuffer.get();
+                    u2 = rawBuffer.byteBuffer.get();
+                    u3 = rawBuffer.byteBuffer.get();
+                    u4 = rawBuffer.byteBuffer.get();
+                } else {
+                    u1 = rawBuffer.byteBuffer.getShort();
+                    u2 = rawBuffer.byteBuffer.getShort();
+                    u3 = rawBuffer.byteBuffer.getShort();
+                    u4 = rawBuffer.byteBuffer.getShort();
+                }
+
+                Vector4 jj = new Vector4(u1, u2, u3, u4);
+                joints.add(jj);
+
+//                int jointInt = (u1&0xFF) << 24 | (u2 &0xFF) << 16 | (u3&0xFF) << 8 | (u4&0xFF);
+//                System.out.println("joints  "+u1 + " "+ u2 + " "+u3+" "+u4+": "+Integer.toHexString(jointInt));
+//                joints.add(jointInt);
+            }
+        }
+
+        ArrayList<Vector4> weights = new ArrayList<>();
+        if(weightsAccessorId >= 0) {
+            GLTFAccessor accessor = gltf.accessors.get(weightsAccessorId);
+            if (accessor.componentType != GLTF.FLOAT32 || !accessor.type.contentEquals("VEC4"))
+                throw new RuntimeException("GLTF: Can only support vec4(FLOAT32) for joints, type = "+accessor.componentType);
+            view = gltf.bufferViews.get(accessor.bufferView);
+            if (view.buffer != 0)
+                throw new RuntimeException("GLTF: Can only support buffer 0");
+            offset = view.byteOffset;
+            offset += accessor.byteOffset;
+            rawBuffer.byteBuffer.position(offset);
+
+            for (int i = 0; i < accessor.count; i++) {
+                float f1 = rawBuffer.byteBuffer.getFloat();
+                float f2 = rawBuffer.byteBuffer.getFloat();
+                float f3 = rawBuffer.byteBuffer.getFloat();
+                float f4 = rawBuffer.byteBuffer.getFloat();
+                Vector4 w = new Vector4(f1, f2, f3, f4);
+                System.out.println("weights  "+w.toString());
+                weights.add(w);
+            }
+        }
 
         ArrayList<Vector3> bitangents = new ArrayList<>();
         // if the material has a normal map and tangents are not provided we need to calculate them
@@ -434,6 +534,24 @@ public class GLTFLoader implements ModelLoader {
                 meshData.vertFloats.add(bitangent.x);
                 meshData.vertFloats.add(bitangent.y);
                 meshData.vertFloats.add(bitangent.z);
+            }
+
+            if(!joints.isEmpty()) {
+//                float jointF = Float.intBitsToFloat(joints.get(i));
+//                meshData.vertFloats.add(jointF);        // masquerade integer value as float
+                Vector4 jnt = joints.get(i);
+                meshData.vertFloats.add(jnt.x);
+                meshData.vertFloats.add(jnt.y);
+                meshData.vertFloats.add(jnt.z);
+                meshData.vertFloats.add(jnt.w);
+            }
+
+            if(!weights.isEmpty()) {
+                Vector4 weight = weights.get(i);
+                meshData.vertFloats.add(weight.x);
+                meshData.vertFloats.add(weight.y);
+                meshData.vertFloats.add(weight.z);
+                meshData.vertFloats.add(weight.w);
             }
         }
 

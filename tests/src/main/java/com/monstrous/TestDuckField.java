@@ -40,7 +40,7 @@ public class TestDuckField extends ApplicationAdapter {
         startTime = System.nanoTime();
         frames = 0;
 
-        model = new Model("models/Ducky/ducky.gltf");
+        model = new Model("models/Ducky/ducky.glb");
 
         modelInstances = new ArrayList<>();
 

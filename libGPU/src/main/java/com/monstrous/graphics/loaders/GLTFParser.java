@@ -295,6 +295,33 @@ public class GLTFParser {
             gltf.nodes.add(node);
         }
 
+        JSONArray skins = (JSONArray)file.get("skins");
+        if(skins != null) {
+            System.out.println("skins: " + skins.size());
+            for (int i = 0; i < skins.size(); i++) {
+                GLTFSkin skin = new GLTFSkin();
+
+                JSONObject sk = (JSONObject) skins.get(i);
+                skin.name = (String) sk.get("name");
+                System.out.println("skin: " + skin.name);
+
+                Number ibm = (Number)sk.get("inverseBindMatrices");
+                skin.inverseBindMatrices = ibm.intValue();
+
+                Number skel = (Number)sk.get("skeleton");
+                skin.skeleton = skel != null ? skel.intValue() : -1;
+
+
+                JSONArray joints = (JSONArray) sk.get("joints");
+                for (int j = 0; j < joints.size(); j++) {
+                    Number nr = (Number) joints.get(j);
+                    skin.joints.add(nr.intValue());
+                }
+
+                gltf.skins.add(skin);
+            }
+        }
+
         JSONArray animations = (JSONArray)file.get("animations");
         if(animations != null) {
             System.out.println("animations: " + animations.size());

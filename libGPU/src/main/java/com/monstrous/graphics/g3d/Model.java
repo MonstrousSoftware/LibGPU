@@ -18,6 +18,7 @@ package com.monstrous.graphics.g3d;
 
 import com.monstrous.graphics.Material;
 import com.monstrous.graphics.loaders.*;
+import com.monstrous.math.Matrix4;
 import com.monstrous.utils.Disposable;
 import com.monstrous.webgpu.WGPUPrimitiveTopology;
 
@@ -32,6 +33,8 @@ public class Model implements Disposable {
     private boolean ownsMeshes = true;
     private ArrayList<Node> rootNodes;
     private ArrayList<Material> materials;
+    public ArrayList<Matrix4> inverseBoneTransforms;       // temp?
+    public ArrayList<Node> joints;                         // temp?
 
 
     private ArrayList<Animation> animations;
@@ -43,6 +46,8 @@ public class Model implements Disposable {
         materials = new ArrayList<>();
         rootNodes = new ArrayList<>();
         animations = new ArrayList<>();
+        inverseBoneTransforms = new ArrayList<>();
+        joints = new ArrayList<>();
     }
 
     public Model(String filePath) {

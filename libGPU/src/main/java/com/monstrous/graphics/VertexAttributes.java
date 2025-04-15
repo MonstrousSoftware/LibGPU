@@ -56,6 +56,8 @@ public class VertexAttributes implements Disposable {
                     case NORMAL:        add(flag, "normal", WGPUVertexFormat.Float32x3, 2); break;
                     case TANGENT:       add(flag, "tangent", WGPUVertexFormat.Float32x3, 3); break;
                     case BITANGENT:     add(flag, "bitangent", WGPUVertexFormat.Float32x3, 4); break;
+                    case JOINTS:        add(flag, "joints", WGPUVertexFormat.Float32x4, 6); break;  // todo compress
+                    case WEIGHTS:       add(flag, "weights", WGPUVertexFormat.Float32x4, 7); break;
                 }
             }
         }

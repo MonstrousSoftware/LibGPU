@@ -26,6 +26,7 @@ public class GLTF {
     public ArrayList<GLTFAccessor> accessors;
     public ArrayList<GLTFNode> nodes;
     public ArrayList<GLTFAnimation> animations;
+    public ArrayList<GLTFSkin> skins;
     public ArrayList<GLTFScene> scenes;
     public GLTFRawBuffer rawBuffer;     // binary data either from a .bin file or from second chunk in .glb file
 
@@ -40,6 +41,7 @@ public class GLTF {
         accessors = new ArrayList<>();
         nodes = new ArrayList<>();
         animations = new ArrayList<>();
+        skins = new ArrayList<>();
         scenes = new ArrayList<>();
         rawBuffer = null;
     }

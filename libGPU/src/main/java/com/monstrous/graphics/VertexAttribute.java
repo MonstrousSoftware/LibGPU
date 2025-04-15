@@ -29,10 +29,12 @@ public class VertexAttribute {
         static public final int NORMAL= 32;
         static public final int TANGENT = 64;
         static public final int BITANGENT = 128;
+        static public final int JOINTS = 256;
+        static public final int WEIGHTS = 512;
 
-        static public final int _LAST = 128;
+        static public final int _LAST = 512;
 
-        static public final int GENERIC = 256;
+        static public final int GENERIC = 1024;
     }
 
 

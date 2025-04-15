@@ -17,7 +17,7 @@ public class Launcher {
 
         config.enableGPUtiming = false;
 
-        new Application(new TestHDR(), config);
+        new Application(new Menu(), config);
 
     }
 }

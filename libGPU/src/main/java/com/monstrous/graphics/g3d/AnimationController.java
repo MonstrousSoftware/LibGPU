@@ -1,5 +1,6 @@
 package com.monstrous.graphics.g3d;
 
+import com.monstrous.math.Matrix4;
 import com.monstrous.math.Quaternion;
 import com.monstrous.math.Vector3;
 
@@ -54,6 +55,7 @@ public class AnimationController {
     public void setAnimation(String animationId){
         setAnimation(animationId, 1);
     }
+
     public void setAnimation(String animationId, int loopCount){
         setAnimation(animationId, loopCount, 1.0f);
     }
@@ -71,6 +73,12 @@ public class AnimationController {
         animationDesc = null;
     }
 
+    /** use first, possibly anonymous animation */
+    public void setAnimation( int loopCount, float speed){
+        Animation anim = instance.model.getAnimations().get(0);
+        animationDesc = new AnimationDesc(anim, loopCount, anim.duration, speed);
+    }
+
     public AnimationDesc update(float deltaTime){
         if(animationDesc == null)
             return null;
@@ -78,11 +86,27 @@ public class AnimationController {
         if(animationDesc.time > animationDesc.duration)
             throw new RuntimeException("Animation time out of bounds");
 
+        // clear isAnimated flag because the time may be outside the animation duration of a node
         for(NodeAnimation nodeAnim: animationDesc.animation.nodeAnimations){
-            // reset per node animation
-            tmpQ.idt(); // no rotation
-            tmpScl.set(1,1,1); // no scaling
-            tmpTra.set(0,0,0); // no translation
+            nodeAnim.node.isAnimated = false;   // set to true if time is within an animation range
+        }
+
+        Node prevNode = null;
+
+        // todo what values do we use before the first keyframe and after the last? (todo perhaps interpolate between last and first?)
+        for(NodeAnimation nodeAnim: animationDesc.animation.nodeAnimations){
+
+            // assume the animations are in node order (1), aggregate the different operators to apply at the same time
+            // and in the correct operator order: translate, rotate then scale
+            // (1): perhaps the data structure should group animations per node
+            if(nodeAnim.node != prevNode) {
+                if(prevNode != null)
+                    updateNodeTransform(prevNode, tmpTra, tmpQ, tmpScl);
+                tmpQ.idt();
+                tmpScl.set(1, 1, 1);
+                tmpTra.set(0, 0, 0);
+                prevNode = nodeAnim.node;
+            }
 
             if(nodeAnim.rotation != null) {
                 NodeKeyframe<Quaternion> prevKey = nodeAnim.rotation.get(0);
@@ -120,17 +144,31 @@ public class AnimationController {
                 }
             }
 
-            nodeAnim.node.isAnimated = true;
-            nodeAnim.node.localTransform.set(tmpTra, tmpQ, tmpScl);
+
         }
+        if(prevNode != null)
+            updateNodeTransform(prevNode, tmpTra, tmpQ, tmpScl);
+// ThinMatrix OpenGL skel anim #3: https://www.youtube.com/watch?v=cieheqt7eqc
 
-        // todo local copy per instance
-        for(Node rootNode : instance.model.getNodes())
-            rootNode.updateMatrices(true);
+//        int jointId = 0;
+//        for(Node joint : instance.model.joints){
+//            joint.globalTransform.mul(instance.model.inverseBoneTransforms.get(jointId));
+//            //joint.globalTransform.set(instance.model.inverseBoneTransforms.get(jointId));
+//            jointId++;
+//        }
 
+        // todo local copy per instance, now all instances will animate in sync
 
         if(animationDesc.loopCount == 0)
             animationDesc = null;
         return animationDesc;
+    }
+
+
+
+    private void updateNodeTransform(Node node, Vector3 tra, Quaternion rot, Vector3 scl){
+        node.localTransform.idt().translate(tra).rotate(rot).scale(scl);
+        node.isAnimated = true;
+        node.updateMatrices(true); // update this node and its children
     }
 }

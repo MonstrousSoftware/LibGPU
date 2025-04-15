@@ -44,10 +44,10 @@ public class TestRenderable extends ApplicationAdapter {
 
 
         modelMatrix = new Matrix4();
-        renderable = new Renderable(meshPart, new Material(texture2), modelMatrix);
+        renderable = new Renderable(meshPart, new Material(texture2), modelMatrix, null);
 
         modelMatrix2 = new Matrix4();
-        renderable2 = new Renderable(meshPart, new Material(texture), modelMatrix2);
+        renderable2 = new Renderable(meshPart, new Material(texture), modelMatrix2, null);
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1, -3);

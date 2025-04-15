@@ -14,7 +14,7 @@ public class Menu extends ApplicationAdapter {
 
     private static final String[] testNames = { "SpriteBatch", "ShapeRenderer", "FontSDF", "Rounded Rectangle", "Simple Game", "Viewport", "GUI", "Build Model", "Instancing", "Frustum demo",
             "Lighting", "Shadow", "Post-Processing", "Cube Map", "Skybox",  "GLTF", "GLTF (GLB format)", "GLTF (Sponza)", "Animation", "Image Based Lighting", "IBL Generator", "Compute MipMap",
-            "Particles"
+            "Particles", "Skeletal Anim"
     };
 
     private Stage stage;
@@ -108,6 +108,8 @@ public class Menu extends ApplicationAdapter {
             listener = new TestComputeMipMap();
         else if(name.contentEquals("Particles"))
             listener = new TestParticles();
+        else if(name.contentEquals("Skeletal Anim"))
+            listener = new TestRiggedGLTF();
         else
 
             throw new RuntimeException("No class known for test: "+name);

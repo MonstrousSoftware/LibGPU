@@ -7,7 +7,7 @@
 // NORMAL
 // USE_IBL
 // COLOR
-
+// SKIN
 
 const MAX_DIR_LIGHTS : i32 = 5;
 const MAX_POINT_LIGHTS : i32 = 5;
@@ -54,6 +54,8 @@ struct ModelUniforms {
     modelMatrix: mat4x4f,
 };
 
+
+
 // Group 0 - Frame
 // Group 1 - Material
 // Group 2 - Instance
@@ -88,7 +90,11 @@ struct ModelUniforms {
 // Instance
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
-
+// Skinning
+#ifdef SKIN
+    @group(3) @binding(0) var<storage, read> joint_matrices: array<mat4x4f>;
+    @group(3) @binding(1) var<storage, read> inverse_bind_matrices: array<mat4x4f>;
+#endif
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -105,6 +111,10 @@ struct VertexInput {
 #ifdef COLOR
     @location(5) color: vec4f,
 #endif
+#ifdef SKIN
+    @location(6) joints: vec4f, // actually uint
+    @location(7) weights: vec4f,
+#endif
 };
 
 struct VertexOutput {
@@ -120,24 +130,44 @@ struct VertexOutput {
     @location(6) worldPosition: vec3f,
     @location(7) shadowPos: vec3f,
     @location(8) color: vec4f,
+#ifdef SKIN
+     @location(9) weights: vec4f,   // TMP
+#endif
 };
 
 @vertex
 fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOutput {
    var out: VertexOutput;
 
-#ifdef NORMAL
-   out.normal = (instances[instance].modelMatrix * vec4f(in.normal, 0.0)).xyz;
-#else
-   out.normal = vec3(0,1,0);
+
+    var vertPos:vec4f = vec4f(in.position, 1.0);
+    var worldPosition =  instances[instance].modelMatrix * vertPos;
+#ifdef SKIN
+  // Get relevant 4 bone matrices
+  let joint0 = joint_matrices[u32(in.joints[0])] * inverse_bind_matrices[u32(in.joints[0])];
+  let joint1 = joint_matrices[u32(in.joints[1])] * inverse_bind_matrices[u32(in.joints[1])];
+  let joint2 = joint_matrices[u32(in.joints[2])] * inverse_bind_matrices[u32(in.joints[2])];
+  let joint3 = joint_matrices[u32(in.joints[3])] * inverse_bind_matrices[u32(in.joints[3])];
+
+  // Compute influence of joint based on weight
+  let skin_matrix =
+    joint0 * in.weights[0] +
+    joint1 * in.weights[1] +
+    joint2 * in.weights[2] +
+    joint3 * in.weights[3];
+
+
+      // Bone transformed mesh
+    worldPosition =   skin_matrix * vertPos;
 #endif
 
-#ifdef NORMAL_MAP
-   out.tangent = (instances[instance].modelMatrix * vec4f(in.tangent, 0.0)).xyz;
-   out.bitangent = (instances[instance].modelMatrix * vec4f(in.bitangent, 0.0)).xyz;
+#ifdef SKIN
+    out.weights = in.joints;
 #endif
 
-   let worldPosition =  instances[instance].modelMatrix * vec4f(in.position, 1.0);
+//let worldPosition =   vertPos;
+
+   //let worldPosition =  instances[instance].modelMatrix * vertPos;
    let pos =  uFrame.combinedMatrix * worldPosition;
    //let pos =  uFrame.projectionMatrix * uFrame.viewMatrix * worldPosition;
    let cameraPosition = uFrame.cameraPosition.xyz;
@@ -157,6 +187,18 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    out.cameraPosition = cameraPosition.xyz;
    out.worldPosition = worldPosition.xyz;
 
+// todo skinning of normals
+#ifdef NORMAL
+   out.normal = (instances[instance].modelMatrix * vec4f(in.normal, 0.0)).xyz;
+#else
+   out.normal = vec3(0,1,0);
+#endif
+
+#ifdef NORMAL_MAP
+   out.tangent = (instances[instance].modelMatrix * vec4f(in.tangent, 0.0)).xyz;
+   out.bitangent = (instances[instance].modelMatrix * vec4f(in.bitangent, 0.0)).xyz;
+#endif
+
 #ifdef SHADOWS
     let posFromLight= uFrame.lightCombinedMatrix * worldPosition;
     // XY is in (-1, 1) space, Z is in (0, 1) space
@@ -168,6 +210,8 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
         posFromLight.z
     );
 #endif
+
+
 
    return out;
 }
