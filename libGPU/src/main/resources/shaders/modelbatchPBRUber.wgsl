@@ -150,18 +150,15 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
   let joint3 = joint_matrices[u32(in.joints[3])] * inverse_bind_matrices[u32(in.joints[3])];
 
   // Compute influence of joint based on weight
-  let skin_matrix =
+  let skinMatrix =
     joint0 * in.weights[0] +
     joint1 * in.weights[1] +
     joint2 * in.weights[2] +
     joint3 * in.weights[3];
 
-
       // Bone transformed mesh
-    worldPosition =   skin_matrix * vertPos;
-#endif
-
-#ifdef SKIN
+    worldPosition =   skinMatrix * vertPos; // todo combine with instance matrix
+    //worldPosition = skinMatrix * instances[instance].modelMatrix * vertPos;
     out.weights = in.joints;
 #endif
 

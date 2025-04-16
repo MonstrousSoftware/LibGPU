@@ -26,12 +26,13 @@ public class TestRiggedGLTF extends ApplicationAdapter {
     private Model modelFloor;
     private Model modelBlock;
     private ModelInstance modelInstance1;
+    private ModelInstance modelInstance2;
     private ArrayList<ModelInstance> instances;
     private ArrayList<ModelInstance> bones;
     private SpriteBatch batch;
     private BitmapFont font;
     private CameraController camController;
-    private AnimationController animController;
+    private AnimationController animController, animController2;
     private boolean showBones = true;
 
     public void create() {
@@ -43,6 +44,9 @@ public class TestRiggedGLTF extends ApplicationAdapter {
 
         modelInstance1 = new ModelInstance(model);
         instances.add(modelInstance1);
+
+//        modelInstance2 = new ModelInstance(model, 3, 1, 0);
+//        instances.add(modelInstance2);
 
 
 //        modelFloor = buildFloor();
@@ -64,6 +68,9 @@ public class TestRiggedGLTF extends ApplicationAdapter {
 
         animController = new AnimationController(modelInstance1);
         animController.setAnimation(-1, 1.0f);
+//
+//        animController2 = new AnimationController(modelInstance2);
+//        animController2.setAnimation(-1, 1.0f);
 
 
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
@@ -106,6 +113,7 @@ public class TestRiggedGLTF extends ApplicationAdapter {
         }
 
         AnimationController.AnimationDesc desc = animController.update(deltaTime);
+//        animController2.update(deltaTime);
         camController.update();
         modelInstance1.update();
 
@@ -122,11 +130,11 @@ public class TestRiggedGLTF extends ApplicationAdapter {
         }
 
         batch.begin();
-        if(desc != null) {
-            font.draw(batch, "Skeletal Animation of GLTF file" , 10, 180);
-            font.draw(batch, "1 to show bones, 2 to hide, SPACE to freeze animation " , 10, 150);
-            font.draw(batch, "animation time: " + desc.time, 10, 120);
-        }
+        font.draw(batch, "Skeletal Animation of GLTF file" , 10, 180);
+        font.draw(batch, "1 to show bones, 2 to hide, SPACE to freeze animation " , 10, 150);
+//        if(desc != null) {
+//            font.draw(batch, "animation time: " + desc.time, 10, 120);
+//        }
         batch.end();
     }
 

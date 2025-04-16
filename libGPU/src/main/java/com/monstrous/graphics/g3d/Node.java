@@ -57,6 +57,21 @@ public class Node {
         nodeParts.add( nodePart );
     }
 
+    public Node( Node other ){
+        this();
+        this.name = other.name;
+        this.localTransform.set(other.localTransform);  // needed?
+        this.globalTransform.set(other.globalTransform);    // needed?
+        this.translation.set(other.translation);
+        this.rotation.set(other.rotation);
+        this.scale.set(other.scale);
+        this.nodeParts = other.nodeParts;   // shallow copy
+        for(Node child : other.children){
+            Node newChild = new Node(child);
+            addChild(newChild);
+        }
+    }
+
     public void addChild(Node child){
         child.parent = this;
         children.add(child);
@@ -76,18 +91,18 @@ public class Node {
         }
     }
 
-    public void getRenderables(ArrayList<Renderable> renderables, Model model, Matrix4 instanceTransform, RenderablePool pool ){
+    public void getRenderables(ArrayList<Renderable> renderables, ModelInstance modelInstance, Matrix4 instanceTransform, RenderablePool pool ){
         if(nodeParts != null) {
             for (NodePart nodePart : nodeParts) {
                 Renderable renderable = pool.obtain();
-                renderable.set(nodePart.meshPart, nodePart.material, instanceTransform, model);
+                renderable.set(nodePart.meshPart, nodePart.material, instanceTransform, modelInstance);
                 // combine globalTransform from node with modelTransform from model instance
                 renderable.modelTransform.mul(globalTransform);
                 renderables.add(renderable);
             }
         }
         for(Node child : children)
-            child.getRenderables(renderables, model, instanceTransform, pool);
+            child.getRenderables(renderables, modelInstance, instanceTransform, pool);
     }
 
 

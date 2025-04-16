@@ -58,7 +58,7 @@ public class ModelBatch implements Disposable {
     private BindGroup instancingBindGroup;
     private BindGroup skinningBindGroup;
     private Material prevMaterial;
-    private Model prevModel;
+    private ModelInstance prevModelInstance;
     private Mesh currentMesh;
     private Camera camera;
 
@@ -162,7 +162,7 @@ public class ModelBatch implements Disposable {
 
         prevMaterial = null;
         prevPipeline = null;
-        prevModel = null;
+        prevModelInstance = null;
         numPipelineSwitches = 0;
         materialSwitches = 0;
         drawCalls = 0;
@@ -179,8 +179,8 @@ public class ModelBatch implements Disposable {
         instancingBindGroup = createInstancingBindGroup(instancingBindGroupLayout, instanceBuffer);
         pass.setBindGroup(2, instancingBindGroup.getHandle());
 
-        setSkinBuffers(1);
-        skinningBindGroup = createSkinningBindGroup(skinningBindGroupLayout, jointBuffer, inverseBoneBuffer);
+        // set skinning bind group to use fake non-zero buffer to avoid complaints from webgpu
+        skinningBindGroup = createSkinningBindGroup(skinningBindGroupLayout, dummyBuffer, dummyBuffer);
         pass.setBindGroup(3, skinningBindGroup.getHandle());
     }
 
@@ -289,10 +289,10 @@ public class ModelBatch implements Disposable {
     // this will actually generate the draw calls for the renderable
     private void emit(Renderable renderable) {
         numEmitted++;
-        emit(renderable.meshPart, renderable.material, renderable.modelTransform, renderable.model);
+        emit(renderable.meshPart, renderable.material, renderable.modelTransform, renderable.modelInstance);
     }
 
-    public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix, Model model){
+    public void emit(MeshPart meshPart, Material material, Matrix4 modelMatrix, ModelInstance modelInstance){
 
         // gather identical meshParts to be drawn in one call using instancing
         if(meshPart != prevMeshPart) {
@@ -313,12 +313,13 @@ public class ModelBatch implements Disposable {
             materialSwitches++;
         }
 
-        if(model != prevModel){
-            prevModel = model;
-            if(model.joints != null) {
-                setSkinBuffers(model.inverseBoneTransforms.size());
-                fillSkinBuffers(model);
-                skinningBindGroup = createSkinningBindGroup(skinningBindGroupLayout, jointBuffer, inverseBoneBuffer);
+        // modelInstance switch affects skinning
+        if(modelInstance != prevModelInstance){
+            prevModelInstance = modelInstance;
+            if(modelInstance != null && modelInstance.jointBuffer != null) {
+                updateJointBuffer(modelInstance);
+                // note: perhaps the bind group should be part of model instance
+                skinningBindGroup = createSkinningBindGroup(skinningBindGroupLayout, modelInstance.jointBuffer, modelInstance.model.inverseBoneBuffer);
                 pass.setBindGroup(3, skinningBindGroup.getHandle());
             }
         }
@@ -583,39 +584,22 @@ public class ModelBatch implements Disposable {
         return bindGroup;
     }
 
-    private Buffer jointBuffer;
-    private Buffer inverseBoneBuffer;
-    // todo release buffers and avoid creating new buffers per frame. Perhaps store with model or modelInstance.
 
-    private void setSkinBuffers(int numBones){
-        int usage = WGPUBufferUsage.CopyDst | WGPUBufferUsage.Storage;
-        inverseBoneBuffer = new Buffer("inverse bone matrices", usage, numBones * 16 * Float.BYTES);
-        jointBuffer = new Buffer("joint matrices", usage, numBones * 16 * Float.BYTES);
-    }
 
     private Pointer floatData;
 
-    private void fillSkinBuffers(Model model ){
-        if(model.joints == null)
+    private void updateJointBuffer(ModelInstance modelInstance ){
+        if(modelInstance.jointBuffer == null)
             return;
-        int numBones = model.joints.size();
         int matrixSize = 16*Float.BYTES;
 
         if(floatData == null)
             floatData = JavaWebGPU.createDirectPointer(matrixSize );    // allocate native memory for one matrix
         int offset = 0;
-        for(Node joint : model.joints) {
+        for(Node joint : modelInstance.model.joints) {
             float floats[] = joint.globalTransform.val;
             floatData.put(0, floats, 0, 16);
-            jointBuffer.write(offset, floatData, matrixSize);
-            offset += matrixSize;
-        }
-        // these are static should be stored per model on loading
-        offset = 0;
-        for(int i = 0; i < numBones; i++) {
-            float floats[] = model.inverseBoneTransforms.get(i).val;
-            floatData.put(0, floats, 0, 16);
-            inverseBoneBuffer.write(offset, floatData, matrixSize);
+            modelInstance.jointBuffer.write(offset, floatData, matrixSize);
             offset += matrixSize;
         }
     }
@@ -636,8 +620,8 @@ public class ModelBatch implements Disposable {
         bindGroup.begin();
         // webgpu will raise a fatal error if buffer is size is zero, despite we are not using these buffers for non-skinned models
         // and minBindingSize is 0. So use a dummy buffer if needed.
-        bindGroup.addBuffer(0, jointBuffer.getSize() > 0 ? jointBuffer : dummyBuffer);
-        bindGroup.addBuffer(1, inverseBoneBuffer.getSize() > 0 ? inverseBoneBuffer : dummyBuffer);
+        bindGroup.addBuffer(0, jointBuffer);
+        bindGroup.addBuffer(1, inverseBoneBuffer);
         bindGroup.end();
         return bindGroup;
     }

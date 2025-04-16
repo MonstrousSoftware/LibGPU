@@ -54,8 +54,6 @@ public class TestGLTF extends ApplicationAdapter {
         instances.add(modelInstance1);
 
 
-
-
         camera = new PerspectiveCamera(70, LibGPU.graphics.getWidth(), LibGPU.graphics.getHeight());
         camera.position.set(0, 1f, -1.6f);
         camera.direction.set(0,0f, 1f);
